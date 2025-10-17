@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Login - MCU Management</title>
+    <link rel="stylesheet" href="css/output.css">
+    <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="card mb-6">
+            <h1 class="text-2xl font-bold mb-4">🔧 Debug Login Issue</h1>
+            <p class="text-gray-600 mb-4">Tool untuk debug masalah login</p>
+
+            <div class="space-y-4">
+                <button onclick="checkDatabase()" class="btn btn-primary w-full">
+                    1. Check Database & Users
+                </button>
+
+                <button onclick="resetAndSeed()" class="btn btn-warning w-full">
+                    2. Reset & Seed Database
+                </button>
+
+                <button onclick="testLogin()" class="btn btn-success w-full">
+                    3. Test Login (admin/admin123)
+                </button>
+
+                <button onclick="manualCreateUser()" class="btn btn-secondary w-full">
+                    4. Manual Create Admin User
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="text-lg font-semibold mb-4">Debug Output:</h2>
+            <div id="output" class="bg-gray-900 text-green-400 p-4 rounded font-mono text-sm overflow-auto" style="max-height: 400px; min-height: 200px;">
+                Klik tombol di atas untuk mulai debug...<br>
+            </div>
+        </div>
+
+        <div class="mt-6 text-center">
+            <a href="pages/login.html" class="btn btn-primary">← Kembali ke Login</a>
+        </div>
+    </div>
+
+    <script type="module">
+        import { database } from './js/services/database.js';
+        import { authService } from './js/services/authService.js';
+        import { seedDatabase } from './js/seedData.js';
+
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'text-red-400' :
+                         type === 'success' ? 'text-green-400' :
+                         type === 'warning' ? 'text-yellow-400' : 'text-blue-400';
+            output.innerHTML += `<span class="${color}">[${timestamp}] ${message}</span><br>`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        window.checkDatabase = async function() {
+            try {
+                log('=== CHECKING DATABASE ===', 'info');
+
+                // Check if database initialized
+                if (!database.db && !database.useFallback) {
+                    log('⚠️ Database not initialized!', 'warning');
+                    log('Initializing database...', 'info');
+                    await database.init();
+                }
+
+                log('✓ Database initialized', 'success');
+
+                // Get all users
+                const users = await database.getAll('users');
+                log(`Found ${users.length} users in database`, 'info');
+
+                if (users.length === 0) {
+                    log('⚠️ No users found! Database needs seeding.', 'warning');
+                } else {
+                    users.forEach(user => {
+                        log(`User: ${user.username} (${user.role}) - Active: ${user.active}`, 'success');
+                        log(`  Password Hash: ${user.passwordHash}`, 'info');
+
+                        // Test password hash
+                        const expectedHash = btoa('admin123');
+                        if (user.username === 'admin') {
+                            log(`  Expected Hash: ${expectedHash}`, 'info');
+                            log(`  Match: ${user.passwordHash === expectedHash ? '✓' : '✗'}`,
+                                user.passwordHash === expectedHash ? 'success' : 'error');
+                        }
+                    });
+                }
+
+                // Check all tables
+                log('--- Checking other tables ---', 'info');
+                const employees = await database.getAll('employees');
+                log(`Employees: ${employees.length}`, 'info');
+
+                const mcus = await database.getAll('mcus');
+                log(`MCUs: ${mcus.length}`, 'info');
+
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+
+        window.resetAndSeed = async function() {
+            if (!confirm('This will delete all data and create new seed data. Continue?')) {
+                return;
+            }
+
+            try {
+                log('=== RESETTING & SEEDING DATABASE ===', 'info');
+
+                const result = await seedDatabase();
+
+                if (result.success) {
+                    log('✓ Database seeded successfully!', 'success');
+                    log(`Created: ${result.counts.employees} employees, ${result.counts.mcus} MCUs`, 'success');
+                    log(`Users: ${result.counts.users}`, 'success');
+
+                    // Verify users
+                    const users = await database.getAll('users');
+                    log('--- Verifying Users ---', 'info');
+                    users.forEach(user => {
+                        log(`✓ ${user.username} / ${user.role}`, 'success');
+                    });
+
+                    log('✓ You can now try to login!', 'success');
+                } else {
+                    log(`❌ Seed failed: ${result.error}`, 'error');
+                }
+
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+
+        window.testLogin = async function() {
+            try {
+                log('=== TESTING LOGIN ===', 'info');
+                log('Username: admin', 'info');
+                log('Password: admin123', 'info');
+
+                const result = await authService.login('admin', 'admin123');
+
+                log('✓ LOGIN SUCCESS!', 'success');
+                log(`Logged in as: ${result.displayName} (${result.role})`, 'success');
+                log('SessionStorage saved', 'success');
+
+                setTimeout(() => {
+                    log('Redirecting to dashboard...', 'info');
+                    window.location.href = 'index.html';
+                }, 2000);
+
+            } catch (error) {
+                log(`❌ LOGIN FAILED: ${error.message}`, 'error');
+                console.error(error);
+
+                // Additional debug
+                log('--- Debug Info ---', 'warning');
+                const users = await database.getAll('users');
+                const adminUser = users.find(u => u.username === 'admin');
+
+                if (!adminUser) {
+                    log('⚠️ Admin user not found in database!', 'error');
+                } else {
+                    log(`Admin user exists: ${JSON.stringify(adminUser, null, 2)}`, 'info');
+
+                    const testHash = btoa('admin123');
+                    log(`Test password hash: ${testHash}`, 'info');
+                    log(`Stored hash: ${adminUser.passwordHash}`, 'info');
+                    log(`Hashes match: ${testHash === adminUser.passwordHash}`,
+                        testHash === adminUser.passwordHash ? 'success' : 'error');
+                }
+            }
+        };
+
+        window.manualCreateUser = async function() {
+            try {
+                log('=== MANUALLY CREATING ADMIN USER ===', 'info');
+
+                // Delete existing admin if exists
+                const users = await database.getAll('users');
+                const existingAdmin = users.find(u => u.username === 'admin');
+                if (existingAdmin) {
+                    await database.delete('users', existingAdmin.userId);
+                    log('Deleted existing admin user', 'warning');
+                }
+
+                // Create new admin
+                const newAdmin = await authService.createUser({
+                    username: 'admin',
+                    password: 'admin123',
+                    displayName: 'Administrator',
+                    role: 'Admin'
+                });
+
+                log('✓ Admin user created!', 'success');
+                log(`User ID: ${newAdmin.userId}`, 'info');
+                log(`Username: ${newAdmin.username}`, 'info');
+                log(`Password Hash: ${newAdmin.passwordHash}`, 'info');
+                log(`Expected Hash: ${btoa('admin123')}`, 'info');
+
+                log('✓ Try logging in now!', 'success');
+
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+
+        // Auto-check on load
+        log('Debug tool loaded. Click buttons above to diagnose issue.', 'success');
+    </script>
+</body>
+</html>

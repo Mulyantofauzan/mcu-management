@@ -1,0 +1,24 @@
+{
+  "name": "mcu-management",
+  "version": "1.0.0",
+  "description": "Aplikasi Web Manajemen Medical Check Up (MCU)",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx tailwindcss -i ./css/input.css -o ./css/output.css --watch",
+    "build": "npx tailwindcss -i ./css/input.css -o ./css/output.css --minify",
+    "build:dev": "npx tailwindcss -i ./css/input.css -o ./css/output.css"
+  },
+  "keywords": ["mcu", "medical", "checkup", "management"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "tailwindcss": "^3.4.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32"
+  },
+  "dependencies": {
+    "dexie": "^3.2.4",
+    "chart.js": "^4.4.0",
+    "chartjs-plugin-datalabels": "^2.2.0"
+  }
+}

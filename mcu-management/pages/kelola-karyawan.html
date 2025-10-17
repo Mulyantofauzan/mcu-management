@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola Karyawan - MCU Management</title>
+    <link rel="stylesheet" href="../css/output.css">
+
+    <!-- Dexie (IndexedDB) - Fallback -->
+    <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
+
+    <!-- Supabase - Production Database -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-50">
+    <!-- Sidebar (sama seperti halaman lain) -->
+    <aside id="sidebar" class="sidebar fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 z-30">
+        <div class="flex flex-col h-full">
+            <div class="p-6 border-b border-gray-200">
+                <h1 class="text-xl font-bold text-primary-600">MCU Management</h1>
+                <p class="text-xs text-gray-500 mt-1">Medical Check Up System</p>
+            </div>
+            <nav class="flex-1 overflow-y-auto p-4">
+                <ul class="space-y-1">
+                    <li><a href="../index.html" class="sidebar-link"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span>Dashboard</span></a></li>
+                    <li><a href="tambah-karyawan.html" class="sidebar-link"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg><span>Tambah Karyawan</span></a></li>
+                    <li><a href="kelola-karyawan.html" class="sidebar-link active"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg><span>Kelola Karyawan</span></a></li>
+                    <li><a href="follow-up.html" class="sidebar-link"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg><span>Follow-Up</span></a></li>
+                    <li><a href="data-master.html" class="sidebar-link"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg><span>Data Master</span></a></li>
+                    <li id="menu-kelola-user"><a href="kelola-user.html" class="sidebar-link"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg><span>Kelola User</span></a></li>
+                    <li><a href="analysis.html" class="sidebar-link"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg><span>Analysis</span></a></li>
+                    <li><a href="data-terhapus.html" class="sidebar-link"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg><span>Data Terhapus</span></a></li>
+                </ul>
+            </nav>
+            <div class="p-4 border-t border-gray-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center"><span class="text-primary-600 font-semibold" id="user-initial">A</span></div>
+                    <div class="flex-1"><p class="text-sm font-medium text-gray-900" id="user-name">Admin</p><p class="text-xs text-gray-500" id="user-role">Administrator</p></div>
+                    <button onclick="window.handleLogout()" class="text-gray-400 hover:text-gray-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg></button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="ml-64 min-h-screen">
+        <header class="bg-white border-b border-gray-200 sticky top-0 z-20">
+            <div class="px-6 py-4">
+                <nav class="flex" aria-label="Breadcrumb">
+                    <ol class="inline-flex items-center space-x-1">
+                        <li><a href="../index.html" class="text-sm text-gray-500 hover:text-primary-600">Dashboard</a></li>
+                        <li><span class="text-gray-400 mx-2">/</span></li>
+                        <li><span class="text-sm font-medium text-gray-700">Kelola Karyawan</span></li>
+                    </ol>
+                </nav>
+            </div>
+        </header>
+
+        <main class="p-6">
+            <div class="mb-6">
+                <h1 class="text-2xl font-bold text-gray-900">Kelola Karyawan</h1>
+                <p class="text-gray-500">Manage data karyawan dan riwayat MCU</p>
+            </div>
+
+            <!-- Stats -->
+            <div class="flex gap-4 mb-6">
+                <div class="card" style="min-width: 200px;"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center"><svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></div><div><p class="text-xs text-gray-500">Total Karyawan</p><p class="text-xl font-bold text-gray-900" id="stat-total">0</p></div></div></div>
+                <div class="card" style="min-width: 180px;"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-success-light rounded-lg flex items-center justify-center"><svg class="w-5 h-5 text-success-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div><div><p class="text-xs text-gray-500">Aktif</p><p class="text-xl font-bold text-success" id="stat-active">0</p></div></div></div>
+                <div class="card" style="min-width: 180px;"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center"><svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg></div><div><p class="text-xs text-gray-500">Company</p><p class="text-xl font-bold text-primary-600" id="stat-company">0</p></div></div></div>
+                <div class="card" style="min-width: 180px;"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-warning-light rounded-lg flex items-center justify-center"><svg class="w-5 h-5 text-warning-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></div><div><p class="text-xs text-gray-500">Vendor</p><p class="text-xl font-bold text-warning" id="stat-vendor">0</p></div></div></div>
+            </div>
+
+            <!-- Employee Table -->
+            <div class="card">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold">Daftar Karyawan</h2>
+                    <div class="flex gap-2">
+                        <input type="text" id="search" placeholder="Cari nama..." class="input" style="width: 250px;" onkeyup="window.handleSearch()" />
+                        <button onclick="window.exportData()" class="btn btn-secondary">📥 Export</button>
+                    </div>
+                </div>
+                <div id="employee-table"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal: Employee Detail -->
+    <div id="detail-modal" class="modal-overlay hidden">
+        <div class="modal max-w-6xl">
+            <div class="modal-header">
+                <h3 class="text-lg font-semibold">Detail Karyawan</h3>
+                <button onclick="window.closeDetailModal()" class="text-gray-400 hover:text-gray-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="modal-body">
+                <!-- Employee Info -->
+                <div class="grid grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded-lg" id="employee-info"></div>
+
+                <!-- MCU History -->
+                <h4 class="font-semibold text-gray-900 mb-3">Riwayat MCU</h4>
+                <div id="mcu-history-table"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Edit Karyawan -->
+    <div id="edit-employee-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="text-lg font-semibold">Edit Karyawan</h3>
+                <button onclick="window.closeEditEmployeeModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-employee-form" onsubmit="window.handleEditEmployee(event)">
+                    <input type="hidden" id="edit-emp-id" />
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="col-span-2">
+                            <label class="label">Nama Lengkap <span class="text-danger">*</span></label>
+                            <input type="text" id="edit-emp-name" class="input" required />
+                        </div>
+
+                        <div>
+                            <label class="label">Jabatan <span class="text-danger">*</span></label>
+                            <select id="edit-emp-job" class="input" required></select>
+                        </div>
+
+                        <div>
+                            <label class="label">Departemen <span class="text-danger">*</span></label>
+                            <select id="edit-emp-dept" class="input" required></select>
+                        </div>
+
+                        <div>
+                            <label class="label">Tanggal Lahir <span class="text-danger">*</span></label>
+                            <input type="date" id="edit-emp-birthdate" class="input" required />
+                        </div>
+
+                        <div>
+                            <label class="label">Golongan Darah <span class="text-danger">*</span></label>
+                            <select id="edit-emp-blood" class="input" required>
+                                <option value="">Pilih...</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="label">Status Karyawan <span class="text-danger">*</span></label>
+                            <select id="edit-emp-status" class="input" required onchange="toggleEditVendorField()">
+                                <option value="Company">Company</option>
+                                <option value="Vendor">Vendor</option>
+                            </select>
+                        </div>
+
+                        <div id="edit-vendor-field" class="hidden">
+                            <label class="label">Nama Vendor</label>
+                            <input type="text" id="edit-emp-vendor" class="input" />
+                        </div>
+
+                        <div>
+                            <label class="label">Status Aktif <span class="text-danger">*</span></label>
+                            <select id="edit-emp-active" class="input" required onchange="toggleEditInactiveField()">
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                        </div>
+
+                        <div id="edit-inactive-reason-field" class="hidden col-span-2">
+                            <label class="label">Alasan Tidak Aktif</label>
+                            <input type="text" id="edit-emp-inactive-reason" class="input" />
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" onclick="window.closeEditEmployeeModal()" class="btn btn-secondary">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: MCU Detail -->
+    <div id="mcu-detail-modal" class="modal-overlay hidden">
+        <div class="modal max-w-6xl">
+            <div class="modal-header">
+                <h3 class="text-lg font-semibold">Detail MCU</h3>
+                <button onclick="window.closeMCUDetailModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Employee Info -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                    <h4 class="font-semibold text-gray-900 mb-2">Data Karyawan</h4>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div><span class="text-gray-600">Nama:</span> <span class="font-medium" id="mcu-detail-emp-name">-</span></div>
+                        <div><span class="text-gray-600">ID:</span> <span class="font-medium" id="mcu-detail-emp-id">-</span></div>
+                        <div><span class="text-gray-600">Jabatan:</span> <span class="font-medium" id="mcu-detail-emp-job">-</span></div>
+                        <div><span class="text-gray-600">Departemen:</span> <span class="font-medium" id="mcu-detail-emp-dept">-</span></div>
+                    </div>
+                </div>
+
+                <!-- MCU Info -->
+                <div class="grid grid-cols-3 gap-4 mb-4">
+                    <div><label class="text-sm text-gray-600">ID MCU:</label><p class="font-medium" id="mcu-detail-id">-</p></div>
+                    <div><label class="text-sm text-gray-600">Tanggal MCU:</label><p class="font-medium" id="mcu-detail-date">-</p></div>
+                    <div><label class="text-sm text-gray-600">Jenis MCU:</label><p class="font-medium" id="mcu-detail-type">-</p></div>
+                </div>
+
+                <h4 class="font-semibold text-gray-900 mb-3">Hasil Pemeriksaan</h4>
+                <div class="bg-white border border-gray-200 rounded-lg overflow-hidden mb-4">
+                    <div class="grid grid-cols-3 gap-px bg-gray-200">
+                        <div class="bg-white px-4 py-3"><span class="text-xs text-gray-500">BMI</span><p class="font-medium text-sm" id="mcu-detail-bmi">-</p></div>
+                        <div class="bg-gray-50 px-4 py-3"><span class="text-xs text-gray-500">Tekanan Darah</span><p class="font-medium text-sm" id="mcu-detail-bp">-</p></div>
+                        <div class="bg-white px-4 py-3"><span class="text-xs text-gray-500">Penglihatan</span><p class="font-medium text-sm" id="mcu-detail-vision">-</p></div>
+
+                        <div class="bg-gray-50 px-4 py-3"><span class="text-xs text-gray-500">Audiometri</span><p class="font-medium text-sm" id="mcu-detail-audio">-</p></div>
+                        <div class="bg-white px-4 py-3"><span class="text-xs text-gray-500">Spirometri</span><p class="font-medium text-sm" id="mcu-detail-spiro">-</p></div>
+                        <div class="bg-gray-50 px-4 py-3"><span class="text-xs text-gray-500">HBsAg</span><p class="font-medium text-sm" id="mcu-detail-hbsag">-</p></div>
+
+                        <div class="bg-white px-4 py-3"><span class="text-xs text-gray-500">SGOT</span><p class="font-medium text-sm" id="mcu-detail-sgot">-</p></div>
+                        <div class="bg-gray-50 px-4 py-3"><span class="text-xs text-gray-500">SGPT</span><p class="font-medium text-sm" id="mcu-detail-sgpt">-</p></div>
+                        <div class="bg-white px-4 py-3"><span class="text-xs text-gray-500">CBC</span><p class="font-medium text-sm" id="mcu-detail-cbc">-</p></div>
+
+                        <div class="col-span-3 bg-gray-50 px-4 py-3"><span class="text-xs text-gray-500">X-Ray</span><p class="font-medium text-sm" id="mcu-detail-xray">-</p></div>
+                        <div class="col-span-3 bg-white px-4 py-3"><span class="text-xs text-gray-500">EKG</span><p class="font-medium text-sm" id="mcu-detail-ekg">-</p></div>
+                        <div class="col-span-3 bg-gray-50 px-4 py-3"><span class="text-xs text-gray-500">Treadmill</span><p class="font-medium text-sm" id="mcu-detail-treadmill">-</p></div>
+                        <div class="col-span-3 bg-white px-4 py-3"><span class="text-xs text-gray-500">Fungsi Ginjal & Hati</span><p class="font-medium text-sm" id="mcu-detail-kidney">-</p></div>
+                        <div class="col-span-3 bg-gray-50 px-4 py-3"><span class="text-xs text-gray-500">NAPZA</span><p class="font-medium text-sm" id="mcu-detail-napza">-</p></div>
+                    </div>
+                </div>
+
+                <h4 class="font-semibold text-gray-900 mb-3">Hasil Awal</h4>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div><span class="text-gray-600">Status:</span> <span id="mcu-detail-initial-result">-</span></div>
+                    <div class="col-span-2"><span class="text-gray-600">Catatan:</span> <p class="text-sm mt-1" id="mcu-detail-initial-notes">-</p></div>
+                </div>
+
+                <div id="final-result-section" class="hidden">
+                    <h4 class="font-semibold text-gray-900 mb-3">Hasil Akhir (Follow-Up)</h4>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div><span class="text-gray-600">Status:</span> <span id="mcu-detail-final-result">-</span></div>
+                        <div class="col-span-2"><span class="text-gray-600">Catatan:</span> <p class="text-sm mt-1" id="mcu-detail-final-notes">-</p></div>
+                    </div>
+                </div>
+
+                <!-- Riwayat Perubahan -->
+                <div id="change-history-section" class="hidden">
+                    <h4 class="font-semibold text-gray-900 mb-3">Riwayat Perubahan</h4>
+                    <p class="text-xs text-gray-500 mb-3">Menampilkan hanya item yang diubah saat follow-up</p>
+                    <div id="change-history-table"></div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" onclick="window.closeMCUDetailModal()" class="btn btn-secondary">Tutup</button>
+                    <button type="button" onclick="window.editMCU()" class="btn btn-primary">
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        Edit MCU
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Edit MCU -->
+    <div id="edit-mcu-modal" class="modal-overlay hidden">
+        <div class="modal max-w-6xl">
+            <div class="modal-header">
+                <h3 class="text-lg font-semibold">Edit MCU</h3>
+                <button onclick="window.closeEditMCUModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-mcu-form" onsubmit="window.handleEditMCU(event)">
+                    <input type="hidden" id="edit-mcu-id" />
+
+                    <div class="grid grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label class="label">Jenis MCU <span class="text-danger">*</span></label>
+                            <select id="edit-mcu-type" class="input" required>
+                                <option value="">Pilih...</option>
+                                <option value="Pre-Employee">Pre-Employee</option>
+                                <option value="Annual">Annual</option>
+                                <option value="Khusus">Khusus</option>
+                                <option value="Final">Final</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Tanggal MCU <span class="text-danger">*</span></label>
+                            <input type="date" id="edit-mcu-date" class="input" required />
+                        </div>
+                    </div>
+
+                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan</h4>
+                    <div class="grid grid-cols-3 gap-4 mb-4">
+                        <div><label class="label">BMI</label><input type="number" step="0.1" id="edit-mcu-bmi" class="input" /></div>
+                        <div><label class="label">Tekanan Darah</label><input type="text" id="edit-mcu-bp" class="input" placeholder="120/80" /></div>
+                        <div><label class="label">Penglihatan</label><input type="text" id="edit-mcu-vision" class="input" placeholder="6/6" /></div>
+                        <div><label class="label">Audiometri</label><input type="text" id="edit-mcu-audio" class="input" /></div>
+                        <div><label class="label">Spirometri</label><input type="text" id="edit-mcu-spiro" class="input" /></div>
+                        <div><label class="label">HBsAg</label>
+                            <select id="edit-mcu-hbsag" class="input">
+                                <option value="">Pilih...</option>
+                                <option value="Negatif">Negatif</option>
+                                <option value="Positif">Positif</option>
+                                <option value="Reaktif">Reaktif</option>
+                            </select>
+                        </div>
+                        <div><label class="label">SGOT</label><input type="text" id="edit-mcu-sgot" class="input" /></div>
+                        <div><label class="label">SGPT</label><input type="text" id="edit-mcu-sgpt" class="input" /></div>
+                        <div><label class="label">CBC</label><input type="text" id="edit-mcu-cbc" class="input" /></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-4 mb-4">
+                        <div><label class="label">X-Ray</label><textarea id="edit-mcu-xray" class="input" rows="2"></textarea></div>
+                        <div><label class="label">EKG</label><textarea id="edit-mcu-ekg" class="input" rows="2"></textarea></div>
+                        <div><label class="label">Treadmill</label><textarea id="edit-mcu-treadmill" class="input" rows="2"></textarea></div>
+                        <div><label class="label">Fungsi Ginjal & Hati</label><textarea id="edit-mcu-kidney" class="input" rows="2"></textarea></div>
+                        <div><label class="label">NAPZA</label><input type="text" id="edit-mcu-napza" class="input" /></div>
+                    </div>
+
+                    <h4 class="font-semibold text-gray-900 mb-3">Hasil Awal</h4>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="label">Hasil Awal <span class="text-danger">*</span></label>
+                            <select id="edit-mcu-initial-result" class="input" required>
+                                <option value="">Pilih...</option>
+                                <option value="Fit">Fit</option>
+                                <option value="Follow-Up">Follow-Up</option>
+                                <option value="Unfit">Unfit</option>
+                            </select>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="label">Catatan Awal <span class="text-danger">*</span></label>
+                            <textarea id="edit-mcu-initial-notes" class="input" rows="3" required></textarea>
+                        </div>
+                    </div>
+
+                    <div id="edit-final-result-section" class="hidden">
+                        <h4 class="font-semibold text-gray-900 mb-3">Hasil Akhir (Follow-Up)</h4>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="label">Hasil Akhir</label>
+                                <select id="edit-mcu-final-result" class="input">
+                                    <option value="">Pilih...</option>
+                                    <option value="Fit">Fit</option>
+                                    <option value="Follow-Up">Follow-Up</option>
+                                    <option value="Unfit">Unfit</option>
+                                </select>
+                            </div>
+                            <div class="col-span-2">
+                                <label class="label">Catatan Akhir</label>
+                                <textarea id="edit-mcu-final-notes" class="input" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" onclick="window.closeEditMCUModal()" class="btn btn-secondary">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Tambah MCU -->
+    <div id="add-mcu-modal" class="modal-overlay hidden">
+        <div class="modal max-w-6xl">
+            <div class="modal-header">
+                <h3 class="text-lg font-semibold">Tambah MCU</h3>
+                <button onclick="window.closeAddMCUModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Employee Summary -->
+                <div class="bg-blue-50 rounded-lg p-4 mb-6">
+                    <h4 class="font-semibold text-gray-900 mb-3">Data Karyawan</h4>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div><span class="text-gray-600">Nama:</span> <span class="font-medium" id="mcu-emp-name">-</span></div>
+                        <div><span class="text-gray-600">ID:</span> <span class="font-medium" id="mcu-emp-id">-</span></div>
+                        <div><span class="text-gray-600">Jabatan:</span> <span class="font-medium" id="mcu-emp-job">-</span></div>
+                        <div><span class="text-gray-600">Departemen:</span> <span class="font-medium" id="mcu-emp-dept">-</span></div>
+                    </div>
+                </div>
+
+                <form id="add-mcu-form" onsubmit="window.handleAddMCU(event)">
+                    <input type="hidden" id="mcu-employee-id" />
+
+                    <div class="grid grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label class="label">Jenis MCU <span class="text-danger">*</span></label>
+                            <select id="mcu-type" class="input" required>
+                                <option value="">Pilih...</option>
+                                <option value="Pre-Employee">Pre-Employee</option>
+                                <option value="Annual">Annual</option>
+                                <option value="Khusus">Khusus</option>
+                                <option value="Final">Final</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Tanggal MCU <span class="text-danger">*</span></label>
+                            <input type="date" id="mcu-date" class="input" required />
+                        </div>
+                    </div>
+
+                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan</h4>
+                    <div class="grid grid-cols-3 gap-4 mb-4">
+                        <div><label class="label">BMI</label><input type="number" step="0.1" id="mcu-bmi" class="input" /></div>
+                        <div><label class="label">Tekanan Darah</label><input type="text" id="mcu-bp" class="input" placeholder="120/80" /></div>
+                        <div><label class="label">Penglihatan</label><input type="text" id="mcu-vision" class="input" placeholder="6/6" /></div>
+                        <div><label class="label">Audiometri</label><input type="text" id="mcu-audio" class="input" /></div>
+                        <div><label class="label">Spirometri</label><input type="text" id="mcu-spiro" class="input" /></div>
+                        <div><label class="label">HBsAg</label>
+                            <select id="mcu-hbsag" class="input">
+                                <option value="">Pilih...</option>
+                                <option value="Negatif">Negatif</option>
+                                <option value="Positif">Positif</option>
+                                <option value="Reaktif">Reaktif</option>
+                            </select>
+                        </div>
+                        <div><label class="label">SGOT</label><input type="text" id="mcu-sgot" class="input" /></div>
+                        <div><label class="label">SGPT</label><input type="text" id="mcu-sgpt" class="input" /></div>
+                        <div><label class="label">CBC</label><input type="text" id="mcu-cbc" class="input" /></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-4 mb-4">
+                        <div><label class="label">X-Ray</label><textarea id="mcu-xray" class="input" rows="2"></textarea></div>
+                        <div><label class="label">EKG</label><textarea id="mcu-ekg" class="input" rows="2"></textarea></div>
+                        <div><label class="label">Treadmill</label><textarea id="mcu-treadmill" class="input" rows="2"></textarea></div>
+                        <div><label class="label">Fungsi Ginjal & Hati</label><textarea id="mcu-kidney" class="input" rows="2"></textarea></div>
+                        <div><label class="label">NAPZA</label><input type="text" id="mcu-napza" class="input" /></div>
+                    </div>
+
+                    <h4 class="font-semibold text-gray-900 mb-3">Hasil</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="label">Hasil Awal <span class="text-danger">*</span></label>
+                            <select id="mcu-result" class="input" required>
+                                <option value="">Pilih...</option>
+                                <option value="Fit">Fit</option>
+                                <option value="Fit With Note">Fit With Note</option>
+                                <option value="Temporary Unfit">Temporary Unfit</option>
+                                <option value="Unfit">Unfit</option>
+                            </select>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="label">Catatan Awal <span class="text-danger">*</span></label>
+                            <textarea id="mcu-notes" class="input" rows="3" required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" onclick="window.closeAddMCUModal()" class="btn btn-secondary">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan MCU</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="../js/pages/kelola-karyawan.js"></script>
+</body>
+</html>

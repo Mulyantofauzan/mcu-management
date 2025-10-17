@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - MCU Management</title>
+  <link rel="stylesheet" href="../css/output.css" />
+
+  <!-- Dexie (IndexedDB) -->
+  <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    /* background gradient animation */
+    body {
+      background: linear-gradient(135deg, #2563eb, #4f46e5, #1e3a8a);
+      background-size: 300% 300%;
+      animation: gradientMove 10s ease infinite;
+    }
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center px-4">
+  <div class="relative w-full max-w-md">
+    <!-- Glass card -->
+    <div class="backdrop-blur-lg bg-white/10 border border-white/20 rounded-2xl shadow-2xl p-8 text-white">
+      
+      <!-- Logo -->
+      <div class="flex justify-center mb-6">
+        <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Title -->
+      <h2 class="text-3xl font-extrabold text-center mb-1 drop-shadow-md">MCU Management</h2>
+      <p class="text-sm text-indigo-100 mb-6 text-center tracking-wide">Medical Check Up System</p>
+
+      <!-- Form -->
+      <form id="login-form" onsubmit="window.handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-indigo-100 mb-1">Username</label>
+          <input id="username" name="username" type="text"
+            class="w-full px-4 py-2.5 bg-white/10 border border-white/20 rounded-lg text-white placeholder-indigo-200 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all"
+            placeholder="Masukkan username" required autocomplete="username" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-indigo-100 mb-1">Password</label>
+          <input id="password" name="password" type="password"
+            class="w-full px-4 py-2.5 bg-white/10 border border-white/20 rounded-lg text-white placeholder-indigo-200 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all"
+            placeholder="••••••••" required autocomplete="current-password" />
+        </div>
+
+        <div class="flex items-center justify-between text-sm text-indigo-100">
+          <label class="flex items-center">
+            <input type="checkbox" class="rounded border-indigo-400 bg-transparent text-blue-500 focus:ring-blue-400" />
+            <span class="ml-2">Remember me</span>
+          </label>
+          <a href="../debug-login.html" class="hover:text-blue-200 underline">Debug Tool</a>
+        </div>
+
+        <button type="submit" id="login-btn"
+          class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-2.5 rounded-lg shadow-md shadow-indigo-900/30 transition-all">
+          Sign In
+        </button>
+      </form>
+
+      <!-- Demo Credentials -->
+      <div class="mt-6 p-4 bg-white/10 rounded-lg border border-white/20 text-sm text-indigo-100">
+        <p class="text-center font-semibold mb-2 text-white/90">Demo Credentials</p>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between">
+            <span>Admin:</span>
+            <div class="flex gap-1.5">
+              <code class="bg-white/20 px-2 py-1 rounded text-white">admin</code>
+              <span>/</span>
+              <code class="bg-white/20 px-2 py-1 rounded text-white">admin123</code>
+            </div>
+          </div>
+          <div class="flex justify-between">
+            <span>Petugas:</span>
+            <div class="flex gap-1.5">
+              <code class="bg-white/20 px-2 py-1 rounded text-white">petugas</code>
+              <span>/</span>
+              <code class="bg-white/20 px-2 py-1 rounded text-white">petugas123</code>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="mt-6 text-center text-xs text-indigo-100/80">
+        &copy; 2025 MCU Management System
+      </div>
+    </div>
+  </div>
+
+  <!-- JS -->
+  <script type="module">
+    import { authService } from '../js/services/authService.js';
+    import { showToast } from '../js/utils/uiHelpers.js';
+    import { checkAndSeedIfEmpty } from '../js/seedData.js';
+
+    let dbReady = false;
+
+    async function initDatabase() {
+      try {
+        console.log('🔄 Initializing database...');
+        const result = await checkAndSeedIfEmpty();
+        if (result.success) {
+          console.log('✅ Database ready');
+        } else {
+          console.error('❌ Database init failed:', result.error);
+        }
+      } catch (err) {
+        console.error('❌ DB init error:', err);
+      } finally {
+        dbReady = true;
+      }
+    }
+    initDatabase();
+
+    window.handleLogin = async function (e) {
+      e.preventDefault();
+      if (!dbReady) {
+        showToast('Database initializing...', 'warning');
+        return;
+      }
+
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const btn = document.getElementById('login-btn');
+
+      try {
+        btn.disabled = true;
+        btn.textContent = 'Signing In...';
+        await authService.login(username, password);
+        showToast('Login berhasil!', 'success');
+        setTimeout(() => (window.location.href = '../index.html'), 600);
+      } catch (err) {
+        showToast(err.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+      }
+    };
+  </script>
+</body>
+</html>

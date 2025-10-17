@@ -1,0 +1,5 @@
+# Netlify Redirects
+# This file handles client-side routing for SPA
+
+# Note: No explicit redirects - let the app handle routing
+# The app will auto-redirect to login.html if not authenticated

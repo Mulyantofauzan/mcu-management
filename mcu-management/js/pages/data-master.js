@@ -1,0 +1,165 @@
+/**
+ * Data Master Page - CRUD for Job Titles, Departments, Vendors
+ */
+
+import { authService } from '../services/authService.js';
+import { masterDataService } from '../services/masterDataService.js';
+import { showToast, openModal, closeModal, confirmDialog, hideAdminMenuForNonAdmin } from '../utils/uiHelpers.js';
+
+let currentTab = 'jobTitles';
+let currentData = [];
+let editingId = null;
+
+const tabConfig = {
+    jobTitles: { title: 'Jabatan', getAll: () => masterDataService.getAllJobTitles(), create: (d) => masterDataService.createJobTitle(d), update: (id, d) => masterDataService.updateJobTitle(id, d), delete: (id) => masterDataService.deleteJobTitle(id) },
+    departments: { title: 'Departemen', getAll: () => masterDataService.getAllDepartments(), create: (d) => masterDataService.createDepartment(d), update: (id, d) => masterDataService.updateDepartment(id, d), delete: (id) => masterDataService.deleteDepartment(id) },
+    vendors: { title: 'Vendor', getAll: () => masterDataService.getAllVendors(), create: (d) => masterDataService.createVendor(d), update: (id, d) => masterDataService.updateVendor(id, d), delete: (id) => masterDataService.deleteVendor(id) }
+};
+
+async function init() {
+    if (!authService.isAuthenticated()) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    updateUserInfo();
+    await loadData();
+}
+
+function updateUserInfo() {
+    const user = authService.getCurrentUser();
+    if (user) {
+        document.getElementById('user-name').textContent = user.displayName;
+        document.getElementById('user-role').textContent = user.role;
+        document.getElementById('user-initial').textContent = user.displayName.charAt(0).toUpperCase();
+        hideAdminMenuForNonAdmin(user);
+    }
+}
+
+async function loadData() {
+    try {
+        const config = tabConfig[currentTab];
+        currentData = await config.getAll();
+        renderTable();
+    } catch (error) {
+        console.error('Error loading data:', error);
+        showToast('Gagal memuat data: ' + error.message, 'error');
+    }
+}
+
+function renderTable() {
+    const container = document.getElementById('data-table');
+
+    if (currentData.length === 0) {
+        container.innerHTML = '<p class="text-center text-gray-500 py-8">Belum ada data</p>';
+        return;
+    }
+
+    let html = '<div class="table-container"><table class="table"><thead><tr><th>ID</th><th>Nama</th><th>Aksi</th></tr></thead><tbody>';
+
+    currentData.forEach(item => {
+        const idField = currentTab === 'jobTitles' ? 'jobTitleId' : currentTab === 'departments' ? 'departmentId' : 'vendorId';
+        html += '<tr>';
+        html += `<td><span class="text-sm text-gray-600">${item[idField]}</span></td>`;
+        html += `<td><span class="font-medium text-gray-900">${item.name}</span></td>`;
+        html += `<td><div class="flex gap-2"><button onclick="editItem('${item[idField]}')" class="btn btn-sm btn-secondary">Edit</button><button onclick="deleteItem('${item[idField]}')" class="btn btn-sm btn-danger">Hapus</button></div></td>`;
+        html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+}
+
+window.switchTab = async function(tab) {
+    currentTab = tab;
+
+    // Update tab styling
+    ['jobTitles', 'departments', 'vendors'].forEach(t => {
+        const tabEl = document.getElementById('tab-' + t);
+        if (t === tab) {
+            tabEl.className = 'px-4 py-2 font-medium text-primary-600 border-b-2 border-primary-600';
+        } else {
+            tabEl.className = 'px-4 py-2 font-medium text-gray-500 hover:text-gray-700';
+        }
+    });
+
+    document.getElementById('tab-title').textContent = tabConfig[tab].title;
+    await loadData();
+};
+
+window.openAddModal = function() {
+    editingId = null;
+    document.getElementById('modal-title').textContent = `Tambah ${tabConfig[currentTab].title}`;
+    document.getElementById('crud-form').reset();
+    document.getElementById('item-id').value = '';
+    openModal('crud-modal');
+};
+
+window.closeCrudModal = function() {
+    closeModal('crud-modal');
+};
+
+window.editItem = async function(id) {
+    const idField = currentTab === 'jobTitles' ? 'jobTitleId' : currentTab === 'departments' ? 'departmentId' : 'vendorId';
+    const item = currentData.find(i => i[idField] === id);
+
+    if (!item) {
+        showToast('Data tidak ditemukan', 'error');
+        return;
+    }
+
+    editingId = id;
+    document.getElementById('modal-title').textContent = `Edit ${tabConfig[currentTab].title}`;
+    document.getElementById('item-id').value = id;
+    document.getElementById('item-name').value = item.name;
+
+    openModal('crud-modal');
+};
+
+window.handleSubmit = async function(event) {
+    event.preventDefault();
+
+    const name = document.getElementById('item-name').value;
+    const config = tabConfig[currentTab];
+
+    try {
+        if (editingId) {
+            // Update
+            await config.update(editingId, { name });
+            showToast('Data berhasil diupdate', 'success');
+        } else {
+            // Create
+            await config.create({ name });
+            showToast('Data berhasil ditambahkan', 'success');
+        }
+
+        closeCrudModal();
+        await loadData();
+    } catch (error) {
+        console.error('Error saving:', error);
+        showToast('Gagal menyimpan: ' + error.message, 'error');
+    }
+};
+
+window.deleteItem = function(id) {
+    confirmDialog(
+        `Apakah Anda yakin ingin menghapus data ini? Data yang sedang digunakan tidak dapat dihapus.`,
+        async () => {
+            try {
+                const config = tabConfig[currentTab];
+                await config.delete(id);
+                showToast('Data berhasil dihapus', 'success');
+                await loadData();
+            } catch (error) {
+                console.error('Error deleting:', error);
+                showToast('Gagal menghapus: ' + error.message, 'error');
+            }
+        }
+    );
+};
+
+window.handleLogout = function() {
+    authService.logout();
+};
+
+init();
