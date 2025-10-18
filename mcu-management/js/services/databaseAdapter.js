@@ -194,18 +194,35 @@ export const Employees = {
     async add(employee) {
         if (useSupabase) {
             const supabase = getSupabaseClient();
+
+            // Resolve job title ID to name
+            let jobTitleName = employee.jobTitle || '';
+            if (employee.jobTitleId && !employee.jobTitle) {
+                const jobTitles = await MasterData.getJobTitles();
+                const jt = jobTitles.find(j => j.id === employee.jobTitleId || j.jobTitleId === employee.jobTitleId);
+                jobTitleName = jt ? jt.name : employee.jobTitleId;
+            }
+
+            // Resolve department ID to name
+            let departmentName = employee.department || '';
+            if (employee.departmentId && !employee.department) {
+                const departments = await MasterData.getDepartments();
+                const dept = departments.find(d => d.id === employee.departmentId || d.departmentId === employee.departmentId);
+                departmentName = dept ? dept.name : employee.departmentId;
+            }
+
             const { data, error } = await supabase
                 .from('employees')
                 .insert({
                     employee_id: employee.employeeId,
                     name: employee.name,
-                    job_title: employee.jobTitle,
-                    department: employee.department,
-                    date_of_birth: employee.dateOfBirth,
+                    job_title: jobTitleName,
+                    department: departmentName,
+                    date_of_birth: employee.dateOfBirth || employee.birthDate,
                     blood_type: employee.bloodType,
-                    employee_type: employee.employeeType,
+                    employee_type: employee.employeeType || employee.employmentStatus || 'Company',
                     vendor_name: employee.vendorName,
-                    is_active: employee.isActive
+                    is_active: employee.isActive !== undefined ? employee.isActive : (employee.activeStatus === 'Active' || employee.activeStatus === true)
                 })
                 .select()
                 .single();
@@ -221,15 +238,40 @@ export const Employees = {
             const supabase = getSupabaseClient();
             const updateData = {};
 
-            // Map camelCase to snake_case
+            // Map camelCase to snake_case and resolve IDs
             if (updates.name) updateData.name = updates.name;
-            if (updates.jobTitle) updateData.job_title = updates.jobTitle;
-            if (updates.department) updateData.department = updates.department;
-            if (updates.dateOfBirth) updateData.date_of_birth = updates.dateOfBirth;
+
+            // Resolve job title ID to name if provided
+            if (updates.jobTitle) {
+                updateData.job_title = updates.jobTitle;
+            } else if (updates.jobTitleId) {
+                const jobTitles = await MasterData.getJobTitles();
+                const jt = jobTitles.find(j => j.id === updates.jobTitleId || j.jobTitleId === updates.jobTitleId);
+                updateData.job_title = jt ? jt.name : updates.jobTitleId;
+            }
+
+            // Resolve department ID to name if provided
+            if (updates.department) {
+                updateData.department = updates.department;
+            } else if (updates.departmentId) {
+                const departments = await MasterData.getDepartments();
+                const dept = departments.find(d => d.id === updates.departmentId || d.departmentId === updates.departmentId);
+                updateData.department = dept ? dept.name : updates.departmentId;
+            }
+
+            if (updates.dateOfBirth || updates.birthDate) updateData.date_of_birth = updates.dateOfBirth || updates.birthDate;
             if (updates.bloodType) updateData.blood_type = updates.bloodType;
             if (updates.employeeType) updateData.employee_type = updates.employeeType;
+            if (updates.employmentStatus) updateData.employee_type = updates.employmentStatus;
             if (updates.vendorName !== undefined) updateData.vendor_name = updates.vendorName;
-            if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
+
+            // Handle active status (multiple formats)
+            if (updates.isActive !== undefined) {
+                updateData.is_active = updates.isActive;
+            } else if (updates.activeStatus !== undefined) {
+                updateData.is_active = updates.activeStatus === 'Active' || updates.activeStatus === true;
+            }
+
             if (updates.deletedAt !== undefined) updateData.deleted_at = updates.deletedAt;
 
             const { data, error } = await supabase
