@@ -1,8 +1,8 @@
 # Netlify Configuration for MCU Management
 
 [build]
-  # No build command needed - output.css is committed
-  command = ""
+  # Inject environment variables into env-config.js
+  command = "sed -i.bak \"s|\${SUPABASE_URL}|$SUPABASE_URL|g\" env-config.js && sed -i.bak \"s|\${SUPABASE_ANON_KEY}|$SUPABASE_ANON_KEY|g\" env-config.js"
   # Publish directory is current folder
   publish = "."
 
