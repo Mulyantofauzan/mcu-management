@@ -43,6 +43,23 @@ export function isUsingSupabase() {
 /**
  * USERS
  */
+// Helper function to transform Supabase snake_case to camelCase for users
+function transformUser(user) {
+    if (!user) return user;
+    return {
+        id: user.id,
+        userId: user.user_id,
+        username: user.username,
+        passwordHash: user.password_hash,
+        displayName: user.display_name,
+        role: user.role,
+        active: user.active,
+        createdAt: user.created_at,
+        updatedAt: user.updated_at,
+        lastLogin: user.last_login
+    };
+}
+
 export const Users = {
     async getAll() {
         if (useSupabase) {
@@ -53,7 +70,7 @@ export const Users = {
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
-            return data;
+            return data.map(transformUser);
         }
         return await db.users.toArray();
     },
@@ -68,7 +85,7 @@ export const Users = {
                 .single();
 
             if (error && error.code !== 'PGRST116') throw error; // PGRST116 = not found
-            return data;
+            return transformUser(data);
         }
         return await db.users.where('username').equals(username).first();
     },
@@ -83,7 +100,7 @@ export const Users = {
                 .single();
 
             if (error && error.code !== 'PGRST116') throw error;
-            return data;
+            return transformUser(data);
         }
         return await db.users.where('userId').equals(userId).first();
     },
@@ -105,7 +122,7 @@ export const Users = {
                 .single();
 
             if (error) throw error;
-            return data;
+            return transformUser(data);
         }
         return await db.users.add(user);
     },
@@ -118,6 +135,7 @@ export const Users = {
             if (updates.passwordHash) updateData.password_hash = updates.passwordHash;
             if (updates.displayName) updateData.display_name = updates.displayName;
             if (updates.role) updateData.role = updates.role;
+            if (updates.lastLogin !== undefined) updateData.last_login = updates.lastLogin;
 
             const { data, error } = await supabase
                 .from('users')
@@ -127,7 +145,7 @@ export const Users = {
                 .single();
 
             if (error) throw error;
-            return data;
+            return transformUser(data);
         }
         return await db.users.where('userId').equals(userId).modify(updates);
     }
