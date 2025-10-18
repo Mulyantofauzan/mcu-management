@@ -9,7 +9,7 @@
 
 import { db } from './database.js';
 import { isSupabaseEnabled, getSupabaseClient } from '../config/supabase.js';
-import { transformUser, transformEmployee, transformMCU, transformMasterDataItem, transformActivityLog } from './databaseAdapter-transforms.js';
+import { transformUser, transformEmployee, transformMCU, transformMCUChange, transformMasterDataItem, transformActivityLog } from './databaseAdapter-transforms.js';
 
 // Determine which database to use
 const useSupabase = isSupabaseEnabled();
@@ -302,7 +302,7 @@ export const MCUs = {
             const { data, error } = await query.order('mcu_date', { ascending: false });
 
             if (error) throw error;
-            return data;
+            return data.map(transformMCU);
         }
 
         if (includeDeleted) {
@@ -321,7 +321,7 @@ export const MCUs = {
                 .single();
 
             if (error && error.code !== 'PGRST116') throw error;
-            return data;
+            return transformMCU(data);
         }
         return await db.mcus.where('mcuId').equals(mcuId).first();
     },
@@ -337,7 +337,7 @@ export const MCUs = {
                 .order('mcu_date', { ascending: false });
 
             if (error) throw error;
-            return data;
+            return data.map(transformMCU);
         }
         return await db.mcus
             .where('employeeId').equals(employeeId)
@@ -355,36 +355,35 @@ export const MCUs = {
                     employee_id: mcu.employeeId,
                     mcu_type: mcu.mcuType,
                     mcu_date: mcu.mcuDate,
-                    initial_bmi: mcu.initialBmi,
-                    initial_blood_pressure: mcu.initialBloodPressure,
-                    initial_vision: mcu.initialVision,
-                    initial_hearing: mcu.initialHearing,
-                    initial_color_blindness: mcu.initialColorBlindness,
-                    initial_heart: mcu.initialHeart,
-                    initial_lungs: mcu.initialLungs,
-                    initial_blood_test: mcu.initialBloodTest,
-                    initial_urine_test: mcu.initialUrineTest,
-                    initial_x_ray: mcu.initialXRay,
+                    // Examination results (single set, not initial/final)
+                    bmi: mcu.bmi,
+                    blood_pressure: mcu.bloodPressure,
+                    vision: mcu.vision,
+                    audiometry: mcu.audiometry,
+                    spirometry: mcu.spirometry,
+                    hbsag: mcu.hbsag,
+                    sgot: mcu.sgot,
+                    sgpt: mcu.sgpt,
+                    cbc: mcu.cbc,
+                    xray: mcu.xray,
+                    ekg: mcu.ekg,
+                    treadmill: mcu.treadmill,
+                    kidney_liver_function: mcu.kidneyLiverFunction,
+                    napza: mcu.napza,
+                    // Initial and final results
                     initial_result: mcu.initialResult,
                     initial_notes: mcu.initialNotes,
-                    final_bmi: mcu.finalBmi,
-                    final_blood_pressure: mcu.finalBloodPressure,
-                    final_vision: mcu.finalVision,
-                    final_hearing: mcu.finalHearing,
-                    final_color_blindness: mcu.finalColorBlindness,
-                    final_heart: mcu.finalHeart,
-                    final_lungs: mcu.finalLungs,
-                    final_blood_test: mcu.finalBloodTest,
-                    final_urine_test: mcu.finalUrineTest,
-                    final_x_ray: mcu.finalXRay,
                     final_result: mcu.finalResult,
-                    final_notes: mcu.finalNotes
+                    final_notes: mcu.finalNotes,
+                    status: mcu.status,
+                    created_by: mcu.createdBy,
+                    updated_by: mcu.updatedBy
                 })
                 .select()
                 .single();
 
             if (error) throw error;
-            return data;
+            return transformMCU(data);
         }
         return await db.mcus.add(mcu);
     },
@@ -394,35 +393,34 @@ export const MCUs = {
             const supabase = getSupabaseClient();
             const updateData = {};
 
-            // Map all possible fields
+            // Map all possible fields to match actual Supabase schema
             const fieldMapping = {
                 mcuType: 'mcu_type',
                 mcuDate: 'mcu_date',
-                initialBmi: 'initial_bmi',
-                initialBloodPressure: 'initial_blood_pressure',
-                initialVision: 'initial_vision',
-                initialHearing: 'initial_hearing',
-                initialColorBlindness: 'initial_color_blindness',
-                initialHeart: 'initial_heart',
-                initialLungs: 'initial_lungs',
-                initialBloodTest: 'initial_blood_test',
-                initialUrineTest: 'initial_urine_test',
-                initialXRay: 'initial_x_ray',
+                // Examination results (single set)
+                bmi: 'bmi',
+                bloodPressure: 'blood_pressure',
+                vision: 'vision',
+                audiometry: 'audiometry',
+                spirometry: 'spirometry',
+                hbsag: 'hbsag',
+                sgot: 'sgot',
+                sgpt: 'sgpt',
+                cbc: 'cbc',
+                xray: 'xray',
+                ekg: 'ekg',
+                treadmill: 'treadmill',
+                kidneyLiverFunction: 'kidney_liver_function',
+                napza: 'napza',
+                // Results
                 initialResult: 'initial_result',
                 initialNotes: 'initial_notes',
-                finalBmi: 'final_bmi',
-                finalBloodPressure: 'final_blood_pressure',
-                finalVision: 'final_vision',
-                finalHearing: 'final_hearing',
-                finalColorBlindness: 'final_color_blindness',
-                finalHeart: 'final_heart',
-                finalLungs: 'final_lungs',
-                finalBloodTest: 'final_blood_test',
-                finalUrineTest: 'final_urine_test',
-                finalXRay: 'final_x_ray',
                 finalResult: 'final_result',
                 finalNotes: 'final_notes',
-                deletedAt: 'deleted_at'
+                status: 'status',
+                deletedAt: 'deleted_at',
+                createdBy: 'created_by',
+                updatedBy: 'updated_by'
             };
 
             Object.keys(updates).forEach(key => {
@@ -438,7 +436,7 @@ export const MCUs = {
                 .single();
 
             if (error) throw error;
-            return data;
+            return transformMCU(data);
         }
         return await db.mcus.where('mcuId').equals(mcuId).modify(updates);
     },
@@ -462,6 +460,35 @@ export const MCUs = {
  * MCU CHANGES (Change History)
  */
 export const MCUChanges = {
+    async getAll() {
+        if (useSupabase) {
+            const supabase = getSupabaseClient();
+            const { data, error } = await supabase
+                .from('mcu_changes')
+                .select('*')
+                .order('changed_at', { ascending: false });
+
+            if (error) throw error;
+            return data.map(transformMCUChange);
+        }
+        return await db.mcuChanges.toArray();
+    },
+
+    async getById(id) {
+        if (useSupabase) {
+            const supabase = getSupabaseClient();
+            const { data, error } = await supabase
+                .from('mcu_changes')
+                .select('*')
+                .eq('id', id)
+                .single();
+
+            if (error && error.code !== 'PGRST116') throw error;
+            return transformMCUChange(data);
+        }
+        return await db.mcuChanges.get(id);
+    },
+
     async getByMcuId(mcuId) {
         if (useSupabase) {
             const supabase = getSupabaseClient();
@@ -472,7 +499,7 @@ export const MCUChanges = {
                 .order('changed_at', { ascending: false });
 
             if (error) throw error;
-            return data;
+            return data.map(transformMCUChange);
         }
         return await db.mcuChanges
             .where('mcuId').equals(mcuId)
@@ -496,9 +523,45 @@ export const MCUChanges = {
                 .single();
 
             if (error) throw error;
-            return data;
+            return transformMCUChange(data);
         }
         return await db.mcuChanges.add(change);
+    },
+
+    async update(id, updates) {
+        if (useSupabase) {
+            const supabase = getSupabaseClient();
+            const updateData = {};
+            if (updates.fieldName) updateData.field_name = updates.fieldName;
+            if (updates.oldValue !== undefined) updateData.old_value = updates.oldValue;
+            if (updates.newValue !== undefined) updateData.new_value = updates.newValue;
+            if (updates.changedBy) updateData.changed_by = updates.changedBy;
+
+            const { data, error } = await supabase
+                .from('mcu_changes')
+                .update(updateData)
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return transformMCUChange(data);
+        }
+        return await db.mcuChanges.update(id, updates);
+    },
+
+    async delete(id) {
+        if (useSupabase) {
+            const supabase = getSupabaseClient();
+            const { error } = await supabase
+                .from('mcu_changes')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            return true;
+        }
+        return await db.mcuChanges.delete(id);
     }
 };
 
@@ -515,7 +578,7 @@ export const MasterData = {
                 .order('name', { ascending: true });
 
             if (error) throw error;
-            return data;
+            return data.map(transformMasterDataItem);
         }
         return await db.jobTitles.toArray();
     },
@@ -529,7 +592,7 @@ export const MasterData = {
                 .order('name', { ascending: true });
 
             if (error) throw error;
-            return data;
+            return data.map(transformMasterDataItem);
         }
         return await db.departments.toArray();
     },
@@ -543,7 +606,7 @@ export const MasterData = {
                 .order('name', { ascending: true });
 
             if (error) throw error;
-            return data;
+            return data.map(transformMasterDataItem);
         }
         return await db.vendors.toArray();
     },
@@ -558,7 +621,7 @@ export const MasterData = {
                 .single();
 
             if (error) throw error;
-            return data;
+            return transformMasterDataItem(data);
         }
         return await db.jobTitles.add({ name });
     },
@@ -573,7 +636,7 @@ export const MasterData = {
                 .single();
 
             if (error) throw error;
-            return data;
+            return transformMasterDataItem(data);
         }
         return await db.departments.add({ name });
     },
@@ -588,7 +651,7 @@ export const MasterData = {
                 .single();
 
             if (error) throw error;
-            return data;
+            return transformMasterDataItem(data);
         }
         return await db.vendors.add({ name });
     },
@@ -604,7 +667,7 @@ export const MasterData = {
                 .single();
 
             if (error) throw error;
-            return data;
+            return transformMasterDataItem(data);
         }
         return await db.jobTitles.update(id, { name });
     },
@@ -620,7 +683,7 @@ export const MasterData = {
                 .single();
 
             if (error) throw error;
-            return data;
+            return transformMasterDataItem(data);
         }
         return await db.departments.update(id, { name });
     },
@@ -636,7 +699,7 @@ export const MasterData = {
                 .single();
 
             if (error) throw error;
-            return data;
+            return transformMasterDataItem(data);
         }
         return await db.vendors.update(id, { name });
     },
@@ -698,7 +761,7 @@ export const ActivityLog = {
                 .limit(limit);
 
             if (error) throw error;
-            return data;
+            return data.map(transformActivityLog);
         }
         return await db.activityLog.orderBy('timestamp').reverse().limit(limit).toArray();
     },
@@ -719,7 +782,7 @@ export const ActivityLog = {
                 .single();
 
             if (error) throw error;
-            return data;
+            return transformActivityLog(data);
         }
         return await db.activityLog.add(activity);
     }

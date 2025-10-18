@@ -79,6 +79,20 @@ export function transformMCU(mcu) {
     };
 }
 
+// Transform MCUChange: Supabase → App format
+export function transformMCUChange(change) {
+    if (!change) return change;
+    return {
+        id: change.id,
+        mcuId: change.mcu_id,
+        fieldName: change.field_name,
+        oldValue: change.old_value,
+        newValue: change.new_value,
+        changedAt: change.changed_at,
+        changedBy: change.changed_by
+    };
+}
+
 // Transform MasterData item: Supabase → App format
 export function transformMasterDataItem(item) {
     if (!item) return item;
