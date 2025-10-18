@@ -32,6 +32,7 @@ class DatabaseService {
             case 'users': return await adapter.Users.getAll();
             case 'employees': return await adapter.Employees.getAll();
             case 'mcus': return await adapter.MCUs.getAll();
+            case 'mcuChanges': return await adapter.MCUChanges.getAll();
             case 'departments': return await adapter.MasterData.getDepartments();
             case 'jobTitles': return await adapter.MasterData.getJobTitles();
             case 'vendors': return await adapter.MasterData.getVendors();
@@ -45,6 +46,7 @@ class DatabaseService {
             case 'users': return await adapter.Users.add(data);
             case 'employees': return await adapter.Employees.add(data);
             case 'mcus': return await adapter.MCUs.add(data);
+            case 'mcuChanges': return await adapter.MCUChanges.add(data);
             case 'departments': return await adapter.MasterData.addDepartment(data.name);
             case 'jobTitles': return await adapter.MasterData.addJobTitle(data.name);
             case 'vendors': return await adapter.MasterData.addVendor(data.name);
@@ -58,6 +60,7 @@ class DatabaseService {
             case 'users': return await adapter.Users.update(id, data);
             case 'employees': return await adapter.Employees.update(id, data);
             case 'mcus': return await adapter.MCUs.update(id, data);
+            case 'mcuChanges': return await adapter.MCUChanges.update(id, data);
             case 'departments': return await adapter.MasterData.updateDepartment(id, data.name);
             case 'jobTitles': return await adapter.MasterData.updateJobTitle(id, data.name);
             case 'vendors': return await adapter.MasterData.updateVendor(id, data.name);
@@ -69,6 +72,7 @@ class DatabaseService {
         switch(tableName) {
             case 'employees': return await adapter.Employees.softDelete(id);
             case 'mcus': return await adapter.MCUs.softDelete(id);
+            case 'mcuChanges': return await adapter.MCUChanges.delete(id);
             default: throw new Error(`Delete not supported for: ${tableName}`);
         }
     }
@@ -78,6 +82,7 @@ class DatabaseService {
             case 'users': return await adapter.Users.getById(id);
             case 'employees': return await adapter.Employees.getById(id);
             case 'mcus': return await adapter.MCUs.getById(id);
+            case 'mcuChanges': return await adapter.MCUChanges.getById(id);
             case 'departments': {
                 const all = await adapter.MasterData.getDepartments();
                 return all.find(item => item.id === id || item.departmentId === id);
