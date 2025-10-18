@@ -7,9 +7,9 @@
  * Priority: Supabase (if configured) → IndexedDB (fallback)
  */
 
-import { db } from './database.js';
 import { isSupabaseEnabled, getSupabaseClient } from '../config/supabase.js';
 import { transformUser, transformEmployee, transformMCU, transformMCUChange, transformMasterDataItem, transformActivityLog } from './databaseAdapter-transforms.js';
+import { db } from './database-old.js';  // Direct import of Dexie db (no circular dependency)
 
 // Determine which database to use
 const useSupabase = isSupabaseEnabled();
