@@ -814,10 +814,10 @@ window.applyDateFilter = async function() {
 };
 
 window.resetDateFilter = async function() {
-  currentDateRange = getCurrentMonthRange();
-  setDateRange(currentDateRange.startDate, currentDateRange.endDate);
+  currentDateRange = { startDate: '', endDate: '' };
+  setDateRange('', '');
   await loadData();
-  showToast('Filter direset ke bulan ini', 'success');
+  showToast('Filter direset (tampilkan semua data)', 'success');
 };
 
 window.handleLogout = function() {

@@ -103,15 +103,15 @@ CREATE TABLE IF NOT EXISTS mcus (
     napza VARCHAR(100),
 
     -- Initial result
-    initial_result VARCHAR(50) CHECK (initial_result IN ('Fit', 'Fit With Note', 'Temporary Unfit', 'Unfit')),
+    initial_result VARCHAR(50) CHECK (initial_result IN ('Fit', 'Fit With Note', 'Temporary Unfit', 'Follow-Up', 'Unfit')),
     initial_notes TEXT,
 
     -- Final result (after follow-up)
-    final_result VARCHAR(50) CHECK (final_result IN ('Fit', 'Fit With Note', 'Temporary Unfit', 'Unfit')),
+    final_result VARCHAR(50) CHECK (final_result IN ('Fit', 'Fit With Note', 'Temporary Unfit', 'Follow-Up', 'Unfit')),
     final_notes TEXT,
 
     -- Status
-    status VARCHAR(50) DEFAULT 'Fit' CHECK (status IN ('Fit', 'Follow-Up', 'Unfit')),
+    status VARCHAR(50) DEFAULT 'Fit' CHECK (status IN ('Fit', 'Fit With Note', 'Temporary Unfit', 'Follow-Up', 'Unfit')),
 
     deleted_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
