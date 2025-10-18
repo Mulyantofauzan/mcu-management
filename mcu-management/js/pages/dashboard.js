@@ -22,15 +22,10 @@ let charts = {};
 // Initialize
 async function init() {
   try {
-    // Check auth
+    // Check auth - SECURITY: Require proper authentication
     if (!authService.isAuthenticated()) {
-      // Auto-login for demo (remove in production)
-      try {
-        await authService.login('admin', 'admin123');
-      } catch (err) {
-        window.location.href = 'pages/login.html';
-        return;
-      }
+      window.location.href = 'pages/login.html';
+      return;
     }
 
     // Update user info

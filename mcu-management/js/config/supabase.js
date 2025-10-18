@@ -8,12 +8,14 @@
 // Load Supabase client from CDN (added in HTML)
 // <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-// Supabase credentials - Hardcoded for deployment
-const SUPABASE_URL = 'https://gbbpzbpfzzsmghciulse.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYnB6YnBmenpzbWdoY2l1bHNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3NzgyMTIsImV4cCI6MjA3NjM1NDIxMn0.y-8csC6vjcpEl8D9nKwKfTItoLL8_fY4Q-dRDFHL3GM';
+// Supabase credentials - SECURE: Load from environment variables
+// Set in Netlify: Settings → Environment variables → SUPABASE_URL and SUPABASE_ANON_KEY
+const SUPABASE_URL = window.ENV?.SUPABASE_URL || import.meta.env?.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = window.ENV?.SUPABASE_ANON_KEY || import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     console.warn('⚠️ Supabase credentials not found. Using IndexedDB fallback.');
+    console.warn('To use Supabase: Set SUPABASE_URL and SUPABASE_ANON_KEY in Netlify environment variables');
 }
 
 // Initialize Supabase client

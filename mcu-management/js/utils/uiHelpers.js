@@ -3,7 +3,7 @@
  * Toast notifications, modals, loading states, etc.
  */
 
-// Toast Notifications
+// Toast Notifications - SECURITY: XSS-safe implementation
 export function showToast(message, type = 'info') {
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
@@ -17,26 +17,48 @@ export function showToast(message, type = 'info') {
 
   const icon = iconMap[type] || 'ℹ';
 
-  toast.innerHTML = `
-    <div class="flex items-start gap-3">
-      <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full ${
-        type === 'success' ? 'bg-success text-white' :
-        type === 'error' ? 'bg-danger text-white' :
-        type === 'warning' ? 'bg-warning text-white' :
-        'bg-primary-500 text-white'
-      }">
-        <span class="text-sm font-bold">${icon}</span>
-      </div>
-      <div class="flex-1">
-        <p class="text-sm font-medium text-gray-900">${message}</p>
-      </div>
-      <button onclick="this.closest('.toast').remove()" class="flex-shrink-0 text-gray-400 hover:text-gray-600">
-        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-        </svg>
-      </button>
-    </div>
+  // Create elements using DOM API instead of innerHTML to prevent XSS
+  const container = document.createElement('div');
+  container.className = 'flex items-start gap-3';
+
+  // Icon container
+  const iconContainer = document.createElement('div');
+  const iconBgClass =
+    type === 'success' ? 'bg-success text-white' :
+    type === 'error' ? 'bg-danger text-white' :
+    type === 'warning' ? 'bg-warning text-white' :
+    'bg-primary-500 text-white';
+  iconContainer.className = `flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full ${iconBgClass}`;
+
+  const iconSpan = document.createElement('span');
+  iconSpan.className = 'text-sm font-bold';
+  iconSpan.textContent = icon;  // textContent auto-escapes
+  iconContainer.appendChild(iconSpan);
+
+  // Message container
+  const messageDiv = document.createElement('div');
+  messageDiv.className = 'flex-1';
+  const messageP = document.createElement('p');
+  messageP.className = 'text-sm font-medium text-gray-900';
+  messageP.textContent = message;  // SAFE: textContent auto-escapes HTML
+  messageDiv.appendChild(messageP);
+
+  // Close button
+  const closeButton = document.createElement('button');
+  closeButton.className = 'flex-shrink-0 text-gray-400 hover:text-gray-600';
+  closeButton.setAttribute('aria-label', 'Close notification');
+  closeButton.innerHTML = `
+    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+    </svg>
   `;
+  closeButton.onclick = () => toast.remove();
+
+  // Assemble
+  container.appendChild(iconContainer);
+  container.appendChild(messageDiv);
+  container.appendChild(closeButton);
+  toast.appendChild(container);
 
   document.body.appendChild(toast);
 
@@ -95,41 +117,80 @@ export function hideLoading() {
   }
 }
 
-// Confirmation Dialog
+// Confirmation Dialog - SECURITY: XSS-safe implementation
 export function confirmDialog(message, onConfirm, onCancel = null) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.id = 'confirm-dialog';
 
-  overlay.innerHTML = `
-    <div class="modal max-w-md">
-      <div class="modal-header">
-        <h3 class="text-lg font-semibold text-gray-900">Konfirmasi</h3>
-      </div>
-      <div class="modal-body">
-        <p class="text-gray-700">${message}</p>
-      </div>
-      <div class="modal-footer">
-        <button id="confirm-cancel" class="btn btn-secondary">Batal</button>
-        <button id="confirm-ok" class="btn btn-danger">Ya, Lanjutkan</button>
-      </div>
-    </div>
-  `;
+  // Create modal structure safely
+  const modal = document.createElement('div');
+  modal.className = 'modal max-w-md';
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'modal-header';
+  const title = document.createElement('h3');
+  title.className = 'text-lg font-semibold text-gray-900';
+  title.textContent = 'Konfirmasi';
+  header.appendChild(title);
+
+  // Body
+  const body = document.createElement('div');
+  body.className = 'modal-body';
+  const messageP = document.createElement('p');
+  messageP.className = 'text-gray-700';
+  messageP.textContent = message;  // SAFE: textContent auto-escapes
+  body.appendChild(messageP);
+
+  // Footer
+  const footer = document.createElement('div');
+  footer.className = 'modal-footer';
+
+  const cancelButton = document.createElement('button');
+  cancelButton.id = 'confirm-cancel';
+  cancelButton.className = 'btn btn-secondary';
+  cancelButton.textContent = 'Batal';
+
+  const okButton = document.createElement('button');
+  okButton.id = 'confirm-ok';
+  okButton.className = 'btn btn-danger';
+  okButton.textContent = 'Ya, Lanjutkan';
+
+  footer.appendChild(cancelButton);
+  footer.appendChild(okButton);
+
+  // Assemble modal
+  modal.appendChild(header);
+  modal.appendChild(body);
+  modal.appendChild(footer);
+  overlay.appendChild(modal);
 
   document.body.appendChild(overlay);
   document.body.style.overflow = 'hidden';
 
-  document.getElementById('confirm-ok').onclick = () => {
+  okButton.onclick = () => {
     overlay.remove();
     document.body.style.overflow = 'auto';
     if (onConfirm) onConfirm();
   };
 
-  document.getElementById('confirm-cancel').onclick = () => {
+  cancelButton.onclick = () => {
     overlay.remove();
     document.body.style.overflow = 'auto';
     if (onCancel) onCancel();
   };
+
+  // ESC key to cancel
+  const handleEscape = (e) => {
+    if (e.key === 'Escape') {
+      overlay.remove();
+      document.body.style.overflow = 'auto';
+      if (onCancel) onCancel();
+      document.removeEventListener('keydown', handleEscape);
+    }
+  };
+  document.addEventListener('keydown', handleEscape);
 }
 
 // Format numbers

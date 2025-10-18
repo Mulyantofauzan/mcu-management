@@ -47,19 +47,47 @@ async function loadMasterData() {
 }
 
 function populateDropdowns() {
-    // Job Titles
+    // Job Titles - PERFORMANCE & SECURITY FIX: Build HTML once, use DocumentFragment
     const jobSelect = document.getElementById('emp-job');
-    jobSelect.innerHTML = '<option value="">Pilih...</option>';
+    jobSelect.innerHTML = ''; // Clear existing
+
+    const jobFragment = document.createDocumentFragment();
+
+    // Add default option
+    const defaultJobOption = document.createElement('option');
+    defaultJobOption.value = '';
+    defaultJobOption.textContent = 'Pilih...';
+    jobFragment.appendChild(defaultJobOption);
+
+    // Add all job titles
     jobTitles.forEach(job => {
-        jobSelect.innerHTML += `<option value="${job.jobTitleId}">${job.name}</option>`;
+        const option = document.createElement('option');
+        option.value = job.jobTitleId;
+        option.textContent = job.name;  // SAFE: textContent auto-escapes
+        jobFragment.appendChild(option);
     });
 
-    // Departments
+    jobSelect.appendChild(jobFragment);  // Single DOM operation
+
+    // Departments - Same approach
     const deptSelect = document.getElementById('emp-dept');
-    deptSelect.innerHTML = '<option value="">Pilih...</option>';
+    deptSelect.innerHTML = '';
+
+    const deptFragment = document.createDocumentFragment();
+
+    const defaultDeptOption = document.createElement('option');
+    defaultDeptOption.value = '';
+    defaultDeptOption.textContent = 'Pilih...';
+    deptFragment.appendChild(defaultDeptOption);
+
     departments.forEach(dept => {
-        deptSelect.innerHTML += `<option value="${dept.departmentId}">${dept.name}</option>`;
+        const option = document.createElement('option');
+        option.value = dept.departmentId;
+        option.textContent = dept.name;  // SAFE: textContent auto-escapes
+        deptFragment.appendChild(option);
     });
+
+    deptSelect.appendChild(deptFragment);  // Single DOM operation
 }
 
 window.handleSearch = async function() {

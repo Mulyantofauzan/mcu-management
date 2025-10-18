@@ -73,76 +73,102 @@ function renderTable() {
         return;
     }
 
+    // PERFORMANCE FIX: Build lookup Maps ONCE - O(n) instead of O(n*m)
+    const jobMap = new Map(jobTitles.map(j => [j.jobTitleId, j]));
+    const deptMap = new Map(departments.map(d => [d.departmentId, d]));
+
     // Pagination
     const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
     const startIdx = (currentPage - 1) * itemsPerPage;
     const endIdx = startIdx + itemsPerPage;
     const paginatedEmployees = filteredEmployees.slice(startIdx, endIdx);
 
-    let html = '<div class="table-container"><table class="table"><thead><tr>';
-    html += '<th>Nama</th><th>ID</th><th>Jabatan</th><th>Departemen</th><th>Status</th><th>Aksi</th>';
-    html += '</tr></thead><tbody>';
+    // PERFORMANCE FIX: Build complete HTML string ONCE, then assign
+    // Instead of concatenating in loop (causes multiple DOM reflows)
+    const htmlParts = [];
+    htmlParts.push('<div class="table-container"><table class="table"><thead><tr>');
+    htmlParts.push('<th>Nama</th><th>ID</th><th>Jabatan</th><th>Departemen</th><th>Status</th><th>Aksi</th>');
+    htmlParts.push('</tr></thead><tbody>');
 
     paginatedEmployees.forEach(emp => {
-        const job = jobTitles.find(j => j.jobTitleId === emp.jobTitleId);
-        const dept = departments.find(d => d.departmentId === emp.departmentId);
+        // PERFORMANCE: O(1) Map lookup instead of O(n) array.find()
+        const job = jobMap.get(emp.jobTitleId);
+        const dept = deptMap.get(emp.departmentId);
 
-        html += '<tr>';
-        html += `<td><span class="font-medium text-gray-900">${emp.name}</span></td>`;
-        html += `<td><span class="text-sm text-gray-600">${emp.employeeId}</span></td>`;
-        html += `<td>${job?.name || '-'}</td>`;
-        html += `<td>${dept?.name || '-'}</td>`;
-        html += `<td>${getStatusBadge(emp.activeStatus)}</td>`;
-        html += `<td>
+        // SECURITY: Use escapeHtml for user data to prevent XSS
+        const safeName = escapeHtml(emp.name);
+        const safeEmployeeId = escapeHtml(emp.employeeId);
+        const safeJobName = escapeHtml(job?.name || '-');
+        const safeDeptName = escapeHtml(dept?.name || '-');
+
+        htmlParts.push('<tr>');
+        htmlParts.push(`<td><span class="font-medium text-gray-900">${safeName}</span></td>`);
+        htmlParts.push(`<td><span class="text-sm text-gray-600">${safeEmployeeId}</span></td>`);
+        htmlParts.push(`<td>${safeJobName}</td>`);
+        htmlParts.push(`<td>${safeDeptName}</td>`);
+        htmlParts.push(`<td>${getStatusBadge(emp.activeStatus)}</td>`);
+        htmlParts.push(`<td>
             <div class="flex gap-2">
-                <button onclick="window.viewEmployee('${emp.employeeId}')" class="btn btn-sm btn-primary" title="Detail">
+                <button onclick="window.viewEmployee('${safeEmployeeId}')" class="btn btn-sm btn-primary" title="Detail" aria-label="Lihat detail ${safeName}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                 </button>
-                <button onclick="window.editEmployee('${emp.employeeId}')" class="btn btn-sm btn-secondary" title="Edit">
+                <button onclick="window.editEmployee('${safeEmployeeId}')" class="btn btn-sm btn-secondary" title="Edit" aria-label="Edit ${safeName}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                 </button>
-                <button onclick="window.addMCUForEmployee('${emp.employeeId}')" class="btn btn-sm btn-success" title="Tambah MCU">
+                <button onclick="window.addMCUForEmployee('${safeEmployeeId}')" class="btn btn-sm btn-success" title="Tambah MCU" aria-label="Tambah MCU untuk ${safeName}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 </button>
-                <button onclick="window.deleteEmployee('${emp.employeeId}')" class="btn btn-sm btn-danger" title="Hapus">
+                <button onclick="window.deleteEmployee('${safeEmployeeId}')" class="btn btn-sm btn-danger" title="Hapus" aria-label="Hapus ${safeName}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                 </button>
             </div>
-        </td>`;
-        html += '</tr>';
+        </td>`);
+        htmlParts.push('</tr>');
     });
 
-    html += '</tbody></table></div>';
+    htmlParts.push('</tbody></table></div>');
 
     // Pagination controls
     if (totalPages > 1) {
-        html += '<div class="flex items-center justify-between mt-4">';
-        html += `<p class="text-sm text-gray-600">Menampilkan ${startIdx + 1}-${Math.min(endIdx, filteredEmployees.length)} dari ${filteredEmployees.length} data</p>`;
-        html += '<div class="flex gap-2">';
+        htmlParts.push('<div class="flex items-center justify-between mt-4">');
+        htmlParts.push(`<p class="text-sm text-gray-600">Menampilkan ${startIdx + 1}-${Math.min(endIdx, filteredEmployees.length)} dari ${filteredEmployees.length} data</p>`);
+        htmlParts.push('<div class="flex gap-2">');
 
         // Previous button
-        html += `<button onclick="window.changePage(${currentPage - 1})" class="btn btn-sm btn-secondary" ${currentPage === 1 ? 'disabled' : ''}>
+        const prevDisabled = currentPage === 1 ? 'disabled' : '';
+        htmlParts.push(`<button onclick="window.changePage(${currentPage - 1})" class="btn btn-sm btn-secondary" ${prevDisabled} aria-label="Halaman sebelumnya">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-        </button>`;
+        </button>`);
 
         // Page numbers
         for (let i = 1; i <= totalPages; i++) {
             if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
-                html += `<button onclick="window.changePage(${i})" class="btn btn-sm ${i === currentPage ? 'btn-primary' : 'btn-secondary'}">${i}</button>`;
+                const pageClass = i === currentPage ? 'btn-primary' : 'btn-secondary';
+                htmlParts.push(`<button onclick="window.changePage(${i})" class="btn btn-sm ${pageClass}" aria-label="Halaman ${i}" ${i === currentPage ? 'aria-current="page"' : ''}>${i}</button>`);
             } else if (i === currentPage - 2 || i === currentPage + 2) {
-                html += '<span class="px-2">...</span>';
+                htmlParts.push('<span class="px-2" aria-hidden="true">...</span>');
             }
         }
 
         // Next button
-        html += `<button onclick="window.changePage(${currentPage + 1})" class="btn btn-sm btn-secondary" ${currentPage === totalPages ? 'disabled' : ''}>
+        const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+        htmlParts.push(`<button onclick="window.changePage(${currentPage + 1})" class="btn btn-sm btn-secondary" ${nextDisabled} aria-label="Halaman selanjutnya">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-        </button>`;
+        </button>`);
 
-        html += '</div></div>';
+        htmlParts.push('</div></div>');
     }
 
-    container.innerHTML = html;
+    // PERFORMANCE: Single DOM operation instead of concatenation in loop
+    container.innerHTML = htmlParts.join('');
+}
+
+// Helper function for XSS protection
+function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
+    const div = document.createElement('div');
+    div.textContent = String(text);
+    return div.innerHTML;
 }
 
 window.changePage = function(page) {
