@@ -3,7 +3,7 @@ node_modules/
 package-lock.json
 
 # Build outputs
-css/output.css
+# css/output.css (commented out for Netlify deployment)
 
 # OS files
 .DS_Store
