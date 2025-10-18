@@ -181,5 +181,5 @@ class DatabaseService {
 // Export singleton instance
 export const database = new DatabaseService();
 
-// Legacy export (for compatibility)
-export { db } from './database-old.js';
+// Legacy export (for compatibility) - export the IndexedDB instance
+export { database as db } from './database-old.js';

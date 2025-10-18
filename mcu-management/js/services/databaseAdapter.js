@@ -9,7 +9,7 @@
 
 import { isSupabaseEnabled, getSupabaseClient } from '../config/supabase.js';
 import { transformUser, transformEmployee, transformMCU, transformMCUChange, transformMasterDataItem, transformActivityLog } from './databaseAdapter-transforms.js';
-import { db } from './database-old.js';  // Direct import of Dexie db (no circular dependency)
+import { database as indexedDB } from './database-old.js';  // Direct import of IndexedDB instance (no circular dependency)
 
 // Determine which database to use
 const useSupabase = isSupabaseEnabled();
@@ -27,7 +27,7 @@ export function getDatabase() {
     if (useSupabase) {
         return getSupabaseClient();
     }
-    return db;
+    return indexedDB;
 }
 
 /**
@@ -56,7 +56,7 @@ export const Users = {
             if (error) throw error;
             return data.map(transformUser);
         }
-        return await db.users.toArray();
+        return await indexedDB.db.users.toArray();
     },
 
     async getByUsername(username) {
@@ -71,7 +71,7 @@ export const Users = {
             if (error && error.code !== 'PGRST116') throw error; // PGRST116 = not found
             return transformUser(data);
         }
-        return await db.users.where('username').equals(username).first();
+        return await indexedDB.db.users.where('username').equals(username).first();
     },
 
     async getById(userId) {
