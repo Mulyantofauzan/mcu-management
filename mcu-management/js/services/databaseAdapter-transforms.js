@@ -1,0 +1,104 @@
+/**
+ * Transform Functions - Convert between Supabase (snake_case) and App (camelCase)
+ * This file contains all transformation logic for database entities
+ */
+
+// Transform User: Supabase → App format
+export function transformUser(user) {
+    if (!user) return user;
+    return {
+        id: user.id,
+        userId: user.user_id,
+        username: user.username,
+        passwordHash: user.password_hash,
+        displayName: user.display_name,
+        role: user.role,
+        active: user.active,
+        createdAt: user.created_at,
+        updatedAt: user.updated_at,
+        lastLogin: user.last_login
+    };
+}
+
+// Transform Employee: Supabase → App format
+export function transformEmployee(emp) {
+    if (!emp) return emp;
+    return {
+        id: emp.id,
+        employeeId: emp.employee_id,
+        name: emp.name,
+        jobTitle: emp.job_title,
+        department: emp.department,
+        dateOfBirth: emp.date_of_birth,
+        birthDate: emp.date_of_birth, // alias
+        bloodType: emp.blood_type,
+        employeeType: emp.employee_type,
+        employmentStatus: emp.employee_type, // alias
+        vendorName: emp.vendor_name,
+        isActive: emp.is_active,
+        activeStatus: emp.is_active ? 'Active' : 'Inactive', // alias
+        deletedAt: emp.deleted_at,
+        createdAt: emp.created_at,
+        updatedAt: emp.updated_at
+    };
+}
+
+// Transform MCU: Supabase → App format
+export function transformMCU(mcu) {
+    if (!mcu) return mcu;
+    return {
+        id: mcu.id,
+        mcuId: mcu.mcu_id,
+        employeeId: mcu.employee_id,
+        mcuType: mcu.mcu_type,
+        mcuDate: mcu.mcu_date,
+        bmi: mcu.bmi,
+        bloodPressure: mcu.blood_pressure,
+        vision: mcu.vision,
+        audiometry: mcu.audiometry,
+        spirometry: mcu.spirometry,
+        hbsag: mcu.hbsag,
+        sgot: mcu.sgot,
+        sgpt: mcu.sgpt,
+        cbc: mcu.cbc,
+        xray: mcu.xray,
+        ekg: mcu.ekg,
+        treadmill: mcu.treadmill,
+        kidneyLiverFunction: mcu.kidney_liver_function,
+        napza: mcu.napza,
+        initialResult: mcu.initial_result,
+        initialNotes: mcu.initial_notes,
+        finalResult: mcu.final_result,
+        finalNotes: mcu.final_notes,
+        status: mcu.status,
+        deletedAt: mcu.deleted_at,
+        createdAt: mcu.created_at,
+        updatedAt: mcu.updated_at,
+        createdBy: mcu.created_by,
+        updatedBy: mcu.updated_by
+    };
+}
+
+// Transform MasterData item: Supabase → App format
+export function transformMasterDataItem(item) {
+    if (!item) return item;
+    return {
+        id: item.id,
+        name: item.name,
+        createdAt: item.created_at
+    };
+}
+
+// Transform ActivityLog: Supabase → App format
+export function transformActivityLog(log) {
+    if (!log) return log;
+    return {
+        id: log.id,
+        userId: log.user_id,
+        userName: log.user_name,
+        action: log.action,
+        target: log.target,
+        details: log.details,
+        timestamp: log.timestamp
+    };
+}

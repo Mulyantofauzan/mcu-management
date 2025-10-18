@@ -9,6 +9,7 @@
 
 import { db } from './database.js';
 import { isSupabaseEnabled, getSupabaseClient } from '../config/supabase.js';
+import { transformUser, transformEmployee, transformMCU, transformMasterDataItem, transformActivityLog } from './databaseAdapter-transforms.js';
 
 // Determine which database to use
 const useSupabase = isSupabaseEnabled();
@@ -43,23 +44,6 @@ export function isUsingSupabase() {
 /**
  * USERS
  */
-// Helper function to transform Supabase snake_case to camelCase for users
-function transformUser(user) {
-    if (!user) return user;
-    return {
-        id: user.id,
-        userId: user.user_id,
-        username: user.username,
-        passwordHash: user.password_hash,
-        displayName: user.display_name,
-        role: user.role,
-        active: user.active,
-        createdAt: user.created_at,
-        updatedAt: user.updated_at,
-        lastLogin: user.last_login
-    };
-}
-
 export const Users = {
     async getAll() {
         if (useSupabase) {
@@ -167,7 +151,7 @@ export const Employees = {
             const { data, error } = await query.order('created_at', { ascending: false });
 
             if (error) throw error;
-            return data;
+            return data.map(transformEmployee);
         }
 
         if (includeDeleted) {
@@ -186,7 +170,7 @@ export const Employees = {
                 .single();
 
             if (error && error.code !== 'PGRST116') throw error;
-            return data;
+            return transformEmployee(data);
         }
         return await db.employees.where('employeeId').equals(employeeId).first();
     },
@@ -228,7 +212,7 @@ export const Employees = {
                 .single();
 
             if (error) throw error;
-            return data;
+            return transformEmployee(data);
         }
         return await db.employees.add(employee);
     },
@@ -282,7 +266,7 @@ export const Employees = {
                 .single();
 
             if (error) throw error;
-            return data;
+            return transformEmployee(data);
         }
         return await db.employees.where('employeeId').equals(employeeId).modify(updates);
     },
