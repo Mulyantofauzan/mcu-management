@@ -1,231 +1,105 @@
 /**
- * IndexedDB Database Service using Dexie
- * This file will be loaded via CDN in production or can be bundled
+ * Database Service - Unified Interface
+ * 
+ * This is a wrapper that uses databaseAdapter to support both:
+ * - Supabase (production - cloud database)
+ * - IndexedDB/Dexie (fallback - local storage)
+ * 
+ * Priority: Supabase → IndexedDB
  */
 
-// Note: Dexie will be loaded via CDN in HTML
-// This is a wrapper service for the database operations
+import { isSupabaseEnabled } from '../config/supabase.js';
+import * as adapter from './databaseAdapter.js';
 
-class MCUDatabase {
-  constructor() {
-    this.db = null;
-    this.init();
-  }
+// Check which database is being used
+if (isSupabaseEnabled()) {
+    console.log('🚀 Using Supabase as primary database');
+} else {
+    console.log('📦 Using IndexedDB (Dexie) as fallback database');
+}
 
-  async init() {
-    // Check if Dexie is available
-    if (typeof Dexie === 'undefined') {
-      console.error('Dexie is not loaded. Please include Dexie library.');
-      // Fallback to localStorage mode
-      this.useFallback = true;
-      return;
+/**
+ * Database wrapper class that proxies to databaseAdapter
+ */
+class DatabaseService {
+    constructor() {
+        console.log('Database initialized successfully');
     }
 
-    this.db = new Dexie('MCU_Database');
-
-    // Define schema
-    this.db.version(1).stores({
-      employees: 'employeeId, name, departmentId, jobTitleId, activeStatus, deletedAt',
-      mcus: 'mcuId, employeeId, mcuDate, mcuType, status, deletedAt, lastUpdatedTimestamp',
-      mcuChanges: 'changeId, mcuId, changedAt, changedBy',
-      jobTitles: 'jobTitleId, name',
-      departments: 'departmentId, name',
-      statusMCU: 'statusId, name',
-      vendors: 'vendorId, name',
-      users: 'userId, username, role',
-      activityLog: '++id, timestamp, action, entityType, entityId'
-    });
-
-    await this.db.open();
-    console.log('Database initialized successfully');
-  }
-
-  // Generic CRUD operations
-  async add(tableName, data) {
-    if (this.useFallback) {
-      return this.fallbackAdd(tableName, data);
-    }
-    try {
-      const id = await this.db[tableName].add(data);
-      this.logActivity('create', tableName, data);
-      return id;
-    } catch (error) {
-      console.error(`Error adding to ${tableName}:`, error);
-      throw error;
-    }
-  }
-
-  async get(tableName, id) {
-    if (this.useFallback) {
-      return this.fallbackGet(tableName, id);
-    }
-    try {
-      return await this.db[tableName].get(id);
-    } catch (error) {
-      console.error(`Error getting from ${tableName}:`, error);
-      throw error;
-    }
-  }
-
-  async getAll(tableName) {
-    if (this.useFallback) {
-      return this.fallbackGetAll(tableName);
-    }
-    try {
-      return await this.db[tableName].toArray();
-    } catch (error) {
-      console.error(`Error getting all from ${tableName}:`, error);
-      throw error;
-    }
-  }
-
-  async update(tableName, id, data) {
-    if (this.useFallback) {
-      return this.fallbackUpdate(tableName, id, data);
-    }
-    try {
-      await this.db[tableName].update(id, data);
-      this.logActivity('update', tableName, { id, ...data });
-      return true;
-    } catch (error) {
-      console.error(`Error updating ${tableName}:`, error);
-      throw error;
-    }
-  }
-
-  async delete(tableName, id) {
-    if (this.useFallback) {
-      return this.fallbackDelete(tableName, id);
-    }
-    try {
-      await this.db[tableName].delete(id);
-      this.logActivity('delete', tableName, { id });
-      return true;
-    } catch (error) {
-      console.error(`Error deleting from ${tableName}:`, error);
-      throw error;
-    }
-  }
-
-  async query(tableName, filterFn) {
-    if (this.useFallback) {
-      return this.fallbackQuery(tableName, filterFn);
-    }
-    try {
-      return await this.db[tableName].filter(filterFn).toArray();
-    } catch (error) {
-      console.error(`Error querying ${tableName}:`, error);
-      throw error;
-    }
-  }
-
-  // Activity logging
-  async logActivity(action, entityType, data) {
-    const activity = {
-      timestamp: new Date().toISOString(),
-      action,
-      entityType,
-      entityId: data.id || data.employeeId || data.mcuId || null,
-      data: JSON.stringify(data)
-    };
-
-    if (this.useFallback) {
-      const logs = JSON.parse(localStorage.getItem('activityLog') || '[]');
-      logs.unshift(activity);
-      // Keep only last 100 activities
-      if (logs.length > 100) logs.splice(100);
-      localStorage.setItem('activityLog', JSON.stringify(logs));
-    } else if (this.db) {
-      try {
-        await this.db.activityLog.add(activity);
-        // Clean up old logs (keep last 100)
-        const count = await this.db.activityLog.count();
-        if (count > 100) {
-          const oldLogs = await this.db.activityLog
-            .orderBy('timestamp')
-            .limit(count - 100)
-            .toArray();
-          for (const log of oldLogs) {
-            await this.db.activityLog.delete(log.id);
-          }
+    // Users
+    async getAll(tableName) {
+        switch(tableName) {
+            case 'users': return await adapter.Users.getAll();
+            case 'employees': return await adapter.Employees.getAll();
+            case 'mcus': return await adapter.MCUs.getAll();
+            case 'departments': return await adapter.Departments.getAll();
+            case 'jobTitles': return await adapter.JobTitles.getAll();
+            case 'vendors': return await adapter.Vendors.getAll();
+            case 'activityLog': return await adapter.ActivityLog.getAll();
+            default: throw new Error(`Unknown table: ${tableName}`);
         }
-      } catch (error) {
-        console.error('Error logging activity:', error);
-      }
     }
-  }
 
-  async getActivityLog(limit = 20) {
-    if (this.useFallback) {
-      const logs = JSON.parse(localStorage.getItem('activityLog') || '[]');
-      return logs.slice(0, limit);
+    async add(tableName, data) {
+        switch(tableName) {
+            case 'users': return await adapter.Users.add(data);
+            case 'employees': return await adapter.Employees.add(data);
+            case 'mcus': return await adapter.MCUs.add(data);
+            case 'departments': return await adapter.Departments.add(data);
+            case 'jobTitles': return await adapter.JobTitles.add(data);
+            case 'vendors': return await adapter.Vendors.add(data);
+            case 'activityLog': return await adapter.ActivityLog.add(data);
+            default: throw new Error(`Unknown table: ${tableName}`);
+        }
     }
-    try {
-      return await this.db.activityLog
-        .orderBy('timestamp')
-        .reverse()
-        .limit(limit)
-        .toArray();
-    } catch (error) {
-      console.error('Error getting activity log:', error);
-      return [];
+
+    async update(tableName, id, data) {
+        switch(tableName) {
+            case 'users': return await adapter.Users.update(id, data);
+            case 'employees': return await adapter.Employees.update(id, data);
+            case 'mcus': return await adapter.MCUs.update(id, data);
+            case 'departments': return await adapter.Departments.update(id, data);
+            case 'jobTitles': return await adapter.JobTitles.update(id, data);
+            case 'vendors': return await adapter.Vendors.update(id, data);
+            default: throw new Error(`Unknown table: ${tableName}`);
+        }
     }
-  }
 
-  // LocalStorage fallback methods
-  fallbackAdd(tableName, data) {
-    const items = JSON.parse(localStorage.getItem(tableName) || '[]');
-    items.push(data);
-    localStorage.setItem(tableName, JSON.stringify(items));
-    return data.id || data[Object.keys(data)[0]];
-  }
-
-  fallbackGet(tableName, id) {
-    const items = JSON.parse(localStorage.getItem(tableName) || '[]');
-    const idKey = Object.keys(items[0] || {})[0];
-    return items.find(item => item[idKey] === id);
-  }
-
-  fallbackGetAll(tableName) {
-    return JSON.parse(localStorage.getItem(tableName) || '[]');
-  }
-
-  fallbackUpdate(tableName, id, data) {
-    const items = JSON.parse(localStorage.getItem(tableName) || '[]');
-    const idKey = Object.keys(items[0] || {})[0];
-    const index = items.findIndex(item => item[idKey] === id);
-    if (index !== -1) {
-      items[index] = { ...items[index], ...data };
-      localStorage.setItem(tableName, JSON.stringify(items));
-      return true;
+    async delete(tableName, id) {
+        switch(tableName) {
+            case 'employees': return await adapter.Employees.softDelete(id);
+            case 'mcus': return await adapter.MCUs.softDelete(id);
+            default: throw new Error(`Delete not supported for: ${tableName}`);
+        }
     }
-    return false;
-  }
 
-  fallbackDelete(tableName, id) {
-    const items = JSON.parse(localStorage.getItem(tableName) || '[]');
-    const idKey = Object.keys(items[0] || {})[0];
-    const filtered = items.filter(item => item[idKey] !== id);
-    localStorage.setItem(tableName, JSON.stringify(filtered));
-    return true;
-  }
-
-  fallbackQuery(tableName, filterFn) {
-    const items = JSON.parse(localStorage.getItem(tableName) || '[]');
-    return items.filter(filterFn);
-  }
-
-  // Clear all data
-  async clearAll() {
-    if (this.useFallback) {
-      const keys = ['employees', 'mcus', 'mcuChanges', 'jobTitles', 'departments', 'statusMCU', 'vendors', 'users', 'activityLog'];
-      keys.forEach(key => localStorage.removeItem(key));
-    } else if (this.db) {
-      await this.db.delete();
-      await this.init();
+    // Activity log
+    async getActivityLog(limit = 20) {
+        return await adapter.ActivityLog.getAll(limit);
     }
-  }
+
+    async logActivity(action, entityType, entityId, userId = null) {
+        return await adapter.ActivityLog.add({
+            action,
+            entityType,
+            entityId,
+            userId,
+            timestamp: new Date().toISOString()
+        });
+    }
+
+    // Expose adapter modules directly for advanced usage
+    get users() { return adapter.Users; }
+    get employees() { return adapter.Employees; }
+    get mcus() { return adapter.MCUs; }
+    get departments() { return adapter.Departments; }
+    get jobTitles() { return adapter.JobTitles; }
+    get vendors() { return adapter.Vendors; }
+    get activityLog() { return adapter.ActivityLog; }
 }
 
 // Export singleton instance
-export const database = new MCUDatabase();
+export const database = new DatabaseService();
+
+// Also export direct access to database instance for legacy code
+export const db = adapter.getDatabase();
