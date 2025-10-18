@@ -69,9 +69,14 @@ export async function seedDatabase() {
   try {
     console.log('Starting database seeding...');
 
-    // Clear existing data
-    await database.clearAll();
-    console.log('Database cleared');
+    // Clear existing data (only for IndexedDB, not Supabase)
+    // For Supabase, we skip clearing to preserve production data
+    try {
+      await database.clearAll();
+      console.log('Database cleared');
+    } catch (error) {
+      console.log('Skipping clearAll (likely using Supabase)');
+    }
 
     // 1. Create Master Data
     console.log('Creating master data...');
@@ -255,14 +260,23 @@ export async function seedDatabase() {
 // Auto-seed on first load if no data exists
 export async function checkAndSeedIfEmpty() {
   try {
-    const employees = await database.getAll('employees');
-    if (!employees || employees.length === 0) {
-      console.log('Database is empty. Auto-seeding...');
+    // Check if users exist (more important than employees for login)
+    const users = await database.getAll('users');
+    if (!users || users.length === 0) {
+      console.log('No users found. Auto-seeding database...');
       return await seedDatabase();
     }
+
+    console.log(`Database already has ${users.length} user(s)`);
     return { success: true, message: 'Database already has data' };
   } catch (error) {
     console.error('Error checking database:', error);
-    return { success: false, error: error.message };
+    // If error checking, try to seed anyway (maybe tables don't exist yet)
+    console.log('Error checking, attempting to seed...');
+    try {
+      return await seedDatabase();
+    } catch (seedError) {
+      return { success: false, error: seedError.message };
+    }
   }
 }
