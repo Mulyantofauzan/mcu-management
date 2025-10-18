@@ -445,6 +445,23 @@ window.viewMCUDetail = async function(mcuId) {
         document.getElementById('mcu-detail-date').textContent = formatDateDisplay(mcu.mcuDate);
         document.getElementById('mcu-detail-type').textContent = mcu.mcuType;
 
+        // Format updatedAt
+        if (mcu.updatedAt) {
+            const updatedDate = new Date(mcu.updatedAt);
+            const formattedDate = updatedDate.toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            });
+            const formattedTime = updatedDate.toLocaleTimeString('id-ID', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            document.getElementById('mcu-detail-updated').textContent = `${formattedDate}, ${formattedTime}`;
+        } else {
+            document.getElementById('mcu-detail-updated').textContent = '-';
+        }
+
         // Fill examination results
         document.getElementById('mcu-detail-bmi').textContent = mcu.bmi || '-';
         document.getElementById('mcu-detail-bp').textContent = mcu.bloodPressure || '-';

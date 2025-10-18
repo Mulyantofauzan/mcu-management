@@ -13,7 +13,7 @@ import { showToast, getStatusBadge, hideAdminMenuForNonAdmin } from '../utils/ui
 import { seedDatabase, checkAndSeedIfEmpty } from '../seedData.js';
 
 // State
-let currentDateRange = getCurrentMonthRange();
+let currentDateRange = { startDate: '', endDate: '' }; // Default: empty filter (show all)
 let latestMCUs = [];
 let employees = [];
 let departments = [];
@@ -47,8 +47,8 @@ async function init() {
       console.log('Database seeded:', seedResult.counts);
     }
 
-    // Set default date range
-    setDateRange(currentDateRange.startDate, currentDateRange.endDate);
+    // Set default date range (empty = show all)
+    setDateRange('', '');
 
     // Load data
     await loadData();
@@ -88,10 +88,12 @@ async function loadData() {
     // Get latest MCU per employee
     latestMCUs = await mcuService.getLatestMCUPerEmployee();
 
-    // Filter by date range
-    const filteredMCUs = latestMCUs.filter(mcu =>
-      isDateInRange(mcu.mcuDate, currentDateRange.startDate, currentDateRange.endDate)
-    );
+    // Filter by date range (if dates are set)
+    const filteredMCUs = (!currentDateRange.startDate && !currentDateRange.endDate)
+      ? latestMCUs
+      : latestMCUs.filter(mcu =>
+          isDateInRange(mcu.mcuDate, currentDateRange.startDate, currentDateRange.endDate)
+        );
 
     // Update KPIs
     updateKPIs(filteredMCUs);
@@ -125,6 +127,16 @@ function updateKPIs(filteredMCUs) {
     return result === 'Fit';
   }).length;
 
+  const fitWithNote = filteredMCUs.filter(m => {
+    const result = m.finalResult || m.initialResult;
+    return result === 'Fit With Note';
+  }).length;
+
+  const temporaryUnfit = filteredMCUs.filter(m => {
+    const result = m.finalResult || m.initialResult;
+    return result === 'Temporary Unfit';
+  }).length;
+
   const followUp = filteredMCUs.filter(m => {
     const result = m.finalResult || m.initialResult;
     return result === 'Follow-Up' && m.finalResult !== 'Fit';
@@ -136,6 +148,8 @@ function updateKPIs(filteredMCUs) {
   }).length;
 
   document.getElementById('kpi-fit').textContent = fit;
+  document.getElementById('kpi-fit-with-note').textContent = fitWithNote;
+  document.getElementById('kpi-temporary-unfit').textContent = temporaryUnfit;
   document.getElementById('kpi-followup').textContent = followUp;
   document.getElementById('kpi-unfit').textContent = unfit;
 }
@@ -152,6 +166,15 @@ function updateCharts(filteredMCUs) {
 
   // Chart 4: Blood Type Distribution (filtered by employees who have MCU in range)
   updateBloodTypeChart(filteredMCUs);
+
+  // Chart 5: MCU Trend Monthly (Line Chart)
+  updateMCUTrendChart();
+
+  // Chart 6: Age Distribution
+  updateAgeDistributionChart(filteredMCUs);
+
+  // Chart 7: BMI Distribution
+  updateBMIDistributionChart(filteredMCUs);
 }
 
 function updateDepartmentChart(filteredMCUs) {
@@ -281,16 +304,33 @@ function updateMCUTypeChart(filteredMCUs) {
 function updateStatusChart(filteredMCUs) {
   const ctx = document.getElementById('chart-status');
 
-  // Count by status
+  // Count by final result (or initial result if no follow-up)
   const statusCounts = {
     'Fit': 0,
+    'Fit With Note': 0,
+    'Temporary Unfit': 0,
     'Follow-Up': 0,
     'Unfit': 0
   };
 
   filteredMCUs.forEach(mcu => {
-    if (statusCounts.hasOwnProperty(mcu.status)) {
-      statusCounts[mcu.status]++;
+    const result = mcu.finalResult || mcu.initialResult;
+    if (statusCounts.hasOwnProperty(result)) {
+      statusCounts[result]++;
+    }
+  });
+
+  // Filter out zero counts for cleaner display
+  const labels = Object.keys(statusCounts).filter(k => statusCounts[k] > 0);
+  const data = labels.map(k => statusCounts[k]);
+  const colors = labels.map(label => {
+    switch(label) {
+      case 'Fit': return 'rgba(34, 197, 94, 0.8)';
+      case 'Fit With Note': return 'rgba(59, 130, 246, 0.8)';
+      case 'Temporary Unfit': return 'rgba(249, 115, 22, 0.8)';
+      case 'Follow-Up': return 'rgba(234, 179, 8, 0.8)';
+      case 'Unfit': return 'rgba(239, 68, 68, 0.8)';
+      default: return 'rgba(156, 163, 175, 0.8)';
     }
   });
 
@@ -299,14 +339,10 @@ function updateStatusChart(filteredMCUs) {
   charts.status = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: Object.keys(statusCounts),
+      labels: labels,
       datasets: [{
-        data: Object.values(statusCounts),
-        backgroundColor: [
-          'rgba(34, 197, 94, 0.8)',
-          'rgba(234, 179, 8, 0.8)',
-          'rgba(239, 68, 68, 0.8)'
-        ]
+        data: data,
+        backgroundColor: colors
       }]
     },
     options: {
@@ -395,6 +431,254 @@ function updateBloodTypeChart(filteredMCUs) {
   });
 }
 
+async function updateMCUTrendChart() {
+  const ctx = document.getElementById('chart-mcu-trend');
+  if (!ctx) return;
+
+  try {
+    // Get all MCUs (not just latest per employee)
+    const allMCUs = await database.db.mcus.toArray();
+    const validMCUs = allMCUs.filter(mcu => !mcu.deletedAt && mcu.mcuDate);
+
+    // Determine date range
+    let startDate, endDate;
+    if (currentDateRange.startDate && currentDateRange.endDate) {
+      // Use filter dates
+      startDate = new Date(currentDateRange.startDate);
+      endDate = new Date(currentDateRange.endDate);
+    } else {
+      // Default: last 12 months
+      endDate = new Date();
+      startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - 11);
+      startDate.setDate(1);
+    }
+
+    // Generate month labels between start and end
+    const months = [];
+    const monthLabels = [];
+    let currentMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    const endMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+
+    while (currentMonth <= endMonth) {
+      months.push(new Date(currentMonth));
+      monthLabels.push(currentMonth.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }));
+      currentMonth.setMonth(currentMonth.getMonth() + 1);
+    }
+
+    // Count MCUs per month
+    const monthlyCounts = months.map(monthDate => {
+      return validMCUs.filter(mcu => {
+        const mcuDate = new Date(mcu.mcuDate);
+        return mcuDate.getMonth() === monthDate.getMonth() &&
+               mcuDate.getFullYear() === monthDate.getFullYear();
+      }).length;
+    });
+
+    if (charts.mcuTrend) charts.mcuTrend.destroy();
+
+    charts.mcuTrend = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: monthLabels,
+        datasets: [{
+          label: 'Jumlah MCU',
+          data: monthlyCounts,
+          borderColor: 'rgba(59, 130, 246, 1)',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          tension: 0.4,
+          fill: true,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            display: false
+          },
+          datalabels: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return 'Jumlah MCU: ' + context.parsed.y;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1,
+              precision: 0
+            }
+          }
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error creating trend chart:', error);
+  }
+}
+
+function updateAgeDistributionChart(filteredMCUs) {
+  const ctx = document.getElementById('chart-age-distribution');
+
+  // Calculate age for employees with MCU
+  const ageRanges = {
+    '<20': 0,
+    '20-24': 0,
+    '25-29': 0,
+    '30-34': 0,
+    '35-39': 0,
+    '40-44': 0,
+    '45-49': 0,
+    '50-54': 0,
+    '55-59': 0,
+    '60+': 0
+  };
+
+  filteredMCUs.forEach(mcu => {
+    const employee = employees.find(e => e.employeeId === mcu.employeeId);
+    if (employee && employee.birthDate) {
+      const birthDate = new Date(employee.birthDate);
+      const age = Math.floor((new Date() - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
+
+      if (age < 20) ageRanges['<20']++;
+      else if (age >= 20 && age < 25) ageRanges['20-24']++;
+      else if (age >= 25 && age < 30) ageRanges['25-29']++;
+      else if (age >= 30 && age < 35) ageRanges['30-34']++;
+      else if (age >= 35 && age < 40) ageRanges['35-39']++;
+      else if (age >= 40 && age < 45) ageRanges['40-44']++;
+      else if (age >= 45 && age < 50) ageRanges['45-49']++;
+      else if (age >= 50 && age < 55) ageRanges['50-54']++;
+      else if (age >= 55 && age < 60) ageRanges['55-59']++;
+      else ageRanges['60+']++;
+    }
+  });
+
+  if (charts.ageDistribution) charts.ageDistribution.destroy();
+
+  charts.ageDistribution = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(ageRanges),
+      datasets: [{
+        label: 'Jumlah Karyawan',
+        data: Object.values(ageRanges),
+        backgroundColor: 'rgba(59, 130, 246, 0.8)'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          display: false
+        },
+        datalabels: {
+          color: '#fff',
+          font: {
+            weight: 'bold'
+          },
+          formatter: (value) => value > 0 ? value : ''
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1
+          }
+        }
+      }
+    },
+    plugins: [ChartDataLabels]
+  });
+}
+
+function updateBMIDistributionChart(filteredMCUs) {
+  const ctx = document.getElementById('chart-bmi-distribution');
+
+  // BMI Categories
+  const bmiCategories = {
+    'Underweight\n(<18.5)': 0,
+    'Normal\n(18.5-24.9)': 0,
+    'Overweight\n(25-29.9)': 0,
+    'Obese\n(≥30)': 0,
+    'No Data': 0
+  };
+
+  filteredMCUs.forEach(mcu => {
+    if (mcu.bmi) {
+      const bmi = parseFloat(mcu.bmi);
+      if (bmi < 18.5) bmiCategories['Underweight\n(<18.5)']++;
+      else if (bmi >= 18.5 && bmi < 25) bmiCategories['Normal\n(18.5-24.9)']++;
+      else if (bmi >= 25 && bmi < 30) bmiCategories['Overweight\n(25-29.9)']++;
+      else if (bmi >= 30) bmiCategories['Obese\n(≥30)']++;
+    } else {
+      bmiCategories['No Data']++;
+    }
+  });
+
+  const labels = Object.keys(bmiCategories);
+  const data = Object.values(bmiCategories);
+  const colors = labels.map(label => {
+    if (label.includes('Underweight')) return 'rgba(234, 179, 8, 0.8)';
+    if (label.includes('Normal')) return 'rgba(34, 197, 94, 0.8)';
+    if (label.includes('Overweight')) return 'rgba(249, 115, 22, 0.8)';
+    if (label.includes('Obese')) return 'rgba(239, 68, 68, 0.8)';
+    return 'rgba(156, 163, 175, 0.8)';
+  });
+
+  if (charts.bmiDistribution) charts.bmiDistribution.destroy();
+
+  charts.bmiDistribution = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Jumlah Karyawan',
+        data: data,
+        backgroundColor: colors
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          display: false
+        },
+        datalabels: {
+          color: '#fff',
+          font: {
+            weight: 'bold'
+          },
+          formatter: (value) => value > 0 ? value : ''
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1
+          }
+        }
+      }
+    },
+    plugins: [ChartDataLabels]
+  });
+}
+
 async function updateFollowUpList() {
   const container = document.getElementById('followup-list');
   const followUpMCUs = await mcuService.getFollowUpList();
@@ -442,12 +726,59 @@ async function updateActivityList() {
   }
 
   let html = '';
-  activities.forEach(activity => {
-    const actionText = {
-      'create': 'dibuat',
-      'update': 'diperbarui',
-      'delete': 'dihapus'
-    }[activity.action] || activity.action;
+  for (const activity of activities) {
+    let activityText = '';
+    let userName = 'System';
+
+    // Get user display name
+    try {
+      const user = await database.db.users.where('userId').equals(activity.userId).first();
+      if (user) userName = user.displayName;
+    } catch (e) {
+      // Silent fail
+    }
+
+    // Build detailed activity text based on entity type
+    if (activity.entityType === 'Employee') {
+      const actionText = {
+        'create': 'menambahkan karyawan',
+        'update': 'mengupdate data karyawan',
+        'delete': 'menghapus karyawan'
+      }[activity.action] || activity.action;
+
+      let employeeName = activity.entityId;
+      try {
+        const emp = employees.find(e => e.employeeId === activity.entityId);
+        if (emp) employeeName = emp.name;
+      } catch (e) {}
+
+      activityText = `<strong>${userName}</strong> ${actionText} <strong>${employeeName}</strong>`;
+    } else if (activity.entityType === 'MCU') {
+      let employeeName = '';
+      try {
+        const mcu = await database.db.mcus.where('mcuId').equals(activity.entityId).first();
+        if (mcu) {
+          const emp = employees.find(e => e.employeeId === mcu.employeeId);
+          if (emp) employeeName = emp.name;
+        }
+      } catch (e) {}
+
+      if (activity.action === 'create') {
+        activityText = `<strong>${employeeName}</strong> baru saja MCU`;
+      } else if (activity.action === 'update') {
+        activityText = `<strong>${employeeName}</strong> baru saja Follow-Up`;
+      } else {
+        activityText = `<strong>${userName}</strong> menghapus data MCU`;
+      }
+    } else {
+      const actionText = {
+        'create': 'menambahkan',
+        'update': 'mengupdate',
+        'delete': 'menghapus'
+      }[activity.action] || activity.action;
+
+      activityText = `<strong>${userName}</strong> ${actionText} ${activity.entityType}`;
+    }
 
     html += `
       <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
@@ -457,12 +788,12 @@ async function updateActivityList() {
           </svg>
         </div>
         <div class="flex-1">
-          <p class="text-sm text-gray-900">${activity.entityType} ${actionText}</p>
+          <p class="text-sm text-gray-900">${activityText}</p>
           <p class="text-xs text-gray-500">${formatDateDisplay(activity.timestamp)}</p>
         </div>
       </div>
     `;
-  });
+  }
 
   container.innerHTML = html;
 }

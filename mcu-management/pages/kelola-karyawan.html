@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kelola Karyawan - MCU Management</title>
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="../assets/images/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+    <link rel="manifest" href="../assets/site.webmanifest">
+
     <link rel="stylesheet" href="../css/output.css">
 
     <!-- Dexie (IndexedDB) - Fallback -->
@@ -213,6 +221,7 @@
                     <div><label class="text-sm text-gray-600">ID MCU:</label><p class="font-medium" id="mcu-detail-id">-</p></div>
                     <div><label class="text-sm text-gray-600">Tanggal MCU:</label><p class="font-medium" id="mcu-detail-date">-</p></div>
                     <div><label class="text-sm text-gray-600">Jenis MCU:</label><p class="font-medium" id="mcu-detail-type">-</p></div>
+                    <div class="col-span-3"><label class="text-sm text-gray-600">Terakhir diubah:</label><p class="font-medium text-xs" id="mcu-detail-updated">-</p></div>
                 </div>
 
                 <h4 class="font-semibold text-gray-900 mb-3">Hasil Pemeriksaan</h4>
@@ -335,6 +344,8 @@
                             <select id="edit-mcu-initial-result" class="input" required>
                                 <option value="">Pilih...</option>
                                 <option value="Fit">Fit</option>
+                                <option value="Fit With Note">Fit With Note</option>
+                                <option value="Temporary Unfit">Temporary Unfit</option>
                                 <option value="Follow-Up">Follow-Up</option>
                                 <option value="Unfit">Unfit</option>
                             </select>
@@ -353,6 +364,8 @@
                                 <select id="edit-mcu-final-result" class="input">
                                     <option value="">Pilih...</option>
                                     <option value="Fit">Fit</option>
+                                    <option value="Fit With Note">Fit With Note</option>
+                                    <option value="Temporary Unfit">Temporary Unfit</option>
                                     <option value="Follow-Up">Follow-Up</option>
                                     <option value="Unfit">Unfit</option>
                                 </select>
@@ -451,6 +464,7 @@
                                 <option value="Fit">Fit</option>
                                 <option value="Fit With Note">Fit With Note</option>
                                 <option value="Temporary Unfit">Temporary Unfit</option>
+                                <option value="Follow-Up">Follow-Up</option>
                                 <option value="Unfit">Unfit</option>
                             </select>
                         </div>

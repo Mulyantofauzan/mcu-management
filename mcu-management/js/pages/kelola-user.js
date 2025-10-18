@@ -5,7 +5,7 @@
 
 import { authService } from '../services/authService.js';
 import { showToast, openModal, closeModal, hideAdminMenuForNonAdmin } from '../utils/uiHelpers.js';
-import { db } from '../services/database.js';
+import { database } from '../services/database.js';
 import { generateUserId } from '../utils/idGenerator.js';
 import { getCurrentTimestamp } from '../utils/dateHelpers.js';
 
@@ -43,7 +43,7 @@ function updateUserInfo() {
 
 async function loadUsers() {
     try {
-        users = await db.users.toArray();
+        users = await database.db.users.toArray();
         renderTable();
         showToast('Data user berhasil dimuat', 'success');
     } catch (error) {
@@ -129,7 +129,7 @@ window.handleAddUser = async function(event) {
 
     try {
         // Check if username already exists
-        const existingUser = await db.users.where('username').equals(username).first();
+        const existingUser = await database.db.users.where('username').equals(username).first();
         if (existingUser) {
             showToast('Username sudah digunakan', 'error');
             return;
@@ -147,10 +147,10 @@ window.handleAddUser = async function(event) {
             updatedAt: getCurrentTimestamp()
         };
 
-        await db.users.add(newUser);
+        await database.db.users.add(newUser);
 
         showToast('User berhasil ditambahkan', 'success');
-        closeAddUserModal();
+        window.closeAddUserModal();
         await loadUsers();
 
     } catch (error) {
@@ -161,7 +161,7 @@ window.handleAddUser = async function(event) {
 
 window.editUser = async function(userId) {
     try {
-        const user = await db.users.where('userId').equals(userId).first();
+        const user = await database.db.users.where('userId').equals(userId).first();
         if (!user) {
             showToast('User tidak ditemukan', 'error');
             return;
@@ -216,7 +216,7 @@ window.handleEditUser = async function(event) {
 
     try {
         // Check if username is taken by another user
-        const existingUser = await db.users.where('username').equals(username).first();
+        const existingUser = await database.db.users.where('username').equals(username).first();
         if (existingUser && existingUser.userId !== userId) {
             showToast('Username sudah digunakan oleh user lain', 'error');
             return;
@@ -247,16 +247,16 @@ window.handleEditUser = async function(event) {
             updateData.passwordHash = btoa(password);
         }
 
-        await db.users.where('userId').equals(userId).modify(updateData);
+        await database.db.users.where('userId').equals(userId).modify(updateData);
 
         showToast('User berhasil diupdate', 'success');
-        closeEditUserModal();
+        window.closeEditUserModal();
         await loadUsers();
 
         // If current user updated their own info, refresh session
         const currentUser = authService.getCurrentUser();
         if (currentUser.userId === userId) {
-            const updatedUser = await db.users.where('userId').equals(userId).first();
+            const updatedUser = await database.db.users.where('userId').equals(userId).first();
             authService.updateCurrentUser(updatedUser);
             updateUserInfo();
         }
@@ -268,7 +268,7 @@ window.handleEditUser = async function(event) {
 };
 
 window.deleteUser = async function(userId) {
-    const user = await db.users.where('userId').equals(userId).first();
+    const user = await database.db.users.where('userId').equals(userId).first();
     if (!user) {
         showToast('User tidak ditemukan', 'error');
         return;
@@ -278,7 +278,7 @@ window.deleteUser = async function(userId) {
     if (!confirmed) return;
 
     try {
-        await db.users.where('userId').equals(userId).delete();
+        await database.db.users.where('userId').equals(userId).delete();
 
         showToast('User berhasil dihapus', 'success');
         await loadUsers();
