@@ -32,9 +32,9 @@ class DatabaseService {
             case 'users': return await adapter.Users.getAll();
             case 'employees': return await adapter.Employees.getAll();
             case 'mcus': return await adapter.MCUs.getAll();
-            case 'departments': return await adapter.Departments.getAll();
-            case 'jobTitles': return await adapter.JobTitles.getAll();
-            case 'vendors': return await adapter.Vendors.getAll();
+            case 'departments': return await adapter.MasterData.getDepartments();
+            case 'jobTitles': return await adapter.MasterData.getJobTitles();
+            case 'vendors': return await adapter.MasterData.getVendors();
             case 'activityLog': return await adapter.ActivityLog.getAll();
             default: throw new Error(`Unknown table: ${tableName}`);
         }
@@ -45,9 +45,9 @@ class DatabaseService {
             case 'users': return await adapter.Users.add(data);
             case 'employees': return await adapter.Employees.add(data);
             case 'mcus': return await adapter.MCUs.add(data);
-            case 'departments': return await adapter.Departments.add(data);
-            case 'jobTitles': return await adapter.JobTitles.add(data);
-            case 'vendors': return await adapter.Vendors.add(data);
+            case 'departments': return await adapter.MasterData.addDepartment(data.name);
+            case 'jobTitles': return await adapter.MasterData.addJobTitle(data.name);
+            case 'vendors': return await adapter.MasterData.addVendor(data.name);
             case 'activityLog': return await adapter.ActivityLog.add(data);
             default: throw new Error(`Unknown table: ${tableName}`);
         }
@@ -58,9 +58,9 @@ class DatabaseService {
             case 'users': return await adapter.Users.update(id, data);
             case 'employees': return await adapter.Employees.update(id, data);
             case 'mcus': return await adapter.MCUs.update(id, data);
-            case 'departments': return await adapter.Departments.update(id, data);
-            case 'jobTitles': return await adapter.JobTitles.update(id, data);
-            case 'vendors': return await adapter.Vendors.update(id, data);
+            case 'departments': return await adapter.MasterData.updateDepartment(id, data.name);
+            case 'jobTitles': return await adapter.MasterData.updateJobTitle(id, data.name);
+            case 'vendors': return await adapter.MasterData.updateVendor(id, data.name);
             default: throw new Error(`Unknown table: ${tableName}`);
         }
     }
@@ -78,9 +78,18 @@ class DatabaseService {
             case 'users': return await adapter.Users.getById(id);
             case 'employees': return await adapter.Employees.getById(id);
             case 'mcus': return await adapter.MCUs.getById(id);
-            case 'departments': return await adapter.Departments.getById(id);
-            case 'jobTitles': return await adapter.JobTitles.getById(id);
-            case 'vendors': return await adapter.Vendors.getById(id);
+            case 'departments': {
+                const all = await adapter.MasterData.getDepartments();
+                return all.find(item => item.id === id || item.departmentId === id);
+            }
+            case 'jobTitles': {
+                const all = await adapter.MasterData.getJobTitles();
+                return all.find(item => item.id === id || item.jobTitleId === id);
+            }
+            case 'vendors': {
+                const all = await adapter.MasterData.getVendors();
+                return all.find(item => item.id === id || item.vendorId === id);
+            }
             default: throw new Error(`Get not supported for: ${tableName}`);
         }
     }
@@ -129,9 +138,7 @@ class DatabaseService {
     get users() { return adapter.Users; }
     get employees() { return adapter.Employees; }
     get mcus() { return adapter.MCUs; }
-    get departments() { return adapter.Departments; }
-    get jobTitles() { return adapter.JobTitles; }
-    get vendors() { return adapter.Vendors; }
+    get masterData() { return adapter.MasterData; }
     get activityLog() { return adapter.ActivityLog; }
 }
 
