@@ -91,14 +91,15 @@ export const Users = {
     async add(user) {
         if (useSupabase) {
             const supabase = getSupabaseClient();
-            const { data, error } = await supabase
+            const { data, error} = await supabase
                 .from('users')
                 .insert({
                     user_id: user.userId,
                     username: user.username,
                     password_hash: user.passwordHash,
                     display_name: user.displayName,
-                    role: user.role
+                    role: user.role,
+                    active: user.active !== undefined ? user.active : true
                 })
                 .select()
                 .single();
