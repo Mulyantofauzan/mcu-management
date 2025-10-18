@@ -9,8 +9,15 @@
 // <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 // Environment variables (set in Netlify dashboard)
-const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || window.ENV?.SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || window.ENV?.SUPABASE_ANON_KEY || '';
+// Fallback order: import.meta.env → window.ENV → localStorage
+const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL
+    || window.ENV?.SUPABASE_URL
+    || localStorage.getItem('SUPABASE_URL')
+    || '';
+const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY
+    || window.ENV?.SUPABASE_ANON_KEY
+    || localStorage.getItem('SUPABASE_ANON_KEY')
+    || '';
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     console.warn('⚠️ Supabase credentials not found. Using IndexedDB fallback.');
