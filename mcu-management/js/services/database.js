@@ -73,6 +73,26 @@ class DatabaseService {
         }
     }
 
+    async get(tableName, id) {
+        switch(tableName) {
+            case 'users': return await adapter.Users.getById(id);
+            case 'employees': return await adapter.Employees.getById(id);
+            case 'mcus': return await adapter.MCUs.getById(id);
+            case 'departments': return await adapter.Departments.getById(id);
+            case 'jobTitles': return await adapter.JobTitles.getById(id);
+            case 'vendors': return await adapter.Vendors.getById(id);
+            default: throw new Error(`Get not supported for: ${tableName}`);
+        }
+    }
+
+    async query(tableName, queryFn) {
+        // This is a generic query function for IndexedDB
+        // For Supabase, we'd need to translate to SQL query
+        // For now, we'll get all and filter in memory (not efficient, but works)
+        const all = await this.getAll(tableName);
+        return all.filter(queryFn);
+    }
+
     // Activity log
     async getActivityLog(limit = 20) {
         return await adapter.ActivityLog.getAll(limit);
@@ -86,6 +106,23 @@ class DatabaseService {
             userId,
             timestamp: new Date().toISOString()
         });
+    }
+
+    // Clear all data (for seed/reset)
+    async clearAll() {
+        // For Supabase, we don't want to delete production data
+        // For IndexedDB, we can clear it
+        if (!isSupabaseEnabled()) {
+            const db = adapter.getDatabase();
+            if (db && db.delete) {
+                await db.delete();
+                // Re-initialize
+                location.reload();
+            }
+        } else {
+            console.warn('⚠️ clearAll() is disabled for Supabase to prevent accidental data loss');
+            // If you really need to clear Supabase data, do it manually from Supabase Dashboard
+        }
     }
 
     // Expose adapter modules directly for advanced usage
