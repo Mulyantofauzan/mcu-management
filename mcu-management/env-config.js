@@ -4,28 +4,23 @@
  * SECURITY: This file loads environment variables safely.
  *
  * For Netlify deployment:
- * 1. Go to: Site settings → Environment variables
+ * 1. Go to: Site settings → Build & deploy → Environment
  * 2. Add variables:
  *    - SUPABASE_URL = your_supabase_project_url
  *    - SUPABASE_ANON_KEY = your_supabase_anon_key
- * 3. Netlify will inject these at build time
+ * 3. Add build command that generates this file (see netlify.toml)
  *
  * For local development:
- * Set in .env file (NOT committed to git):
- *   VITE_SUPABASE_URL=your_url
- *   VITE_SUPABASE_ANON_KEY=your_key
+ * Set in localStorage (see below)
  */
 
-// Initialize with empty values (will be replaced by Netlify)
-window.ENV = window.ENV || {
-  SUPABASE_URL: '',
-  SUPABASE_ANON_KEY: ''
-};
+// Try to load from Netlify's generated env file (if exists)
+// This will be generated during build by generate-env.js
+window.ENV = window.ENV || {};
 
-// Netlify will replace %%ENV%% placeholders during build
-// This happens via Netlify's environment variable injection
-if (typeof NETLIFY_ENV !== 'undefined') {
-  window.ENV = NETLIFY_ENV;
+// Check if we have pre-generated env (from build script)
+if (typeof __NETLIFY_ENV__ !== 'undefined') {
+  window.ENV = __NETLIFY_ENV__;
 }
 
 // Development fallback: Check localStorage for testing (NEVER use in production)
