@@ -86,7 +86,7 @@ export const Users = {
             if (error && error.code !== 'PGRST116') throw error;
             return transformUser(data);
         }
-        return await db.users.where('userId').equals(userId).first();
+        return await indexedDB.db.users.where('userId').equals(userId).first();
     },
 
     async add(user) {
@@ -108,7 +108,7 @@ export const Users = {
             if (error) throw error;
             return transformUser(data);
         }
-        return await db.users.add(user);
+        return await indexedDB.db.users.add(user);
     },
 
     async update(userId, updates) {
@@ -131,7 +131,7 @@ export const Users = {
             if (error) throw error;
             return transformUser(data);
         }
-        return await db.users.where('userId').equals(userId).modify(updates);
+        return await indexedDB.db.users.where('userId').equals(userId).modify(updates);
     }
 };
 
@@ -155,9 +155,9 @@ export const Employees = {
         }
 
         if (includeDeleted) {
-            return await db.employees.toArray();
+            return await indexedDB.db.employees.toArray();
         }
-        return await db.employees.filter(e => !e.deletedAt).toArray();
+        return await indexedDB.db.employees.filter(e => !e.deletedAt).toArray();
     },
 
     async getById(employeeId) {
@@ -172,7 +172,7 @@ export const Employees = {
             if (error && error.code !== 'PGRST116') throw error;
             return transformEmployee(data);
         }
-        return await db.employees.where('employeeId').equals(employeeId).first();
+        return await indexedDB.db.employees.where('employeeId').equals(employeeId).first();
     },
 
     async add(employee) {
@@ -214,7 +214,7 @@ export const Employees = {
             if (error) throw error;
             return transformEmployee(data);
         }
-        return await db.employees.add(employee);
+        return await indexedDB.db.employees.add(employee);
     },
 
     async update(employeeId, updates) {
@@ -268,7 +268,7 @@ export const Employees = {
             if (error) throw error;
             return transformEmployee(data);
         }
-        return await db.employees.where('employeeId').equals(employeeId).modify(updates);
+        return await indexedDB.db.employees.where('employeeId').equals(employeeId).modify(updates);
     },
 
     async delete(employeeId) {
@@ -282,7 +282,7 @@ export const Employees = {
             if (error) throw error;
             return true;
         }
-        return await db.employees.where('employeeId').equals(employeeId).delete();
+        return await indexedDB.db.employees.where('employeeId').equals(employeeId).delete();
     }
 };
 
@@ -306,9 +306,9 @@ export const MCUs = {
         }
 
         if (includeDeleted) {
-            return await db.mcus.toArray();
+            return await indexedDB.db.mcus.toArray();
         }
-        return await db.mcus.filter(m => !m.deletedAt).toArray();
+        return await indexedDB.db.mcus.filter(m => !m.deletedAt).toArray();
     },
 
     async getById(mcuId) {
@@ -323,7 +323,7 @@ export const MCUs = {
             if (error && error.code !== 'PGRST116') throw error;
             return transformMCU(data);
         }
-        return await db.mcus.where('mcuId').equals(mcuId).first();
+        return await indexedDB.db.mcus.where('mcuId').equals(mcuId).first();
     },
 
     async getByEmployeeId(employeeId) {
@@ -339,7 +339,7 @@ export const MCUs = {
             if (error) throw error;
             return data.map(transformMCU);
         }
-        return await db.mcus
+        return await indexedDB.db.mcus
             .where('employeeId').equals(employeeId)
             .filter(m => !m.deletedAt)
             .toArray();
@@ -385,7 +385,7 @@ export const MCUs = {
             if (error) throw error;
             return transformMCU(data);
         }
-        return await db.mcus.add(mcu);
+        return await indexedDB.db.mcus.add(mcu);
     },
 
     async update(mcuId, updates) {
@@ -438,7 +438,7 @@ export const MCUs = {
             if (error) throw error;
             return transformMCU(data);
         }
-        return await db.mcus.where('mcuId').equals(mcuId).modify(updates);
+        return await indexedDB.db.mcus.where('mcuId').equals(mcuId).modify(updates);
     },
 
     async delete(mcuId) {
@@ -452,7 +452,7 @@ export const MCUs = {
             if (error) throw error;
             return true;
         }
-        return await db.mcus.where('mcuId').equals(mcuId).delete();
+        return await indexedDB.db.mcus.where('mcuId').equals(mcuId).delete();
     }
 };
 
@@ -471,7 +471,7 @@ export const MCUChanges = {
             if (error) throw error;
             return data.map(transformMCUChange);
         }
-        return await db.mcuChanges.toArray();
+        return await indexedDB.db.mcuChanges.toArray();
     },
 
     async getById(id) {
@@ -486,7 +486,7 @@ export const MCUChanges = {
             if (error && error.code !== 'PGRST116') throw error;
             return transformMCUChange(data);
         }
-        return await db.mcuChanges.get(id);
+        return await indexedDB.db.mcuChanges.get(id);
     },
 
     async getByMcuId(mcuId) {
@@ -501,7 +501,7 @@ export const MCUChanges = {
             if (error) throw error;
             return data.map(transformMCUChange);
         }
-        return await db.mcuChanges
+        return await indexedDB.db.mcuChanges
             .where('mcuId').equals(mcuId)
             .reverse()
             .sortBy('changedAt');
@@ -525,7 +525,7 @@ export const MCUChanges = {
             if (error) throw error;
             return transformMCUChange(data);
         }
-        return await db.mcuChanges.add(change);
+        return await indexedDB.db.mcuChanges.add(change);
     },
 
     async update(id, updates) {
@@ -547,7 +547,7 @@ export const MCUChanges = {
             if (error) throw error;
             return transformMCUChange(data);
         }
-        return await db.mcuChanges.update(id, updates);
+        return await indexedDB.db.mcuChanges.update(id, updates);
     },
 
     async delete(id) {
@@ -561,7 +561,7 @@ export const MCUChanges = {
             if (error) throw error;
             return true;
         }
-        return await db.mcuChanges.delete(id);
+        return await indexedDB.db.mcuChanges.delete(id);
     }
 };
 
@@ -580,7 +580,7 @@ export const MasterData = {
             if (error) throw error;
             return data.map(transformMasterDataItem);
         }
-        return await db.jobTitles.toArray();
+        return await indexedDB.db.jobTitles.toArray();
     },
 
     async getDepartments() {
@@ -594,7 +594,7 @@ export const MasterData = {
             if (error) throw error;
             return data.map(transformMasterDataItem);
         }
-        return await db.departments.toArray();
+        return await indexedDB.db.departments.toArray();
     },
 
     async getVendors() {
@@ -608,7 +608,7 @@ export const MasterData = {
             if (error) throw error;
             return data.map(transformMasterDataItem);
         }
-        return await db.vendors.toArray();
+        return await indexedDB.db.vendors.toArray();
     },
 
     async addJobTitle(name) {
@@ -623,7 +623,7 @@ export const MasterData = {
             if (error) throw error;
             return transformMasterDataItem(data);
         }
-        return await db.jobTitles.add({ name });
+        return await indexedDB.db.jobTitles.add({ name });
     },
 
     async addDepartment(name) {
@@ -638,7 +638,7 @@ export const MasterData = {
             if (error) throw error;
             return transformMasterDataItem(data);
         }
-        return await db.departments.add({ name });
+        return await indexedDB.db.departments.add({ name });
     },
 
     async addVendor(name) {
@@ -653,7 +653,7 @@ export const MasterData = {
             if (error) throw error;
             return transformMasterDataItem(data);
         }
-        return await db.vendors.add({ name });
+        return await indexedDB.db.vendors.add({ name });
     },
 
     async updateJobTitle(id, name) {
@@ -669,7 +669,7 @@ export const MasterData = {
             if (error) throw error;
             return transformMasterDataItem(data);
         }
-        return await db.jobTitles.update(id, { name });
+        return await indexedDB.db.jobTitles.update(id, { name });
     },
 
     async updateDepartment(id, name) {
@@ -685,7 +685,7 @@ export const MasterData = {
             if (error) throw error;
             return transformMasterDataItem(data);
         }
-        return await db.departments.update(id, { name });
+        return await indexedDB.db.departments.update(id, { name });
     },
 
     async updateVendor(id, name) {
@@ -701,7 +701,7 @@ export const MasterData = {
             if (error) throw error;
             return transformMasterDataItem(data);
         }
-        return await db.vendors.update(id, { name });
+        return await indexedDB.db.vendors.update(id, { name });
     },
 
     async deleteJobTitle(id) {
@@ -715,7 +715,7 @@ export const MasterData = {
             if (error) throw error;
             return true;
         }
-        return await db.jobTitles.delete(id);
+        return await indexedDB.db.jobTitles.delete(id);
     },
 
     async deleteDepartment(id) {
@@ -729,7 +729,7 @@ export const MasterData = {
             if (error) throw error;
             return true;
         }
-        return await db.departments.delete(id);
+        return await indexedDB.db.departments.delete(id);
     },
 
     async deleteVendor(id) {
@@ -743,7 +743,7 @@ export const MasterData = {
             if (error) throw error;
             return true;
         }
-        return await db.vendors.delete(id);
+        return await indexedDB.db.vendors.delete(id);
     }
 };
 
@@ -763,7 +763,7 @@ export const ActivityLog = {
             if (error) throw error;
             return data.map(transformActivityLog);
         }
-        return await db.activityLog.orderBy('timestamp').reverse().limit(limit).toArray();
+        return await indexedDB.db.activityLog.orderBy('timestamp').reverse().limit(limit).toArray();
     },
 
     async add(activity) {
@@ -784,7 +784,7 @@ export const ActivityLog = {
             if (error) throw error;
             return transformActivityLog(data);
         }
-        return await db.activityLog.add(activity);
+        return await indexedDB.db.activityLog.add(activity);
     }
 };
 
