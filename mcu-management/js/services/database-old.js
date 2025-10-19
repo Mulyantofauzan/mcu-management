@@ -23,7 +23,7 @@ class MCUDatabase {
 
     this.db = new Dexie('MCU_Database');
 
-    // Define schema
+    // Define schema - version 2 adds 'active' field to users
     this.db.version(1).stores({
       employees: 'employeeId, name, departmentId, jobTitleId, activeStatus, deletedAt',
       mcus: 'mcuId, employeeId, mcuDate, mcuType, status, deletedAt, lastUpdatedTimestamp',
@@ -34,6 +34,11 @@ class MCUDatabase {
       vendors: 'vendorId, name',
       users: 'userId, username, role',
       activityLog: '++id, timestamp, action, entityType, entityId'
+    });
+
+    // Version 2: Add 'active' index to users table
+    this.db.version(2).stores({
+      users: 'userId, username, role, active'
     });
 
     await this.db.open();
