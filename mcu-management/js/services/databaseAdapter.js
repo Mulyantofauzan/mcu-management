@@ -611,10 +611,15 @@ export const MasterData = {
         return await indexedDB.db.vendors.toArray();
     },
 
-    async addJobTitle(name) {
+    async addJobTitle(dataOrName) {
+        // Support both object (with jobTitleId) and string (just name)
+        const isObject = typeof dataOrName === 'object' && dataOrName !== null;
+        const name = isObject ? dataOrName.name : dataOrName;
+        const fullData = isObject ? dataOrName : { name };
+
         if (useSupabase) {
             const supabase = getSupabaseClient();
-            const { data, error } = await supabase
+            const { data, error} = await supabase
                 .from('job_titles')
                 .insert({ name })
                 .select()
@@ -623,10 +628,16 @@ export const MasterData = {
             if (error) throw error;
             return transformMasterDataItem(data);
         }
-        return await indexedDB.db.jobTitles.add({ name });
+        // For IndexedDB, use the full object if provided (includes ID and timestamps)
+        return await indexedDB.db.jobTitles.add(fullData);
     },
 
-    async addDepartment(name) {
+    async addDepartment(dataOrName) {
+        // Support both object (with departmentId) and string (just name)
+        const isObject = typeof dataOrName === 'object' && dataOrName !== null;
+        const name = isObject ? dataOrName.name : dataOrName;
+        const fullData = isObject ? dataOrName : { name };
+
         if (useSupabase) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
@@ -638,10 +649,16 @@ export const MasterData = {
             if (error) throw error;
             return transformMasterDataItem(data);
         }
-        return await indexedDB.db.departments.add({ name });
+        // For IndexedDB, use the full object if provided (includes ID and timestamps)
+        return await indexedDB.db.departments.add(fullData);
     },
 
-    async addVendor(name) {
+    async addVendor(dataOrName) {
+        // Support both object (with vendorId) and string (just name)
+        const isObject = typeof dataOrName === 'object' && dataOrName !== null;
+        const name = isObject ? dataOrName.name : dataOrName;
+        const fullData = isObject ? dataOrName : { name };
+
         if (useSupabase) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
@@ -653,7 +670,8 @@ export const MasterData = {
             if (error) throw error;
             return transformMasterDataItem(data);
         }
-        return await indexedDB.db.vendors.add({ name });
+        // For IndexedDB, use the full object if provided (includes ID and timestamps)
+        return await indexedDB.db.vendors.add(fullData);
     },
 
     async updateJobTitle(id, name) {

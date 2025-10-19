@@ -57,9 +57,20 @@ class DatabaseService {
             case 'employees': return await adp.Employees.add(data);
             case 'mcus': return await adp.MCUs.add(data);
             case 'mcuChanges': return await adp.MCUChanges.add(data);
-            case 'departments': return await adp.MasterData.addDepartment(data.name);
-            case 'jobTitles': return await adp.MasterData.addJobTitle(data.name);
-            case 'vendors': return await adp.MasterData.addVendor(data.name);
+            // For master data, if data is an object with ID, pass the whole object
+            // Otherwise (legacy), pass just the name string
+            case 'departments':
+                return typeof data === 'object' && data.departmentId
+                    ? await adp.MasterData.addDepartment(data)
+                    : await adp.MasterData.addDepartment(data.name || data);
+            case 'jobTitles':
+                return typeof data === 'object' && data.jobTitleId
+                    ? await adp.MasterData.addJobTitle(data)
+                    : await adp.MasterData.addJobTitle(data.name || data);
+            case 'vendors':
+                return typeof data === 'object' && data.vendorId
+                    ? await adp.MasterData.addVendor(data)
+                    : await adp.MasterData.addVendor(data.name || data);
             case 'activityLog': return await adp.ActivityLog.add(data);
             default: throw new Error(`Unknown table: ${tableName}`);
         }
