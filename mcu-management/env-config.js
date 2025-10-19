@@ -1,29 +1,23 @@
 /**
  * Environment Configuration
  *
- * SECURITY: This file loads environment variables safely.
+ * TEMPORARY: Hardcoded credentials for testing
+ * TODO: Replace with secure environment variable injection
  *
- * For Netlify deployment:
- * 1. Go to: Site settings → Build & deploy → Environment
- * 2. Add variables:
- *    - SUPABASE_URL = your_supabase_project_url
- *    - SUPABASE_ANON_KEY = your_supabase_anon_key
- * 3. Add build command that generates this file (see netlify.toml)
- *
- * For local development:
- * Set in localStorage (see below)
+ * INSTRUCTIONS:
+ * 1. Replace YOUR_SUPABASE_URL with your actual Supabase URL
+ * 2. Replace YOUR_SUPABASE_ANON_KEY with your actual anon key
+ * 3. Get these from: Supabase Dashboard → Settings → API
  */
 
-// Try to load from Netlify's generated env file (if exists)
-// This will be generated during build by generate-env.js
-window.ENV = window.ENV || {};
+// TEMPORARY HARDCODED CREDENTIALS
+// Replace these values with your actual Supabase credentials
+window.ENV = {
+  SUPABASE_URL: 'YOUR_SUPABASE_URL',
+  SUPABASE_ANON_KEY: 'YOUR_SUPABASE_ANON_KEY'
+};
 
-// Check if we have pre-generated env (from build script)
-if (typeof __NETLIFY_ENV__ !== 'undefined') {
-  window.ENV = __NETLIFY_ENV__;
-}
-
-// Development fallback: Check localStorage for testing (NEVER use in production)
+// Development fallback: Check localStorage for testing (localhost only)
 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
   const devUrl = localStorage.getItem('DEV_SUPABASE_URL');
   const devKey = localStorage.getItem('DEV_SUPABASE_ANON_KEY');
@@ -33,4 +27,11 @@ if (window.location.hostname === 'localhost' || window.location.hostname === '12
     window.ENV.SUPABASE_URL = devUrl;
     window.ENV.SUPABASE_ANON_KEY = devKey;
   }
+}
+
+console.log('📦 env-config.js loaded');
+if (window.ENV.SUPABASE_URL && window.ENV.SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+  console.log('✅ Supabase credentials configured');
+} else {
+  console.warn('⚠️ Please replace YOUR_SUPABASE_URL and YOUR_SUPABASE_ANON_KEY in env-config.js');
 }

@@ -1,8 +1,8 @@
 # Netlify Configuration for MCU Management
 
 [build]
-  # Inject environment variables into env-config.js
-  command = "bash inject-env.sh"
+  # No build command needed - static site
+  # DISABLED: command = "bash inject-env.sh" (not working, using hardcoded credentials instead)
   # Publish directory is current folder
   publish = "."
 
