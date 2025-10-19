@@ -257,8 +257,25 @@ export async function seedDatabase() {
   }
 }
 
-// Auto-seed on first load if no data exists
+// ============================================
+// PRODUCTION MODE - AUTO-SEEDING DISABLED
+// ============================================
+// Auto-seeding is DISABLED for production to prevent dummy data contamination
+// For development/testing only: Set ENABLE_AUTO_SEED = true in env-config.js
+
 export async function checkAndSeedIfEmpty() {
+  // Check if auto-seeding is enabled (default: DISABLED for production)
+  const enableAutoSeed = window.ENV?.ENABLE_AUTO_SEED === true;
+
+  if (!enableAutoSeed) {
+    console.log('ℹ️ Auto-seeding DISABLED (production mode)');
+    console.log('💡 To enable for development: Set window.ENV.ENABLE_AUTO_SEED = true');
+    return { success: true, message: 'Auto-seeding disabled for production' };
+  }
+
+  // Development mode: Auto-seed if database is empty
+  console.warn('⚠️ DEVELOPMENT MODE: Auto-seeding enabled');
+
   try {
     // Check if users exist (more important than employees for login)
     const users = await database.getAll('users');
@@ -271,12 +288,6 @@ export async function checkAndSeedIfEmpty() {
     return { success: true, message: 'Database already has data' };
   } catch (error) {
     console.error('Error checking database:', error);
-    // If error checking, try to seed anyway (maybe tables don't exist yet)
-    console.log('Error checking, attempting to seed...');
-    try {
-      return await seedDatabase();
-    } catch (seedError) {
-      return { success: false, error: seedError.message };
-    }
+    return { success: false, error: error.message };
   }
 }

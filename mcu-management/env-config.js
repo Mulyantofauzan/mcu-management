@@ -10,11 +10,15 @@
  * 3. Get these from: Supabase Dashboard → Settings → API
  */
 
-// TEMPORARY HARDCODED CREDENTIALS
-// Replace these values with your actual Supabase credentials
+// PRODUCTION CONFIGURATION
 window.ENV = {
+  // Supabase credentials
   SUPABASE_URL: 'https://xqyuktsfjvdqfhulobai.supabase.co',
-  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxeXVrdHNmanZkcWZodWxvYmFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MjkxNzQsImV4cCI6MjA3NjQwNTE3NH0.8_lmNISdJ7AMi0QgAqBoPathoiUeH_WZRDqFaAiRDwY'
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxeXVrdHNmanZkcWZodWxvYmFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MjkxNzQsImV4cCI6MjA3NjQwNTE3NH0.8_lmNISdJ7AMi0QgAqBoPathoiUeH_WZRDqFaAiRDwY',
+
+  // Production mode: Disable auto-seeding (prevent dummy data)
+  // Set to true ONLY for development/testing
+  ENABLE_AUTO_SEED: false
 };
 
 // Development fallback: Check localStorage for testing (localhost only)
