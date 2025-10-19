@@ -154,11 +154,14 @@ class DatabaseService {
         // For IndexedDB, we can clear it
         if (!isSupabaseEnabled()) {
             const adp = await getAdapter();
-            const db = adp.getDatabase();
-            if (db && db.delete) {
-                await db.delete();
-                // Re-initialize
-                location.reload();
+            const indexedDBInstance = adp.getDatabase();
+
+            // indexedDBInstance is MCUDatabase class instance
+            // It has a clearAll() method that handles Dexie db.delete()
+            if (indexedDBInstance && typeof indexedDBInstance.clearAll === 'function') {
+                await indexedDBInstance.clearAll();
+            } else {
+                console.warn('⚠️ clearAll() not available on database instance');
             }
         } else {
             console.warn('⚠️ clearAll() is disabled for Supabase to prevent accidental data loss');
