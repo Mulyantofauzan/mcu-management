@@ -41,8 +41,21 @@ class MCUDatabase {
       users: 'userId, username, role, active'
     });
 
-    await this.db.open();
-    console.log('Database initialized successfully');
+    try {
+      await this.db.open();
+      console.log('IndexedDB initialized successfully (version ' + this.db.verno + ')');
+    } catch (error) {
+      // If version conflict, delete and recreate
+      if (error.name === 'VersionError') {
+        console.warn('⚠️ IndexedDB version conflict. Deleting old database...');
+        await this.db.delete();
+        // Recreate with correct version
+        await this.db.open();
+        console.log('✅ IndexedDB recreated successfully');
+      } else {
+        throw error;
+      }
+    }
   }
 
   // Generic CRUD operations
