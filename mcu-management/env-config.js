@@ -13,8 +13,8 @@
 // TEMPORARY HARDCODED CREDENTIALS
 // Replace these values with your actual Supabase credentials
 window.ENV = {
-  SUPABASE_URL: 'YOUR_SUPABASE_URL',
-  SUPABASE_ANON_KEY: 'YOUR_SUPABASE_ANON_KEY'
+  SUPABASE_URL: 'https://xqyuktsfjvdqfhulobai.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxeXVrdHNmanZkcWZodWxvYmFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MjkxNzQsImV4cCI6MjA3NjQwNTE3NH0.8_lmNISdJ7AMi0QgAqBoPathoiUeH_WZRDqFaAiRDwY'
 };
 
 // Development fallback: Check localStorage for testing (localhost only)
