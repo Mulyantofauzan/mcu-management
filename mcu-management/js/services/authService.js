@@ -56,7 +56,8 @@ class AuthService {
       console.log(`  - User: ${u.username}, Active: ${u.active}, Match: ${u.username === username && u.active}`);
     });
 
-    const user = users.find(u => u.username === username && u.active);
+    // Check active field - if undefined (Supabase old schema), treat as active
+    const user = users.find(u => u.username === username && (u.active === undefined || u.active === true));
 
     if (!user) {
       console.error(`❌ User not found or inactive. Username: ${username}`);

@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     display_name VARCHAR(200) NOT NULL,
     role VARCHAR(50) NOT NULL CHECK (role IN ('Admin', 'Petugas')),
+    active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
