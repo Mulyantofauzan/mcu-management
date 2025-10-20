@@ -56,20 +56,19 @@ async function loadData() {
     }
 }
 
-// Helper: Add jobTitleId and departmentId based on names (for Supabase compatibility)
+// Helper: Add jobTitleId and departmentId based on names (for Supabase)
+// Supabase stores job_title and department as names, we need IDs for lookups
 function enrichEmployeeWithIds(emp) {
     if (!emp.jobTitleId && emp.jobTitle) {
         const job = jobTitles.find(j => j.name === emp.jobTitle);
         if (job) {
-            // Use id (Supabase) or jobTitleId (IndexedDB)
-            emp.jobTitleId = job.id || job.jobTitleId;
+            emp.jobTitleId = job.id; // Supabase uses numeric id
         }
     }
     if (!emp.departmentId && emp.department) {
         const dept = departments.find(d => d.name === emp.department);
         if (dept) {
-            // Use id (Supabase) or departmentId (IndexedDB)
-            emp.departmentId = dept.id || dept.departmentId;
+            emp.departmentId = dept.id; // Supabase uses numeric id
         }
     }
     return emp;
@@ -97,17 +96,9 @@ function renderTable() {
     }
 
     // PERFORMANCE FIX: Build lookup Maps ONCE - O(n) instead of O(n*m)
-    // Support both Supabase (id) and IndexedDB (jobTitleId/departmentId)
-    const jobMap = new Map();
-    jobTitles.forEach(j => {
-        const key = j.id || j.jobTitleId;
-        jobMap.set(key, j);
-    });
-    const deptMap = new Map();
-    departments.forEach(d => {
-        const key = d.id || d.departmentId;
-        deptMap.set(key, d);
-    });
+    // Supabase master data uses numeric id as primary key
+    const jobMap = new Map(jobTitles.map(j => [j.id, j]));
+    const deptMap = new Map(departments.map(d => [d.id, d]));
 
     // Pagination
     const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);

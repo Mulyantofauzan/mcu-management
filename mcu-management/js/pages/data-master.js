@@ -71,28 +71,14 @@ function renderTable() {
 
     let html = '<div class="table-container"><table class="table"><thead><tr><th>ID</th><th>Nama</th><th>Aksi</th></tr></thead><tbody>';
 
-    currentData.forEach((item, index) => {
-        const idField = currentTab === 'jobTitles' ? 'jobTitleId' : currentTab === 'departments' ? 'departmentId' : 'vendorId';
-        // Get actual ID - prefer generic id (Supabase), fallback to specific field (IndexedDB)
-        const actualId = item.id || item[idField];
-
-        // Debug log for troubleshooting
-        if (index === 0) {
-            console.log('📊 Data Master Item Sample:', {
-                tab: currentTab,
-                idField: idField,
-                item: item,
-                actualId: actualId,
-                actualIdType: typeof actualId
-            });
-        }
-
+    currentData.forEach(item => {
+        // Supabase master data uses numeric id as primary key
         html += '<tr>';
-        html += `<td><span class="text-sm text-gray-600">${actualId || 'N/A'}</span></td>`;
-        html += `<td><span class="font-medium text-gray-900">${item.name || 'N/A'}</span></td>`;
+        html += `<td><span class="text-sm text-gray-600">${item.id}</span></td>`;
+        html += `<td><span class="font-medium text-gray-900">${item.name}</span></td>`;
         html += `<td><div class="flex gap-2">`;
-        html += `<button onclick="window.editItem(${actualId})" class="btn btn-sm btn-secondary">Edit</button>`;
-        html += `<button onclick="window.deleteItem(${actualId})" class="btn btn-sm btn-danger">Hapus</button>`;
+        html += `<button onclick="window.editItem(${item.id})" class="btn btn-sm btn-secondary">Edit</button>`;
+        html += `<button onclick="window.deleteItem(${item.id})" class="btn btn-sm btn-danger">Hapus</button>`;
         html += `</div></td>`;
         html += '</tr>';
     });
@@ -131,51 +117,20 @@ window.closeCrudModal = function() {
 };
 
 window.editItem = async function(id) {
-    console.log('🔍 Edit Item Called:', {
-        id: id,
-        idType: typeof id,
-        currentTab: currentTab,
-        currentDataLength: currentData.length
-    });
+    // Supabase master data uses numeric id as primary key
+    const item = currentData.find(i => i.id === id);
 
-    const idField = currentTab === 'jobTitles' ? 'jobTitleId' : currentTab === 'departments' ? 'departmentId' : 'vendorId';
-
-    // Convert id to both string and number for comparison
-    const idString = String(id);
-    const idNumber = parseInt(id, 10);
-
-    // Try multiple ways to find the item (Supabase uses numeric id, IndexedDB uses string IDs)
-    let item = currentData.find(i => {
-        // Check generic id field (used by both Supabase and IndexedDB)
-        if (i.id === idNumber || i.id === id || i.id === idString) return true;
-        // Check specific ID field (jobTitleId, departmentId, vendorId)
-        if (i[idField] === idNumber || i[idField] === id || i[idField] === idString) return true;
-        return false;
-    });
-
-    // Additional debug logging
     if (!item) {
         console.error('❌ Item NOT FOUND:', {
             searchId: id,
-            searchIdString: idString,
-            searchIdNumber: idNumber,
-            idField: idField,
-            allItems: currentData.map(i => ({
-                id: i.id,
-                idType: typeof i.id,
-                specificId: i[idField],
-                specificIdType: typeof i[idField],
-                name: i.name
-            }))
+            currentTab: currentTab,
+            allItems: currentData.map(i => ({ id: i.id, name: i.name }))
         });
-        showToast('Data tidak ditemukan. Cek console untuk detail.', 'error');
+        showToast('Data tidak ditemukan', 'error');
         return;
     }
 
-    console.log('✅ Item FOUND:', item);
-
-    // Use the actual ID that exists in the item (prefer generic id, fallback to specific field)
-    editingId = item.id || item[idField];
+    editingId = item.id;
     document.getElementById('modal-title').textContent = `Edit ${tabConfig[currentTab].title}`;
     document.getElementById('item-id').value = editingId;
     document.getElementById('item-name').value = item.name;

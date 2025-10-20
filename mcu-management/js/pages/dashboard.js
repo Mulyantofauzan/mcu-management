@@ -73,20 +73,19 @@ function setDateRange(startDate, endDate) {
   currentDateRange = { startDate, endDate };
 }
 
-// Helper: Add jobTitleId and departmentId based on names (for Supabase compatibility)
+// Helper: Add jobTitleId and departmentId based on names (for Supabase)
+// Supabase stores job_title and department as names, we need IDs for lookups
 function enrichEmployeeWithIds(emp, jobTitles, departments) {
   if (!emp.jobTitleId && emp.jobTitle) {
     const job = jobTitles.find(j => j.name === emp.jobTitle);
     if (job) {
-      // Use id (Supabase) or jobTitleId (IndexedDB)
-      emp.jobTitleId = job.id || job.jobTitleId;
+      emp.jobTitleId = job.id; // Supabase uses numeric id
     }
   }
   if (!emp.departmentId && emp.department) {
     const dept = departments.find(d => d.name === emp.department);
     if (dept) {
-      // Use id (Supabase) or departmentId (IndexedDB)
-      emp.departmentId = dept.id || dept.departmentId;
+      emp.departmentId = dept.id; // Supabase uses numeric id
     }
   }
   return emp;
@@ -205,13 +204,10 @@ function updateDepartmentChart(filteredMCUs) {
 
   filteredMCUs.forEach(mcu => {
     const employee = employees.find(e => e.employeeId === mcu.employeeId);
-    if (employee) {
-      // Match by departmentId (IndexedDB) OR by department name (Supabase)
-      const dept = departments.find(d =>
-        d.departmentId === employee.departmentId || // IndexedDB format
-        d.name === employee.department || // Supabase format (stores name directly)
-        (d.id === employee.departmentId && employee.departmentId) // Supabase ID matching
-      );
+    if (employee && employee.departmentId) {
+      // Supabase: employee.departmentId enriched by enrichEmployeeWithIds()
+      // departments have numeric id as primary key
+      const dept = departments.find(d => d.id === employee.departmentId);
       if (dept && deptCounts[dept.name] !== undefined) {
         deptCounts[dept.name]++;
       }
