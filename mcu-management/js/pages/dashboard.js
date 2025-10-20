@@ -432,7 +432,7 @@ async function updateMCUTrendChart() {
 
   try {
     // Get all MCUs (not just latest per employee)
-    const allMCUs = await database.db.mcus.toArray();
+    const allMCUs = await database.getAll("mcus");
     const validMCUs = allMCUs.filter(mcu => !mcu.deletedAt && mcu.mcuDate);
 
     // Determine date range
@@ -715,7 +715,8 @@ async function updateActivityList() {
   const container = document.getElementById('activity-list');
   const activities = await database.getActivityLog(5);
 
-  if (activities.length === 0) {
+  // Handle null/undefined activities
+  if (!activities || activities.length === 0) {
     container.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">Belum ada aktivitas</p>';
     return;
   }
@@ -727,7 +728,7 @@ async function updateActivityList() {
 
     // Get user display name
     try {
-      const user = await database.db.users.where('userId').equals(activity.userId).first();
+      const user = await database.get('users', activity.userId);
       if (user) userName = user.displayName;
     } catch (e) {
       // Silent fail
@@ -751,7 +752,7 @@ async function updateActivityList() {
     } else if (activity.entityType === 'MCU') {
       let employeeName = '';
       try {
-        const mcu = await database.db.mcus.where('mcuId').equals(activity.entityId).first();
+        const mcu = await database.get('mcus', activity.entityId);
         if (mcu) {
           const emp = employees.find(e => e.employeeId === mcu.employeeId);
           if (emp) employeeName = emp.name;
