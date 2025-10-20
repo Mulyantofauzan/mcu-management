@@ -39,12 +39,28 @@ async function loadData() {
         jobTitles = await masterDataService.getAllJobTitles();
         departments = await masterDataService.getAllDepartments();
 
+        // Enrich employee data with IDs (for Supabase which only stores names)
+        deletedEmployees = deletedEmployees.map(emp => enrichEmployeeWithIds(emp));
+
         document.getElementById('total-count').textContent = deletedEmployees.length;
         renderTable();
     } catch (error) {
         console.error('Error loading data:', error);
         showToast('Gagal memuat data: ' + error.message, 'error');
     }
+}
+
+// Helper: Add jobTitleId and departmentId based on names (for Supabase compatibility)
+function enrichEmployeeWithIds(emp) {
+    if (!emp.jobTitleId && emp.jobTitle) {
+        const job = jobTitles.find(j => j.name === emp.jobTitle);
+        if (job) emp.jobTitleId = job.jobTitleId;
+    }
+    if (!emp.departmentId && emp.department) {
+        const dept = departments.find(d => d.name === emp.department);
+        if (dept) emp.departmentId = dept.departmentId;
+    }
+    return emp;
 }
 
 function renderTable() {

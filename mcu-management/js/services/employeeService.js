@@ -39,11 +39,11 @@ class EmployeeService {
   }
 
   async getAllIncludingDeleted() {
-    return await database.getAll('employees');
+    return await database.getAll('employees', true);
   }
 
   async getDeleted() {
-    const employees = await database.getAll('employees');
+    const employees = await database.getAll('employees', true);
     return employees.filter(emp => emp.deletedAt !== null);
   }
 

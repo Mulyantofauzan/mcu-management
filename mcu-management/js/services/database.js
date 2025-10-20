@@ -35,12 +35,12 @@ class DatabaseService {
     }
 
     // Users
-    async getAll(tableName) {
+    async getAll(tableName, includeDeleted = false) {
         const adp = await getAdapter();
         switch(tableName) {
             case 'users': return await adp.Users.getAll();
-            case 'employees': return await adp.Employees.getAll();
-            case 'mcus': return await adp.MCUs.getAll();
+            case 'employees': return await adp.Employees.getAll(includeDeleted);
+            case 'mcus': return await adp.MCUs.getAll(includeDeleted);
             case 'mcuChanges': return await adp.MCUChanges.getAll();
             case 'departments': return await adp.MasterData.getDepartments();
             case 'jobTitles': return await adp.MasterData.getJobTitles();

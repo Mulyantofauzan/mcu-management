@@ -221,7 +221,8 @@ export const Employees = {
                     blood_type: employee.bloodType,
                     employee_type: employee.employeeType || employee.employmentStatus || 'Company',
                     vendor_name: employee.vendorName,
-                    is_active: employee.isActive !== undefined ? employee.isActive : (employee.activeStatus === 'Active' || employee.activeStatus === true)
+                    is_active: employee.isActive !== undefined ? employee.isActive : (employee.activeStatus === 'Active' || employee.activeStatus === true),
+                    inactive_reason: employee.inactiveReason || null
                 })
                 .select()
                 .single();
