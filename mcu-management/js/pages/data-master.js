@@ -40,6 +40,20 @@ async function loadData() {
     try {
         const config = tabConfig[currentTab];
         currentData = await config.getAll();
+
+        // Debug log loaded data
+        console.log(`📥 Loaded ${currentTab}:`, {
+            count: currentData.length,
+            sample: currentData[0],
+            allIds: currentData.map(item => ({
+                id: item.id,
+                jobTitleId: item.jobTitleId,
+                departmentId: item.departmentId,
+                vendorId: item.vendorId,
+                name: item.name
+            }))
+        });
+
         renderTable();
     } catch (error) {
         console.error('Error loading data:', error);
@@ -57,12 +71,28 @@ function renderTable() {
 
     let html = '<div class="table-container"><table class="table"><thead><tr><th>ID</th><th>Nama</th><th>Aksi</th></tr></thead><tbody>';
 
-    currentData.forEach(item => {
+    currentData.forEach((item, index) => {
         const idField = currentTab === 'jobTitles' ? 'jobTitleId' : currentTab === 'departments' ? 'departmentId' : 'vendorId';
+        // Get actual ID - prefer specific field, fallback to generic 'id'
+        const actualId = item[idField] || item.id;
+
+        // Debug log for troubleshooting
+        if (index === 0) {
+            console.log('📊 Data Master Item Sample:', {
+                tab: currentTab,
+                idField: idField,
+                item: item,
+                actualId: actualId
+            });
+        }
+
         html += '<tr>';
-        html += `<td><span class="text-sm text-gray-600">${item[idField]}</span></td>`;
-        html += `<td><span class="font-medium text-gray-900">${item.name}</span></td>`;
-        html += `<td><div class="flex gap-2"><button onclick="editItem('${item[idField]}')" class="btn btn-sm btn-secondary">Edit</button><button onclick="deleteItem('${item[idField]}')" class="btn btn-sm btn-danger">Hapus</button></div></td>`;
+        html += `<td><span class="text-sm text-gray-600">${actualId || 'N/A'}</span></td>`;
+        html += `<td><span class="font-medium text-gray-900">${item.name || 'N/A'}</span></td>`;
+        html += `<td><div class="flex gap-2">`;
+        html += `<button onclick="window.editItem('${actualId}')" class="btn btn-sm btn-secondary">Edit</button>`;
+        html += `<button onclick="window.deleteItem('${actualId}')" class="btn btn-sm btn-danger">Hapus</button>`;
+        html += `</div></td>`;
         html += '</tr>';
     });
 
@@ -100,14 +130,36 @@ window.closeCrudModal = function() {
 };
 
 window.editItem = async function(id) {
-    const idField = currentTab === 'jobTitles' ? 'jobTitleId' : currentTab === 'departments' ? 'departmentId' : 'vendorId';
-    // Try to find by specific ID field first, then fallback to generic 'id'
-    const item = currentData.find(i => i[idField] === id || i.id === id);
+    console.log('🔍 Edit Item Called:', {
+        id: id,
+        currentTab: currentTab,
+        currentDataLength: currentData.length
+    });
 
+    const idField = currentTab === 'jobTitles' ? 'jobTitleId' : currentTab === 'departments' ? 'departmentId' : 'vendorId';
+
+    // Try multiple ways to find the item
+    let item = currentData.find(i => {
+        const match = i[idField] === id || i.id === id || i.id === String(id) || i[idField] === String(id);
+        return match;
+    });
+
+    // Additional debug logging
     if (!item) {
-        showToast('Data tidak ditemukan', 'error');
+        console.error('❌ Item NOT FOUND:', {
+            searchId: id,
+            idField: idField,
+            allItems: currentData.map(i => ({
+                id: i.id,
+                specificId: i[idField],
+                name: i.name
+            }))
+        });
+        showToast('Data tidak ditemukan. Cek console untuk detail.', 'error');
         return;
     }
+
+    console.log('✅ Item FOUND:', item);
 
     // Use the actual ID that exists in the item
     editingId = item[idField] || item.id;

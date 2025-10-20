@@ -705,7 +705,9 @@ export const MasterData = {
             if (error) throw error;
             return transformMasterDataItem(data, 'jobTitle');
         }
-        return await indexedDB.db.jobTitles.update(id, { name });
+        // Dexie: use where().modify() for non-primary key fields
+        await indexedDB.db.jobTitles.where('jobTitleId').equals(id).modify({ name });
+        return await indexedDB.db.jobTitles.where('jobTitleId').equals(id).first();
     },
 
     async updateDepartment(id, name) {
@@ -721,7 +723,9 @@ export const MasterData = {
             if (error) throw error;
             return transformMasterDataItem(data, 'department');
         }
-        return await indexedDB.db.departments.update(id, { name });
+        // Dexie: use where().modify() for non-primary key fields
+        await indexedDB.db.departments.where('departmentId').equals(id).modify({ name });
+        return await indexedDB.db.departments.where('departmentId').equals(id).first();
     },
 
     async updateVendor(id, name) {
@@ -737,7 +741,9 @@ export const MasterData = {
             if (error) throw error;
             return transformMasterDataItem(data, 'vendor');
         }
-        return await indexedDB.db.vendors.update(id, { name });
+        // Dexie: use where().modify() for non-primary key fields
+        await indexedDB.db.vendors.where('vendorId').equals(id).modify({ name });
+        return await indexedDB.db.vendors.where('vendorId').equals(id).first();
     },
 
     async deleteJobTitle(id) {
