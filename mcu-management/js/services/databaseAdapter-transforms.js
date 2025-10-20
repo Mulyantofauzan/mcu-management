@@ -37,6 +37,7 @@ export function transformEmployee(emp) {
         vendorName: emp.vendor_name,
         isActive: emp.is_active,
         activeStatus: emp.is_active ? 'Active' : 'Inactive', // alias
+        inactiveReason: emp.inactive_reason,
         deletedAt: emp.deleted_at,
         createdAt: emp.created_at,
         updatedAt: emp.updated_at
@@ -94,13 +95,21 @@ export function transformMCUChange(change) {
 }
 
 // Transform MasterData item: Supabase → App format
-export function transformMasterDataItem(item) {
+// Note: The specific ID field (jobTitleId, departmentId, vendorId) is added by the adapter
+export function transformMasterDataItem(item, type) {
     if (!item) return item;
-    return {
+    const transformed = {
         id: item.id,
         name: item.name,
         createdAt: item.created_at
     };
+
+    // Add type-specific ID field for backward compatibility with IndexedDB format
+    if (type === 'jobTitle') transformed.jobTitleId = item.id;
+    if (type === 'department') transformed.departmentId = item.id;
+    if (type === 'vendor') transformed.vendorId = item.id;
+
+    return transformed;
 }
 
 // Transform ActivityLog: Supabase → App format

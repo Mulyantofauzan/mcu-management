@@ -120,6 +120,7 @@ export const Users = {
             if (updates.displayName) updateData.display_name = updates.displayName;
             if (updates.role) updateData.role = updates.role;
             if (updates.lastLogin !== undefined) updateData.last_login = updates.lastLogin;
+            if (updates.updatedAt) updateData.updated_at = updates.updatedAt;
 
             const { data, error } = await supabase
                 .from('users')
@@ -132,6 +133,20 @@ export const Users = {
             return transformUser(data);
         }
         return await indexedDB.db.users.where('userId').equals(userId).modify(updates);
+    },
+
+    async delete(userId) {
+        if (useSupabase) {
+            const supabase = getSupabaseClient();
+            const { error } = await supabase
+                .from('users')
+                .delete()
+                .eq('user_id', userId);
+
+            if (error) throw error;
+            return true;
+        }
+        return await indexedDB.db.users.where('userId').equals(userId).delete();
     }
 };
 
@@ -248,6 +263,7 @@ export const Employees = {
             if (updates.employeeType) updateData.employee_type = updates.employeeType;
             if (updates.employmentStatus) updateData.employee_type = updates.employmentStatus;
             if (updates.vendorName !== undefined) updateData.vendor_name = updates.vendorName;
+            if (updates.inactiveReason !== undefined) updateData.inactive_reason = updates.inactiveReason;
 
             // Handle active status (multiple formats)
             if (updates.isActive !== undefined) {
@@ -257,6 +273,7 @@ export const Employees = {
             }
 
             if (updates.deletedAt !== undefined) updateData.deleted_at = updates.deletedAt;
+            if (updates.updatedAt) updateData.updated_at = updates.updatedAt;
 
             const { data, error } = await supabase
                 .from('employees')
@@ -578,7 +595,7 @@ export const MasterData = {
                 .order('name', { ascending: true });
 
             if (error) throw error;
-            return data.map(transformMasterDataItem);
+            return data.map(item => transformMasterDataItem(item, 'jobTitle'));
         }
         return await indexedDB.db.jobTitles.toArray();
     },
@@ -592,7 +609,7 @@ export const MasterData = {
                 .order('name', { ascending: true });
 
             if (error) throw error;
-            return data.map(transformMasterDataItem);
+            return data.map(item => transformMasterDataItem(item, 'department'));
         }
         return await indexedDB.db.departments.toArray();
     },
@@ -606,7 +623,7 @@ export const MasterData = {
                 .order('name', { ascending: true });
 
             if (error) throw error;
-            return data.map(transformMasterDataItem);
+            return data.map(item => transformMasterDataItem(item, 'vendor'));
         }
         return await indexedDB.db.vendors.toArray();
     },

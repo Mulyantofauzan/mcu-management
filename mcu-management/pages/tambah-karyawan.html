@@ -148,7 +148,9 @@
 
                         <div>
                             <label class="label">Jabatan <span class="text-danger">*</span></label>
-                            <select id="emp-job" class="input" required></select>
+                            <input type="text" id="emp-job" list="job-list" class="input" placeholder="Ketik untuk mencari..." required autocomplete="off" />
+                            <datalist id="job-list"></datalist>
+                            <input type="hidden" id="emp-job-id" required />
                         </div>
 
                         <div>

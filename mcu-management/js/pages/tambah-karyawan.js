@@ -47,27 +47,34 @@ async function loadMasterData() {
 }
 
 function populateDropdowns() {
-    // Job Titles - PERFORMANCE & SECURITY FIX: Build HTML once, use DocumentFragment
-    const jobSelect = document.getElementById('emp-job');
-    jobSelect.innerHTML = ''; // Clear existing
+    // Job Titles - Searchable datalist
+    const jobDatalist = document.getElementById('job-list');
+    const jobInput = document.getElementById('emp-job');
+    jobDatalist.innerHTML = ''; // Clear existing
 
     const jobFragment = document.createDocumentFragment();
 
-    // Add default option
-    const defaultJobOption = document.createElement('option');
-    defaultJobOption.value = '';
-    defaultJobOption.textContent = 'Pilih...';
-    jobFragment.appendChild(defaultJobOption);
-
-    // Add all job titles
+    // Add all job titles to datalist
     jobTitles.forEach(job => {
         const option = document.createElement('option');
-        option.value = job.jobTitleId;
+        option.value = job.name;  // Display name in input
+        option.setAttribute('data-id', job.jobTitleId);  // Store ID
         option.textContent = job.name;  // SAFE: textContent auto-escapes
         jobFragment.appendChild(option);
     });
 
-    jobSelect.appendChild(jobFragment);  // Single DOM operation
+    jobDatalist.appendChild(jobFragment);  // Single DOM operation
+
+    // Handle job selection - update hidden ID field when user selects from datalist
+    jobInput.addEventListener('input', function() {
+        const selectedName = this.value;
+        const job = jobTitles.find(j => j.name === selectedName);
+        if (job) {
+            document.getElementById('emp-job-id').value = job.jobTitleId;
+        } else {
+            document.getElementById('emp-job-id').value = '';
+        }
+    });
 
     // Departments - Same approach
     const deptSelect = document.getElementById('emp-dept');
@@ -170,7 +177,7 @@ window.handleAddEmployee = async function(event) {
     try {
         const employeeData = {
             name: document.getElementById('emp-name').value,
-            jobTitleId: document.getElementById('emp-job').value,
+            jobTitleId: document.getElementById('emp-job-id').value,  // Use hidden field with ID
             departmentId: document.getElementById('emp-dept').value,
             birthDate: document.getElementById('emp-birthdate').value,
             bloodType: document.getElementById('emp-blood').value,

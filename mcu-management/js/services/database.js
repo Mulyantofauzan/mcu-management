@@ -93,9 +93,13 @@ class DatabaseService {
     async delete(tableName, id) {
         const adp = await getAdapter();
         switch(tableName) {
+            case 'users': return await adp.Users.delete(id);
             case 'employees': return await adp.Employees.softDelete(id);
             case 'mcus': return await adp.MCUs.softDelete(id);
             case 'mcuChanges': return await adp.MCUChanges.delete(id);
+            case 'jobTitles': return await adp.MasterData.deleteJobTitle(id);
+            case 'departments': return await adp.MasterData.deleteDepartment(id);
+            case 'vendors': return await adp.MasterData.deleteVendor(id);
             default: throw new Error(`Delete not supported for: ${tableName}`);
         }
     }
