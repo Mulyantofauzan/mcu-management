@@ -101,16 +101,18 @@ window.closeCrudModal = function() {
 
 window.editItem = async function(id) {
     const idField = currentTab === 'jobTitles' ? 'jobTitleId' : currentTab === 'departments' ? 'departmentId' : 'vendorId';
-    const item = currentData.find(i => i[idField] === id);
+    // Try to find by specific ID field first, then fallback to generic 'id'
+    const item = currentData.find(i => i[idField] === id || i.id === id);
 
     if (!item) {
         showToast('Data tidak ditemukan', 'error');
         return;
     }
 
-    editingId = id;
+    // Use the actual ID that exists in the item
+    editingId = item[idField] || item.id;
     document.getElementById('modal-title').textContent = `Edit ${tabConfig[currentTab].title}`;
-    document.getElementById('item-id').value = id;
+    document.getElementById('item-id').value = editingId;
     document.getElementById('item-name').value = item.name;
 
     openModal('crud-modal');

@@ -703,7 +703,7 @@ export const MasterData = {
                 .single();
 
             if (error) throw error;
-            return transformMasterDataItem(data);
+            return transformMasterDataItem(data, 'jobTitle');
         }
         return await indexedDB.db.jobTitles.update(id, { name });
     },
@@ -719,7 +719,7 @@ export const MasterData = {
                 .single();
 
             if (error) throw error;
-            return transformMasterDataItem(data);
+            return transformMasterDataItem(data, 'department');
         }
         return await indexedDB.db.departments.update(id, { name });
     },
@@ -735,7 +735,7 @@ export const MasterData = {
                 .single();
 
             if (error) throw error;
-            return transformMasterDataItem(data);
+            return transformMasterDataItem(data, 'vendor');
         }
         return await indexedDB.db.vendors.update(id, { name });
     },
