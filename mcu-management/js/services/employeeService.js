@@ -93,20 +93,21 @@ class EmployeeService {
   }
 
   async permanentDelete(employeeId) {
-    // Delete all associated MCU records
+    // Delete all associated MCU records (hard delete)
     const mcus = await database.query('mcus', mcu => mcu.employeeId === employeeId);
     for (const mcu of mcus) {
-      await database.delete('mcus', mcu.mcuId);
-
-      // Delete associated change records
+      // Delete associated change records first
       const changes = await database.query('mcuChanges', change => change.mcuId === mcu.mcuId);
       for (const change of changes) {
-        await database.delete('mcuChanges', change.changeId);
+        await database.hardDelete('mcuChanges', change.changeId || change.id);
       }
+
+      // Hard delete MCU
+      await database.hardDelete('mcus', mcu.mcuId);
     }
 
-    // Delete employee
-    await database.delete('employees', employeeId);
+    // Hard delete employee
+    await database.hardDelete('employees', employeeId);
     return true;
   }
 

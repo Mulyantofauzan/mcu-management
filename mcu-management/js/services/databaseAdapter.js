@@ -289,7 +289,11 @@ export const Employees = {
         return await indexedDB.db.employees.where('employeeId').equals(employeeId).modify(updates);
     },
 
-    async delete(employeeId) {
+    async softDelete(employeeId) {
+        return await this.update(employeeId, { deletedAt: new Date().toISOString() });
+    },
+
+    async hardDelete(employeeId) {
         if (useSupabase) {
             const supabase = getSupabaseClient();
             const { error } = await supabase
@@ -301,6 +305,11 @@ export const Employees = {
             return true;
         }
         return await indexedDB.db.employees.where('employeeId').equals(employeeId).delete();
+    },
+
+    async delete(employeeId) {
+        // Alias for hardDelete for backward compatibility
+        return await this.hardDelete(employeeId);
     }
 };
 
@@ -459,7 +468,11 @@ export const MCUs = {
         return await indexedDB.db.mcus.where('mcuId').equals(mcuId).modify(updates);
     },
 
-    async delete(mcuId) {
+    async softDelete(mcuId) {
+        return await this.update(mcuId, { deletedAt: new Date().toISOString() });
+    },
+
+    async hardDelete(mcuId) {
         if (useSupabase) {
             const supabase = getSupabaseClient();
             const { error } = await supabase
@@ -471,6 +484,11 @@ export const MCUs = {
             return true;
         }
         return await indexedDB.db.mcus.where('mcuId').equals(mcuId).delete();
+    },
+
+    async delete(mcuId) {
+        // Alias for hardDelete for backward compatibility
+        return await this.hardDelete(mcuId);
     }
 };
 

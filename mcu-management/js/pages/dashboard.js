@@ -715,8 +715,8 @@ async function updateActivityList() {
   const container = document.getElementById('activity-list');
   const activities = await database.getActivityLog(5);
 
-  // Handle null/undefined activities
-  if (!activities || activities.length === 0) {
+  // Handle null/undefined/non-array activities
+  if (!activities || !Array.isArray(activities) || activities.length === 0) {
     container.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">Belum ada aktivitas</p>';
     return;
   }

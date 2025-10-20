@@ -73,8 +73,8 @@ function renderTable() {
 
     currentData.forEach((item, index) => {
         const idField = currentTab === 'jobTitles' ? 'jobTitleId' : currentTab === 'departments' ? 'departmentId' : 'vendorId';
-        // Get actual ID - prefer specific field, fallback to generic 'id'
-        const actualId = item[idField] || item.id;
+        // Get actual ID - prefer generic id (Supabase), fallback to specific field (IndexedDB)
+        const actualId = item.id || item[idField];
 
         // Debug log for troubleshooting
         if (index === 0) {
@@ -82,7 +82,8 @@ function renderTable() {
                 tab: currentTab,
                 idField: idField,
                 item: item,
-                actualId: actualId
+                actualId: actualId,
+                actualIdType: typeof actualId
             });
         }
 
@@ -90,8 +91,8 @@ function renderTable() {
         html += `<td><span class="text-sm text-gray-600">${actualId || 'N/A'}</span></td>`;
         html += `<td><span class="font-medium text-gray-900">${item.name || 'N/A'}</span></td>`;
         html += `<td><div class="flex gap-2">`;
-        html += `<button onclick="window.editItem('${actualId}')" class="btn btn-sm btn-secondary">Edit</button>`;
-        html += `<button onclick="window.deleteItem('${actualId}')" class="btn btn-sm btn-danger">Hapus</button>`;
+        html += `<button onclick="window.editItem(${actualId})" class="btn btn-sm btn-secondary">Edit</button>`;
+        html += `<button onclick="window.deleteItem(${actualId})" class="btn btn-sm btn-danger">Hapus</button>`;
         html += `</div></td>`;
         html += '</tr>';
     });
@@ -132,26 +133,38 @@ window.closeCrudModal = function() {
 window.editItem = async function(id) {
     console.log('🔍 Edit Item Called:', {
         id: id,
+        idType: typeof id,
         currentTab: currentTab,
         currentDataLength: currentData.length
     });
 
     const idField = currentTab === 'jobTitles' ? 'jobTitleId' : currentTab === 'departments' ? 'departmentId' : 'vendorId';
 
-    // Try multiple ways to find the item
+    // Convert id to both string and number for comparison
+    const idString = String(id);
+    const idNumber = parseInt(id, 10);
+
+    // Try multiple ways to find the item (Supabase uses numeric id, IndexedDB uses string IDs)
     let item = currentData.find(i => {
-        const match = i[idField] === id || i.id === id || i.id === String(id) || i[idField] === String(id);
-        return match;
+        // Check generic id field (used by both Supabase and IndexedDB)
+        if (i.id === idNumber || i.id === id || i.id === idString) return true;
+        // Check specific ID field (jobTitleId, departmentId, vendorId)
+        if (i[idField] === idNumber || i[idField] === id || i[idField] === idString) return true;
+        return false;
     });
 
     // Additional debug logging
     if (!item) {
         console.error('❌ Item NOT FOUND:', {
             searchId: id,
+            searchIdString: idString,
+            searchIdNumber: idNumber,
             idField: idField,
             allItems: currentData.map(i => ({
                 id: i.id,
+                idType: typeof i.id,
                 specificId: i[idField],
+                specificIdType: typeof i[idField],
                 name: i.name
             }))
         });
@@ -161,8 +174,8 @@ window.editItem = async function(id) {
 
     console.log('✅ Item FOUND:', item);
 
-    // Use the actual ID that exists in the item
-    editingId = item[idField] || item.id;
+    // Use the actual ID that exists in the item (prefer generic id, fallback to specific field)
+    editingId = item.id || item[idField];
     document.getElementById('modal-title').textContent = `Edit ${tabConfig[currentTab].title}`;
     document.getElementById('item-id').value = editingId;
     document.getElementById('item-name').value = item.name;

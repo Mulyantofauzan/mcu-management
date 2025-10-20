@@ -39,9 +39,10 @@ function updateUserInfo() {
 
 async function loadData() {
     try {
-        employees = await employeeService.getAll();
+        // IMPORTANT: Load master data FIRST before employees
         jobTitles = await masterDataService.getAllJobTitles();
         departments = await masterDataService.getAllDepartments();
+        employees = await employeeService.getAll();
 
         // Enrich employee data with IDs (for Supabase which only stores names)
         employees = employees.map(emp => enrichEmployeeWithIds(emp));

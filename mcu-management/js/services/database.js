@@ -104,6 +104,20 @@ class DatabaseService {
         }
     }
 
+    async hardDelete(tableName, id) {
+        const adp = await getAdapter();
+        switch(tableName) {
+            case 'users': return await adp.Users.delete(id);
+            case 'employees': return await adp.Employees.hardDelete(id);
+            case 'mcus': return await adp.MCUs.hardDelete(id);
+            case 'mcuChanges': return await adp.MCUChanges.delete(id);
+            case 'jobTitles': return await adp.MasterData.deleteJobTitle(id);
+            case 'departments': return await adp.MasterData.deleteDepartment(id);
+            case 'vendors': return await adp.MasterData.deleteVendor(id);
+            default: throw new Error(`Hard delete not supported for: ${tableName}`);
+        }
+    }
+
     async get(tableName, id) {
         const adp = await getAdapter();
         switch(tableName) {
