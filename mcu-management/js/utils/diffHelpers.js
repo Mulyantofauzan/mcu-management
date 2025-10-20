@@ -109,6 +109,7 @@ export function diffAndSaveHistory(oldMCU, newMCU, user, mcuId) {
         changedAt: getCurrentTimestamp(),
         changedBy: user?.userId || user?.username || 'system',
         fieldChanged: field,
+        fieldName: field, // Required by Supabase schema
         fieldLabel: getFieldLabel(field),
         oldValue: oldMCU[field],
         newValue: newMCU[field],
@@ -157,6 +158,7 @@ export function createInitialChangeEntry(entityType, entityId, user) {
     changedAt: getCurrentTimestamp(),
     changedBy: user?.userId || user?.username || 'system',
     fieldChanged: 'created',
+    fieldName: 'created', // Required by Supabase schema
     fieldLabel: 'Dibuat',
     oldValue: null,
     newValue: 'Record created',

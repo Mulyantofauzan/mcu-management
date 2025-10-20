@@ -46,7 +46,7 @@ class MCUService {
 
       createdAt: getCurrentTimestamp(),
       updatedAt: getCurrentTimestamp(),
-      lastUpdatedTimestamp: getCurrentTimestamp(),
+      // Note: lastUpdatedTimestamp removed - use updatedAt instead (Supabase standard)
       deletedAt: null
     };
 
@@ -78,11 +78,13 @@ class MCUService {
     const mcus = await this.getByEmployee(employeeId);
     if (mcus.length === 0) return null;
 
-    // Sort by mcuDate desc, then by lastUpdatedTimestamp desc
+    // Sort by mcuDate desc, then by updatedAt desc (fallback to lastUpdatedTimestamp for backward compat)
     mcus.sort((a, b) => {
       const dateCompare = new Date(b.mcuDate) - new Date(a.mcuDate);
       if (dateCompare !== 0) return dateCompare;
-      return new Date(b.lastUpdatedTimestamp) - new Date(a.lastUpdatedTimestamp);
+      const timestampA = a.lastUpdatedTimestamp || a.updatedAt;
+      const timestampB = b.lastUpdatedTimestamp || b.updatedAt;
+      return new Date(timestampB) - new Date(timestampA);
     });
 
     return mcus[0];
@@ -102,11 +104,13 @@ class MCUService {
       const employeeMCUs = mcus.filter(mcu => mcu.employeeId === employee.employeeId);
 
       if (employeeMCUs.length > 0) {
-        // Sort by mcuDate desc, then by lastUpdatedTimestamp desc
+        // Sort by mcuDate desc, then by updatedAt desc (fallback to lastUpdatedTimestamp for backward compat)
         employeeMCUs.sort((a, b) => {
           const dateCompare = new Date(b.mcuDate) - new Date(a.mcuDate);
           if (dateCompare !== 0) return dateCompare;
-          return new Date(b.lastUpdatedTimestamp) - new Date(a.lastUpdatedTimestamp);
+          const timestampA = a.lastUpdatedTimestamp || a.updatedAt;
+          const timestampB = b.lastUpdatedTimestamp || b.updatedAt;
+          return new Date(timestampB) - new Date(timestampA);
         });
 
         latestMap.set(employee.employeeId, employeeMCUs[0]);
@@ -122,8 +126,8 @@ class MCUService {
 
     const updateData = {
       ...updates,
-      updatedAt: getCurrentTimestamp(),
-      lastUpdatedTimestamp: getCurrentTimestamp()
+      updatedAt: getCurrentTimestamp()
+      // Note: lastUpdatedTimestamp removed - use updatedAt instead (Supabase standard)
     };
 
     await database.update('mcus', mcuId, updateData);
@@ -149,8 +153,8 @@ class MCUService {
 
     // Prepare update data - only update final fields, preserve initial fields
     const updateData = {
-      updatedAt: getCurrentTimestamp(),
-      lastUpdatedTimestamp: getCurrentTimestamp()
+      updatedAt: getCurrentTimestamp()
+      // Note: lastUpdatedTimestamp removed - use updatedAt instead (Supabase standard)
     };
 
     // Only update finalResult and status if provided

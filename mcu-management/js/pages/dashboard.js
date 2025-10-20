@@ -184,8 +184,13 @@ function updateDepartmentChart(filteredMCUs) {
   filteredMCUs.forEach(mcu => {
     const employee = employees.find(e => e.employeeId === mcu.employeeId);
     if (employee) {
-      const dept = departments.find(d => d.departmentId === employee.departmentId);
-      if (dept) {
+      // Match by departmentId (IndexedDB) OR by department name (Supabase)
+      const dept = departments.find(d =>
+        d.departmentId === employee.departmentId || // IndexedDB format
+        d.name === employee.department || // Supabase format (stores name directly)
+        (d.id === employee.departmentId && employee.departmentId) // Supabase ID matching
+      );
+      if (dept && deptCounts[dept.name] !== undefined) {
         deptCounts[dept.name]++;
       }
     }
