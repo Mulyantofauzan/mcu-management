@@ -71,9 +71,18 @@ class IDGenerator {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (uuidRegex.test(id)) return true;
 
-    // Check PREFIX-YYYYMMDD-XXXX format
-    const regex = new RegExp(`^${prefix}-\\d{8}-\\d{4}$`);
-    return regex.test(id);
+    // Check old format: PREFIX-YYYYMMDD-XXXX
+    const oldFormatRegex = new RegExp(`^${prefix}-\\d{8}-\\d{4}$`);
+    if (oldFormatRegex.test(id)) return true;
+
+    // Check new format: PREFIX-YYYYMMDD-timestamp-random OR PREFIX-timestamp-random
+    const newFormatRegex = new RegExp(`^${prefix}-[a-z0-9]+-[A-Z0-9]+$`, 'i');
+    if (newFormatRegex.test(id)) return true;
+
+    // Check CHG format with UUID
+    if (prefix === 'CHG' && id.startsWith('CHG-')) return true;
+
+    return false;
   }
 }
 
@@ -81,36 +90,55 @@ class IDGenerator {
 const idGenerator = new IDGenerator();
 
 // Export functions
+// NOTE: Using UUID to prevent conflicts with soft-deleted records
 export function generateEmployeeId() {
-  return idGenerator.generate('EMP');
+  // Use timestamp-based ID for better readability and sorting
+  const dateStr = idGenerator.getCurrentDate();
+  const timestamp = Date.now().toString(36); // Convert to base36 for shorter string
+  const random = Math.random().toString(36).substr(2, 5).toUpperCase();
+  return `EMP-${dateStr}-${timestamp}-${random}`;
 }
 
 export function generateMCUId() {
-  return idGenerator.generate('MCU');
+  const dateStr = idGenerator.getCurrentDate();
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substr(2, 5).toUpperCase();
+  return `MCU-${dateStr}-${timestamp}-${random}`;
 }
 
 export function generateChangeId() {
-  return idGenerator.generate('CHG');
+  // For changes, UUID is fine as they're rarely displayed
+  return `CHG-${idGenerator.generateUUID()}`;
 }
 
 export function generateJobTitleId() {
-  return idGenerator.generate('JOB');
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substr(2, 5).toUpperCase();
+  return `JOB-${timestamp}-${random}`;
 }
 
 export function generateDepartmentId() {
-  return idGenerator.generate('DEPT');
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substr(2, 5).toUpperCase();
+  return `DEPT-${timestamp}-${random}`;
 }
 
 export function generateStatusId() {
-  return idGenerator.generate('STS');
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substr(2, 5).toUpperCase();
+  return `STS-${timestamp}-${random}`;
 }
 
 export function generateVendorId() {
-  return idGenerator.generate('VND');
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substr(2, 5).toUpperCase();
+  return `VND-${timestamp}-${random}`;
 }
 
 export function generateUserId() {
-  return idGenerator.generate('USR');
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substr(2, 5).toUpperCase();
+  return `USR-${timestamp}-${random}`;
 }
 
 export function generateUUID() {
