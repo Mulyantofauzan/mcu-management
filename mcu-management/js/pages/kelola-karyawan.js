@@ -60,11 +60,17 @@ async function loadData() {
 function enrichEmployeeWithIds(emp) {
     if (!emp.jobTitleId && emp.jobTitle) {
         const job = jobTitles.find(j => j.name === emp.jobTitle);
-        if (job) emp.jobTitleId = job.jobTitleId;
+        if (job) {
+            // Use id (Supabase) or jobTitleId (IndexedDB)
+            emp.jobTitleId = job.id || job.jobTitleId;
+        }
     }
     if (!emp.departmentId && emp.department) {
         const dept = departments.find(d => d.name === emp.department);
-        if (dept) emp.departmentId = dept.departmentId;
+        if (dept) {
+            // Use id (Supabase) or departmentId (IndexedDB)
+            emp.departmentId = dept.id || dept.departmentId;
+        }
     }
     return emp;
 }
@@ -91,8 +97,17 @@ function renderTable() {
     }
 
     // PERFORMANCE FIX: Build lookup Maps ONCE - O(n) instead of O(n*m)
-    const jobMap = new Map(jobTitles.map(j => [j.jobTitleId, j]));
-    const deptMap = new Map(departments.map(d => [d.departmentId, d]));
+    // Support both Supabase (id) and IndexedDB (jobTitleId/departmentId)
+    const jobMap = new Map();
+    jobTitles.forEach(j => {
+        const key = j.id || j.jobTitleId;
+        jobMap.set(key, j);
+    });
+    const deptMap = new Map();
+    departments.forEach(d => {
+        const key = d.id || d.departmentId;
+        deptMap.set(key, d);
+    });
 
     // Pagination
     const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);

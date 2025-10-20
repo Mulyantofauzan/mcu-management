@@ -445,6 +445,9 @@ export const MCUs = {
                 finalResult: 'final_result',
                 finalNotes: 'final_notes',
                 status: 'status',
+                // Timestamps
+                createdAt: 'created_at',
+                updatedAt: 'updated_at',
                 deletedAt: 'deleted_at',
                 createdBy: 'created_by',
                 updatedBy: 'updated_by'

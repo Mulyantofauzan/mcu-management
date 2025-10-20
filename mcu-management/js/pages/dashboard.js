@@ -73,12 +73,34 @@ function setDateRange(startDate, endDate) {
   currentDateRange = { startDate, endDate };
 }
 
+// Helper: Add jobTitleId and departmentId based on names (for Supabase compatibility)
+function enrichEmployeeWithIds(emp, jobTitles, departments) {
+  if (!emp.jobTitleId && emp.jobTitle) {
+    const job = jobTitles.find(j => j.name === emp.jobTitle);
+    if (job) {
+      // Use id (Supabase) or jobTitleId (IndexedDB)
+      emp.jobTitleId = job.id || job.jobTitleId;
+    }
+  }
+  if (!emp.departmentId && emp.department) {
+    const dept = departments.find(d => d.name === emp.department);
+    if (dept) {
+      // Use id (Supabase) or departmentId (IndexedDB)
+      emp.departmentId = dept.id || dept.departmentId;
+    }
+  }
+  return emp;
+}
+
 async function loadData() {
   try {
-    // Load all data
-    employees = await employeeService.getAll();
+    // IMPORTANT: Load master data FIRST before employees
     departments = await masterDataService.getAllDepartments();
     const jobTitles = await masterDataService.getAllJobTitles();
+    employees = await employeeService.getAll();
+
+    // Enrich employees with IDs (for Supabase compatibility)
+    employees = employees.map(emp => enrichEmployeeWithIds(emp, jobTitles, departments));
 
     // Get latest MCU per employee
     latestMCUs = await mcuService.getLatestMCUPerEmployee();
