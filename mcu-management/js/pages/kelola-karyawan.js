@@ -44,19 +44,8 @@ async function loadData() {
         departments = await masterDataService.getAllDepartments();
         employees = await employeeService.getAll();
 
-        // DEBUG: Log raw data from Supabase
-        console.log('📊 DEBUG - Raw Data:', {
-            jobTitles: jobTitles,
-            departments: departments,
-            employeesSample: employees[0]
-        });
-
         // Enrich employee data with IDs (for Supabase which only stores names)
         employees = employees.map(emp => enrichEmployeeWithIds(emp));
-
-        // DEBUG: Log enriched data
-        console.log('📊 DEBUG - Enriched Employee Sample:', employees[0]);
-
         filteredEmployees = [...employees];
 
         updateStats();
@@ -70,39 +59,21 @@ async function loadData() {
 // Helper: Add jobTitleId and departmentId based on names (for Supabase)
 // Supabase stores job_title and department as names, we need IDs for lookups
 function enrichEmployeeWithIds(emp) {
-    // DEBUG: Log before enrichment
-    const debugBefore = {
-        name: emp.name,
-        jobTitle: emp.jobTitle,
-        jobTitleId: emp.jobTitleId,
-        department: emp.department,
-        departmentId: emp.departmentId
-    };
-
-    if (!emp.jobTitleId && emp.jobTitle) {
+    // Match job title by name to get ID
+    if (emp.jobTitle && !emp.jobTitleId) {
         const job = jobTitles.find(j => j.name === emp.jobTitle);
         if (job) {
-            emp.jobTitleId = job.id; // Supabase uses numeric id
-            console.log(`✅ Found job: ${emp.jobTitle} -> ID: ${job.id}`);
-        } else {
-            console.warn(`⚠️ Job NOT found: ${emp.jobTitle}`, { availableJobs: jobTitles.map(j => j.name) });
-        }
-    }
-    if (!emp.departmentId && emp.department) {
-        const dept = departments.find(d => d.name === emp.department);
-        if (dept) {
-            emp.departmentId = dept.id; // Supabase uses numeric id
-            console.log(`✅ Found dept: ${emp.department} -> ID: ${dept.id}`);
-        } else {
-            console.warn(`⚠️ Dept NOT found: ${emp.department}`, { availableDepts: departments.map(d => d.name) });
+            emp.jobTitleId = job.id;
         }
     }
 
-    // DEBUG: Log after enrichment
-    console.log('🔄 Enrichment:', debugBefore, '→', {
-        jobTitleId: emp.jobTitleId,
-        departmentId: emp.departmentId
-    });
+    // Match department by name to get ID
+    if (emp.department && !emp.departmentId) {
+        const dept = departments.find(d => d.name === emp.department);
+        if (dept) {
+            emp.departmentId = dept.id;
+        }
+    }
 
     return emp;
 }

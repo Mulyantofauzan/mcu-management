@@ -195,19 +195,23 @@ export const Employees = {
             const supabase = getSupabaseClient();
 
             // Resolve job title ID to name
-            let jobTitleName = employee.jobTitle || '';
-            if (employee.jobTitleId && !employee.jobTitle) {
+            let jobTitleName = '';
+            if (employee.jobTitleId) {
                 const jobTitles = await MasterData.getJobTitles();
                 const jt = jobTitles.find(j => j.id === employee.jobTitleId || j.jobTitleId === employee.jobTitleId);
-                jobTitleName = jt ? jt.name : employee.jobTitleId;
+                jobTitleName = jt ? jt.name : (employee.jobTitle || String(employee.jobTitleId));
+            } else {
+                jobTitleName = employee.jobTitle || '';
             }
 
             // Resolve department ID to name
-            let departmentName = employee.department || '';
-            if (employee.departmentId && !employee.department) {
+            let departmentName = '';
+            if (employee.departmentId) {
                 const departments = await MasterData.getDepartments();
                 const dept = departments.find(d => d.id === employee.departmentId || d.departmentId === employee.departmentId);
-                departmentName = dept ? dept.name : employee.departmentId;
+                departmentName = dept ? dept.name : (employee.department || String(employee.departmentId));
+            } else {
+                departmentName = employee.department || '';
             }
 
             const { data, error } = await supabase
@@ -242,21 +246,21 @@ export const Employees = {
             if (updates.name) updateData.name = updates.name;
 
             // Resolve job title ID to name if provided
-            if (updates.jobTitle) {
-                updateData.job_title = updates.jobTitle;
-            } else if (updates.jobTitleId) {
+            if (updates.jobTitleId) {
                 const jobTitles = await MasterData.getJobTitles();
                 const jt = jobTitles.find(j => j.id === updates.jobTitleId || j.jobTitleId === updates.jobTitleId);
-                updateData.job_title = jt ? jt.name : updates.jobTitleId;
+                updateData.job_title = jt ? jt.name : (updates.jobTitle || String(updates.jobTitleId));
+            } else if (updates.jobTitle) {
+                updateData.job_title = updates.jobTitle;
             }
 
             // Resolve department ID to name if provided
-            if (updates.department) {
-                updateData.department = updates.department;
-            } else if (updates.departmentId) {
+            if (updates.departmentId) {
                 const departments = await MasterData.getDepartments();
                 const dept = departments.find(d => d.id === updates.departmentId || d.departmentId === updates.departmentId);
-                updateData.department = dept ? dept.name : updates.departmentId;
+                updateData.department = dept ? dept.name : (updates.department || String(updates.departmentId));
+            } else if (updates.department) {
+                updateData.department = updates.department;
             }
 
             if (updates.dateOfBirth || updates.birthDate) updateData.date_of_birth = updates.dateOfBirth || updates.birthDate;
