@@ -198,7 +198,9 @@ export const Employees = {
             let jobTitleName = '';
             if (employee.jobTitleId) {
                 const jobTitles = await MasterData.getJobTitles();
-                const jt = jobTitles.find(j => j.id === employee.jobTitleId || j.jobTitleId === employee.jobTitleId);
+                // Convert to number for comparison (form inputs are strings)
+                const jobTitleIdNum = parseInt(employee.jobTitleId, 10);
+                const jt = jobTitles.find(j => j.id === jobTitleIdNum || j.id === employee.jobTitleId || j.jobTitleId === employee.jobTitleId);
                 jobTitleName = jt ? jt.name : (employee.jobTitle || String(employee.jobTitleId));
             } else {
                 jobTitleName = employee.jobTitle || '';
@@ -208,7 +210,9 @@ export const Employees = {
             let departmentName = '';
             if (employee.departmentId) {
                 const departments = await MasterData.getDepartments();
-                const dept = departments.find(d => d.id === employee.departmentId || d.departmentId === employee.departmentId);
+                // Convert to number for comparison (form inputs are strings)
+                const departmentIdNum = parseInt(employee.departmentId, 10);
+                const dept = departments.find(d => d.id === departmentIdNum || d.id === employee.departmentId || d.departmentId === employee.departmentId);
                 departmentName = dept ? dept.name : (employee.department || String(employee.departmentId));
             } else {
                 departmentName = employee.department || '';
@@ -248,7 +252,9 @@ export const Employees = {
             // Resolve job title ID to name if provided
             if (updates.jobTitleId) {
                 const jobTitles = await MasterData.getJobTitles();
-                const jt = jobTitles.find(j => j.id === updates.jobTitleId || j.jobTitleId === updates.jobTitleId);
+                // Convert to number for comparison (form inputs are strings)
+                const jobTitleIdNum = parseInt(updates.jobTitleId, 10);
+                const jt = jobTitles.find(j => j.id === jobTitleIdNum || j.id === updates.jobTitleId || j.jobTitleId === updates.jobTitleId);
                 updateData.job_title = jt ? jt.name : (updates.jobTitle || String(updates.jobTitleId));
             } else if (updates.jobTitle) {
                 updateData.job_title = updates.jobTitle;
@@ -257,7 +263,9 @@ export const Employees = {
             // Resolve department ID to name if provided
             if (updates.departmentId) {
                 const departments = await MasterData.getDepartments();
-                const dept = departments.find(d => d.id === updates.departmentId || d.departmentId === updates.departmentId);
+                // Convert to number for comparison (form inputs are strings)
+                const departmentIdNum = parseInt(updates.departmentId, 10);
+                const dept = departments.find(d => d.id === departmentIdNum || d.id === updates.departmentId || d.departmentId === updates.departmentId);
                 updateData.department = dept ? dept.name : (updates.department || String(updates.departmentId));
             } else if (updates.department) {
                 updateData.department = updates.department;
