@@ -848,10 +848,11 @@ export const ActivityLog = {
                 .from('activity_log')
                 .insert({
                     user_id: activity.userId,
-                    user_name: activity.userName,
+                    user_name: activity.userName || null,
                     action: activity.action,
-                    target: activity.target,
-                    details: activity.details
+                    target: activity.entityType || activity.target, // Map entityType to target
+                    details: activity.entityId || activity.details, // Map entityId to details
+                    timestamp: activity.timestamp
                 })
                 .select()
                 .single();

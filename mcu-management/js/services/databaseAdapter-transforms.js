@@ -120,6 +120,8 @@ export function transformActivityLog(log) {
         userId: log.user_id,
         userName: log.user_name,
         action: log.action,
+        entityType: log.target, // Map target to entityType (for dashboard backward compat)
+        entityId: log.details, // Map details to entityId (for dashboard backward compat)
         target: log.target,
         details: log.details,
         timestamp: log.timestamp
