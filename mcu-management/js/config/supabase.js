@@ -26,7 +26,7 @@ if (SUPABASE_URL && SUPABASE_ANON_KEY && typeof window.supabase !== 'undefined')
     try {
         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         useSupabase = true;
-        console.log('✅ Supabase client initialized');
+        console.log();
     } catch (error) {
         console.error('❌ Failed to initialize Supabase:', error);
         console.log('📦 Falling back to IndexedDB');

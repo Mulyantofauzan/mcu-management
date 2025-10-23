@@ -33,9 +33,9 @@ if (window.location.hostname === 'localhost' || window.location.hostname === '12
   }
 }
 
-console.log('📦 env-config.js loaded');
+console.log();
 if (window.ENV.SUPABASE_URL && window.ENV.SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
-  console.log('✅ Supabase credentials configured');
+  console.log();
 } else {
-  console.warn('⚠️ Please replace YOUR_SUPABASE_URL and YOUR_SUPABASE_ANON_KEY in env-config.js');
+  console.warn();
 }

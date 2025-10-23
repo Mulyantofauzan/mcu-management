@@ -15,7 +15,7 @@ import { database as indexedDB } from './database-old.js';  // Direct import of 
 const useSupabase = isSupabaseEnabled();
 
 if (useSupabase) {
-    console.log('🚀 Using Supabase as primary database');
+    console.log('🚀 ');
 } else {
     console.log('📦 Using IndexedDB (Dexie) as database');
 }

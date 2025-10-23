@@ -21,7 +21,7 @@ const getAdapter = async () => {
 
 // Check which database is being used
 if (isSupabaseEnabled()) {
-    console.log('🚀 Using Supabase as primary database');
+    console.log();
 } else {
     console.log('📦 Using IndexedDB (Dexie) as fallback database');
 }
