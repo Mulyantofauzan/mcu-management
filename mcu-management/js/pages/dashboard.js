@@ -454,9 +454,19 @@ async function updateMCUTrendChart() {
   if (!ctx) return;
 
   try {
-    // Get all MCUs (not just latest per employee)
+    // Get latest MCU per employee only (same as other charts)
     const allMCUs = await database.getAll("mcus");
     const validMCUs = allMCUs.filter(mcu => !mcu.deletedAt && mcu.mcuDate);
+
+    // Get only the latest MCU per employee
+    const latestMCUsMap = new Map();
+    validMCUs.forEach(mcu => {
+      const existing = latestMCUsMap.get(mcu.employeeId);
+      if (!existing || new Date(mcu.mcuDate) > new Date(existing.mcuDate)) {
+        latestMCUsMap.set(mcu.employeeId, mcu);
+      }
+    });
+    const latestMCUs = Array.from(latestMCUsMap.values());
 
     // Determine date range
     let startDate, endDate;
@@ -484,9 +494,9 @@ async function updateMCUTrendChart() {
       currentMonth.setMonth(currentMonth.getMonth() + 1);
     }
 
-    // Count MCUs per month
+    // Count latest MCUs per month (only counting latest MCU for each employee)
     const monthlyCounts = months.map(monthDate => {
-      return validMCUs.filter(mcu => {
+      return latestMCUs.filter(mcu => {
         const mcuDate = new Date(mcu.mcuDate);
         return mcuDate.getMonth() === monthDate.getMonth() &&
                mcuDate.getFullYear() === monthDate.getFullYear();

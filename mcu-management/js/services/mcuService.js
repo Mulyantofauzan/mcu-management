@@ -56,6 +56,11 @@ class MCUService {
     const initialChange = createInitialChangeEntry('mcu', mcu.mcuId, currentUser);
     await database.add('mcuChanges', initialChange);
 
+    // Log activity
+    if (currentUser) {
+      await database.logActivity('create', 'MCU', mcu.mcuId, currentUser.userId);
+    }
+
     return mcu;
   }
 
@@ -190,6 +195,11 @@ class MCUService {
     const changes = diffAndSaveHistory(oldMCU, newMCU, currentUser, mcuId);
     for (const change of changes) {
       await database.add('mcuChanges', change);
+    }
+
+    // Log activity
+    if (currentUser) {
+      await database.logActivity('update', 'MCU', mcuId, currentUser.userId);
     }
 
     return newMCU;

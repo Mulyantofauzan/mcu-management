@@ -191,6 +191,7 @@ window.handleAddEmployee = async function(event) {
     event.preventDefault();
 
     try {
+        const currentUser = authService.getCurrentUser();
         const employeeData = {
             name: document.getElementById('emp-name').value,
             jobTitleId: document.getElementById('emp-job-id').value,  // Use hidden field with ID
@@ -203,7 +204,7 @@ window.handleAddEmployee = async function(event) {
             inactiveReason: document.getElementById('emp-inactive-reason').value || null
         };
 
-        const newEmployee = await employeeService.create(employeeData);
+        const newEmployee = await employeeService.create(employeeData, currentUser);
 
         showToast('Karyawan berhasil ditambahkan!', 'success');
 

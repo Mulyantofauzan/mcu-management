@@ -224,8 +224,11 @@ window.viewEmployee = async function(employeeId) {
             return;
         }
 
-        const job = jobTitles.find(j => j.jobTitleId === emp.jobTitleId);
-        const dept = departments.find(d => d.departmentId === emp.departmentId);
+        // Enrich employee with IDs (for Supabase which only stores names)
+        const enrichedEmp = enrichEmployeeWithIds(emp);
+
+        const job = jobTitles.find(j => j.id === enrichedEmp.jobTitleId);
+        const dept = departments.find(d => d.id === enrichedEmp.departmentId);
         const age = calculateAge(emp.birthDate);
 
         // Employee info - 2 columns
@@ -291,25 +294,30 @@ window.editEmployee = async function(employeeId) {
             return;
         }
 
+        // Enrich employee with IDs (for Supabase which only stores names)
+        const enrichedEmp = enrichEmployeeWithIds(emp);
+
         // Populate dropdowns
         const jobSelect = document.getElementById('edit-emp-job');
         const deptSelect = document.getElementById('edit-emp-dept');
 
         jobSelect.innerHTML = '<option value="">Pilih...</option>';
         jobTitles.forEach(job => {
-            jobSelect.innerHTML += `<option value="${job.jobTitleId}">${job.name}</option>`;
+            const selected = job.id === enrichedEmp.jobTitleId ? 'selected' : '';
+            jobSelect.innerHTML += `<option value="${job.id}" ${selected}>${job.name}</option>`;
         });
 
         deptSelect.innerHTML = '<option value="">Pilih...</option>';
         departments.forEach(dept => {
-            deptSelect.innerHTML += `<option value="${dept.departmentId}">${dept.name}</option>`;
+            const selected = dept.id === enrichedEmp.departmentId ? 'selected' : '';
+            deptSelect.innerHTML += `<option value="${dept.id}" ${selected}>${dept.name}</option>`;
         });
 
         // Fill form with employee data
         document.getElementById('edit-emp-id').value = emp.employeeId;
         document.getElementById('edit-emp-name').value = emp.name;
-        document.getElementById('edit-emp-job').value = emp.jobTitleId;
-        document.getElementById('edit-emp-dept').value = emp.departmentId;
+        document.getElementById('edit-emp-job').value = enrichedEmp.jobTitleId || '';
+        document.getElementById('edit-emp-dept').value = enrichedEmp.departmentId || '';
         document.getElementById('edit-emp-birthdate').value = emp.birthDate;
         document.getElementById('edit-emp-blood').value = emp.bloodType;
         document.getElementById('edit-emp-status').value = emp.employmentStatus;
@@ -484,8 +492,9 @@ window.viewMCUDetail = async function(mcuId) {
         }
 
         const emp = employees.find(e => e.employeeId === mcu.employeeId);
-        const job = jobTitles.find(j => j.jobTitleId === emp?.jobTitleId);
-        const dept = departments.find(d => d.departmentId === emp?.departmentId);
+        // Note: employees are already enriched in loadData()
+        const job = jobTitles.find(j => j.id === emp?.jobTitleId);
+        const dept = departments.find(d => d.id === emp?.departmentId);
 
         // Fill employee info
         document.getElementById('mcu-detail-emp-name').textContent = emp?.name || '-';

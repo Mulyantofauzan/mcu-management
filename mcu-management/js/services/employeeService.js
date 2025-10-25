@@ -8,7 +8,7 @@ import { generateEmployeeId } from '../utils/idGenerator.js';
 import { getCurrentTimestamp } from '../utils/dateHelpers.js';
 
 class EmployeeService {
-  async create(employeeData) {
+  async create(employeeData, currentUser = null) {
     const employee = {
       employeeId: generateEmployeeId(),
       name: employeeData.name,
@@ -26,6 +26,12 @@ class EmployeeService {
     };
 
     await database.add('employees', employee);
+
+    // Log activity
+    if (currentUser) {
+      await database.logActivity('create', 'Employee', employee.employeeId, currentUser.userId);
+    }
+
     return employee;
   }
 
