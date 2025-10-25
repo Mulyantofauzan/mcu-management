@@ -399,6 +399,9 @@ export const MCUs = {
                     // Examination results (single set, not initial/final)
                     bmi: mcu.bmi,
                     blood_pressure: mcu.bloodPressure,
+                    respiratory_rate: mcu.respiratoryRate,
+                    pulse: mcu.pulse,
+                    temperature: mcu.temperature,
                     vision: mcu.vision,
                     audiometry: mcu.audiometry,
                     spirometry: mcu.spirometry,
@@ -411,6 +414,9 @@ export const MCUs = {
                     treadmill: mcu.treadmill,
                     kidney_liver_function: mcu.kidneyLiverFunction,
                     napza: mcu.napza,
+                    keluhan_utama: mcu.keluhanUtama,
+                    diagnosis_kerja: mcu.diagnosisKerja,
+                    alasan_rujuk: mcu.alasanRujuk,
                     // Initial and final results
                     initial_result: mcu.initialResult,
                     initial_notes: mcu.initialNotes,
@@ -441,6 +447,9 @@ export const MCUs = {
                 // Examination results (single set)
                 bmi: 'bmi',
                 bloodPressure: 'blood_pressure',
+                respiratoryRate: 'respiratory_rate',
+                pulse: 'pulse',
+                temperature: 'temperature',
                 vision: 'vision',
                 audiometry: 'audiometry',
                 spirometry: 'spirometry',
@@ -453,6 +462,9 @@ export const MCUs = {
                 treadmill: 'treadmill',
                 kidneyLiverFunction: 'kidney_liver_function',
                 napza: 'napza',
+                keluhanUtama: 'keluhan_utama',
+                diagnosisKerja: 'diagnosis_kerja',
+                alasanRujuk: 'alasan_rujuk',
                 // Results
                 initialResult: 'initial_result',
                 initialNotes: 'initial_notes',

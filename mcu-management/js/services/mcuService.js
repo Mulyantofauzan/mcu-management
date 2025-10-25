@@ -24,6 +24,9 @@ class MCUService {
       // Examination fields
       bmi: mcuData.bmi || null,
       bloodPressure: mcuData.bloodPressure || null,
+      respiratoryRate: mcuData.respiratoryRate || null,
+      pulse: mcuData.pulse || null,
+      temperature: mcuData.temperature || null,
       vision: mcuData.vision || null,
       audiometry: mcuData.audiometry || null,
       spirometry: mcuData.spirometry || null,
@@ -36,6 +39,11 @@ class MCUService {
       sgpt: mcuData.sgpt || null,
       cbc: mcuData.cbc || null,
       napza: mcuData.napza || null,
+
+      // Rujukan fields
+      keluhanUtama: mcuData.keluhanUtama || null,
+      diagnosisKerja: mcuData.diagnosisKerja || null,
+      alasanRujuk: mcuData.alasanRujuk || null,
 
       // Results
       initialResult: mcuData.initialResult,
@@ -175,9 +183,11 @@ class MCUService {
 
     // Also update examination fields if provided
     const examFields = [
-      'bmi', 'bloodPressure', 'vision', 'audiometry', 'spirometry',
+      'bmi', 'bloodPressure', 'respiratoryRate', 'pulse', 'temperature',
+      'vision', 'audiometry', 'spirometry',
       'xray', 'ekg', 'treadmill', 'kidneyLiverFunction', 'hbsag',
-      'sgot', 'sgpt', 'cbc', 'napza'
+      'sgot', 'sgpt', 'cbc', 'napza',
+      'keluhanUtama', 'diagnosisKerja', 'alasanRujuk'
     ];
 
     examFields.forEach(field => {
