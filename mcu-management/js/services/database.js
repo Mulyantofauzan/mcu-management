@@ -157,11 +157,24 @@ class DatabaseService {
 
     async logActivity(action, entityType, entityId, userId = null) {
         const adp = await getAdapter();
+
+        // Get user name if userId is provided
+        let userName = null;
+        if (userId) {
+            try {
+                const user = await this.get('users', userId);
+                userName = user?.displayName || user?.username || null;
+            } catch (e) {
+                // Silent fail - userName will be null
+            }
+        }
+
         return await adp.ActivityLog.add({
             action,
             entityType,
             entityId,
             userId,
+            userName,
             timestamp: new Date().toISOString()
         });
     }

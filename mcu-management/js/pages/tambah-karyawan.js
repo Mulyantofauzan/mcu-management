@@ -197,6 +197,7 @@ window.handleAddEmployee = async function(event) {
             jobTitleId: document.getElementById('emp-job-id').value,  // Use hidden field with ID
             departmentId: document.getElementById('emp-dept').value,
             birthDate: document.getElementById('emp-birthdate').value,
+            jenisKelamin: document.getElementById('emp-gender').value,
             bloodType: document.getElementById('emp-blood').value,
             employmentStatus: document.getElementById('emp-status').value,
             vendorName: document.getElementById('emp-vendor').value || null,

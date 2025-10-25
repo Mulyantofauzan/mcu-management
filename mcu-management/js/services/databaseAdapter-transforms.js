@@ -27,6 +27,7 @@ export function transformEmployee(emp) {
         id: emp.id,
         employeeId: emp.employee_id,
         name: emp.name,
+        jenisKelamin: emp.jenis_kelamin || 'Laki-laki',
         jobTitle: emp.job_title,
         department: emp.department,
         dateOfBirth: emp.date_of_birth,

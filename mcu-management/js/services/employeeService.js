@@ -12,6 +12,7 @@ class EmployeeService {
     const employee = {
       employeeId: generateEmployeeId(),
       name: employeeData.name,
+      jenisKelamin: employeeData.jenisKelamin || 'Laki-laki',
       jobTitleId: employeeData.jobTitleId,
       departmentId: employeeData.departmentId,
       birthDate: employeeData.birthDate,

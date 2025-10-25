@@ -223,6 +223,7 @@ export const Employees = {
                 .insert({
                     employee_id: employee.employeeId,
                     name: employee.name,
+                    jenis_kelamin: employee.jenisKelamin || 'Laki-laki',
                     job_title: jobTitleName,
                     department: departmentName,
                     date_of_birth: employee.dateOfBirth || employee.birthDate,
@@ -248,6 +249,7 @@ export const Employees = {
 
             // Map camelCase to snake_case and resolve IDs
             if (updates.name) updateData.name = updates.name;
+            if (updates.jenisKelamin) updateData.jenis_kelamin = updates.jenisKelamin;
 
             // Resolve job title ID to name if provided
             if (updates.jobTitleId) {
