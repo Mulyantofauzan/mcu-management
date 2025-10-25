@@ -44,9 +44,25 @@ async function loadMasterData() {
     employees = await employeeService.getAll();
     departments = await masterDataService.getAllDepartments();
     jobTitles = await masterDataService.getAllJobTitles();
+
+    // Enrich employees with IDs (for Supabase which only stores names)
+    employees = employees.map(emp => enrichEmployeeWithIds(emp));
   } catch (error) {
     console.error('Error loading master data:', error);
   }
+}
+
+// Helper: Add jobTitleId and departmentId based on names (for Supabase compatibility)
+function enrichEmployeeWithIds(emp) {
+  if (!emp.jobTitleId && emp.jobTitle) {
+    const job = jobTitles.find(j => j.name === emp.jobTitle);
+    if (job) emp.jobTitleId = job.id;  // Use 'id' not 'jobTitleId' - Supabase format
+  }
+  if (!emp.departmentId && emp.department) {
+    const dept = departments.find(d => d.name === emp.department);
+    if (dept) emp.departmentId = dept.id;  // Use 'id' not 'departmentId' - Supabase format
+  }
+  return emp;
 }
 
 window.loadFollowUpList = async function() {
@@ -106,7 +122,7 @@ function renderTable() {
     const employee = employees.find(e => e.employeeId === mcu.employeeId);
     if (!employee) return;
 
-    const dept = departments.find(d => d.departmentId === employee.departmentId);
+    const dept = departments.find(d => d.id === employee.departmentId);
 
     html += '<tr>';
     html += `<td><span class="font-medium text-gray-900">${employee.name}</span></td>`;
@@ -150,8 +166,8 @@ window.openFollowUpModal = async function(mcuId) {
     }
 
     const employee = employees.find(e => e.employeeId === currentMCU.employeeId);
-    const dept = departments.find(d => d.departmentId === employee?.departmentId);
-    const job = jobTitles.find(j => j.jobTitleId === employee?.jobTitleId);
+    const dept = departments.find(d => d.id === employee?.departmentId);
+    const job = jobTitles.find(j => j.id === employee?.jobTitleId);
 
     // Fill employee info
     document.getElementById('modal-emp-name').textContent = employee?.name || '-';
@@ -237,8 +253,8 @@ window.openMCUUpdateModal = async function(mcuId) {
     }
 
     const employee = employees.find(e => e.employeeId === currentMCU.employeeId);
-    const dept = departments.find(d => d.departmentId === employee?.departmentId);
-    const job = jobTitles.find(j => j.jobTitleId === employee?.jobTitleId);
+    const dept = departments.find(d => d.id === employee?.departmentId);
+    const job = jobTitles.find(j => j.id === employee?.jobTitleId);
 
     // Fill employee summary at top of modal
     document.getElementById('update-emp-name').textContent = employee?.name || '-';

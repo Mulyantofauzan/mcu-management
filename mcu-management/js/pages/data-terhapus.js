@@ -54,11 +54,11 @@ async function loadData() {
 function enrichEmployeeWithIds(emp) {
     if (!emp.jobTitleId && emp.jobTitle) {
         const job = jobTitles.find(j => j.name === emp.jobTitle);
-        if (job) emp.jobTitleId = job.jobTitleId;
+        if (job) emp.jobTitleId = job.id;  // Use 'id' not 'jobTitleId' - Supabase format
     }
     if (!emp.departmentId && emp.department) {
         const dept = departments.find(d => d.name === emp.department);
-        if (dept) emp.departmentId = dept.departmentId;
+        if (dept) emp.departmentId = dept.id;  // Use 'id' not 'departmentId' - Supabase format
     }
     return emp;
 }
@@ -77,8 +77,8 @@ function renderTable() {
     html += '<th>Nama</th><th>ID</th><th>Jabatan</th><th>Departemen</th><th>Dihapus</th><th>Aksi</th></tr></thead><tbody>';
 
     deletedEmployees.forEach(emp => {
-        const job = jobTitles.find(j => j.jobTitleId === emp.jobTitleId);
-        const dept = departments.find(d => d.departmentId === emp.departmentId);
+        const job = jobTitles.find(j => j.id === emp.jobTitleId);
+        const dept = departments.find(d => d.id === emp.departmentId);
         const isChecked = selectedEmployees.has(emp.employeeId);
 
         html += '<tr>';

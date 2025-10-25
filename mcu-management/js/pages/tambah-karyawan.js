@@ -46,6 +46,19 @@ async function loadMasterData() {
     }
 }
 
+// Helper: Add jobTitleId and departmentId based on names (for Supabase compatibility)
+function enrichEmployeeWithIds(emp) {
+    if (!emp.jobTitleId && emp.jobTitle) {
+        const job = jobTitles.find(j => j.name === emp.jobTitle);
+        if (job) emp.jobTitleId = job.id;  // Use 'id' not 'jobTitleId' - Supabase format
+    }
+    if (!emp.departmentId && emp.department) {
+        const dept = departments.find(d => d.name === emp.department);
+        if (dept) emp.departmentId = dept.id;  // Use 'id' not 'departmentId' - Supabase format
+    }
+    return emp;
+}
+
 function populateDropdowns() {
     // Job Titles - Searchable datalist
     const jobDatalist = document.getElementById('job-list');
@@ -119,13 +132,16 @@ window.handleSearch = async function() {
             return;
         }
 
+        // Enrich search results with IDs (for Supabase which only stores names)
+        searchResults = searchResults.map(emp => enrichEmployeeWithIds(emp));
+
         let html = '<div class="table-container"><table class="table"><thead><tr>';
         html += '<th>Nama</th><th>ID</th><th>Tanggal Lahir</th><th>Jabatan</th><th>Departemen</th><th>Aksi</th>';
         html += '</tr></thead><tbody>';
 
         searchResults.forEach(emp => {
-            const job = jobTitles.find(j => j.jobTitleId === emp.jobTitleId);
-            const dept = departments.find(d => d.departmentId === emp.departmentId);
+            const job = jobTitles.find(j => j.id === emp.jobTitleId);
+            const dept = departments.find(d => d.id === emp.departmentId);
 
             html += '<tr>';
             html += `<td><span class="font-medium text-gray-900">${emp.name}</span></td>`;
@@ -214,8 +230,11 @@ window.openAddMCUForEmployee = async function(employeeId) {
             return;
         }
 
-        const job = jobTitles.find(j => j.jobTitleId === currentEmployee.jobTitleId);
-        const dept = departments.find(d => d.departmentId === currentEmployee.departmentId);
+        // Enrich employee with IDs (for Supabase which only stores names)
+        currentEmployee = enrichEmployeeWithIds(currentEmployee);
+
+        const job = jobTitles.find(j => j.id === currentEmployee.jobTitleId);
+        const dept = departments.find(d => d.id === currentEmployee.departmentId);
 
         // Fill employee summary
         document.getElementById('mcu-emp-name').textContent = currentEmployee.name;
