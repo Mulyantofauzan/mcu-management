@@ -77,17 +77,52 @@ function generateRujukanHTML(employee, mcu) {
       </style>
     </head>
     <body class="bg-white">
-      <div class="page bg-white w-[800px] p-6 mx-auto" style="margin: 0; padding: 20px; font-size: 13px;">
-        <!-- Header -->
-        <div class="flex items-start gap-3" style="margin-bottom: 8px;">
-          <img src="${config.clinic.logo}"
-               alt="Logo Klinik"
-               style="width: 80px; height: 80px; object-fit: contain; flex-shrink: 0;" />
-          <div style="text-align: center; flex: 1;">
-            <h1 style="font-size: 16px; font-weight: bold; text-transform: uppercase; margin: 0 0 4px 0;">Format Surat Follow Up</h1>
-            <p style="font-size: 11px; margin: 2px 0; line-height: 1.3;">Dokumen ini digunakan sebagai format surat rujukan dan rujukan balik.<br>Harap isi dengan benar sesuai data asli pasien.</p>
+     <div class="page bg-white w-[900px] shadow-md p-6 relative">
+    <div class="flex justify-between items-start">
+      <!-- Logo kiri -->
+      <div class="flex-shrink-0">
+        <img 
+          src="https://s3.nevaobjects.id/saffix-storige/saffmedic-sekata/company/klinik_sekata_medical_center-1-09052025084603.png"
+          alt="Sekata Medical Center Logo"
+          class="w-40 object-contain">
+      </div>
+
+      <!-- Area kanan -->
+      <div class="flex">
+        <!-- Kolom teks kanan -->
+        <div class="flex flex-col text-sm text-right leading-snug mr-4 justify-center">
+          <!-- Alamat sejajar dengan ikon lokasi -->
+          <div class="flex justify-end items-start mb-1">
+            <div class="max-w-[360px]">
+              <p>Jl. Pangeran Suryanata No.27 RT.15, Kelurahan Air Putih</p>
+              <p>Kecamatan Samarinda Ulu, Kota Samarinda</p>
+              <p>Kalimantan Timur</p>
+            </div>
+          </div>
+
+          <!-- Telepon sejajar dengan ikon telepon -->
+          <div class="flex justify-end items-center mb-1 mt-1">
+            <p>0541 2921958</p>
+          </div>
+
+          <!-- Email sejajar dengan ikon email -->
+          <div class="flex justify-end items-center">
+            <p>sekatamedicalcenter@gmail.com</p>
           </div>
         </div>
+
+        <!-- Kolom biru ikon vertikal -->
+        <div class="flex flex-col justify-around items-center bg-[#1E3A8A] text-white w-10 rounded-l-lg py-4">
+          <div class="text-xl">📍</div>
+          <div class="text-xl">☎️</div>
+          <div class="text-xl">✉️</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Garis bawah tunggal -->
+    <div class="border-t border-black mt-4"></div>
+  </div>
 
         <hr style="border: none; border-top: 1px solid #999; margin: 6px 0;">
 
