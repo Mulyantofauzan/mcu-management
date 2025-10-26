@@ -19,9 +19,8 @@ let jobTitles = [];
 let currentMCU = null;
 
 // Download Surat Rujukan PDF from table action button
-window.downloadRujukanPDFAction = async function(mcuId) {
-  try {
-    const mcu = await mcuService.getById(mcuId);
+window.downloadRujukanPDFAction = function(mcuId) {
+  mcuService.getById(mcuId).then(mcu => {
     if (!mcu) {
       showToast('MCU data tidak ditemukan', 'error');
       return;
@@ -33,9 +32,6 @@ window.downloadRujukanPDFAction = async function(mcuId) {
       return;
     }
 
-    // Show loading state
-    showToast('Sedang membuat surat rujukan...', 'info');
-
     // Prepare data untuk PDF
     const employeeData = {
       name: employee.name,
@@ -45,46 +41,17 @@ window.downloadRujukanPDFAction = async function(mcuId) {
       department: employee.department
     };
 
-    await generateRujukanPDF(employeeData, mcu);
-    showToast('Surat Rujukan berhasil diunduh!', 'success');
-  } catch (error) {
-    console.error('Error generating PDF:', error);
-    showToast('Gagal membuat PDF: ' + error.message, 'error');
-  }
-};
-
-// Download Surat Rujukan PDF (kept for modal if needed in future)
-window.downloadRujukanPDF = async function() {
-  if (!currentMCU) {
-    showToast('MCU data tidak ditemukan', 'error');
-    return;
-  }
-
-  const employee = employees.find(e => e.employeeId === currentMCU.employeeId);
-  if (!employee) {
-    showToast('Data karyawan tidak ditemukan', 'error');
-    return;
-  }
-
-  // Show loading state
-  showToast('Sedang membuat surat rujukan...', 'info');
-
-  // Prepare data untuk PDF
-  const employeeData = {
-    name: employee.name,
-    age: calculateAge(employee.birthDate),
-    jenisKelamin: employee.jenisKelamin || 'Laki-laki',
-    jobTitle: employee.jobTitle,
-    department: employee.department
-  };
-
-  try {
-    await generateRujukanPDF(employeeData, currentMCU);
-    showToast('Surat Rujukan berhasil diunduh!', 'success');
-  } catch (error) {
-    console.error('Error generating PDF:', error);
-    showToast('Gagal membuat PDF: ' + error.message, 'error');
-  }
+    try {
+      generateRujukanPDF(employeeData, mcu);
+      showToast('Surat Rujukan siap dicetak. Gunakan Ctrl+S atau Simpan PDF di print dialog.', 'success');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      showToast('Gagal membuat surat rujukan: ' + error.message, 'error');
+    }
+  }).catch(error => {
+    console.error('Error loading MCU:', error);
+    showToast('Gagal memuat data MCU: ' + error.message, 'error');
+  });
 };
 
 async function init() {

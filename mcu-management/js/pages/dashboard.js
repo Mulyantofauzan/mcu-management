@@ -746,79 +746,88 @@ async function updateFollowUpList() {
 
 async function updateActivityList() {
   const container = document.getElementById('activity-list');
-  const activities = await database.getActivityLog(5);
 
-  // Handle null/undefined/non-array activities
-  if (!activities || !Array.isArray(activities) || activities.length === 0) {
-    container.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">Belum ada aktivitas</p>';
-    return;
-  }
+  try {
+    const activities = await database.getActivityLog(5);
 
-  let html = '';
-  for (const activity of activities) {
-    let activityText = '';
-
-    // Use userName from activity log (already captured during logActivity)
-    const userName = activity.userName || 'System';
-
-    // Build detailed activity text based on entity type
-    if (activity.entityType === 'Employee') {
-      const actionText = {
-        'create': 'menambahkan karyawan',
-        'update': 'mengupdate data karyawan',
-        'delete': 'menghapus karyawan'
-      }[activity.action] || activity.action;
-
-      let employeeName = activity.entityId;
-      const emp = employees.find(e => e.employeeId === activity.entityId);
-      if (emp) employeeName = emp.name;
-
-      activityText = `<strong>${userName}</strong> ${actionText} <strong>${employeeName}</strong>`;
-    } else if (activity.entityType === 'MCU') {
-      let employeeName = '';
-      try {
-        const mcu = await database.get('mcus', activity.entityId);
-        if (mcu) {
-          const emp = employees.find(e => e.employeeId === mcu.employeeId);
-          if (emp) employeeName = emp.name;
-        }
-      } catch (e) {
-        // Silent fail
-      }
-
-      if (activity.action === 'create') {
-        activityText = `<strong>${employeeName || 'Karyawan'}</strong> baru saja MCU`;
-      } else if (activity.action === 'update') {
-        activityText = `<strong>${employeeName || 'Karyawan'}</strong> baru saja Follow-Up`;
-      } else {
-        activityText = `<strong>${userName}</strong> menghapus data MCU`;
-      }
-    } else {
-      const actionText = {
-        'create': 'menambahkan',
-        'update': 'mengupdate',
-        'delete': 'menghapus'
-      }[activity.action] || activity.action;
-
-      activityText = `<strong>${userName}</strong> ${actionText} ${activity.entityType}`;
+    // Handle null/undefined/non-array activities
+    if (!activities || !Array.isArray(activities) || activities.length === 0) {
+      container.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">Belum ada aktivitas</p>';
+      return;
     }
 
-    html += `
-      <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-        <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
-          <svg class="w-4 h-4 text-primary-600" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
-          </svg>
-        </div>
-        <div class="flex-1">
-          <p class="text-sm text-gray-900">${activityText}</p>
-          <p class="text-xs text-gray-500">${formatDateDisplay(activity.timestamp)}</p>
-        </div>
-      </div>
-    `;
-  }
+    let html = '';
+    for (const activity of activities) {
+      let activityText = '';
 
-  container.innerHTML = html;
+      // Support both camelCase and snake_case from database transform
+      const userName = activity.userName || activity.user_name || 'System';
+      const entityType = activity.entityType || activity.target;
+      const entityId = activity.entityId || activity.details;
+      const action = activity.action;
+
+      // Build detailed activity text based on entity type
+      if (entityType === 'Employee') {
+        const actionText = {
+          'create': 'menambahkan karyawan',
+          'update': 'mengupdate data karyawan',
+          'delete': 'menghapus karyawan'
+        }[action] || action;
+
+        let employeeName = entityId || 'Karyawan';
+        const emp = employees.find(e => e.employeeId === entityId);
+        if (emp) employeeName = emp.name;
+
+        activityText = `<strong>${userName}</strong> ${actionText} <strong>${employeeName}</strong>`;
+      } else if (entityType === 'MCU') {
+        let employeeName = '';
+        try {
+          const mcu = await database.get('mcus', entityId);
+          if (mcu) {
+            const emp = employees.find(e => e.employeeId === mcu.employeeId);
+            if (emp) employeeName = emp.name;
+          }
+        } catch (e) {
+          // Silent fail
+        }
+
+        if (action === 'create') {
+          activityText = `<strong>${employeeName || 'Karyawan'}</strong> baru saja MCU`;
+        } else if (action === 'update') {
+          activityText = `<strong>${employeeName || 'Karyawan'}</strong> baru saja Follow-Up`;
+        } else {
+          activityText = `<strong>${userName}</strong> menghapus data MCU`;
+        }
+      } else {
+        const actionText = {
+          'create': 'menambahkan',
+          'update': 'mengupdate',
+          'delete': 'menghapus'
+        }[action] || action;
+
+        activityText = `<strong>${userName}</strong> ${actionText} ${entityType || 'item'}`;
+      }
+
+      html += `
+        <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+          <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
+            <svg class="w-4 h-4 text-primary-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+            </svg>
+          </div>
+          <div class="flex-1">
+            <p class="text-sm text-gray-900">${activityText}</p>
+            <p class="text-xs text-gray-500">${formatDateDisplay(activity.timestamp)}</p>
+          </div>
+        </div>
+      `;
+    }
+
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Error loading activity list:', error);
+    container.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">Gagal memuat aktivitas</p>';
+  }
 }
 
 // Event Handlers
