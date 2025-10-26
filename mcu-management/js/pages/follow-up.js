@@ -38,7 +38,9 @@ window.downloadRujukanPDFAction = function(mcuId) {
       age: calculateAge(employee.birthDate),
       jenisKelamin: employee.jenisKelamin || 'Laki-laki',
       jobTitle: employee.jobTitle,
-      department: employee.department
+      department: employee.department,
+      employmentStatus: employee.employmentStatus,
+      vendorName: employee.vendorName
     };
 
     try {

@@ -51,6 +51,18 @@ function openPrintDialog(content) {
 }
 
 /**
+ * Helper function untuk mendapatkan nama perusahaan berdasarkan employment status
+ */
+function getCompanyName(employee) {
+  if (employee.employmentStatus === 'Karyawan PST') {
+    return 'PT. Putra Sarana Transborneo';
+  } else if (employee.employmentStatus === 'Vendor' && employee.vendorName) {
+    return employee.vendorName;
+  }
+  return '';
+}
+
+/**
  * Generate HTML untuk Surat Rujukan dan Surat Rujukan Balik
  * Sesuai template yang diberikan user
  */
@@ -154,7 +166,7 @@ function generateRujukanHTML(employee, mcu) {
             <p style="margin: 5px 0;">Nama: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 480px;">${employee.name}</span></p>
             <p style="margin: 5px 0;">Umur: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 480px;">${employee.age || ''}</span></p>
             <p style="margin: 5px 0;">Jenis Kelamin: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 420px;">${employee.jenisKelamin || ''}</span></p>
-            <p style="margin: 5px 0;">Perusahaan/Jabatan: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 380px;">${employee.department && employee.jobTitle ? employee.department + ' / ' + employee.jobTitle : ''}</span></p>
+            <p style="margin: 5px 0;">Perusahaan/Jabatan: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 380px;">${getCompanyName(employee)} / ${employee.jobTitle || ''}</span></p>
           </div>
 
           <div style="margin: 10px 0;">

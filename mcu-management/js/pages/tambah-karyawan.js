@@ -71,7 +71,6 @@ function populateDropdowns() {
     jobTitles.forEach(job => {
         const option = document.createElement('option');
         option.value = job.name;  // Display name in input
-        option.setAttribute('data-id', job.jobTitleId);  // Store ID
         option.textContent = job.name;  // SAFE: textContent auto-escapes
         jobFragment.appendChild(option);
     });
