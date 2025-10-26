@@ -187,11 +187,8 @@ function renderTable() {
     html += `<td><span class="text-xs text-gray-600">${(mcu.initialNotes || '').substring(0, 50)}...</span></td>`;
     html += `<td>
       <div class="flex gap-2">
-        <button onclick="downloadRujukanPDFAction('${mcu.mcuId}')" class="btn btn-sm btn-secondary" title="Download Surat Rujukan" style="padding: 0.375rem 0.75rem; background-color: #3b82f6; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
+        <button onclick="downloadRujukanPDFAction('${mcu.mcuId}')" class="btn btn-sm btn-secondary" title="Download Surat Rujukan (dengan Rujukan Balik)" style="padding: 0.375rem 0.75rem; background-color: #3b82f6; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
           📄 Rujukan
-        </button>
-        <button onclick="downloadRujukanBalikAction('${mcu.employeeId}')" class="btn btn-sm btn-secondary" title="Download Surat Rujukan Balik" style="padding: 0.375rem 0.75rem; background-color: #8b5cf6; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
-          📄 Balik
         </button>
         <button onclick="openFollowUpModal('${mcu.mcuId}')" class="btn btn-sm btn-primary">
           Update
