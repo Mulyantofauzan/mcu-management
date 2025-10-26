@@ -3,27 +3,32 @@
  * Generates referral letter PDF based on MCU data
  */
 
-// Note: jsPDF library needs to be loaded in HTML: <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
 /**
- * Wait for jsPDF library to be loaded with retries
+ * Load jsPDF library dynamically if not already loaded
  */
-function waitForjsPDF(maxRetries = 10, delay = 500) {
+async function loadjsPDFLibrary() {
   return new Promise((resolve, reject) => {
-    let retries = 0;
+    // Check if jsPDF is already loaded
+    if (window.jsPDF) {
+      resolve(window.jsPDF);
+      return;
+    }
 
-    const checkjsPDF = () => {
+    // If not, load it dynamically from CDN
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    script.async = true;
+    script.onload = () => {
       if (window.jsPDF) {
         resolve(window.jsPDF);
-      } else if (retries < maxRetries) {
-        retries++;
-        setTimeout(checkjsPDF, delay);
       } else {
-        reject(new Error('jsPDF library failed to load after ' + maxRetries + ' retries'));
+        reject(new Error('jsPDF library failed to initialize'));
       }
     };
-
-    checkjsPDF();
+    script.onerror = () => {
+      reject(new Error('Failed to load jsPDF library from CDN'));
+    };
+    document.head.appendChild(script);
   });
 }
 
@@ -31,10 +36,10 @@ export async function generateRujukanPDF(employee, mcu) {
   let jsPDFLib;
 
   try {
-    jsPDFLib = await waitForjsPDF();
+    jsPDFLib = await loadjsPDFLibrary();
   } catch (error) {
     console.error('jsPDF library loading failed:', error);
-    throw new Error('PDF library belum dimuat. Silakan refresh halaman dan coba lagi.');
+    throw new Error('Gagal memuat PDF library: ' + error.message);
   }
 
   const { jsPDF } = jsPDFLib;

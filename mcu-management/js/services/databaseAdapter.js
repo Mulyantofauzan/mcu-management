@@ -843,38 +843,68 @@ export const ActivityLog = {
     async getAll(limit = 50) {
         if (useSupabase) {
             const supabase = getSupabaseClient();
-            const { data, error } = await supabase
-                .from('activity_log')
-                .select('*')
-                .order('timestamp', { ascending: false })
-                .limit(limit);
+            try {
+                const { data, error } = await supabase
+                    .from('activity_log')
+                    .select('*')
+                    .order('timestamp', { ascending: false })
+                    .limit(limit);
 
-            if (error) throw error;
-            return data.map(transformActivityLog);
+                if (error) {
+                    console.warn('ActivityLog getAll error (table may not exist):', error);
+                    // Return empty array if table doesn't exist
+                    return [];
+                }
+                return data ? data.map(transformActivityLog) : [];
+            } catch (err) {
+                console.warn('ActivityLog getAll exception:', err);
+                // Gracefully return empty if table doesn't exist
+                return [];
+            }
         }
-        return await indexedDB.db.activityLog.orderBy('timestamp').reverse().limit(limit).toArray();
+        try {
+            return await indexedDB.db.activityLog.orderBy('timestamp').reverse().limit(limit).toArray();
+        } catch (err) {
+            console.warn('ActivityLog IndexedDB getAll failed:', err);
+            return [];
+        }
     },
 
     async add(activity) {
         if (useSupabase) {
             const supabase = getSupabaseClient();
-            const { data, error } = await supabase
-                .from('activity_log')
-                .insert({
-                    user_id: activity.userId,
-                    user_name: activity.userName || null,
-                    action: activity.action,
-                    target: activity.entityType || activity.target, // Map entityType to target
-                    details: activity.entityId || activity.details, // Map entityId to details
-                    timestamp: activity.timestamp
-                })
-                .select()
-                .single();
+            try {
+                const { data, error } = await supabase
+                    .from('activity_log')
+                    .insert({
+                        user_id: activity.userId,
+                        user_name: activity.userName || null,
+                        action: activity.action,
+                        target: activity.entityType || activity.target, // Map entityType to target
+                        details: activity.entityId || activity.details, // Map entityId to details
+                        timestamp: activity.timestamp
+                    })
+                    .select()
+                    .single();
 
-            if (error) throw error;
-            return transformActivityLog(data);
+                if (error) {
+                    console.warn('ActivityLog insert error (table may not exist):', error);
+                    // Silently fail if table doesn't exist - this is expected if migration not run
+                    return activity;
+                }
+                return transformActivityLog(data);
+            } catch (err) {
+                console.warn('ActivityLog add exception:', err);
+                // Gracefully handle table not existing
+                return activity;
+            }
         }
-        return await indexedDB.db.activityLog.add(activity);
+        try {
+            return await indexedDB.db.activityLog.add(activity);
+        } catch (err) {
+            console.warn('ActivityLog IndexedDB add failed:', err);
+            return activity;
+        }
     }
 };
 
