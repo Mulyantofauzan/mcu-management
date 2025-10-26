@@ -851,27 +851,43 @@ export const ActivityLog = {
                     .limit(limit);
 
                 if (error) {
-                    console.error('ActivityLog getAll error:', error);
-                    return [];
-                }
-
-                // Log result for debugging
-                if (data && data.length > 0) {
-                    console.log('[ActivityLog] Retrieved ' + data.length + ' records from Supabase');
+                    console.error('[ActivityLog] ❌ Supabase query error:', {
+                        code: error.code,
+                        message: error.message,
+                        hint: error.hint,
+                        details: error.details
+                    });
+                    console.warn('[ActivityLog] Falling back to IndexedDB...');
+                    // Fall through to IndexedDB below
+                } else if (data && data.length > 0) {
+                    console.log('[ActivityLog] ✓ Retrieved ' + data.length + ' records from Supabase');
+                    return data.map(transformActivityLog);
                 } else {
-                    console.warn('[ActivityLog] No records found in activity_log table');
+                    console.log('[ActivityLog] ℹ No records in Supabase activity_log table (checking IndexedDB)');
+                    // Fall through to IndexedDB below
                 }
-
-                return data ? data.map(transformActivityLog) : [];
             } catch (err) {
-                console.error('ActivityLog getAll exception:', err);
-                return [];
+                console.error('[ActivityLog] ❌ Exception during Supabase query:', {
+                    name: err.name,
+                    message: err.message
+                });
+                console.warn('[ActivityLog] Falling back to IndexedDB...');
+                // Fall through to IndexedDB below
             }
         }
+
+        // Try IndexedDB as fallback or primary source
         try {
-            return await indexedDB.db.activityLog.orderBy('timestamp').reverse().limit(limit).toArray();
+            const result = await indexedDB.db.activityLog.orderBy('timestamp').reverse().limit(limit).toArray();
+            if (result && result.length > 0) {
+                console.log('[ActivityLog] ✓ Retrieved ' + result.length + ' records from IndexedDB (offline data)');
+            } else {
+                console.log('[ActivityLog] ℹ No records in IndexedDB');
+            }
+            return result || [];
         } catch (err) {
-            console.warn('ActivityLog IndexedDB getAll failed:', err);
+            console.error('[ActivityLog] ❌ IndexedDB also failed:', err.message);
+            console.log('[ActivityLog] Returning empty array - no data source available');
             return [];
         }
     },

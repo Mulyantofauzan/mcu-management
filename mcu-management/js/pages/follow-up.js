@@ -391,6 +391,7 @@ window.handleMCUUpdate = async function(event) {
       'update-sgpt': 'sgpt',
       'update-cbc': 'cbc',
       'update-napza': 'napza',
+      'update-recipient': 'recipient',
       'update-keluhan': 'keluhanUtama',
       'update-diagnosis': 'diagnosisKerja',
       'update-alasan': 'alasanRujuk'

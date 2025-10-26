@@ -75,13 +75,18 @@ function generateRujukanHTML(employee, mcu) {
           .page { box-shadow: none !important; margin: 0; }
         }
         .icon-column {
-          background-color: #1E3A8A !important;
+          background-color: rgb(30, 58, 138) !important;
+          background: rgb(30, 58, 138) !important;
           color: white !important;
         }
         @media print {
           .icon-column {
-            background-color: #1E3A8A !important;
+            background-color: rgb(30, 58, 138) !important;
+            background: rgb(30, 58, 138) !important;
             color: white !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
           }
         }
       </style>
@@ -122,10 +127,10 @@ function generateRujukanHTML(employee, mcu) {
         </div>
 
         <!-- Kolom biru ikon vertikal -->
-        <div class="icon-column" style="display: flex; flex-direction: column; justify-content: space-around; align-items: center; width: 40px; border-radius: 0 8px 8px 0; padding: 12px 0; margin-left: 6px;">
-          <div style="font-size: 20px; line-height: 1;">📍</div>
-          <div style="font-size: 20px; line-height: 1;">☎️</div>
-          <div style="font-size: 20px; line-height: 1;">✉️</div>
+        <div class="icon-column" style="display: flex; flex-direction: column; justify-content: space-around; align-items: center; width: 40px; border-radius: 0 8px 8px 0; padding: 12px 0; margin-left: 6px; background-color: rgb(30, 58, 138) !important; background: rgb(30, 58, 138) !important; color: white !important;">
+          <div style="font-size: 20px; line-height: 1; color: white;">📍</div>
+          <div style="font-size: 20px; line-height: 1; color: white;">☎️</div>
+          <div style="font-size: 20px; line-height: 1; color: white;">✉️</div>
         </div>
       </div>
     </div>
@@ -139,7 +144,7 @@ function generateRujukanHTML(employee, mcu) {
 
         <div style="font-size: 13px; line-height: 1.45;">
           <p style="margin: 2px 0; line-height: 1.3;">Kepada Yth.</p>
-          <p style="margin: 0; line-height: 1.3;">Ts. Dokter Spesialis Penyakit Dalam</p>
+          <p style="margin: 0; line-height: 1.3;">${mcu.recipient || 'Ts. Dokter Spesialis Penyakit Dalam'}</p>
           <p style="margin: 0 0 2px 0; line-height: 1.3;">Di Tempat</p>
 
           <p style="margin: 2px 0 0 0; font-weight: 600; line-height: 1.3;">Dengan Hormat,</p>
