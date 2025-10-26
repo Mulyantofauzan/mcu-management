@@ -84,7 +84,7 @@ function updateStats() {
     const active = employees.filter(e => e.activeStatus === 'Active').length;
     document.getElementById('stat-active').textContent = active;
 
-    const company = employees.filter(e => e.employmentStatus === 'Company').length;
+    const company = employees.filter(e => e.employmentStatus === 'Karyawan PST').length;
     document.getElementById('stat-company').textContent = company;
 
     const vendor = employees.filter(e => e.employmentStatus === 'Vendor').length;

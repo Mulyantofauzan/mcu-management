@@ -16,7 +16,7 @@ class EmployeeService {
       jobTitleId: employeeData.jobTitleId,
       departmentId: employeeData.departmentId,
       birthDate: employeeData.birthDate,
-      employmentStatus: employeeData.employmentStatus || 'Company',
+      employmentStatus: employeeData.employmentStatus || 'Karyawan PST',
       vendorName: employeeData.vendorName || null,
       activeStatus: employeeData.activeStatus || 'Active',
       inactiveReason: employeeData.inactiveReason || null,

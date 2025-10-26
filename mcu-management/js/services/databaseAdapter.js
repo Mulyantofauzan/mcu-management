@@ -228,7 +228,7 @@ export const Employees = {
                     department: departmentName,
                     date_of_birth: employee.dateOfBirth || employee.birthDate,
                     blood_type: employee.bloodType,
-                    employee_type: employee.employeeType || employee.employmentStatus || 'Company',
+                    employee_type: employee.employeeType || employee.employmentStatus || 'Karyawan PST',
                     vendor_name: employee.vendorName,
                     is_active: employee.isActive !== undefined ? employee.isActive : (employee.activeStatus === 'Active' || employee.activeStatus === true),
                     inactive_reason: employee.inactiveReason || null
