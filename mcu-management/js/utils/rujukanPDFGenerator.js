@@ -71,8 +71,18 @@ function generateRujukanHTML(employee, mcu) {
       <script src="https://cdn.tailwindcss.com"></script>
       <style>
         @media print {
-          body { background: white; }
+          body { background: white !important; }
           .page { box-shadow: none !important; margin: 0; }
+        }
+        .icon-column {
+          background-color: #1E3A8A !important;
+          color: white !important;
+        }
+        @media print {
+          .icon-column {
+            background-color: #1E3A8A !important;
+            color: white !important;
+          }
         }
       </style>
     </head>
@@ -112,7 +122,7 @@ function generateRujukanHTML(employee, mcu) {
         </div>
 
         <!-- Kolom biru ikon vertikal -->
-        <div style="display: flex; flex-direction: column; justify-content: space-around; align-items: center; background-color: #1E3A8A; color: white; width: 40px; border-radius: 0 8px 8px 0; padding: 12px 0; margin-left: 6px;">
+        <div class="icon-column" style="display: flex; flex-direction: column; justify-content: space-around; align-items: center; width: 40px; border-radius: 0 8px 8px 0; padding: 12px 0; margin-left: 6px;">
           <div style="font-size: 20px; line-height: 1;">📍</div>
           <div style="font-size: 20px; line-height: 1;">☎️</div>
           <div style="font-size: 20px; line-height: 1;">✉️</div>
@@ -120,8 +130,6 @@ function generateRujukanHTML(employee, mcu) {
       </div>
     </div>
 
-    <!-- Garis bawah tunggal -->
-    <div class="border-t border-black mt-4"></div>
   </div>
 
         <hr style="border: none; border-top: 1px solid #999; margin: 5px 0;">
