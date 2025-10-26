@@ -188,7 +188,7 @@ class MCUService {
       'vision', 'audiometry', 'spirometry',
       'xray', 'ekg', 'treadmill', 'kidneyLiverFunction', 'hbsag',
       'sgot', 'sgpt', 'cbc', 'napza',
-      'keluhanUtama', 'diagnosisKerja', 'alasanRujuk'
+      'recipient', 'keluhanUtama', 'diagnosisKerja', 'alasanRujuk'
     ];
 
     examFields.forEach(field => {
