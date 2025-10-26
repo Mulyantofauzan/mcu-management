@@ -135,12 +135,6 @@ export function generateVendorId() {
   return `VND-${timestamp}-${random}`;
 }
 
-export function generateReferralRecipientId() {
-  const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substr(2, 5).toUpperCase();
-  return `RR-${timestamp}-${random}`;
-}
-
 export function generateUserId() {
   const timestamp = Date.now().toString(36);
   const random = Math.random().toString(36).substr(2, 5).toUpperCase();

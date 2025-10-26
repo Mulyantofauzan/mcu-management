@@ -13,7 +13,6 @@ import { showToast, openModal, closeModal, hideAdminMenuForNonAdmin } from '../u
 let searchResults = [];
 let jobTitles = [];
 let departments = [];
-let referralRecipients = [];
 let currentEmployee = null;
 
 async function init() {
@@ -41,7 +40,6 @@ async function loadMasterData() {
     try {
         jobTitles = await masterDataService.getAllJobTitles();
         departments = await masterDataService.getAllDepartments();
-        referralRecipients = await masterDataService.getAllReferralRecipients();
     } catch (error) {
         console.error('Error loading master data:', error);
         showToast('Gagal memuat data master', 'error');
@@ -110,25 +108,6 @@ function populateDropdowns() {
     });
 
     deptSelect.appendChild(deptFragment);  // Single DOM operation
-
-    // Populate referral recipients dropdown
-    populateReferralRecipientsDropdown();
-}
-
-function populateReferralRecipientsDropdown() {
-    const select = document.getElementById('mcu-recipient');
-    if (!select) return;
-
-    // Clear existing options except the first one
-    select.innerHTML = '<option value="">Pilih Penerima Rujukan</option>';
-
-    // Add referral recipients
-    referralRecipients.forEach(recipient => {
-        const option = document.createElement('option');
-        option.value = recipient.name;
-        option.textContent = recipient.name;
-        select.appendChild(option);
-    });
 }
 
 window.handleSearch = async function() {

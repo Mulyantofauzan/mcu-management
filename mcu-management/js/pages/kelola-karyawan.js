@@ -14,7 +14,6 @@ let employees = [];
 let filteredEmployees = [];
 let jobTitles = [];
 let departments = [];
-let referralRecipients = [];
 let currentPage = 1;
 const itemsPerPage = 10;
 
@@ -43,7 +42,6 @@ async function loadData() {
         // IMPORTANT: Load master data FIRST before employees
         jobTitles = await masterDataService.getAllJobTitles();
         departments = await masterDataService.getAllDepartments();
-        referralRecipients = await masterDataService.getAllReferralRecipients();
         employees = await employeeService.getAll();
 
         // Enrich employee data with IDs (for Supabase which only stores names)
@@ -52,7 +50,6 @@ async function loadData() {
 
         updateStats();
         renderTable();
-        populateReferralRecipientsDropdown();
     } catch (error) {
         console.error('Error loading data:', error);
         showToast('Gagal memuat data: ' + error.message, 'error');
@@ -404,22 +401,6 @@ window.handleEditEmployee = async function(event) {
         showToast('Gagal mengupdate karyawan: ' + error.message, 'error');
     }
 };
-
-function populateReferralRecipientsDropdown() {
-    const select = document.getElementById('mcu-recipient');
-    if (!select) return;
-
-    // Clear existing options except the first one
-    select.innerHTML = '<option value="">Pilih Penerima Rujukan</option>';
-
-    // Add referral recipients
-    referralRecipients.forEach(recipient => {
-        const option = document.createElement('option');
-        option.value = recipient.name;
-        option.textContent = recipient.name;
-        select.appendChild(option);
-    });
-}
 
 window.addMCUForEmployee = async function(employeeId) {
     try {
