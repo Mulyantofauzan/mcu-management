@@ -757,8 +757,7 @@ async function updateActivityList() {
 
     // Handle null/undefined/non-array activities
     if (!activities || !Array.isArray(activities) || activities.length === 0) {
-      console.warn('[Dashboard] No activities to display');
-      console.log('[Dashboard] This is normal on first load - activities will appear after creating/updating records');
+      console.log('[Dashboard] No activities yet (normal on first load)');
       container.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">Belum ada aktivitas</p>';
       return;
     }
