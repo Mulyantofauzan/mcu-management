@@ -2,7 +2,10 @@
  * Surat Rujukan PDF Generator
  * Generates referral letter as print-friendly HTML
  * Uses browser's native print dialog instead of external library
+ * Supports customizable config and logo
  */
+
+import { rujukanConfig } from './rujukanConfig.js';
 
 /**
  * Generate PDF using browser print dialog
@@ -34,13 +37,21 @@ export function generateRujukanPDF(employee, mcu) {
 }
 
 /**
- * Generate HTML content untuk PDF/Print
+ * Generate HTML content untuk PDF/Print menggunakan config
  */
 function generatePDFContent(employee, mcu) {
+  const config = rujukanConfig;
   const currentDate = new Date();
   const day = String(currentDate.getDate()).padStart(2, '0');
   const month = String(currentDate.getMonth() + 1).padStart(2, '0');
   const year = currentDate.getFullYear();
+
+  // Build logo HTML if exists
+  const logoHTML = config.clinic.logo ? `
+    <div class="logo-container">
+      <img src="${config.clinic.logo}" alt="Logo" class="clinic-logo">
+    </div>
+  ` : '';
 
   return `
     <!DOCTYPE html>
@@ -77,6 +88,24 @@ function generatePDFContent(employee, mcu) {
           margin-bottom: 20px;
           border-bottom: 2px solid #000;
           padding-bottom: 15px;
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          justify-content: center;
+        }
+
+        .logo-container {
+          flex-shrink: 0;
+        }
+
+        .clinic-logo {
+          max-width: 30mm;
+          max-height: 30mm;
+          height: auto;
+        }
+
+        .header-text {
+          text-align: center;
         }
 
         .clinic-name {
@@ -93,7 +122,6 @@ function generatePDFContent(employee, mcu) {
         .clinic-address {
           font-size: 9pt;
           margin-top: 8px;
-          text-align: right;
           line-height: 1.3;
         }
 
@@ -204,41 +232,44 @@ function generatePDFContent(employee, mcu) {
     <body>
       <div class="container">
         <div class="header">
-          <div class="clinic-name">SEKATA</div>
-          <div class="clinic-subtitle">MEDICAL CENTER</div>
-          <div class="clinic-address">
-            Jl. Pangeran Suryanata No.27 RT.15, Kelurahan Air Putih<br>
-            Kecamatan Samarinda Ulu, Kota Samarinda Kalimantan Timur<br>
-            Telp: 0541 2921958<br>
-            Email: sekatamedicalcenter@gmail.com
+          ${logoHTML}
+          <div class="header-text">
+            <div class="clinic-name">${config.clinic.name}</div>
+            <div class="clinic-subtitle">${config.clinic.subtitle}</div>
+            <div class="clinic-address">
+              ${config.clinic.address.street}<br>
+              ${config.clinic.address.district}<br>
+              Telp: ${config.clinic.address.phone}<br>
+              Email: ${config.clinic.address.email}
+            </div>
           </div>
         </div>
 
         <div class="title">SURAT RUJUKAN</div>
 
         <div class="greeting">
-          <div>Kepada Yth.</div>
-          <div>Ts. Dokter Spesialis Penyakit Dalam</div>
-          <div>Di Tempat</div>
-          <div style="margin-top: 10px;">Dengan Hormat,</div>
-          <div>Mohon perawatan lebih lanjut pasien tersebut di bawah ini :</div>
+          <div>${config.greeting.salutation}</div>
+          <div>${config.greeting.recipient}</div>
+          <div>${config.greeting.place}</div>
+          <div style="margin-top: 10px;">${config.greeting.opening}</div>
+          <div>${config.greeting.request}</div>
         </div>
 
         <div class="section">
           <div class="field">
-            <div class="field-label">Nama</div>
+            <div class="field-label">${config.labels.name}</div>
             <div class="field-value">: ${employee.name || '___________________________'}</div>
           </div>
           <div class="field">
-            <div class="field-label">Umur</div>
-            <div class="field-value">: ${employee.age || '___'} tahun</div>
+            <div class="field-label">${config.labels.age}</div>
+            <div class="field-value">: ${employee.age || '___'} ${config.units.age}</div>
           </div>
           <div class="field">
-            <div class="field-label">Jenis Kelamin</div>
+            <div class="field-label">${config.labels.gender}</div>
             <div class="field-value">: ${employee.jenisKelamin || '___________'}</div>
           </div>
           <div class="field">
-            <div class="field-label">Perusahaan/Jabatan</div>
+            <div class="field-label">${config.labels.company_job}</div>
             <div class="field-value">: ${employee.department && employee.jobTitle ? employee.department + ' / ' + employee.jobTitle : '___________________________'}</div>
           </div>
         </div>
@@ -246,51 +277,51 @@ function generatePDFContent(employee, mcu) {
         <div class="separator"></div>
 
         <div class="section">
-          <div class="section-title">Pemeriksaan Fisik</div>
+          <div class="section-title">${config.labels.physical_exam}</div>
           <div class="field">
-            <div class="field-label">Tekanan Darah</div>
-            <div class="field-value">: ${mcu.bloodPressure || '____'} mmHg</div>
+            <div class="field-label">${config.labels.blood_pressure}</div>
+            <div class="field-value">: ${mcu.bloodPressure || '____'} ${config.units.blood_pressure}</div>
           </div>
           <div class="field">
-            <div class="field-label">RR (Frequensi Nafas)</div>
-            <div class="field-value">: ${mcu.respiratoryRate || '____'} /m</div>
+            <div class="field-label">${config.labels.respiratory_rate}</div>
+            <div class="field-value">: ${mcu.respiratoryRate || '____'} ${config.units.respiratory_rate}</div>
           </div>
           <div class="field">
-            <div class="field-label">Nadi</div>
-            <div class="field-value">: ${mcu.pulse || '____'} /m</div>
+            <div class="field-label">${config.labels.pulse}</div>
+            <div class="field-value">: ${mcu.pulse || '____'} ${config.units.pulse}</div>
           </div>
           <div class="field">
-            <div class="field-label">Suhu</div>
-            <div class="field-value">: ${mcu.temperature || '____'} °C</div>
+            <div class="field-label">${config.labels.temperature}</div>
+            <div class="field-value">: ${mcu.temperature || '____'} ${config.units.temperature}</div>
           </div>
         </div>
 
         <div class="separator"></div>
 
         <div class="section">
-          <div class="section-title">Keluhan Utama</div>
+          <div class="section-title">${config.labels.chief_complaint}</div>
           <div style="margin-left: 140px;">${mcu.keluhanUtama || '______________________________________________________________________'}</div>
         </div>
 
         <div class="section">
-          <div class="section-title">Diagnosis Kerja</div>
+          <div class="section-title">${config.labels.diagnosis}</div>
           <div style="margin-left: 140px;">${mcu.diagnosisKerja || '______________________________________________________________________'}</div>
         </div>
 
         <div class="section">
-          <div class="section-title">Alasan Dirujuk</div>
+          <div class="section-title">${config.labels.referral_reason}</div>
           <div style="margin-left: 140px;">${mcu.alasanRujuk || '______________________________________________________________________'}</div>
         </div>
 
         <div class="signature-section">
-          <div class="signature-date">Samarinda, ${day} ${getMonthName(parseInt(month))} ${year}</div>
+          <div class="signature-date">${config.clinic.city}, ${day} ${getMonthName(parseInt(month))} ${year}</div>
           <div class="signature-line"></div>
-          <div class="signature-name">dr. Pahroni</div>
-          <div class="signature-title">Dokter FAR PT.PST</div>
+          <div class="signature-name">${config.clinic.doctorName}</div>
+          <div class="signature-title">${config.clinic.doctorTitle}</div>
         </div>
 
         <div class="footer">
-          Surat rujukan harus disertai dengan RL, Ringkasan hasil tes lab dan atau pemeriksaan lain yang relevan dengan urutan masalah
+          ${config.footer}
         </div>
       </div>
     </body>

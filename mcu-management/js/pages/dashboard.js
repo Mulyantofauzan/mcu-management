@@ -748,10 +748,13 @@ async function updateActivityList() {
   const container = document.getElementById('activity-list');
 
   try {
+    console.log('[Dashboard] Loading activity list...');
     const activities = await database.getActivityLog(5);
+    console.log('[Dashboard] Received activities:', activities);
 
     // Handle null/undefined/non-array activities
     if (!activities || !Array.isArray(activities) || activities.length === 0) {
+      console.warn('[Dashboard] No activities to display');
       container.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">Belum ada aktivitas</p>';
       return;
     }
@@ -759,6 +762,8 @@ async function updateActivityList() {
     let html = '';
     for (const activity of activities) {
       let activityText = '';
+
+      console.log('[Dashboard] Processing activity:', activity);
 
       // Support both camelCase and snake_case from database transform
       const userName = activity.userName || activity.user_name || 'System';

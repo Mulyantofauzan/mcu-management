@@ -846,19 +846,25 @@ export const ActivityLog = {
             try {
                 const { data, error } = await supabase
                     .from('activity_log')
-                    .select('*')
+                    .select('id, user_id, user_name, action, target, details, timestamp, created_at')
                     .order('timestamp', { ascending: false })
                     .limit(limit);
 
                 if (error) {
-                    console.warn('ActivityLog getAll error (table may not exist):', error);
-                    // Return empty array if table doesn't exist
+                    console.error('ActivityLog getAll error:', error);
                     return [];
                 }
+
+                // Log result for debugging
+                if (data && data.length > 0) {
+                    console.log('[ActivityLog] Retrieved ' + data.length + ' records from Supabase');
+                } else {
+                    console.warn('[ActivityLog] No records found in activity_log table');
+                }
+
                 return data ? data.map(transformActivityLog) : [];
             } catch (err) {
-                console.warn('ActivityLog getAll exception:', err);
-                // Gracefully return empty if table doesn't exist
+                console.error('ActivityLog getAll exception:', err);
                 return [];
             }
         }
