@@ -144,7 +144,7 @@ function generateRujukanHTML(employee, mcu) {
 
         <div style="font-size: 13px; line-height: 1.6;">
           <p style="margin: 5px 0; line-height: 1.4;">Kepada Yth.</p>
-          <p style="margin: 3px 0; line-height: 1.4;">${mcu.recipient || 'Ts. Dokter Spesialis Penyakit Dalam'}</p>
+          <p style="margin: 3px 0; line-height: 1.4;">${mcu.recipient}</p>
           <p style="margin: 3px 0 8px 0; line-height: 1.4;">Di Tempat</p>
 
           <p style="margin: 8px 0 3px 0; font-weight: 600; line-height: 1.4;">Dengan Hormat,</p>
