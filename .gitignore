@@ -1,0 +1,30 @@
+# System files
+.DS_Store
+Thumbs.db
+*.bak
+*.tmp
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node
+node_modules/
+package-lock.json
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build
+dist/
+build/
+
+# IDE specific
+*.iml
+
+# OS
+*.log
