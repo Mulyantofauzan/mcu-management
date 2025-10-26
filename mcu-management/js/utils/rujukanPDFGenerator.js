@@ -1,35 +1,48 @@
 /**
  * Surat Rujukan PDF Generator
- * Generates referral letter as print-friendly HTML
- * Uses browser's native print dialog instead of external library
- * Supports customizable config and logo
+ * Generates professional referral letter with logo
+ * Supports both Surat Rujukan (forward) and Surat Rujukan Balik (return)
+ * Uses browser's native print dialog
  */
 
 import { rujukanConfig } from './rujukanConfig.js';
 
 /**
- * Generate PDF using browser print dialog
- * Opens a formatted document ready to print/save as PDF
+ * Generate Surat Rujukan (Forward Referral) PDF
  */
 export function generateRujukanPDF(employee, mcu) {
-  // Validate input
   if (!employee || !mcu) {
     throw new Error('Data karyawan atau MCU tidak lengkap');
   }
 
-  // Generate HTML content
-  const content = generatePDFContent(employee, mcu);
+  const content = generateRujukanHTML(employee, mcu);
+  openPrintDialog(content);
+}
 
-  // Create temporary window for printing
+/**
+ * Generate Surat Rujukan Balik (Return Referral) PDF
+ * Rujukan balik kosong - hanya template dengan fields kosong untuk diisi manual
+ */
+export function generateRujukanBalikPDF(employee) {
+  if (!employee) {
+    throw new Error('Data karyawan tidak lengkap');
+  }
+
+  const content = generateRujukanBalikHTML(employee);
+  openPrintDialog(content);
+}
+
+/**
+ * Open browser print dialog
+ */
+function openPrintDialog(content) {
   const printWindow = window.open('', '_blank');
   printWindow.document.write(content);
   printWindow.document.close();
 
-  // Trigger print dialog after content loads
   printWindow.onload = function() {
     printWindow.focus();
     printWindow.print();
-    // Close window setelah user selesai print
     setTimeout(() => {
       printWindow.close();
     }, 500);
@@ -37,21 +50,14 @@ export function generateRujukanPDF(employee, mcu) {
 }
 
 /**
- * Generate HTML content untuk PDF/Print menggunakan config
+ * Generate HTML untuk Surat Rujukan
  */
-function generatePDFContent(employee, mcu) {
+function generateRujukanHTML(employee, mcu) {
   const config = rujukanConfig;
   const currentDate = new Date();
   const day = String(currentDate.getDate()).padStart(2, '0');
   const month = String(currentDate.getMonth() + 1).padStart(2, '0');
   const year = currentDate.getFullYear();
-
-  // Build logo HTML if exists
-  const logoHTML = config.clinic.logo ? `
-    <div class="logo-container">
-      <img src="${config.clinic.logo}" alt="Logo" class="clinic-logo">
-    </div>
-  ` : '';
 
   return `
     <!DOCTYPE html>
@@ -60,268 +66,155 @@ function generatePDFContent(employee, mcu) {
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Surat Rujukan - ${employee.name}</title>
+      <script src="https://cdn.tailwindcss.com"></script>
       <style>
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-
-        body {
-          font-family: 'Courier New', monospace;
-          background: white;
-          padding: 20px;
-        }
-
-        .container {
-          max-width: 210mm;
-          height: 297mm;
-          margin: 0 auto;
-          background: white;
-          padding: 20mm;
-          line-height: 1.6;
-          font-size: 11pt;
-        }
-
-        .header {
-          text-align: center;
-          margin-bottom: 20px;
-          border-bottom: 2px solid #000;
-          padding-bottom: 15px;
-          display: flex;
-          align-items: center;
-          gap: 15px;
-          justify-content: center;
-        }
-
-        .logo-container {
-          flex-shrink: 0;
-        }
-
-        .clinic-logo {
-          max-width: 30mm;
-          max-height: 30mm;
-          height: auto;
-        }
-
-        .header-text {
-          text-align: center;
-        }
-
-        .clinic-name {
-          font-size: 16pt;
-          font-weight: bold;
-          letter-spacing: 3px;
-        }
-
-        .clinic-subtitle {
-          font-size: 11pt;
-          margin-top: 3px;
-        }
-
-        .clinic-address {
-          font-size: 9pt;
-          margin-top: 8px;
-          line-height: 1.3;
-        }
-
-        .title {
-          text-align: center;
-          font-size: 13pt;
-          font-weight: bold;
-          margin: 25px 0;
-          text-decoration: underline;
-        }
-
-        .greeting {
-          margin-bottom: 15px;
-        }
-
-        .greeting div {
-          margin-bottom: 3px;
-        }
-
-        .section {
-          margin: 15px 0;
-        }
-
-        .section-title {
-          font-weight: bold;
-          margin-bottom: 8px;
-          text-decoration: underline;
-        }
-
-        .field {
-          display: flex;
-          margin-bottom: 6px;
-          align-items: flex-start;
-        }
-
-        .field-label {
-          width: 140px;
-          font-weight: normal;
-        }
-
-        .field-value {
-          flex: 1;
-          word-break: break-word;
-        }
-
-        .separator {
-          border-bottom: 1px solid #000;
-          margin: 20px 0;
-        }
-
-        .signature-section {
-          margin-top: 40px;
-          text-align: center;
-        }
-
-        .signature-date {
-          margin-bottom: 30px;
-        }
-
-        .signature-line {
-          border-top: 1px solid #000;
-          width: 250px;
-          margin: 50px auto 0;
-          height: 1px;
-        }
-
-        .signature-name {
-          margin-top: 10px;
-          font-weight: bold;
-        }
-
-        .signature-title {
-          font-size: 9pt;
-          margin-top: 3px;
-        }
-
-        .footer {
-          font-size: 8pt;
-          text-align: center;
-          margin-top: 30px;
-          color: #333;
-          line-height: 1.3;
-          border-top: 1px solid #ccc;
-          padding-top: 10px;
-        }
-
         @media print {
-          * {
-            margin: 0;
-            padding: 0;
-          }
-
-          body {
-            margin: 0;
-            padding: 0;
-            background: white;
-          }
-
-          .container {
-            margin: 0;
-            padding: 15mm;
-            height: auto;
-            box-shadow: none;
-          }
+          body { background: white; }
+          .page { box-shadow: none !important; margin: 0; }
         }
       </style>
     </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          ${logoHTML}
-          <div class="header-text">
-            <div class="clinic-name">${config.clinic.name}</div>
-            <div class="clinic-subtitle">${config.clinic.subtitle}</div>
-            <div class="clinic-address">
-              ${config.clinic.address.street}<br>
-              ${config.clinic.address.district}<br>
-              Telp: ${config.clinic.address.phone}<br>
-              Email: ${config.clinic.address.email}
+    <body class="bg-gray-100 flex justify-center py-8">
+      <div class="page bg-white w-[800px] p-10 shadow-lg">
+        <!-- Header dengan Logo -->
+        <div class="flex items-start gap-5">
+          <img src="${config.clinic.logo}"
+               alt="Logo ${config.clinic.name}"
+               class="w-28 h-28 object-contain" />
+          <div class="text-center flex-1">
+            <h1 class="text-xl font-bold uppercase">${config.rujukan.title}</h1>
+            <p class="text-sm mt-1">Dokumen ini merupakan surat rujukan pasien untuk penanganan lanjutan.<br>
+            Harap isi dengan benar sesuai data asli pasien.</p>
+          </div>
+        </div>
+
+        <hr class="border-gray-400 my-5">
+
+        <!-- Surat Rujukan -->
+        <h2 class="text-center font-semibold underline text-base mb-3">${config.rujukan.title}</h2>
+
+        <div class="text-sm leading-relaxed">
+          <p>${config.rujukan.greeting.salutation}</p>
+          <p>${config.rujukan.greeting.recipient}</p>
+          <p>${config.rujukan.greeting.place}</p>
+
+          <p class="mt-3 font-semibold">${config.rujukan.greeting.opening}</p>
+          <p>${config.rujukan.greeting.request}</p>
+
+          <div class="mt-3 space-y-2">
+            <p>${config.rujukan.labels.name}: <strong>${employee.name}</strong></p>
+            <p>${config.rujukan.labels.age}: <strong>${employee.age || '___'} tahun</strong></p>
+            <p>${config.rujukan.labels.gender}: <strong>${employee.jenisKelamin || '___'}</strong></p>
+            <p>${config.rujukan.labels.company_job}: <strong>${employee.department && employee.jobTitle ? employee.department + ' / ' + employee.jobTitle : '___'}</strong></p>
+          </div>
+
+          <div class="mt-3">
+            <p class="font-semibold">${config.rujukan.labels.physical_exam}:</p>
+            <div class="ml-4 space-y-1">
+              <p>${config.rujukan.labels.blood_pressure}: <strong>${mcu.bloodPressure || '____'}</strong> ${config.rujukan.units.blood_pressure} &nbsp;
+                 ${config.rujukan.labels.respiratory_rate}: <strong>${mcu.respiratoryRate || '____'}</strong> ${config.rujukan.units.respiratory_rate}</p>
+              <p>${config.rujukan.labels.pulse}: <strong>${mcu.pulse || '____'}</strong> ${config.rujukan.units.pulse} &nbsp;
+                 ${config.rujukan.labels.temperature}: <strong>${mcu.temperature || '____'}</strong> ${config.rujukan.units.temperature}</p>
+            </div>
+          </div>
+
+          <div class="mt-3 space-y-2">
+            <p>${config.rujukan.labels.chief_complaint}: <strong>${mcu.keluhanUtama || '_________________________'}</strong></p>
+            <p>${config.rujukan.labels.diagnosis}: <strong>${mcu.diagnosisKerja || '_________________________'}</strong></p>
+            <p>${config.rujukan.labels.referral_reason}: <strong>${mcu.alasanRujuk || '_________________________'}</strong></p>
+          </div>
+
+          <div class="flex justify-end mt-8 text-sm">
+            <div class="text-right">
+              <p>${config.clinic.city}, ${day} ${getMonthName(parseInt(month))} ${year}</p>
+              <p class="mt-1">${config.clinic.doctorTitle}</p>
+              <div class="h-16"></div>
+              <p><strong>${config.clinic.doctorName}</strong></p>
             </div>
           </div>
         </div>
 
-        <div class="title">SURAT RUJUKAN</div>
+        <!-- Warning -->
+        <div class="border border-gray-300 bg-yellow-50 p-3 text-xs leading-tight mt-5">
+          <strong>Perhatian:</strong> ${config.warning}
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
 
-        <div class="greeting">
-          <div>${config.greeting.salutation}</div>
-          <div>${config.greeting.recipient}</div>
-          <div>${config.greeting.place}</div>
-          <div style="margin-top: 10px;">${config.greeting.opening}</div>
-          <div>${config.greeting.request}</div>
+/**
+ * Generate HTML untuk Surat Rujukan Balik (Return Referral)
+ * Kosong - hanya template untuk diisi manual
+ */
+function generateRujukanBalikHTML(employee) {
+  const config = rujukanConfig;
+  const currentDate = new Date();
+  const day = String(currentDate.getDate()).padStart(2, '0');
+  const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+  const year = currentDate.getFullYear();
+
+  return `
+    <!DOCTYPE html>
+    <html lang="id">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Surat Rujukan Balik - ${employee.name}</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <style>
+        @media print {
+          body { background: white; }
+          .page { box-shadow: none !important; margin: 0; }
+        }
+      </style>
+    </head>
+    <body class="bg-gray-100 flex justify-center py-8">
+      <div class="page bg-white w-[800px] p-10 shadow-lg">
+        <!-- Header dengan Logo -->
+        <div class="flex items-start gap-5">
+          <img src="${config.clinic.logo}"
+               alt="Logo ${config.clinic.name}"
+               class="w-28 h-28 object-contain" />
+          <div class="text-center flex-1">
+            <h1 class="text-xl font-bold uppercase">${config.rujukanBalik.title}</h1>
+            <p class="text-sm mt-1">Dokumen ini merupakan surat rujukan balik/hasil rujukan pasien.<br>
+            Harap isi dengan benar sesuai hasil penanganan.</p>
+          </div>
         </div>
 
-        <div class="section">
-          <div class="field">
-            <div class="field-label">${config.labels.name}</div>
-            <div class="field-value">: ${employee.name || '___________________________'}</div>
-          </div>
-          <div class="field">
-            <div class="field-label">${config.labels.age}</div>
-            <div class="field-value">: ${employee.age || '___'} ${config.units.age}</div>
-          </div>
-          <div class="field">
-            <div class="field-label">${config.labels.gender}</div>
-            <div class="field-value">: ${employee.jenisKelamin || '___________'}</div>
-          </div>
-          <div class="field">
-            <div class="field-label">${config.labels.company_job}</div>
-            <div class="field-value">: ${employee.department && employee.jobTitle ? employee.department + ' / ' + employee.jobTitle : '___________________________'}</div>
-          </div>
-        </div>
+        <hr class="border-gray-400 my-5">
 
-        <div class="separator"></div>
+        <!-- Surat Rujukan Balik -->
+        <h2 class="text-center font-semibold underline text-base mb-3">${config.rujukanBalik.title}</h2>
 
-        <div class="section">
-          <div class="section-title">${config.labels.physical_exam}</div>
-          <div class="field">
-            <div class="field-label">${config.labels.blood_pressure}</div>
-            <div class="field-value">: ${mcu.bloodPressure || '____'} ${config.units.blood_pressure}</div>
+        <div class="text-sm leading-relaxed">
+          <p>${config.rujukanBalik.greeting}</p>
+          <p>${config.rujukanBalik.opening}</p>
+
+          <div class="mt-3 space-y-2">
+            <p>${config.rujukanBalik.labels.name}: <span class="border-b border-dotted border-gray-500 inline-block w-[450px]"></span></p>
+            <p>${config.rujukanBalik.labels.age}: <span class="border-b border-dotted border-gray-500 inline-block w-[500px]"></span></p>
+            <p>${config.rujukanBalik.labels.diagnosis}: <span class="border-b border-dotted border-gray-500 inline-block w-[425px]"></span></p>
+            <p>${config.rujukanBalik.labels.therapy}: <span class="border-b border-dotted border-gray-500 inline-block w-[460px]"></span></p>
+            <p>${config.rujukanBalik.labels.suggestion}: <span class="border-b border-dotted border-gray-500 inline-block w-[470px]"></span></p>
+            <p>${config.rujukanBalik.labels.notes}: <span class="border-b border-dotted border-gray-500 inline-block w-[400px]"></span></p>
+            <p>${config.rujukanBalik.labels.conclusion}: <span class="border-b border-dotted border-gray-500 inline-block w-[400px]"></span></p>
           </div>
-          <div class="field">
-            <div class="field-label">${config.labels.respiratory_rate}</div>
-            <div class="field-value">: ${mcu.respiratoryRate || '____'} ${config.units.respiratory_rate}</div>
-          </div>
-          <div class="field">
-            <div class="field-label">${config.labels.pulse}</div>
-            <div class="field-value">: ${mcu.pulse || '____'} ${config.units.pulse}</div>
-          </div>
-          <div class="field">
-            <div class="field-label">${config.labels.temperature}</div>
-            <div class="field-value">: ${mcu.temperature || '____'} ${config.units.temperature}</div>
+
+          <div class="flex justify-end mt-10 text-sm">
+            <div class="text-right">
+              <p>${config.clinic.city}, <span class="border-b border-dotted border-gray-500 inline-block w-40"></span> ${year}</p>
+              <div class="h-16"></div>
+              <p>(.................................................)</p>
+            </div>
           </div>
         </div>
 
-        <div class="separator"></div>
-
-        <div class="section">
-          <div class="section-title">${config.labels.chief_complaint}</div>
-          <div style="margin-left: 140px;">${mcu.keluhanUtama || '______________________________________________________________________'}</div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">${config.labels.diagnosis}</div>
-          <div style="margin-left: 140px;">${mcu.diagnosisKerja || '______________________________________________________________________'}</div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">${config.labels.referral_reason}</div>
-          <div style="margin-left: 140px;">${mcu.alasanRujuk || '______________________________________________________________________'}</div>
-        </div>
-
-        <div class="signature-section">
-          <div class="signature-date">${config.clinic.city}, ${day} ${getMonthName(parseInt(month))} ${year}</div>
-          <div class="signature-line"></div>
-          <div class="signature-name">${config.clinic.doctorName}</div>
-          <div class="signature-title">${config.clinic.doctorTitle}</div>
-        </div>
-
-        <div class="footer">
-          ${config.footer}
+        <!-- Warning -->
+        <div class="border border-gray-300 bg-yellow-50 p-3 text-xs leading-tight mt-5">
+          <strong>Perhatian:</strong> ${config.warning}
         </div>
       </div>
     </body>

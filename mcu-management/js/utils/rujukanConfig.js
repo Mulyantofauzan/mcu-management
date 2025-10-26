@@ -1,70 +1,86 @@
 /**
  * Surat Rujukan Configuration
  * Customize format, logo, clinic info, etc.
+ * Matches professional template with logo and dual referral letters
  */
 
 export const rujukanConfig = {
   // Clinic Information
   clinic: {
-    name: 'SEKATA',
-    subtitle: 'MEDICAL CENTER',
+    name: 'SEKATA MEDICAL CENTER',
+    // Logo URL - menggunakan logo dari Supabase storage
+    logo: 'https://s3.nevaobjects.id/saffix-storige/saffmedic-sekata/company/klinik_sekata_medical_center-1-09052025084603.png',
+    logoWidth: 112,  // pixels (disesuaikan dengan template)
+    logoHeight: 112,
+
     address: {
       street: 'Jl. Pangeran Suryanata No.27 RT.15, Kelurahan Air Putih',
       district: 'Kecamatan Samarinda Ulu, Kota Samarinda Kalimantan Timur',
       phone: '0541 2921958',
       email: 'sekatamedicalcenter@gmail.com'
     },
-    // Logo - dapat berupa URL gambar atau data:image/png;base64,...
-    logo: null, // Set ke URL atau base64 data untuk menampilkan logo
-    logoWidth: 30, // Width logo dalam mm
-    logoHeight: 30, // Height logo dalam mm
+
     doctorName: 'dr. Pahroni',
     doctorTitle: 'Dokter FAR PT.PST',
     city: 'Samarinda'
   },
 
-  // Letter Greeting (dapat disesuaikan)
-  greeting: {
-    salutation: 'Kepada Yth.',
-    recipient: 'Ts. Dokter Spesialis Penyakit Dalam',
-    place: 'Di Tempat',
-    opening: 'Dengan Hormat,',
-    request: 'Mohon perawatan lebih lanjut pasien tersebut di bawah ini :'
+  // Surat Rujukan (Forward Referral)
+  rujukan: {
+    title: 'SURAT RUJUKAN',
+    greeting: {
+      salutation: 'Kepada Yth.',
+      recipient: 'Ts. Dokter Spesialis Penyakit Dalam',
+      place: 'Di Tempat',
+      opening: 'Dengan Hormat,',
+      request: 'Mohon perawatan lebih lanjut pasien tersebut di bawah ini:'
+    },
+    labels: {
+      name: 'Nama',
+      age: 'Umur',
+      gender: 'Jenis Kelamin',
+      company_job: 'Perusahaan/Jabatan',
+      physical_exam: 'Pemeriksaan Fisik',
+      blood_pressure: 'Tekanan Darah',
+      respiratory_rate: 'RR',
+      pulse: 'Nadi',
+      temperature: 'Suhu',
+      chief_complaint: 'Keluhan Utama',
+      diagnosis: 'Diagnosis Kerja',
+      referral_reason: 'Alasan dirujuk'
+    },
+    units: {
+      blood_pressure: 'mmHg',
+      respiratory_rate: '/m',
+      pulse: '/m',
+      temperature: '°C'
+    }
   },
 
-  // Field Labels (dapat diterjemahkan atau disesuaikan)
-  labels: {
-    name: 'Nama',
-    age: 'Umur',
-    gender: 'Jenis Kelamin',
-    company_job: 'Perusahaan/Jabatan',
-    physical_exam: 'Pemeriksaan Fisik',
-    blood_pressure: 'Tekanan Darah',
-    respiratory_rate: 'RR (Frequensi Nafas)',
-    pulse: 'Nadi',
-    temperature: 'Suhu',
-    chief_complaint: 'Keluhan Utama',
-    diagnosis: 'Diagnosis Kerja',
-    referral_reason: 'Alasan Dirujuk'
+  // Surat Rujukan Balik (Return Referral)
+  rujukanBalik: {
+    title: 'SURAT RUJUKAN BALIK',
+    greeting: 'Yang Terhormat Rekan Sejawat,',
+    opening: 'Bersama ini kami kirim kembali pasien dengan data sebagai berikut:',
+    labels: {
+      name: 'Nama',
+      age: 'Usia',
+      diagnosis: 'Diagnosa',
+      therapy: 'Terapi',
+      suggestion: 'Saran',
+      notes: 'Keterangan',
+      conclusion: 'Kesimpulan'
+    }
   },
 
-  // Units
-  units: {
-    age: 'tahun',
-    blood_pressure: 'mmHg',
-    respiratory_rate: '/m',
-    pulse: '/m',
-    temperature: '°C'
-  },
-
-  // Footer note
-  footer: 'Surat rujukan harus disertai dengan RL, Ringkasan hasil tes lab dan atau pemeriksaan lain yang relevan dengan urutan masalah',
+  // Warning message
+  warning: 'Perhatian: Surat rujukan harus sesuai dengan asli. Dilarang memalsukan data/berkas hasil rujukan/MCU. Segala bentuk kecurangan akan diberikan sanksi hukum sesuai dengan ketentuan hukum dan undang-undang yang berlaku beserta sanksi sesuai ketentuan perusahaan.',
 
   // Page settings
   page: {
     size: 'A4',
     format: 'portrait',
-    margin: '15mm'
+    margin: '40px'
   }
 };
 

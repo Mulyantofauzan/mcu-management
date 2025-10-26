@@ -9,7 +9,7 @@ import { mcuService } from '../services/mcuService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal, hideAdminMenuForNonAdmin } from '../utils/uiHelpers.js';
-import { generateRujukanPDF } from '../utils/rujukanPDFGenerator.js';
+import { generateRujukanPDF, generateRujukanBalikPDF } from '../utils/rujukanPDFGenerator.js';
 
 let followUpList = [];
 let filteredList = [];
@@ -52,6 +52,23 @@ window.downloadRujukanPDFAction = function(mcuId) {
     console.error('Error loading MCU:', error);
     showToast('Gagal memuat data MCU: ' + error.message, 'error');
   });
+};
+
+// Download Surat Rujukan Balik (Return Referral) from table action button
+window.downloadRujukanBalikAction = function(employeeId) {
+  const employee = employees.find(e => e.employeeId === employeeId);
+  if (!employee) {
+    showToast('Data karyawan tidak ditemukan', 'error');
+    return;
+  }
+
+  try {
+    generateRujukanBalikPDF(employee);
+    showToast('Surat Rujukan Balik siap dicetak. Gunakan Ctrl+S atau Simpan PDF di print dialog.', 'success');
+  } catch (error) {
+    console.error('Error generating rujukan balik:', error);
+    showToast('Gagal membuat surat rujukan balik: ' + error.message, 'error');
+  }
 };
 
 async function init() {
@@ -172,6 +189,9 @@ function renderTable() {
       <div class="flex gap-2">
         <button onclick="downloadRujukanPDFAction('${mcu.mcuId}')" class="btn btn-sm btn-secondary" title="Download Surat Rujukan" style="padding: 0.375rem 0.75rem; background-color: #3b82f6; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
           📄 Rujukan
+        </button>
+        <button onclick="downloadRujukanBalikAction('${mcu.employeeId}')" class="btn btn-sm btn-secondary" title="Download Surat Rujukan Balik" style="padding: 0.375rem 0.75rem; background-color: #8b5cf6; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
+          📄 Balik
         </button>
         <button onclick="openFollowUpModal('${mcu.mcuId}')" class="btn btn-sm btn-primary">
           Update
