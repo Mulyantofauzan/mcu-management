@@ -45,6 +45,7 @@ class DatabaseService {
             case 'departments': return await adp.MasterData.getDepartments();
             case 'jobTitles': return await adp.MasterData.getJobTitles();
             case 'vendors': return await adp.MasterData.getVendors();
+            case 'referralRecipients': return await adp.MasterData.getReferralRecipients();
             case 'activityLog': return await adp.ActivityLog.getAll();
             default: throw new Error(`Unknown table: ${tableName}`);
         }
@@ -71,6 +72,10 @@ class DatabaseService {
                 return typeof data === 'object' && data.vendorId
                     ? await adp.MasterData.addVendor(data)
                     : await adp.MasterData.addVendor(data.name || data);
+            case 'referralRecipients':
+                return typeof data === 'object' && data.id
+                    ? await adp.MasterData.addReferralRecipient(data)
+                    : await adp.MasterData.addReferralRecipient(data.name || data);
             case 'activityLog': return await adp.ActivityLog.add(data);
             default: throw new Error(`Unknown table: ${tableName}`);
         }
@@ -85,6 +90,7 @@ class DatabaseService {
             case 'mcuChanges': return await adp.MCUChanges.update(id, data);
             case 'departments': return await adp.MasterData.updateDepartment(id, data.name);
             case 'jobTitles': return await adp.MasterData.updateJobTitle(id, data.name);
+            case 'referralRecipients': return await adp.MasterData.updateReferralRecipient(id, data.name);
             case 'vendors': return await adp.MasterData.updateVendor(id, data.name);
             default: throw new Error(`Unknown table: ${tableName}`);
         }
@@ -100,6 +106,7 @@ class DatabaseService {
             case 'jobTitles': return await adp.MasterData.deleteJobTitle(id);
             case 'departments': return await adp.MasterData.deleteDepartment(id);
             case 'vendors': return await adp.MasterData.deleteVendor(id);
+            case 'referralRecipients': return await adp.MasterData.deleteReferralRecipient(id);
             default: throw new Error(`Delete not supported for: ${tableName}`);
         }
     }
@@ -114,6 +121,7 @@ class DatabaseService {
             case 'jobTitles': return await adp.MasterData.deleteJobTitle(id);
             case 'departments': return await adp.MasterData.deleteDepartment(id);
             case 'vendors': return await adp.MasterData.deleteVendor(id);
+            case 'referralRecipients': return await adp.MasterData.deleteReferralRecipient(id);
             default: throw new Error(`Hard delete not supported for: ${tableName}`);
         }
     }

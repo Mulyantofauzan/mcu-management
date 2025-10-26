@@ -8,7 +8,8 @@ import {
   generateJobTitleId,
   generateDepartmentId,
   generateStatusId,
-  generateVendorId
+  generateVendorId,
+  generateReferralRecipientId
 } from '../utils/idGenerator.js';
 import { getCurrentTimestamp } from '../utils/dateHelpers.js';
 
@@ -159,6 +160,39 @@ class MasterDataService {
       throw new Error(`Tidak dapat menghapus. Vendor ini digunakan oleh ${employees.length} karyawan.`);
     }
     await database.delete('vendors', id);
+    return true;
+  }
+
+  // Referral Recipients
+  async createReferralRecipient(data) {
+    const referralRecipient = {
+      id: generateReferralRecipientId(),
+      name: data.name,
+      createdAt: getCurrentTimestamp(),
+      updatedAt: getCurrentTimestamp()
+    };
+    await database.add('referralRecipients', referralRecipient);
+    return referralRecipient;
+  }
+
+  async getAllReferralRecipients() {
+    return await database.getAll('referralRecipients');
+  }
+
+  async getReferralRecipientById(id) {
+    return await database.get('referralRecipients', id);
+  }
+
+  async updateReferralRecipient(id, data) {
+    await database.update('referralRecipients', id, {
+      name: data.name,
+      updatedAt: getCurrentTimestamp()
+    });
+    return await this.getReferralRecipientById(id);
+  }
+
+  async deleteReferralRecipient(id) {
+    await database.delete('referralRecipients', id);
     return true;
   }
 }

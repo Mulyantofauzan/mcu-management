@@ -14,6 +14,7 @@ let employees = [];
 let filteredEmployees = [];
 let jobTitles = [];
 let departments = [];
+let referralRecipients = [];
 let currentPage = 1;
 const itemsPerPage = 10;
 
@@ -42,6 +43,7 @@ async function loadData() {
         // IMPORTANT: Load master data FIRST before employees
         jobTitles = await masterDataService.getAllJobTitles();
         departments = await masterDataService.getAllDepartments();
+        referralRecipients = await masterDataService.getAllReferralRecipients();
         employees = await employeeService.getAll();
 
         // Enrich employee data with IDs (for Supabase which only stores names)
@@ -50,6 +52,7 @@ async function loadData() {
 
         updateStats();
         renderTable();
+        populateReferralRecipientsDropdown();
     } catch (error) {
         console.error('Error loading data:', error);
         showToast('Gagal memuat data: ' + error.message, 'error');
@@ -402,6 +405,22 @@ window.handleEditEmployee = async function(event) {
     }
 };
 
+function populateReferralRecipientsDropdown() {
+    const select = document.getElementById('mcu-recipient');
+    if (!select) return;
+
+    // Clear existing options except the first one
+    select.innerHTML = '<option value="">Pilih Penerima Rujukan</option>';
+
+    // Add referral recipients
+    referralRecipients.forEach(recipient => {
+        const option = document.createElement('option');
+        option.value = recipient.name;
+        option.textContent = recipient.name;
+        select.appendChild(option);
+    });
+}
+
 window.addMCUForEmployee = async function(employeeId) {
     try {
         // Find employee data
@@ -453,6 +472,9 @@ window.handleAddMCU = async function(event) {
             mcuDate: document.getElementById('mcu-date').value,
             bmi: document.getElementById('mcu-bmi').value || null,
             bloodPressure: document.getElementById('mcu-bp').value || null,
+            respiratoryRate: document.getElementById('mcu-rr').value || null,
+            pulse: document.getElementById('mcu-pulse').value || null,
+            temperature: document.getElementById('mcu-temp').value || null,
             vision: document.getElementById('mcu-vision').value || null,
             audiometry: document.getElementById('mcu-audio').value || null,
             spirometry: document.getElementById('mcu-spiro').value || null,
@@ -465,6 +487,10 @@ window.handleAddMCU = async function(event) {
             sgpt: document.getElementById('mcu-sgpt').value || null,
             cbc: document.getElementById('mcu-cbc').value || null,
             napza: document.getElementById('mcu-napza').value || null,
+            recipient: document.getElementById('mcu-recipient').value || null,
+            keluhanUtama: document.getElementById('mcu-keluhan').value || null,
+            diagnosisKerja: document.getElementById('mcu-diagnosis').value || null,
+            alasanRujuk: document.getElementById('mcu-alasan').value || null,
             initialResult: document.getElementById('mcu-result').value,
             initialNotes: document.getElementById('mcu-notes').value
         };
