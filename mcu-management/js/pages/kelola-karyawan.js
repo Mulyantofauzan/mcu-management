@@ -423,7 +423,7 @@ window.addMCUForEmployee = async function(employeeId) {
         document.getElementById('mcu-employee-id').value = employeeId;
 
         // Reset form
-        document.getElementById('add-mcu-form').reset();
+        document.getElementById('mcu-form').reset();
         document.getElementById('mcu-employee-id').value = employeeId;
 
         // Set default date to today
@@ -546,6 +546,17 @@ window.viewMCUDetail = async function(mcuId) {
         document.getElementById('mcu-detail-treadmill').textContent = mcu.treadmill || '-';
         document.getElementById('mcu-detail-kidney').textContent = mcu.kidneyLiverFunction || '-';
         document.getElementById('mcu-detail-napza').textContent = mcu.napza || '-';
+
+        // Fill additional data
+        document.getElementById('mcu-detail-rr').textContent = mcu.respiratoryRate || '-';
+        document.getElementById('mcu-detail-pulse').textContent = mcu.pulse || '-';
+        document.getElementById('mcu-detail-temp').textContent = mcu.temperature || '-';
+
+        // Fill referral data
+        document.getElementById('mcu-detail-recipient').textContent = mcu.recipient || '-';
+        document.getElementById('mcu-detail-keluhan').textContent = mcu.keluhanUtama || '-';
+        document.getElementById('mcu-detail-diagnosis').textContent = mcu.diagnosisKerja || '-';
+        document.getElementById('mcu-detail-alasan').textContent = mcu.alasanRujuk || '-';
 
         // Fill results
         document.getElementById('mcu-detail-initial-result').innerHTML = getStatusBadge(mcu.initialResult);
