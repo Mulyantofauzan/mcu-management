@@ -267,6 +267,9 @@
                     <div class="grid grid-cols-3 gap-4 mb-4">
                         <div><label class="label">BMI</label><input type="number" step="0.1" id="mcu-bmi" class="input" /></div>
                         <div><label class="label">Tekanan Darah</label><input type="text" id="mcu-bp" class="input" placeholder="120/80" /></div>
+                        <div><label class="label">RR (Frequensi Nafas)</label><input type="text" id="mcu-rr" class="input" placeholder="20 /m" /></div>
+                        <div><label class="label">Nadi</label><input type="text" id="mcu-pulse" class="input" placeholder="80 /m" /></div>
+                        <div><label class="label">Suhu</label><input type="text" id="mcu-temp" class="input" placeholder="36.5 °C" /></div>
                         <div><label class="label">Penglihatan</label><input type="text" id="mcu-vision" class="input" placeholder="6/6" /></div>
                         <div><label class="label">Audiometri</label><input type="text" id="mcu-audio" class="input" /></div>
                         <div><label class="label">Spirometri</label><input type="text" id="mcu-spiro" class="input" /></div>
@@ -289,6 +292,13 @@
                         <div><label class="label">Treadmill</label><textarea id="mcu-treadmill" class="input" rows="2"></textarea></div>
                         <div><label class="label">Fungsi Ginjal & Hati</label><textarea id="mcu-kidney" class="input" rows="2"></textarea></div>
                         <div><label class="label">NAPZA</label><input type="text" id="mcu-napza" class="input" /></div>
+                    </div>
+
+                    <h4 class="font-semibold text-gray-900 mb-3">Rujukan (Opsional)</h4>
+                    <div class="grid grid-cols-1 gap-4 mb-4">
+                        <div><label class="label">Keluhan Utama</label><textarea id="mcu-keluhan" class="input" rows="2" placeholder="Contoh: Nyeri dada"></textarea></div>
+                        <div><label class="label">Diagnosis Kerja</label><textarea id="mcu-diagnosis" class="input" rows="2" placeholder="Contoh: Hipertensi stage 2"></textarea></div>
+                        <div><label class="label">Alasan Dirujuk</label><textarea id="mcu-alasan" class="input" rows="2" placeholder="Contoh: Perlu konsultasi spesialis jantung"></textarea></div>
                     </div>
 
                     <h4 class="font-semibold text-gray-900 mb-3">Hasil</h4>

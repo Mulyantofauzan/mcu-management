@@ -317,6 +317,9 @@ window.handleMCUUpdate = async function(event) {
     const fieldMapping = {
       'update-bmi': 'bmi',
       'update-bp': 'bloodPressure',
+      'update-rr': 'respiratoryRate',
+      'update-pulse': 'pulse',
+      'update-temp': 'temperature',
       'update-vision': 'vision',
       'update-audio': 'audiometry',
       'update-spiro': 'spirometry',
@@ -328,7 +331,10 @@ window.handleMCUUpdate = async function(event) {
       'update-sgot': 'sgot',
       'update-sgpt': 'sgpt',
       'update-cbc': 'cbc',
-      'update-napza': 'napza'
+      'update-napza': 'napza',
+      'update-keluhan': 'keluhanUtama',
+      'update-diagnosis': 'diagnosisKerja',
+      'update-alasan': 'alasanRujuk'
     };
 
     for (const [fieldId, dataKey] of Object.entries(fieldMapping)) {
@@ -349,12 +355,10 @@ window.handleMCUUpdate = async function(event) {
     // Update MCU record (this will also create MCUChange entries)
     await mcuService.updateFollowUp(mcuId, updateData, currentUser);
 
-    showToast('Detail MCU berhasil diupdate', 'success');
+    showToast('Detail MCU berhasil diupdate! Silakan copy data sebelum menutup modal.', 'success');
 
-    // Auto-close modal
-    closeMCUUpdateModal();
-
-    // Reload follow-up list
+    // Manual close (user can copy data before closing)
+    // Reload follow-up list untuk update tampilan
     await loadFollowUpList();
 
   } catch (error) {

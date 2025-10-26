@@ -277,6 +277,9 @@ window.handleAddMCU = async function(event) {
             mcuDate: document.getElementById('mcu-date').value,
             bmi: document.getElementById('mcu-bmi').value || null,
             bloodPressure: document.getElementById('mcu-bp').value || null,
+            respiratoryRate: document.getElementById('mcu-rr').value || null,
+            pulse: document.getElementById('mcu-pulse').value || null,
+            temperature: document.getElementById('mcu-temp').value || null,
             vision: document.getElementById('mcu-vision').value || null,
             audiometry: document.getElementById('mcu-audio').value || null,
             spirometry: document.getElementById('mcu-spiro').value || null,
@@ -289,6 +292,9 @@ window.handleAddMCU = async function(event) {
             sgpt: document.getElementById('mcu-sgpt').value || null,
             cbc: document.getElementById('mcu-cbc').value || null,
             napza: document.getElementById('mcu-napza').value || null,
+            keluhanUtama: document.getElementById('mcu-keluhan').value || null,
+            diagnosisKerja: document.getElementById('mcu-diagnosis').value || null,
+            alasanRujuk: document.getElementById('mcu-alasan').value || null,
             initialResult: document.getElementById('mcu-result').value,
             initialNotes: document.getElementById('mcu-notes').value
         };
@@ -297,12 +303,8 @@ window.handleAddMCU = async function(event) {
 
         showToast('MCU berhasil ditambahkan!', 'success');
 
-        // Auto-close modal
-        closeAddMCUModal();
-
-        // Clear search
-        document.getElementById('search-input').value = '';
-        document.getElementById('search-results').innerHTML = '';
+        // Manual close (user can copy data before closing)
+        // User closes modal manually dengan tombol "Batal"
 
     } catch (error) {
         console.error('Error adding MCU:', error);
