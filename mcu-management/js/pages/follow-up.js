@@ -18,8 +18,43 @@ let departments = [];
 let jobTitles = [];
 let currentMCU = null;
 
-// Download Surat Rujukan PDF
-window.downloadRujukanPDF = function() {
+// Download Surat Rujukan PDF from table action button
+window.downloadRujukanPDFAction = async function(mcuId) {
+  try {
+    const mcu = await mcuService.getById(mcuId);
+    if (!mcu) {
+      showToast('MCU data tidak ditemukan', 'error');
+      return;
+    }
+
+    const employee = employees.find(e => e.employeeId === mcu.employeeId);
+    if (!employee) {
+      showToast('Data karyawan tidak ditemukan', 'error');
+      return;
+    }
+
+    // Show loading state
+    showToast('Sedang membuat surat rujukan...', 'info');
+
+    // Prepare data untuk PDF
+    const employeeData = {
+      name: employee.name,
+      age: calculateAge(employee.birthDate),
+      jenisKelamin: employee.jenisKelamin || 'Laki-laki',
+      jobTitle: employee.jobTitle,
+      department: employee.department
+    };
+
+    await generateRujukanPDF(employeeData, mcu);
+    showToast('Surat Rujukan berhasil diunduh!', 'success');
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    showToast('Gagal membuat PDF: ' + error.message, 'error');
+  }
+};
+
+// Download Surat Rujukan PDF (kept for modal if needed in future)
+window.downloadRujukanPDF = async function() {
   if (!currentMCU) {
     showToast('MCU data tidak ditemukan', 'error');
     return;
@@ -31,6 +66,9 @@ window.downloadRujukanPDF = function() {
     return;
   }
 
+  // Show loading state
+  showToast('Sedang membuat surat rujukan...', 'info');
+
   // Prepare data untuk PDF
   const employeeData = {
     name: employee.name,
@@ -41,7 +79,7 @@ window.downloadRujukanPDF = function() {
   };
 
   try {
-    generateRujukanPDF(employeeData, currentMCU);
+    await generateRujukanPDF(employeeData, currentMCU);
     showToast('Surat Rujukan berhasil diunduh!', 'success');
   } catch (error) {
     console.error('Error generating PDF:', error);
@@ -164,9 +202,14 @@ function renderTable() {
     html += `<td><span class="badge badge-warning">${mcu.initialResult}</span></td>`;
     html += `<td><span class="text-xs text-gray-600">${(mcu.initialNotes || '').substring(0, 50)}...</span></td>`;
     html += `<td>
-      <button onclick="openFollowUpModal('${mcu.mcuId}')" class="btn btn-sm btn-primary">
-        Update
-      </button>
+      <div class="flex gap-2">
+        <button onclick="downloadRujukanPDFAction('${mcu.mcuId}')" class="btn btn-sm btn-info" title="Download Surat Rujukan">
+          📄
+        </button>
+        <button onclick="openFollowUpModal('${mcu.mcuId}')" class="btn btn-sm btn-primary">
+          Update
+        </button>
+      </div>
     </td>`;
     html += '</tr>';
   });

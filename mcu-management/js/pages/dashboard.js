@@ -757,15 +757,9 @@ async function updateActivityList() {
   let html = '';
   for (const activity of activities) {
     let activityText = '';
-    let userName = 'System';
 
-    // Get user display name
-    try {
-      const user = await database.get('users', activity.userId);
-      if (user) userName = user.displayName;
-    } catch (e) {
-      // Silent fail
-    }
+    // Use userName from activity log (already captured during logActivity)
+    const userName = activity.userName || 'System';
 
     // Build detailed activity text based on entity type
     if (activity.entityType === 'Employee') {
@@ -776,10 +770,8 @@ async function updateActivityList() {
       }[activity.action] || activity.action;
 
       let employeeName = activity.entityId;
-      try {
-        const emp = employees.find(e => e.employeeId === activity.entityId);
-        if (emp) employeeName = emp.name;
-      } catch (e) {}
+      const emp = employees.find(e => e.employeeId === activity.entityId);
+      if (emp) employeeName = emp.name;
 
       activityText = `<strong>${userName}</strong> ${actionText} <strong>${employeeName}</strong>`;
     } else if (activity.entityType === 'MCU') {
@@ -790,12 +782,14 @@ async function updateActivityList() {
           const emp = employees.find(e => e.employeeId === mcu.employeeId);
           if (emp) employeeName = emp.name;
         }
-      } catch (e) {}
+      } catch (e) {
+        // Silent fail
+      }
 
       if (activity.action === 'create') {
-        activityText = `<strong>${employeeName}</strong> baru saja MCU`;
+        activityText = `<strong>${employeeName || 'Karyawan'}</strong> baru saja MCU`;
       } else if (activity.action === 'update') {
-        activityText = `<strong>${employeeName}</strong> baru saja Follow-Up`;
+        activityText = `<strong>${employeeName || 'Karyawan'}</strong> baru saja Follow-Up`;
       } else {
         activityText = `<strong>${userName}</strong> menghapus data MCU`;
       }

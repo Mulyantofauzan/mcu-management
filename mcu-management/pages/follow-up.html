@@ -235,7 +235,6 @@
 
                     <div class="modal-footer">
                         <button type="button" onclick="closeFollowUpModal()" class="btn btn-secondary">Batal</button>
-                        <button type="button" onclick="window.downloadRujukanPDF()" class="btn btn-info">📄 Download Surat Rujukan</button>
                         <button type="submit" class="btn btn-primary">Simpan & Lanjut Update MCU</button>
                     </div>
                 </form>
@@ -315,8 +314,8 @@
         </div>
     </div>
 
-    <!-- jsPDF Library for PDF generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- jsPDF Library for PDF generation (async to prevent blocking) -->
+    <script async src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script type="module" src="../js/pages/follow-up.js"></script>
 </body>

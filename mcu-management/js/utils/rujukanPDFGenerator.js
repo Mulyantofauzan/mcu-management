@@ -5,14 +5,39 @@
 
 // Note: jsPDF library needs to be loaded in HTML: <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-export function generateRujukanPDF(employee, mcu) {
-  if (!window.jsPDF) {
-    console.error('jsPDF library not loaded');
-    alert('PDF library belum dimuat. Silakan refresh halaman.');
-    return;
+/**
+ * Wait for jsPDF library to be loaded with retries
+ */
+function waitForjsPDF(maxRetries = 10, delay = 500) {
+  return new Promise((resolve, reject) => {
+    let retries = 0;
+
+    const checkjsPDF = () => {
+      if (window.jsPDF) {
+        resolve(window.jsPDF);
+      } else if (retries < maxRetries) {
+        retries++;
+        setTimeout(checkjsPDF, delay);
+      } else {
+        reject(new Error('jsPDF library failed to load after ' + maxRetries + ' retries'));
+      }
+    };
+
+    checkjsPDF();
+  });
+}
+
+export async function generateRujukanPDF(employee, mcu) {
+  let jsPDFLib;
+
+  try {
+    jsPDFLib = await waitForjsPDF();
+  } catch (error) {
+    console.error('jsPDF library loading failed:', error);
+    throw new Error('PDF library belum dimuat. Silakan refresh halaman dan coba lagi.');
   }
 
-  const { jsPDF } = window.jsPDF;
+  const { jsPDF } = jsPDFLib;
   const doc = new jsPDF();
 
   // Set font
