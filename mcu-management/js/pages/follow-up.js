@@ -7,8 +7,9 @@ import { authService } from '../services/authService.js';
 import { employeeService } from '../services/employeeService.js';
 import { mcuService } from '../services/mcuService.js';
 import { masterDataService } from '../services/masterDataService.js';
-import { formatDateDisplay } from '../utils/dateHelpers.js';
+import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal, hideAdminMenuForNonAdmin } from '../utils/uiHelpers.js';
+import { generateRujukanPDF } from '../utils/rujukanPDFGenerator.js';
 
 let followUpList = [];
 let filteredList = [];
@@ -16,6 +17,37 @@ let employees = [];
 let departments = [];
 let jobTitles = [];
 let currentMCU = null;
+
+// Download Surat Rujukan PDF
+window.downloadRujukanPDF = function() {
+  if (!currentMCU) {
+    showToast('MCU data tidak ditemukan', 'error');
+    return;
+  }
+
+  const employee = employees.find(e => e.employeeId === currentMCU.employeeId);
+  if (!employee) {
+    showToast('Data karyawan tidak ditemukan', 'error');
+    return;
+  }
+
+  // Prepare data untuk PDF
+  const employeeData = {
+    name: employee.name,
+    age: calculateAge(employee.birthDate),
+    jenisKelamin: employee.jenisKelamin || 'Laki-laki',
+    jobTitle: employee.jobTitle,
+    department: employee.department
+  };
+
+  try {
+    generateRujukanPDF(employeeData, currentMCU);
+    showToast('Surat Rujukan berhasil diunduh!', 'success');
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    showToast('Gagal membuat PDF: ' + error.message, 'error');
+  }
+};
 
 async function init() {
   // Check auth
