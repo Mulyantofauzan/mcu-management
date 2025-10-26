@@ -41,6 +41,7 @@ class MCUService {
       napza: mcuData.napza || null,
 
       // Rujukan fields
+      recipient: mcuData.recipient || null,
       keluhanUtama: mcuData.keluhanUtama || null,
       diagnosisKerja: mcuData.diagnosisKerja || null,
       alasanRujuk: mcuData.alasanRujuk || null,
