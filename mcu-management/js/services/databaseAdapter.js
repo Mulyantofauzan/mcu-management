@@ -838,25 +838,13 @@ export const MasterData = {
     async getReferralRecipients() {
         if (useSupabase) {
             const supabase = getSupabaseClient();
-            try {
-                const { data, error } = await supabase
-                    .from('referral_recipients')
-                    .select('*')
-                    .order('name', { ascending: true });
+            const { data, error } = await supabase
+                .from('referral_recipients')
+                .select('*')
+                .order('name', { ascending: true });
 
-                if (error) {
-                    // If table doesn't exist in Supabase, fall back to IndexedDB
-                    if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
-                        console.warn('[ReferralRecipients] Table not found in Supabase, falling back to IndexedDB');
-                        return await indexedDB.db.referralRecipients.toArray();
-                    }
-                    throw error;
-                }
-                return data.map(item => transformMasterDataItem(item, 'referralRecipient'));
-            } catch (err) {
-                console.warn('[ReferralRecipients] Error querying Supabase, falling back to IndexedDB:', err.message);
-                return await indexedDB.db.referralRecipients.toArray();
-            }
+            if (error) throw error;
+            return data.map(item => transformMasterDataItem(item, 'referralRecipient'));
         }
         return await indexedDB.db.referralRecipients.toArray();
     },
@@ -869,26 +857,14 @@ export const MasterData = {
 
         if (useSupabase) {
             const supabase = getSupabaseClient();
-            try {
-                const { data, error } = await supabase
-                    .from('referral_recipients')
-                    .insert({ name })
-                    .select()
-                    .single();
+            const { data, error } = await supabase
+                .from('referral_recipients')
+                .insert({ name })
+                .select()
+                .single();
 
-                if (error) {
-                    // If table doesn't exist, fall back to IndexedDB
-                    if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
-                        console.warn('[ReferralRecipients] Table not found in Supabase, using IndexedDB');
-                        return await indexedDB.db.referralRecipients.add(fullData);
-                    }
-                    throw error;
-                }
-                return transformMasterDataItem(data, 'referralRecipient');
-            } catch (err) {
-                console.warn('[ReferralRecipients] Error inserting to Supabase, using IndexedDB:', err.message);
-                return await indexedDB.db.referralRecipients.add(fullData);
-            }
+            if (error) throw error;
+            return transformMasterDataItem(data, 'referralRecipient');
         }
         // For IndexedDB, use the full object if provided
         return await indexedDB.db.referralRecipients.add(fullData);
@@ -897,29 +873,15 @@ export const MasterData = {
     async updateReferralRecipient(id, name) {
         if (useSupabase) {
             const supabase = getSupabaseClient();
-            try {
-                const { data, error } = await supabase
-                    .from('referral_recipients')
-                    .update({ name })
-                    .eq('id', id)
-                    .select()
-                    .single();
+            const { data, error } = await supabase
+                .from('referral_recipients')
+                .update({ name })
+                .eq('id', id)
+                .select()
+                .single();
 
-                if (error) {
-                    // If table doesn't exist, fall back to IndexedDB
-                    if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
-                        console.warn('[ReferralRecipients] Table not found in Supabase, using IndexedDB');
-                        await indexedDB.db.referralRecipients.where('id').equals(id).modify({ name });
-                        return await indexedDB.db.referralRecipients.where('id').equals(id).first();
-                    }
-                    throw error;
-                }
-                return transformMasterDataItem(data, 'referralRecipient');
-            } catch (err) {
-                console.warn('[ReferralRecipients] Error updating Supabase, using IndexedDB:', err.message);
-                await indexedDB.db.referralRecipients.where('id').equals(id).modify({ name });
-                return await indexedDB.db.referralRecipients.where('id').equals(id).first();
-            }
+            if (error) throw error;
+            return transformMasterDataItem(data, 'referralRecipient');
         }
         // Dexie: use where().modify() for non-primary key fields
         await indexedDB.db.referralRecipients.where('id').equals(id).modify({ name });
@@ -929,25 +891,13 @@ export const MasterData = {
     async deleteReferralRecipient(id) {
         if (useSupabase) {
             const supabase = getSupabaseClient();
-            try {
-                const { error } = await supabase
-                    .from('referral_recipients')
-                    .delete()
-                    .eq('id', id);
+            const { error } = await supabase
+                .from('referral_recipients')
+                .delete()
+                .eq('id', id);
 
-                if (error) {
-                    // If table doesn't exist, fall back to IndexedDB
-                    if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
-                        console.warn('[ReferralRecipients] Table not found in Supabase, using IndexedDB');
-                        return await indexedDB.db.referralRecipients.delete(id);
-                    }
-                    throw error;
-                }
-                return true;
-            } catch (err) {
-                console.warn('[ReferralRecipients] Error deleting from Supabase, using IndexedDB:', err.message);
-                return await indexedDB.db.referralRecipients.delete(id);
-            }
+            if (error) throw error;
+            return true;
         }
         return await indexedDB.db.referralRecipients.delete(id);
     }
