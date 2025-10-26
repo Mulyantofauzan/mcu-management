@@ -638,6 +638,9 @@ window.editMCU = async function() {
         // Fill examination fields
         document.getElementById('edit-mcu-bmi').value = mcu.bmi || '';
         document.getElementById('edit-mcu-bp').value = mcu.bloodPressure || '';
+        document.getElementById('edit-mcu-rr').value = mcu.respiratoryRate || '';
+        document.getElementById('edit-mcu-pulse').value = mcu.pulse || '';
+        document.getElementById('edit-mcu-temp').value = mcu.temperature || '';
         document.getElementById('edit-mcu-vision').value = mcu.vision || '';
         document.getElementById('edit-mcu-audio').value = mcu.audiometry || '';
         document.getElementById('edit-mcu-spiro').value = mcu.spirometry || '';
@@ -650,6 +653,12 @@ window.editMCU = async function() {
         document.getElementById('edit-mcu-treadmill').value = mcu.treadmill || '';
         document.getElementById('edit-mcu-kidney').value = mcu.kidneyLiverFunction || '';
         document.getElementById('edit-mcu-napza').value = mcu.napza || '';
+
+        // Fill referral data
+        document.getElementById('edit-mcu-recipient').value = mcu.recipient || '';
+        document.getElementById('edit-mcu-keluhan').value = mcu.keluhanUtama || '';
+        document.getElementById('edit-mcu-diagnosis').value = mcu.diagnosisKerja || '';
+        document.getElementById('edit-mcu-alasan').value = mcu.alasanRujuk || '';
 
         // Fill results
         document.getElementById('edit-mcu-initial-result').value = mcu.initialResult;
@@ -687,6 +696,9 @@ window.handleEditMCU = async function(event) {
             mcuDate: document.getElementById('edit-mcu-date').value,
             bmi: document.getElementById('edit-mcu-bmi').value || null,
             bloodPressure: document.getElementById('edit-mcu-bp').value || null,
+            respiratoryRate: document.getElementById('edit-mcu-rr').value || null,
+            pulse: document.getElementById('edit-mcu-pulse').value || null,
+            temperature: document.getElementById('edit-mcu-temp').value || null,
             vision: document.getElementById('edit-mcu-vision').value || null,
             audiometry: document.getElementById('edit-mcu-audio').value || null,
             spirometry: document.getElementById('edit-mcu-spiro').value || null,
@@ -699,6 +711,10 @@ window.handleEditMCU = async function(event) {
             treadmill: document.getElementById('edit-mcu-treadmill').value || null,
             kidneyLiverFunction: document.getElementById('edit-mcu-kidney').value || null,
             napza: document.getElementById('edit-mcu-napza').value || null,
+            recipient: document.getElementById('edit-mcu-recipient').value || null,
+            keluhanUtama: document.getElementById('edit-mcu-keluhan').value || null,
+            diagnosisKerja: document.getElementById('edit-mcu-diagnosis').value || null,
+            alasanRujuk: document.getElementById('edit-mcu-alasan').value || null,
             initialResult: document.getElementById('edit-mcu-initial-result').value,
             initialNotes: document.getElementById('edit-mcu-initial-notes').value
         };
