@@ -90,32 +90,32 @@ function generateRujukanHTML(employee, mcu) {
       <!-- Area kanan -->
       <div class="flex">
         <!-- Kolom teks kanan -->
-        <div class="flex flex-col text-sm text-right leading-snug mr-4 justify-center">
+        <div style="display: flex; flex-direction: column; text-align: right; font-size: 13px; line-height: 1.2; margin-right: 0; justify-content: center;">
           <!-- Alamat sejajar dengan ikon lokasi -->
-          <div class="flex justify-end items-start mb-1">
-            <div class="max-w-[360px]">
-              <p>Jl. Pangeran Suryanata No.27 RT.15, Kelurahan Air Putih</p>
-              <p>Kecamatan Samarinda Ulu, Kota Samarinda</p>
-              <p>Kalimantan Timur</p>
+          <div style="display: flex; justify-content: flex-end; align-items: flex-start; margin-bottom: 8px;">
+            <div style="max-width: 360px;">
+              <p style="margin: 1px 0;">Jl. Pangeran Suryanata No.27 RT.15, Kelurahan Air Putih</p>
+              <p style="margin: 1px 0;">Kecamatan Samarinda Ulu, Kota Samarinda</p>
+              <p style="margin: 1px 0;">Kalimantan Timur</p>
             </div>
           </div>
 
           <!-- Telepon sejajar dengan ikon telepon -->
-          <div class="flex justify-end items-center mb-1 mt-1">
-            <p>0541 2921958</p>
+          <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 8px; margin-top: 2px;">
+            <p style="margin: 0;">0541 2921958</p>
           </div>
 
           <!-- Email sejajar dengan ikon email -->
-          <div class="flex justify-end items-center">
-            <p>sekatamedicalcenter@gmail.com</p>
+          <div style="display: flex; justify-content: flex-end; align-items: center;">
+            <p style="margin: 0;">sekatamedicalcenter@gmail.com</p>
           </div>
         </div>
 
         <!-- Kolom biru ikon vertikal -->
-        <div class="flex flex-col justify-around items-center bg-[#1E3A8A] text-white w-10 rounded-l-lg py-4">
-          <div class="text-xl">📍</div>
-          <div class="text-xl">☎️</div>
-          <div class="text-xl">✉️</div>
+        <div style="display: flex; flex-direction: column; justify-content: space-around; align-items: center; background-color: #1E3A8A; color: white; width: 40px; border-radius: 0 8px 8px 0; padding: 12px 0; margin-left: 6px;">
+          <div style="font-size: 20px; line-height: 1;">📍</div>
+          <div style="font-size: 20px; line-height: 1;">☎️</div>
+          <div style="font-size: 20px; line-height: 1;">✉️</div>
         </div>
       </div>
     </div>
@@ -124,54 +124,54 @@ function generateRujukanHTML(employee, mcu) {
     <div class="border-t border-black mt-4"></div>
   </div>
 
-        <hr style="border: none; border-top: 1px solid #999; margin: 6px 0;">
+        <hr style="border: none; border-top: 1px solid #999; margin: 5px 0;">
 
         <!-- SURAT RUJUKAN -->
-        <h2 style="text-align: center; font-weight: 600; text-decoration: underline; font-size: 13px; margin: 4px 0;">SURAT RUJUKAN</h2>
+        <h2 style="text-align: center; font-weight: 600; text-decoration: underline; font-size: 13px; margin: 3px 0;">SURAT RUJUKAN</h2>
 
-        <div style="font-size: 13px; line-height: 1.4;">
-          <p style="margin: 2px 0;">Kepada Yth.</p>
-          <p style="margin: 0;">Ts. Dokter Spesialis Penyakit Dalam</p>
-          <p style="margin: 0 0 3px 0;">Di Tempat</p>
+        <div style="font-size: 13px; line-height: 1.45;">
+          <p style="margin: 2px 0; line-height: 1.3;">Kepada Yth.</p>
+          <p style="margin: 0; line-height: 1.3;">Ts. Dokter Spesialis Penyakit Dalam</p>
+          <p style="margin: 0 0 2px 0; line-height: 1.3;">Di Tempat</p>
 
-          <p style="margin: 3px 0 0 0; font-weight: 600;">Dengan Hormat,</p>
-          <p style="margin: 0 0 4px 0;">Mohon perawatan lebih lanjut pasien tersebut di bawah ini:</p>
+          <p style="margin: 2px 0 0 0; font-weight: 600; line-height: 1.3;">Dengan Hormat,</p>
+          <p style="margin: 0 0 3px 0; line-height: 1.3;">Mohon perawatan lebih lanjut pasien tersebut di bawah ini:</p>
 
-          <div style="margin: 3px 0;">
+          <div style="margin: 3px 0 4px 0;">
             <p style="margin: 2px 0;">Nama: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 480px;">${employee.name}</span></p>
             <p style="margin: 2px 0;">Umur: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 480px;">${employee.age || ''}</span></p>
             <p style="margin: 2px 0;">Jenis Kelamin: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 420px;">${employee.jenisKelamin || ''}</span></p>
             <p style="margin: 2px 0;">Perusahaan/Jabatan: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 380px;">${employee.department && employee.jobTitle ? employee.department + ' / ' + employee.jobTitle : ''}</span></p>
           </div>
 
-          <div style="margin: 3px 0;">
-            <p style="margin: 2px 0 1px 0; font-weight: 600;">Pemeriksaan Fisik:</p>
-            <p style="margin: 1px 0; margin-left: 20px;">Tekanan Darah: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 80px;">${mcu.bloodPressure || ''}</span> mmHg &nbsp; RR: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 50px;">${mcu.respiratoryRate || ''}</span> /m</p>
-            <p style="margin: 1px 0; margin-left: 20px;">Nadi: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 70px;">${mcu.pulse || ''}</span> /m &nbsp; Suhu: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 70px;">${mcu.temperature || ''}</span> °C</p>
+          <div style="margin: 4px 0;">
+            <p style="margin: 2px 0 2px 0; font-weight: 600;">Pemeriksaan Fisik:</p>
+            <p style="margin: 2px 0; margin-left: 20px;">Tekanan Darah: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 80px;">${mcu.bloodPressure || ''}</span> mmHg &nbsp; RR: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 50px;">${mcu.respiratoryRate || ''}</span> /m</p>
+            <p style="margin: 2px 0; margin-left: 20px;">Nadi: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 70px;">${mcu.pulse || ''}</span> /m &nbsp; Suhu: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 70px;">${mcu.temperature || ''}</span> °C</p>
           </div>
 
-          <div style="margin: 3px 0;">
-            <p style="margin: 2px 0;">Keluhan Utama: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 430px;">${mcu.keluhanUtama || ''}</span></p>
-            <p style="margin: 2px 0;">Diagnosis Kerja: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 430px;">${mcu.diagnosisKerja || ''}</span></p>
-            <p style="margin: 2px 0;">Alasan dirujuk: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 430px;">${mcu.alasanRujuk || ''}</span></p>
+          <div style="margin: 4px 0;">
+            <p style="margin: 3px 0;">Keluhan Utama: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 430px;">${mcu.keluhanUtama || ''}</span></p>
+            <p style="margin: 3px 0;">Diagnosis Kerja: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 430px;">${mcu.diagnosisKerja || ''}</span></p>
+            <p style="margin: 3px 0;">Alasan dirujuk: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 430px;">${mcu.alasanRujuk || ''}</span></p>
           </div>
 
-          <div style="text-align: right; margin: 4px 0;">
+          <div style="text-align: right; margin: 5px 0;">
             <p style="margin: 2px 0;">${config.clinic.city}, <span style="border-bottom: 1px dotted #666; display: inline-block; width: 150px;">${day} ${getMonthName(parseInt(month))}</span> 20${year}</p>
             <p style="margin: 2px 0;">Dokter FAR PT. PST</p>
-            <div style="height: 35px;"></div>
+            <div style="height: 28px;"></div>
             <p style="margin: 2px 0; font-weight: 600;">${config.clinic.doctorName}</p>
           </div>
         </div>
 
-        <hr style="border: none; border-top: 1px solid #999; margin: 4px 0;">
+        <hr style="border: none; border-top: 1px solid #999; margin: 3px 0;">
 
         <!-- SURAT RUJUKAN BALIK -->
-        <h2 style="text-align: center; font-weight: 600; text-decoration: underline; font-size: 13px; margin: 4px 0;">SURAT RUJUKAN BALIK</h2>
+        <h2 style="text-align: center; font-weight: 600; text-decoration: underline; font-size: 13px; margin: 3px 0;">SURAT RUJUKAN BALIK</h2>
 
-        <div style="font-size: 13px; line-height: 1.4;">
+        <div style="font-size: 13px; line-height: 1.45;">
           <p style="margin: 2px 0;">Yang Terhormat Rekan Sejawat,</p>
-          <p style="margin: 0 0 3px 0;">Bersama ini kami kirim kembali pasien dengan data sebagai berikut:</p>
+          <p style="margin: 0 0 2px 0;">Bersama ini kami kirim kembali pasien dengan data sebagai berikut:</p>
 
           <div style="margin: 3px 0;">
             <p style="margin: 2px 0;">Nama: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 480px;"></span></p>
@@ -183,15 +183,15 @@ function generateRujukanHTML(employee, mcu) {
             <p style="margin: 2px 0;">Kesimpulan: <span style="border-bottom: 1px dotted #666; display: inline-block; width: 430px;"></span></p>
           </div>
 
-          <div style="text-align: right; margin: 4px 0;">
+          <div style="text-align: right; margin: 5px 0;">
             <p style="margin: 2px 0;">${config.clinic.city}, <span style="border-bottom: 1px dotted #666; display: inline-block; width: 120px;"></span> 20<span style="border-bottom: 1px dotted #666; display: inline-block; width: 30px;"></span></p>
-            <div style="height: 35px;"></div>
+            <div style="height: 28px;"></div>
             <p style="margin: 2px 0;">(.................................................)</p>
           </div>
         </div>
 
         <!-- Peringatan -->
-        <div style="border: 1px solid #ccc; background-color: #fffacd; padding: 6px; font-size: 11px; line-height: 1.3; margin-top: 4px;">
+        <div style="border: 1px solid #ccc; background-color: #fffacd; padding: 6px; font-size: 12px; line-height: 1.35; margin-top: 3px;">
           <strong>Perhatian:</strong> Surat rujukan harus sesuai dengan asli. Dilarang memalsukan data/berkas hasil rujukan/MCU. Segala bentuk kecurangan akan diberikan sanksi hukum sesuai dengan ketentuan hukum dan undang-undang yang berlaku beserta sanksi sesuai ketentuan perusahaan.
         </div>
       </div>
