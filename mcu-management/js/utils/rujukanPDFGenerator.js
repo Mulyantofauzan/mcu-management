@@ -52,14 +52,14 @@ function openPrintDialog(content) {
 
 /**
  * Generate HTML untuk Surat Rujukan dan Surat Rujukan Balik
- * Dalam satu dokumen - atas bawah
+ * Sesuai template yang diberikan user
  */
 function generateRujukanHTML(employee, mcu) {
   const config = rujukanConfig;
   const currentDate = new Date();
   const day = String(currentDate.getDate()).padStart(2, '0');
   const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-  const year = currentDate.getFullYear();
+  const year = String(currentDate.getFullYear()).slice(-2); // 2 digit tahun
 
   return `
     <!DOCTYPE html>
@@ -71,197 +71,104 @@ function generateRujukanHTML(employee, mcu) {
       <script src="https://cdn.tailwindcss.com"></script>
       <style>
         @media print {
-          body { background: white; margin: 0; padding: 0; }
-          .page { box-shadow: none !important; margin: 0; page-break-after: auto; }
-          .page-break { page-break-before: always; }
+          body { background: white; }
+          .page { box-shadow: none !important; margin: 0; }
         }
-        body { margin: 0; padding: 0; }
       </style>
     </head>
-    <body class="bg-white">
-      <!-- SURAT RUJUKAN (Bagian Atas) -->
-      <div class="page bg-white w-[800px] p-10 mx-auto">
-        <!-- Header dengan Logo -->
+    <body class="bg-gray-100 flex justify-center py-8">
+
+      <div class="page bg-white w-[800px] p-10 shadow-lg">
+        <!-- Header -->
         <div class="flex items-start gap-5">
           <img src="${config.clinic.logo}"
-               alt="Logo ${config.clinic.name}"
-               class="w-28 h-28 object-contain flex-shrink-0" />
+               alt="Logo Klinik"
+               class="w-28 h-28 object-contain" />
           <div class="text-center flex-1">
-            <h1 class="text-lg font-bold uppercase">${config.clinic.name}</h1>
-            <p class="text-xs mt-1">${config.clinic.address.street}</p>
-            <p class="text-xs">${config.clinic.address.district}</p>
-            <p class="text-xs">Telepon: ${config.clinic.phone} | Email: ${config.clinic.email}</p>
+            <h1 class="text-xl font-bold uppercase">Format Surat Follow Up</h1>
+            <p class="text-sm mt-1">Dokumen ini digunakan sebagai format surat rujukan dan rujukan balik.<br>
+            Harap isi dengan benar sesuai data asli pasien.</p>
           </div>
         </div>
 
-        <hr class="border-gray-800 my-4">
+        <hr class="border-gray-400 my-5">
 
-        <!-- Judul Surat Rujukan -->
-        <h2 class="text-center font-bold text-lg mb-4 underline">${config.rujukan.title}</h2>
+        <!-- ================== SURAT RUJUKAN ================== -->
+        <h2 class="text-center font-semibold underline text-base mb-3">SURAT RUJUKAN</h2>
 
-        <!-- Isi Surat Rujukan -->
         <div class="text-sm leading-relaxed">
-          <p>${config.rujukan.greeting.salutation}</p>
-          <p>${config.rujukan.greeting.recipient}</p>
-          <p>${config.rujukan.greeting.place}</p>
+          <p>Kepada Yth.</p>
+          <p>Ts. Dokter Spesialis Penyakit Dalam</p>
+          <p>Di Tempat</p>
 
-          <p class="mt-3 font-semibold">${config.rujukan.greeting.opening}</p>
-          <p>${config.rujukan.greeting.request}</p>
+          <p class="mt-3 font-semibold">Dengan Hormat,</p>
+          <p>Mohon perawatan lebih lanjut pasien tersebut di bawah ini:</p>
 
-          <table class="mt-3 w-full text-sm">
-            <tr>
-              <td class="w-32 font-semibold">${config.rujukan.labels.name}</td>
-              <td class="px-2">:</td>
-              <td>${employee.name}</td>
-            </tr>
-            <tr>
-              <td class="font-semibold">${config.rujukan.labels.age}</td>
-              <td class="px-2">:</td>
-              <td>${employee.age || '___'} tahun</td>
-            </tr>
-            <tr>
-              <td class="font-semibold">${config.rujukan.labels.gender}</td>
-              <td class="px-2">:</td>
-              <td>${employee.jenisKelamin || '___'}</td>
-            </tr>
-            <tr>
-              <td class="font-semibold">${config.rujukan.labels.company_job}</td>
-              <td class="px-2">:</td>
-              <td>${employee.department && employee.jobTitle ? employee.department + ' / ' + employee.jobTitle : '___'}</td>
-            </tr>
-          </table>
+          <div class="mt-3 space-y-2">
+            <p>Nama: <span class="border-b border-dotted border-gray-500 inline-block w-[500px]">${employee.name}</span></p>
+            <p>Umur: <span class="border-b border-dotted border-gray-500 inline-block w-[480px]">${employee.age || ''}</span></p>
+            <p>Jenis Kelamin: <span class="border-b border-dotted border-gray-500 inline-block w-[435px]">${employee.jenisKelamin || ''}</span></p>
+            <p>Perusahaan/Jabatan: <span class="border-b border-dotted border-gray-500 inline-block w-[390px]">${employee.department && employee.jobTitle ? employee.department + ' / ' + employee.jobTitle : ''}</span></p>
+          </div>
 
-          <p class="font-semibold mt-3">${config.rujukan.labels.physical_exam}:</p>
-          <table class="ml-4 w-full text-sm">
-            <tr>
-              <td class="w-32">${config.rujukan.labels.blood_pressure}</td>
-              <td class="px-2">:</td>
-              <td class="w-24">${mcu.bloodPressure || '____'} ${config.rujukan.units.blood_pressure}</td>
-              <td class="w-32">${config.rujukan.labels.respiratory_rate}</td>
-              <td class="px-2">:</td>
-              <td>${mcu.respiratoryRate || '____'} ${config.rujukan.units.respiratory_rate}</td>
-            </tr>
-            <tr>
-              <td>${config.rujukan.labels.pulse}</td>
-              <td class="px-2">:</td>
-              <td>${mcu.pulse || '____'} ${config.rujukan.units.pulse}</td>
-              <td>${config.rujukan.labels.temperature}</td>
-              <td class="px-2">:</td>
-              <td>${mcu.temperature || '____'} ${config.rujukan.units.temperature}</td>
-            </tr>
-          </table>
+          <div class="mt-3">
+            <p class="font-semibold">Pemeriksaan Fisik:</p>
+            <div class="ml-4 space-y-1">
+              <p>Tekanan Darah: <span class="border-b border-dotted border-gray-500 inline-block w-32">${mcu.bloodPressure || ''}</span> mmHg &nbsp;
+                 RR: <span class="border-b border-dotted border-gray-500 inline-block w-16">${mcu.respiratoryRate || ''}</span> /m</p>
+              <p>Nadi: <span class="border-b border-dotted border-gray-500 inline-block w-24">${mcu.pulse || ''}</span> /m &nbsp;
+                 Suhu: <span class="border-b border-dotted border-gray-500 inline-block w-24">${mcu.temperature || ''}</span> °C</p>
+            </div>
+          </div>
 
-          <table class="mt-3 w-full text-sm">
-            <tr>
-              <td class="font-semibold w-32">${config.rujukan.labels.chief_complaint}</td>
-              <td class="px-2">:</td>
-              <td>${mcu.keluhanUtama || '_________________________'}</td>
-            </tr>
-            <tr>
-              <td class="font-semibold">${config.rujukan.labels.diagnosis}</td>
-              <td class="px-2">:</td>
-              <td>${mcu.diagnosisKerja || '_________________________'}</td>
-            </tr>
-            <tr>
-              <td class="font-semibold">${config.rujukan.labels.referral_reason}</td>
-              <td class="px-2">:</td>
-              <td>${mcu.alasanRujuk || '_________________________'}</td>
-            </tr>
-          </table>
+          <div class="mt-3 space-y-2">
+            <p>Keluhan Utama: <span class="border-b border-dotted border-gray-500 inline-block w-[480px]">${mcu.keluhanUtama || ''}</span></p>
+            <p>Diagnosis Kerja: <span class="border-b border-dotted border-gray-500 inline-block w-[470px]">${mcu.diagnosisKerja || ''}</span></p>
+            <p>Alasan dirujuk: <span class="border-b border-dotted border-gray-500 inline-block w-[480px]">${mcu.alasanRujuk || ''}</span></p>
+          </div>
 
-          <!-- Tanda Tangan -->
           <div class="flex justify-end mt-8 text-sm">
-            <div class="text-center w-48">
-              <p>${config.clinic.city}, ${day} ${getMonthName(parseInt(month))} ${year}</p>
+            <div class="text-right">
+              <p>${config.clinic.city}, <span class="border-b border-dotted border-gray-500 inline-block w-40">${day} ${getMonthName(parseInt(month))}</span> 20${year}</p>
+              <p class="mt-1">Dokter FAR PT. PST</p>
               <div class="h-16"></div>
-              <p class="font-semibold">${config.clinic.doctorName}</p>
-              <p class="text-xs">${config.clinic.doctorTitle}</p>
+              <p><strong>${config.clinic.doctorName}</strong></p>
             </div>
           </div>
         </div>
 
-        <!-- Warning -->
-        <div class="border border-gray-400 bg-yellow-50 p-2 text-xs leading-tight mt-4">
-          <strong>Perhatian:</strong> ${config.warning}
-        </div>
-      </div>
+        <hr class="border-gray-400 my-6">
 
-      <!-- SURAT RUJUKAN BALIK (Bagian Bawah) -->
-      <div class="page bg-white w-[800px] p-10 mx-auto mt-8 border-t-4 border-gray-800 pt-8">
-        <!-- Header dengan Logo -->
-        <div class="flex items-start gap-5">
-          <img src="${config.clinic.logo}"
-               alt="Logo ${config.clinic.name}"
-               class="w-28 h-28 object-contain flex-shrink-0" />
-          <div class="text-center flex-1">
-            <h1 class="text-lg font-bold uppercase">${config.clinic.name}</h1>
-            <p class="text-xs mt-1">${config.clinic.address.street}</p>
-            <p class="text-xs">${config.clinic.address.district}</p>
-            <p class="text-xs">Telepon: ${config.clinic.phone} | Email: ${config.clinic.email}</p>
-          </div>
-        </div>
+        <!-- ================== SURAT RUJUKAN BALIK ================== -->
+        <h2 class="text-center font-semibold underline text-base mb-3">SURAT RUJUKAN BALIK</h2>
 
-        <hr class="border-gray-800 my-4">
-
-        <!-- Judul Surat Rujukan Balik -->
-        <h2 class="text-center font-bold text-lg mb-4 underline">${config.rujukanBalik.title}</h2>
-
-        <!-- Isi Surat Rujukan Balik -->
         <div class="text-sm leading-relaxed">
-          <p>${config.rujukanBalik.greeting}</p>
-          <p>${config.rujukanBalik.opening}</p>
+          <p>Yang Terhormat Rekan Sejawat,</p>
+          <p>Bersama ini kami kirim kembali pasien dengan data sebagai berikut:</p>
 
-          <table class="mt-3 w-full text-sm">
-            <tr>
-              <td class="font-semibold w-32">${config.rujukanBalik.labels.name}</td>
-              <td class="px-2">:</td>
-              <td class="border-b border-dotted border-gray-600 min-h-5"></td>
-            </tr>
-            <tr>
-              <td class="font-semibold">${config.rujukanBalik.labels.age}</td>
-              <td class="px-2">:</td>
-              <td class="border-b border-dotted border-gray-600 min-h-5"></td>
-            </tr>
-            <tr>
-              <td class="font-semibold">${config.rujukanBalik.labels.diagnosis}</td>
-              <td class="px-2">:</td>
-              <td class="border-b border-dotted border-gray-600 min-h-5"></td>
-            </tr>
-            <tr>
-              <td class="font-semibold">${config.rujukanBalik.labels.therapy}</td>
-              <td class="px-2">:</td>
-              <td class="border-b border-dotted border-gray-600 min-h-5"></td>
-            </tr>
-            <tr>
-              <td class="font-semibold">${config.rujukanBalik.labels.suggestion}</td>
-              <td class="px-2">:</td>
-              <td class="border-b border-dotted border-gray-600 min-h-5"></td>
-            </tr>
-            <tr>
-              <td class="font-semibold">${config.rujukanBalik.labels.notes}</td>
-              <td class="px-2">:</td>
-              <td class="border-b border-dotted border-gray-600 min-h-5"></td>
-            </tr>
-            <tr>
-              <td class="font-semibold">${config.rujukanBalik.labels.conclusion}</td>
-              <td class="px-2">:</td>
-              <td class="border-b border-dotted border-gray-600 min-h-5"></td>
-            </tr>
-          </table>
+          <div class="mt-3 space-y-2">
+            <p>Nama: <span class="border-b border-dotted border-gray-500 inline-block w-[500px]"></span></p>
+            <p>Usia: <span class="border-b border-dotted border-gray-500 inline-block w-[500px]"></span></p>
+            <p>Diagnosa: <span class="border-b border-dotted border-gray-500 inline-block w-[470px]"></span></p>
+            <p>Terapi: <span class="border-b border-dotted border-gray-500 inline-block w-[495px]"></span></p>
+            <p>Saran: <span class="border-b border-dotted border-gray-500 inline-block w-[505px]"></span></p>
+            <p>Keterangan: <span class="border-b border-dotted border-gray-500 inline-block w-[455px]"></span></p>
+            <p>Kesimpulan: <span class="border-b border-dotted border-gray-500 inline-block w-[455px]"></span></p>
+          </div>
 
-          <!-- Tanda Tangan -->
-          <div class="flex justify-end mt-8 text-sm">
-            <div class="text-center w-48">
-              <p>${config.clinic.city}, <span class="border-b border-dotted border-gray-600 inline-block w-20"></span> ${year}</p>
+          <div class="flex justify-end mt-10 text-sm">
+            <div class="text-right">
+              <p>${config.clinic.city}, <span class="border-b border-dotted border-gray-500 inline-block w-44"></span> 20<span class="border-b border-dotted border-gray-500 inline-block w-10"></span></p>
               <div class="h-16"></div>
               <p>(.................................................)</p>
             </div>
           </div>
         </div>
 
-        <!-- Warning -->
-        <div class="border border-gray-400 bg-yellow-50 p-2 text-xs leading-tight mt-4">
-          <strong>Perhatian:</strong> ${config.warning}
+        <!-- Peringatan -->
+        <div class="border border-gray-300 bg-yellow-50 p-3 text-sm leading-tight mb-5">
+          <strong>Perhatian:</strong> Surat rujukan harus sesuai dengan asli. Dilarang memalsukan data/berkas hasil rujukan/MCU.
+          Segala bentuk kecurangan akan diberikan sanksi hukum sesuai dengan ketentuan hukum dan undang-undang yang berlaku beserta sanksi sesuai ketentuan perusahaan.
         </div>
       </div>
     </body>
