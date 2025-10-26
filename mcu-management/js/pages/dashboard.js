@@ -751,10 +751,14 @@ async function updateActivityList() {
     console.log('[Dashboard] Loading activity list...');
     const activities = await database.getActivityLog(5);
     console.log('[Dashboard] Received activities:', activities);
+    console.log('[Dashboard] Activities type:', typeof activities);
+    console.log('[Dashboard] Activities is array:', Array.isArray(activities));
+    console.log('[Dashboard] Activities length:', activities?.length);
 
     // Handle null/undefined/non-array activities
     if (!activities || !Array.isArray(activities) || activities.length === 0) {
       console.warn('[Dashboard] No activities to display');
+      console.log('[Dashboard] This is normal on first load - activities will appear after creating/updating records');
       container.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">Belum ada aktivitas</p>';
       return;
     }
