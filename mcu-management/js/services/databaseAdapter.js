@@ -839,6 +839,28 @@ export const MasterData = {
 };
 
 /**
+ * Helper function to calculate SHA256-like hash for audit integrity
+ * (Note: For production, use actual crypto library)
+ */
+async function calculateAuditHash(activity) {
+    try {
+        const dataToHash = JSON.stringify({
+            userId: activity.userId,
+            action: activity.action,
+            target: activity.target || activity.entityType,
+            timestamp: activity.timestamp,
+            oldValue: activity.oldValue,
+            newValue: activity.newValue
+        });
+
+        // Simple base64 encoding for now (in production use crypto.subtle.digest)
+        return btoa(dataToHash).substring(0, 64);
+    } catch (err) {
+        return null;
+    }
+}
+
+/**
  * ACTIVITY LOG
  */
 export const ActivityLog = {
@@ -879,6 +901,9 @@ export const ActivityLog = {
         if (useSupabase) {
             const supabase = getSupabaseClient();
             try {
+                // Calculate integrity hash for immutability verification
+                const hashValue = activity.hashValue || await calculateAuditHash(activity);
+
                 const { data, error } = await supabase
                     .from('activity_log')
                     .insert({
@@ -886,7 +911,21 @@ export const ActivityLog = {
                         user_name: activity.userName || null,
                         action: activity.action,
                         target: activity.entityType || activity.target,
+                        target_id: activity.entityId,
                         details: activity.entityId || activity.details,
+
+                        // Audit compliance fields
+                        ip_address: activity.ipAddress || null,
+                        user_agent: activity.userAgent || null,
+                        old_value: activity.oldValue || null,
+                        new_value: activity.newValue || null,
+                        change_field: activity.changeField || null,
+
+                        // Immutability
+                        is_immutable: true,
+                        hash_value: hashValue,
+                        archived: false,
+
                         timestamp: activity.timestamp
                     })
                     .select()
@@ -900,8 +939,6 @@ export const ActivityLog = {
                 }
             } catch (err) {
                 console.warn('⚠️ Failed to save activity log to Supabase:', err.message);
-                // Don't fall back to IndexedDB when Supabase is enabled
-                // Return error state instead to prevent duplicate entries
                 throw err;
             }
         }

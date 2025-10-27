@@ -342,5 +342,10 @@ export function hideAdminMenuForNonAdmin(user) {
     if (activityLogMenu) {
       activityLogMenu.style.display = 'none';
     }
+
+    const auditComplianceMenu = document.getElementById('menu-audit-compliance');
+    if (auditComplianceMenu) {
+      auditComplianceMenu.style.display = 'none';
+    }
   }
 }

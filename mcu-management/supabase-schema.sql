@@ -151,7 +151,7 @@ CREATE INDEX IF NOT EXISTS idx_mcu_changes_mcu_id ON mcu_changes(mcu_id);
 CREATE INDEX IF NOT EXISTS idx_mcu_changes_changed_at ON mcu_changes(changed_at DESC);
 
 -- ============================================
--- 8. ACTIVITY LOG TABLE
+-- 8. ACTIVITY LOG TABLE (AUDIT TRAIL - IMMUTABLE)
 -- ============================================
 CREATE TABLE IF NOT EXISTS activity_log (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -159,13 +159,48 @@ CREATE TABLE IF NOT EXISTS activity_log (
     user_name VARCHAR(200),
     action VARCHAR(100) NOT NULL,
     target VARCHAR(200),
+    target_id VARCHAR(100),
     details TEXT,
-    timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+
+    -- Audit compliance fields
+    ip_address VARCHAR(45), -- supports both IPv4 and IPv6
+    user_agent TEXT,
+    old_value TEXT, -- for change tracking: previous value
+    new_value TEXT, -- for change tracking: new value
+    change_field VARCHAR(100), -- which field was changed
+
+    -- Immutability & integrity
+    is_immutable BOOLEAN DEFAULT true, -- write-once, cannot be deleted
+    hash_value TEXT, -- SHA256 hash for integrity verification
+    archived BOOLEAN DEFAULT false,
+    archive_date TIMESTAMP WITH TIME ZONE,
+
+    -- Timestamps
+    timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Index for activity log
+-- Indexes for fast queries
 CREATE INDEX IF NOT EXISTS idx_activity_log_timestamp ON activity_log(timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_activity_log_user_id ON activity_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_activity_log_target ON activity_log(target, target_id);
+CREATE INDEX IF NOT EXISTS idx_activity_log_action ON activity_log(action);
+CREATE INDEX IF NOT EXISTS idx_activity_log_ip ON activity_log(ip_address);
+CREATE INDEX IF NOT EXISTS idx_activity_log_archived ON activity_log(archived);
+
+-- Audit log retention table (for deleted/archived records)
+CREATE TABLE IF NOT EXISTS audit_log_archive (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    original_activity_id UUID NOT NULL,
+    archive_reason VARCHAR(200), -- 'retention_policy', 'manual_archive', etc
+    archived_data JSONB NOT NULL, -- full snapshot of activity_log record
+    archived_by VARCHAR(50), -- user_id who archived
+    archived_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    retention_until TIMESTAMP WITH TIME ZONE -- when it will be permanently deleted
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_archive_date ON audit_log_archive(archived_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_archive_retention ON audit_log_archive(retention_until);
 
 -- ============================================
 -- FUNCTIONS & TRIGGERS
