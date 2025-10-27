@@ -853,31 +853,29 @@ export const ActivityLog = {
                     .limit(limit);
 
                 if (error) {
-                    // Supabase query failed - fall through to IndexedDB
                     console.warn('⚠️ Activity log query failed:', error.message);
-                } else if (data && data.length > 0) {
-                    return data.map(transformActivityLog);
+                    return [];
                 }
-                // Fall through to IndexedDB if no data or error
+
+                return data ? data.map(transformActivityLog) : [];
             } catch (err) {
-                // Exception during Supabase query - fall through to IndexedDB
                 console.warn('⚠️ Activity log query exception:', err.message);
+                return [];
             }
         }
 
-        // Try IndexedDB as fallback or primary source
+        // IndexedDB primary source (only when Supabase is disabled)
         try {
             const result = await indexedDB.db.activityLog.orderBy('timestamp').reverse().limit(limit).toArray();
             return result || [];
         } catch (err) {
-            // IndexedDB also failed - return empty array
             console.warn('⚠️ IndexedDB activity log query failed:', err.message);
             return [];
         }
     },
 
     async add(activity) {
-        // Try Supabase first
+        // When Supabase is enabled, use ONLY Supabase (no IndexedDB caching to prevent duplicates)
         if (useSupabase) {
             const supabase = getSupabaseClient();
             try {
@@ -895,20 +893,25 @@ export const ActivityLog = {
                     .single();
 
                 if (!error && data) {
-                    // Supabase success - return immediately without saving to IndexedDB
                     return transformActivityLog(data);
+                } else if (error) {
+                    console.warn('⚠️ Activity log insert failed:', error.message);
+                    throw error;
                 }
             } catch (err) {
-                // Supabase failed - continue to IndexedDB
+                console.warn('⚠️ Failed to save activity log to Supabase:', err.message);
+                // Don't fall back to IndexedDB when Supabase is enabled
+                // Return error state instead to prevent duplicate entries
+                throw err;
             }
         }
 
-        // Save to IndexedDB as fallback/offline storage (only if Supabase failed or is disabled)
+        // IndexedDB primary storage (only when Supabase is disabled)
         try {
             const id = await indexedDB.db.activityLog.add(activity);
             return { ...activity, id };
         } catch (err) {
-            // Last resort - return activity as-is
+            console.warn('⚠️ Failed to save activity log to IndexedDB:', err.message);
             return activity;
         }
     }

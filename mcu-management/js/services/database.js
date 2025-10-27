@@ -169,14 +169,20 @@ class DatabaseService {
             }
         }
 
-        return await adp.ActivityLog.add({
-            action,
-            entityType,
-            entityId,
-            userId,
-            userName,
-            timestamp: new Date().toISOString()
-        });
+        try {
+            return await adp.ActivityLog.add({
+                action,
+                entityType,
+                entityId,
+                userId,
+                userName,
+                timestamp: new Date().toISOString()
+            });
+        } catch (err) {
+            // Activity log is non-critical - don't block main operations
+            console.warn('⚠️ Failed to log activity:', err.message);
+            return null;
+        }
     }
 
     // Clear all data (for seed/reset)
