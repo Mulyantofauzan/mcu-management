@@ -217,10 +217,6 @@ class DatabaseService {
         const adp = await getAdapter();
         return adp.MasterData;
     }
-    async getActivityLog() {
-        const adp = await getAdapter();
-        return adp.ActivityLog;
-    }
 }
 
 // Export singleton instance
