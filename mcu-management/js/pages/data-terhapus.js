@@ -7,7 +7,7 @@ import { employeeService } from '../services/employeeService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { formatDateDisplay } from '../utils/dateHelpers.js';
 import { showToast, confirmDialog } from '../utils/uiHelpers.js';
-import { initializeSidebar } from '../sidebar-manager.js';
+import { initializeSidebar, hideAdminMenus } from '../sidebar-manager.js';
 
 let deletedEmployees = [];
 let jobTitles = [];
@@ -37,7 +37,8 @@ function updateUserInfo() {
         document.getElementById('user-initial').textContent = initial;
         // Initialize sidebar - handles permission checks internally
         initializeSidebar(user);
-    }
+            // Apply permission checks to show/hide admin menus
+            hideAdminMenus(user);    }
 }
 
 async function loadData() {

@@ -333,7 +333,7 @@
         import { authService } from '../js/services/authService.js';
         import { showToast } from '../js/utils/uiHelpers.js';
         import { ActivityLogService } from '../js/services/activityLogService.js';
-        import { initializeSidebar } from '../js/sidebar-manager.js';
+        import { initializeSidebar, hideAdminMenus } from '../js/sidebar-manager.js';
 
         let activityLogService;
         let currentUser = null;
@@ -365,8 +365,11 @@
                 document.getElementById('user-role').textContent = currentUser?.role || 'Petugas';
                 document.getElementById('user-initial').textContent = initial;
 
-                // Initialize sidebar - handles permission checks internally
+                // Initialize sidebar - handles sidebar active link
                 initializeSidebar(currentUser);
+
+                // Apply permission checks to show/hide admin menus
+                hideAdminMenus(currentUser);
 
                 // Initialize service
                 activityLogService = new ActivityLogService(database);

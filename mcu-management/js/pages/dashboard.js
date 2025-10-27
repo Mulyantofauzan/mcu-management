@@ -11,7 +11,7 @@ import { database } from '../services/database.js';
 import { formatDateDisplay, getCurrentMonthRange, isDateInRange } from '../utils/dateHelpers.js';
 import { showToast, getStatusBadge } from '../utils/uiHelpers.js';
 import { sessionManager } from '../utils/sessionManager.js';
-import { initializeSidebar } from '../sidebar-manager.js';
+import { initializeSidebar, hideAdminMenus } from '../sidebar-manager.js';
 import { seedDatabase, checkAndSeedIfEmpty } from '../seedData.js';
 
 // State
@@ -77,8 +77,11 @@ function updateUserInfo() {
     document.getElementById('user-role').textContent = role;
     document.getElementById('user-initial').textContent = initial;
 
-    // Initialize sidebar - handles permission checks internally
+    // Initialize sidebar - handles sidebar active link
     initializeSidebar(user);
+
+    // Apply permission checks to show/hide admin menus
+    hideAdminMenus(user);
   }
 }
 

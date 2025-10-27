@@ -198,7 +198,7 @@
 
     <script type="module">
         import { authService } from '../js/services/authService.js';
-        import { initializeSidebar } from '../js/sidebar-manager.js';
+        import { initializeSidebar, hideAdminMenus } from '../js/sidebar-manager.js';
 
         if (!authService.isAuthenticated()) {
             window.location.href = 'login.html';
@@ -214,8 +214,11 @@
             document.getElementById('user-role').textContent = role;
             document.getElementById('user-initial').textContent = initial;
 
-            // Initialize sidebar - handles permission checks internally
+            // Initialize sidebar - handles sidebar active link
             initializeSidebar(user);
+
+            // Apply permission checks to show/hide admin menus
+            hideAdminMenus(user);
         }
     </script>
 </body>

@@ -83,22 +83,35 @@ function setupMobileSidebarToggle() {
 
 /**
  * Hide admin-only menu items for non-admin users
- * (This is also in uiHelpers.js, but kept here for sidebar-specific logic)
+ * Shows all menus for Admin, hides admin menus for others
  */
 export function hideAdminMenus(user) {
-    if (!user || user.role === 'Admin') return;
-
+    // Admin menus that should only show for Admin users
     const adminMenus = [
         'menu-kelola-user',
         'menu-activity-log'
     ];
 
-    adminMenus.forEach(menuId => {
-        const element = document.getElementById(menuId);
-        if (element) {
-            element.style.display = 'none';
-        }
-    });
+    // If user is Admin, SHOW all menus
+    if (user && user.role === 'Admin') {
+        adminMenus.forEach(menuId => {
+            const element = document.getElementById(menuId);
+            if (element) {
+                element.style.display = '';  // Show menu
+            }
+        });
+        return;
+    }
+
+    // For non-Admin users, HIDE admin menus
+    if (user) {
+        adminMenus.forEach(menuId => {
+            const element = document.getElementById(menuId);
+            if (element) {
+                element.style.display = 'none';  // Hide menu
+            }
+        });
+    }
 }
 
 /**

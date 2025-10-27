@@ -5,7 +5,7 @@
 
 import { authService } from '../services/authService.js';
 import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
-import { initializeSidebar } from '../sidebar-manager.js';
+import { initializeSidebar, hideAdminMenus } from '../sidebar-manager.js';
 import { database } from '../services/database.js';
 import { generateUserId } from '../utils/idGenerator.js';
 import { getCurrentTimestamp } from '../utils/dateHelpers.js';
@@ -71,7 +71,8 @@ function updateUserInfo() {
 
         // Initialize sidebar - handles permission checks internally
         initializeSidebar(user);
-    }
+            // Apply permission checks to show/hide admin menus
+            hideAdminMenus(user);    }
 }
 
 async function loadUsers() {

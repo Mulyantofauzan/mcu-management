@@ -8,7 +8,7 @@ import { mcuService } from '../services/mcuService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal, confirmDialog, getStatusBadge } from '../utils/uiHelpers.js';
-import { initializeSidebar } from '../sidebar-manager.js';
+import { initializeSidebar, hideAdminMenus } from '../sidebar-manager.js';
 import { exportEmployeeData } from '../utils/exportHelpers.js';
 import { validateEmployeeForm, validateMCUForm, displayValidationErrors } from '../utils/validation.js';
 import { logger } from '../utils/logger.js';
@@ -46,7 +46,8 @@ function updateUserInfo() {
         document.getElementById('user-initial').textContent = initial;
         // Initialize sidebar - handles permission checks internally
         initializeSidebar(user);
-    }
+            // Apply permission checks to show/hide admin menus
+            hideAdminMenus(user);    }
 }
 
 async function loadData() {
