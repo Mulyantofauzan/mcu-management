@@ -848,18 +848,20 @@ export const ActivityLog = {
             try {
                 const { data, error } = await supabase
                     .from('activity_log')
-                    .select('id, user_id, user_name, action, target, details, timestamp, created_at')
-                    .order('timestamp', { ascending: false })
+                    .select('*')
+                    .order('created_at', { ascending: false })
                     .limit(limit);
 
                 if (error) {
                     // Supabase query failed - fall through to IndexedDB
+                    console.warn('⚠️ Activity log query failed:', error.message);
                 } else if (data && data.length > 0) {
                     return data.map(transformActivityLog);
                 }
                 // Fall through to IndexedDB if no data or error
             } catch (err) {
                 // Exception during Supabase query - fall through to IndexedDB
+                console.warn('⚠️ Activity log query exception:', err.message);
             }
         }
 
@@ -869,6 +871,7 @@ export const ActivityLog = {
             return result || [];
         } catch (err) {
             // IndexedDB also failed - return empty array
+            console.warn('⚠️ IndexedDB activity log query failed:', err.message);
             return [];
         }
     },
