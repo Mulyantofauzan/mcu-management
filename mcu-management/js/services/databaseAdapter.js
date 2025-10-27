@@ -877,8 +877,6 @@ export const ActivityLog = {
     },
 
     async add(activity) {
-        let supabaseSuccess = false;
-
         // Try Supabase first
         if (useSupabase) {
             const supabase = getSupabaseClient();
@@ -897,7 +895,7 @@ export const ActivityLog = {
                     .single();
 
                 if (!error && data) {
-                    supabaseSuccess = true;
+                    // Supabase success - return immediately without saving to IndexedDB
                     return transformActivityLog(data);
                 }
             } catch (err) {
@@ -905,7 +903,7 @@ export const ActivityLog = {
             }
         }
 
-        // Always save to IndexedDB as fallback/offline storage
+        // Save to IndexedDB as fallback/offline storage (only if Supabase failed or is disabled)
         try {
             const id = await indexedDB.db.activityLog.add(activity);
             return { ...activity, id };
