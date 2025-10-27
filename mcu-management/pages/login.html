@@ -100,41 +100,111 @@
 
     let dbReady = false;
 
+    // Rate limiting configuration
+    const RATE_LIMIT = {
+      MAX_ATTEMPTS: 5,           // Maximum login attempts
+      LOCKOUT_DURATION: 15 * 60 * 1000,  // 15 minutes lockout
+      RESET_WINDOW: 30 * 60 * 1000       // 30 minute window for reset
+    };
+
+    let loginAttempts = 0;
+    let lockoutUntil = 0;
+    let lastAttemptTime = 0;
+
     async function initDatabase() {
       try {
-        console.log('🔄 Initializing database...');
         const result = await checkAndSeedIfEmpty();
         if (result.success) {
-          console.log('✅ Database ready');
-        } else {
-          console.error('❌ Database init failed:', result.error);
+          // Database ready
         }
       } catch (err) {
-        console.error('❌ DB init error:', err);
+        // Database error
       } finally {
         dbReady = true;
       }
     }
     initDatabase();
 
+    /**
+     * Check if login is rate-limited
+     * @returns {boolean} true if account is locked
+     */
+    function isRateLimited() {
+      if (lockoutUntil && Date.now() < lockoutUntil) {
+        const remainingMinutes = Math.ceil((lockoutUntil - Date.now()) / 60000);
+        showToast(`Terlalu banyak percobaan. Coba lagi dalam ${remainingMinutes} menit.`, 'error');
+        return true;
+      }
+
+      // Reset if window has passed
+      if (Date.now() - lastAttemptTime > RATE_LIMIT.RESET_WINDOW) {
+        loginAttempts = 0;
+        lockoutUntil = 0;
+      }
+
+      return false;
+    }
+
+    /**
+     * Record failed login attempt
+     */
+    function recordFailedAttempt() {
+      loginAttempts++;
+      lastAttemptTime = Date.now();
+
+      if (loginAttempts >= RATE_LIMIT.MAX_ATTEMPTS) {
+        lockoutUntil = Date.now() + RATE_LIMIT.LOCKOUT_DURATION;
+        showToast('Akun dikunci karena terlalu banyak percobaan gagal. Coba lagi dalam 15 menit.', 'error');
+      }
+    }
+
+    /**
+     * Reset login attempts on successful login
+     */
+    function resetLoginAttempts() {
+      loginAttempts = 0;
+      lockoutUntil = 0;
+      lastAttemptTime = 0;
+    }
+
     window.handleLogin = async function (e) {
       e.preventDefault();
+
+      // Check rate limiting
+      if (isRateLimited()) {
+        return;
+      }
+
       if (!dbReady) {
         showToast('Database initializing...', 'warning');
         return;
       }
 
-      const username = document.getElementById('username').value;
+      const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value;
       const btn = document.getElementById('login-btn');
+
+      // Client-side validation
+      if (!username || !password) {
+        showToast('Username dan password harus diisi', 'error');
+        return;
+      }
 
       try {
         btn.disabled = true;
         btn.textContent = 'Signing In...';
+
         await authService.login(username, password);
+
+        // Reset attempts on success
+        resetLoginAttempts();
+
         showToast('Login berhasil!', 'success');
         setTimeout(() => (window.location.href = '../index.html'), 600);
       } catch (err) {
+        // Record failed attempt for rate limiting
+        recordFailedAttempt();
+
         showToast(err.message, 'error');
         btn.disabled = false;
         btn.textContent = 'Sign In';
