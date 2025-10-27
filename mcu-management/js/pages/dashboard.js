@@ -10,6 +10,7 @@ import { masterDataService } from '../services/masterDataService.js';
 import { database } from '../services/database.js';
 import { formatDateDisplay, getCurrentMonthRange, isDateInRange } from '../utils/dateHelpers.js';
 import { showToast, getStatusBadge, hideAdminMenuForNonAdmin } from '../utils/uiHelpers.js';
+import { sessionManager } from '../utils/sessionManager.js';
 import { initializeSidebar } from '../sidebar-manager.js';
 import { seedDatabase, checkAndSeedIfEmpty } from '../seedData.js';
 
@@ -932,7 +933,7 @@ window.resetDateFilter = async function() {
 };
 
 window.handleLogout = function() {
-  authService.logout();
+  sessionManager.logout('User initiated logout');
 };
 
 window.toggleDebugPanel = function() {

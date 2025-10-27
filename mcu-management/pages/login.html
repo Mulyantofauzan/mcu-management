@@ -167,6 +167,17 @@
       lastAttemptTime = 0;
     }
 
+    // Show logout message if redirected from session timeout
+    function showLogoutMessage() {
+      const params = new URLSearchParams(window.location.search);
+      const message = params.get('message');
+      if (message) {
+        showToast(message, 'info');
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+
     window.handleLogin = async function (e) {
       e.preventDefault();
 
@@ -210,6 +221,9 @@
         btn.textContent = 'Sign In';
       }
     };
+
+    // Show any logout message on page load
+    showLogoutMessage();
   </script>
 </body>
 </html>
