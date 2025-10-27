@@ -849,7 +849,7 @@ export const ActivityLog = {
                 const { data, error } = await supabase
                     .from('activity_log')
                     .select('*')
-                    .order('created_at', { ascending: false })
+                    .order('timestamp', { ascending: false })
                     .limit(limit);
 
                 if (error) {
