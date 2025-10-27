@@ -233,17 +233,17 @@ window.viewEmployee = async function(employeeId) {
 
         // Employee info - 2 columns
         let infoHtml = `
-            <div><span class="text-gray-600">Nama:</span> <span class="font-medium">${emp.name}</span></div>
-            <div><span class="text-gray-600">ID:</span> <span class="font-medium">${emp.employeeId}</span></div>
-            <div><span class="text-gray-600">Jabatan:</span> <span class="font-medium">${job?.name || '-'}</span></div>
-            <div><span class="text-gray-600">Departemen:</span> <span class="font-medium">${dept?.name || '-'}</span></div>
+            <div><span class="text-gray-600">Nama:</span> <span class="font-medium">${escapeHtml(emp.name)}</span></div>
+            <div><span class="text-gray-600">ID:</span> <span class="font-medium">${escapeHtml(emp.employeeId)}</span></div>
+            <div><span class="text-gray-600">Jabatan:</span> <span class="font-medium">${escapeHtml(job?.name || '-')}</span></div>
+            <div><span class="text-gray-600">Departemen:</span> <span class="font-medium">${escapeHtml(dept?.name || '-')}</span></div>
             <div><span class="text-gray-600">Tanggal Lahir:</span> <span class="font-medium">${formatDateDisplay(emp.birthDate)} (${age} tahun)</span></div>
-            <div><span class="text-gray-600">Golongan Darah:</span> <span class="font-medium">${emp.bloodType}</span></div>
-            <div><span class="text-gray-600">Status Karyawan:</span> <span class="font-medium">${emp.employmentStatus}</span></div>
+            <div><span class="text-gray-600">Golongan Darah:</span> <span class="font-medium">${escapeHtml(emp.bloodType)}</span></div>
+            <div><span class="text-gray-600">Status Karyawan:</span> <span class="font-medium">${escapeHtml(emp.employmentStatus)}</span></div>
             <div><span class="text-gray-600">Status Aktif:</span> ${getStatusBadge(emp.activeStatus)}</div>
         `;
         if (emp.vendorName) {
-            infoHtml += `<div class="col-span-2"><span class="text-gray-600">Vendor:</span> <span class="font-medium">${emp.vendorName}</span></div>`;
+            infoHtml += `<div class="col-span-2"><span class="text-gray-600">Vendor:</span> <span class="font-medium">${escapeHtml(emp.vendorName)}</span></div>`;
         }
         document.getElementById('employee-info').innerHTML = infoHtml;
 
@@ -261,12 +261,12 @@ window.viewEmployee = async function(employeeId) {
             mcus.forEach((mcu, index) => {
                 const isLatest = index === 0;
                 mcuHtml += '<tr>';
-                mcuHtml += `<td>${mcu.mcuId} ${isLatest ? '<span class="badge badge-primary ml-2">Terbaru</span>' : ''}</td>`;
+                mcuHtml += `<td>${escapeHtml(mcu.mcuId)} ${isLatest ? '<span class="badge badge-primary ml-2">Terbaru</span>' : ''}</td>`;
                 mcuHtml += `<td>${formatDateDisplay(mcu.mcuDate)}</td>`;
-                mcuHtml += `<td>${mcu.mcuType}</td>`;
-                mcuHtml += `<td><span class="text-sm">${mcu.initialResult}</span></td>`;
+                mcuHtml += `<td>${escapeHtml(mcu.mcuType)}</td>`;
+                mcuHtml += `<td><span class="text-sm">${escapeHtml(mcu.initialResult)}</span></td>`;
                 mcuHtml += `<td>${getStatusBadge(mcu.status)}</td>`;
-                mcuHtml += `<td><button onclick="window.viewMCUDetail('${mcu.mcuId}')" class="btn btn-sm btn-secondary">Detail</button></td>`;
+                mcuHtml += `<td><button onclick="window.viewMCUDetail('${escapeHtml(mcu.mcuId)}')" class="btn btn-sm btn-secondary">Detail</button></td>`;
                 mcuHtml += '</tr>';
             });
 
@@ -320,6 +320,7 @@ window.editEmployee = async function(employeeId) {
         document.getElementById('edit-emp-dept').value = enrichedEmp.departmentId || '';
         document.getElementById('edit-emp-birthdate').value = emp.birthDate;
         document.getElementById('edit-emp-blood').value = emp.bloodType;
+        document.getElementById('edit-emp-gender').value = emp.jenisKelamin || 'Laki-laki';
         document.getElementById('edit-emp-status').value = emp.employmentStatus;
         document.getElementById('edit-emp-active').value = emp.activeStatus;
 
@@ -385,6 +386,7 @@ window.handleEditEmployee = async function(event) {
             departmentId: document.getElementById('edit-emp-dept').value,
             birthDate: document.getElementById('edit-emp-birthdate').value,
             bloodType: document.getElementById('edit-emp-blood').value,
+            jenisKelamin: document.getElementById('edit-emp-gender').value,
             employmentStatus: document.getElementById('edit-emp-status').value,
             vendorName: document.getElementById('edit-emp-vendor').value || null,
             activeStatus: document.getElementById('edit-emp-active').value,

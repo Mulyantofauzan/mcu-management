@@ -64,9 +64,11 @@ CREATE TABLE IF NOT EXISTS employees (
     department VARCHAR(200) NOT NULL,
     date_of_birth DATE NOT NULL,
     blood_type VARCHAR(10) CHECK (blood_type IN ('A', 'B', 'AB', 'O', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')),
+    jenis_kelamin VARCHAR(20) DEFAULT 'Laki-laki',
     employee_type VARCHAR(50) NOT NULL CHECK (employee_type IN ('Karyawan PST', 'Vendor')),
     vendor_name VARCHAR(200),
     is_active BOOLEAN DEFAULT TRUE,
+    inactive_reason TEXT,
     deleted_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
