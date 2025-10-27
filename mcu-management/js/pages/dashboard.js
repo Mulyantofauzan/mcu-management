@@ -9,7 +9,7 @@ import { mcuService } from '../services/mcuService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { database } from '../services/database.js';
 import { formatDateDisplay, getCurrentMonthRange, isDateInRange } from '../utils/dateHelpers.js';
-import { showToast, getStatusBadge, hideAdminMenuForNonAdmin } from '../utils/uiHelpers.js';
+import { showToast, getStatusBadge } from '../utils/uiHelpers.js';
 import { sessionManager } from '../utils/sessionManager.js';
 import { initializeSidebar } from '../sidebar-manager.js';
 import { seedDatabase, checkAndSeedIfEmpty } from '../seedData.js';
@@ -77,9 +77,7 @@ function updateUserInfo() {
     document.getElementById('user-role').textContent = role;
     document.getElementById('user-initial').textContent = initial;
 
-    // Hide admin-only menus for non-Admin users
-    hideAdminMenuForNonAdmin(user);
-    // Initialize sidebar with permission checks
+    // Initialize sidebar - handles permission checks internally
     initializeSidebar(user);
   }
 }

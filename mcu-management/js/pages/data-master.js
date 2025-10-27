@@ -4,7 +4,7 @@
 
 import { authService } from '../services/authService.js';
 import { masterDataService } from '../services/masterDataService.js';
-import { showToast, openModal, closeModal, confirmDialog, hideAdminMenuForNonAdmin } from '../utils/uiHelpers.js';
+import { showToast, openModal, closeModal, confirmDialog } from '../utils/uiHelpers.js';
 import { initializeSidebar } from '../sidebar-manager.js';
 
 let currentTab = 'jobTitles';
@@ -30,10 +30,15 @@ async function init() {
 function updateUserInfo() {
     const user = authService.getCurrentUser();
     if (user) {
-        document.getElementById('user-name').textContent = user.displayName;
-        document.getElementById('user-role').textContent = user.role;
-        document.getElementById('user-initial').textContent = user.displayName.charAt(0).toUpperCase();
-        hideAdminMenuForNonAdmin(user);
+        // Safely access user properties with fallbacks
+        const displayName = user?.displayName || 'User';
+        const role = user?.role || 'Petugas';
+        const initial = (displayName && displayName.length > 0) ? displayName.charAt(0).toUpperCase() : '?';
+
+        document.getElementById('user-name').textContent = displayName;
+        document.getElementById('user-role').textContent = role;
+        document.getElementById('user-initial').textContent = initial;
+        // Initialize sidebar - handles permission checks internally
         initializeSidebar(user);
     }
 }

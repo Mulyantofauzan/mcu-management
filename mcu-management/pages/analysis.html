@@ -198,7 +198,6 @@
 
     <script type="module">
         import { authService } from '../js/services/authService.js';
-        import { hideAdminMenuForNonAdmin } from '../js/utils/uiHelpers.js';
         import { initializeSidebar } from '../js/sidebar-manager.js';
 
         if (!authService.isAuthenticated()) {
@@ -206,13 +205,16 @@
         }
         const user = authService.getCurrentUser();
         if (user) {
-            document.getElementById('user-name').textContent = user.displayName;
-            document.getElementById('user-role').textContent = user.role;
-            document.getElementById('user-initial').textContent = user.displayName.charAt(0).toUpperCase();
+            // Safely access user properties with fallbacks
+            const displayName = user?.displayName || 'User';
+            const role = user?.role || 'Petugas';
+            const initial = (displayName && displayName.length > 0) ? displayName.charAt(0).toUpperCase() : '?';
 
-            // Hide admin-only menus for non-admin users
-            hideAdminMenuForNonAdmin(user);
-            // Initialize sidebar with permission checks
+            document.getElementById('user-name').textContent = displayName;
+            document.getElementById('user-role').textContent = role;
+            document.getElementById('user-initial').textContent = initial;
+
+            // Initialize sidebar - handles permission checks internally
             initializeSidebar(user);
         }
     </script>

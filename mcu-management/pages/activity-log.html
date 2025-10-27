@@ -332,7 +332,6 @@
         import { database } from '../js/services/database.js';
         import { authService } from '../js/services/authService.js';
         import { showToast } from '../js/utils/uiHelpers.js';
-        import { hideAdminMenuForNonAdmin } from '../js/utils/uiHelpers.js';
         import { ActivityLogService } from '../js/services/activityLogService.js';
         import { initializeSidebar } from '../js/sidebar-manager.js';
 
@@ -359,14 +358,14 @@
                 }
 
                 // Update UI with user info
-                document.getElementById('user-name').textContent = currentUser.displayName || currentUser.username;
-                document.getElementById('user-role').textContent = currentUser.role;
-                document.getElementById('user-initial').textContent = (currentUser.displayName || currentUser.username).charAt(0).toUpperCase();
+                const displayName = currentUser?.displayName || currentUser?.username || 'User';
+                const initial = (displayName && displayName.length > 0) ? displayName.charAt(0).toUpperCase() : '?';
 
-                // Hide admin menu for non-admin
-                hideAdminMenuForNonAdmin(currentUser);
+                document.getElementById('user-name').textContent = displayName;
+                document.getElementById('user-role').textContent = currentUser?.role || 'Petugas';
+                document.getElementById('user-initial').textContent = initial;
 
-                // Initialize sidebar with permission checks
+                // Initialize sidebar - handles permission checks internally
                 initializeSidebar(currentUser);
 
                 // Initialize service
