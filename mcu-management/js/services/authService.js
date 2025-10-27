@@ -48,33 +48,19 @@ class AuthService {
 
   async login(username, password) {
     const users = await database.getAll('users');
-    console.log(`🔍 Login attempt for: ${username}`);
-    console.log(`📊 Total users in database: ${users.length}`);
-
-    // Debug: Show all users
-    users.forEach(u => {
-      console.log(`  - User: ${u.username}, Active: ${u.active}, Match: ${u.username === username && u.active}`);
-    });
 
     // Check active field - if undefined (Supabase old schema), treat as active
     const user = users.find(u => u.username === username && (u.active === undefined || u.active === true));
 
     if (!user) {
-      console.error(`❌ User not found or inactive. Username: ${username}`);
-      console.error(`Available users:`, users.map(u => ({ username: u.username, active: u.active })));
       throw new Error('Username tidak ditemukan atau akun tidak aktif');
     }
-
-    console.log(`✅ User found: ${user.username}`);
 
     // Simple password verification
     const passwordHash = btoa(password);
     if (user.passwordHash !== passwordHash) {
-      console.error(`❌ Password mismatch for user: ${username}`);
       throw new Error('Password salah');
     }
-
-    console.log(`✅ Password correct for user: ${username}`);
 
     // Update last login
     await database.update('users', user.userId, {
