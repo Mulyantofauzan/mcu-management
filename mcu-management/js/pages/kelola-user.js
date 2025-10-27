@@ -23,6 +23,20 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+/**
+ * Sanitize string input to prevent XSS
+ * @param {string} input - Text to sanitize
+ * @returns {string} - Sanitized text safe for database
+ */
+function sanitizeInput(input) {
+    if (!input) return '';
+    // Remove potentially dangerous characters while preserving valid input
+    return input
+        .trim()
+        .replace(/[<>]/g, '') // Remove angle brackets
+        .substring(0, 200); // Limit length
+}
+
 async function init() {
     // Check auth - only Admin can access
     if (!authService.isAuthenticated()) {
@@ -128,8 +142,8 @@ window.closeAddUserModal = function() {
 window.handleAddUser = async function(event) {
     event.preventDefault();
 
-    const username = document.getElementById('add-username').value.trim();
-    const displayName = document.getElementById('add-displayname').value.trim();
+    const username = sanitizeInput(document.getElementById('add-username').value);  // Sanitize
+    const displayName = sanitizeInput(document.getElementById('add-displayname').value);  // Sanitize
     const password = document.getElementById('add-password').value;
     const passwordConfirm = document.getElementById('add-password-confirm').value;
     const role = document.getElementById('add-role').value;

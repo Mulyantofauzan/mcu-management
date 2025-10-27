@@ -242,13 +242,26 @@ CREATE TRIGGER update_mcus_updated_at BEFORE UPDATE ON mcus
 -- ============================================
 -- SEED DATA (Optional)
 -- ============================================
--- Insert default admin user (password: admin123)
--- Note: In production, use proper password hashing (bcrypt)
-INSERT INTO users (user_id, username, password_hash, display_name, role)
-VALUES
-    ('USR-20250101-0001', 'admin', 'YWRtaW4xMjM=', 'Administrator', 'Admin'),
-    ('USR-20250101-0002', 'petugas', 'cGV0dWdhczEyMw==', 'Petugas MCU', 'Petugas')
-ON CONFLICT (username) DO NOTHING;
+-- IMPORTANT: Do NOT use hardcoded credentials in production!
+--
+-- Instructions for creating initial users:
+-- 1. Use the application's signup/admin setup form
+-- 2. Or use a secure script that generates bcrypt-hashed passwords
+-- 3. Store passwords securely - NEVER commit to git
+-- 4. If migrating: use a migration script with environment variables for credentials
+--
+-- Example migration script (Node.js with bcrypt):
+--   const bcrypt = require('bcryptjs');
+--   const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
+--   // Insert into database with hashed password
+--
+-- REMOVED: Hardcoded admin user (security risk)
+-- This was: admin / admin123 (Base64: YWRtaW4xMjM=)
+-- This was: petugas / petugas123 (Base64: cGV0dWdhczEyMw==)
+--
+-- To create initial users safely:
+-- Option 1: Use the application's user management interface after first login
+-- Option 2: Create a separate secure initialization script with proper password hashing
 
 -- Insert default master data
 INSERT INTO departments (name) VALUES

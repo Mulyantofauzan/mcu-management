@@ -16,6 +16,20 @@ let jobTitles = [];
 let departments = [];
 let currentEmployee = null;
 
+/**
+ * Sanitize string input to prevent XSS
+ * @param {string} input - Text to sanitize
+ * @returns {string} - Sanitized text safe for database
+ */
+function sanitizeInput(input) {
+    if (!input) return '';
+    // Remove potentially dangerous characters while preserving valid input
+    return input
+        .trim()
+        .replace(/[<>]/g, '') // Remove angle brackets
+        .substring(0, 200); // Limit length
+}
+
 async function init() {
     if (!authService.isAuthenticated()) {
         window.location.href = 'login.html';
@@ -194,16 +208,16 @@ window.handleAddEmployee = async function(event) {
     try {
         const currentUser = authService.getCurrentUser();
         const employeeData = {
-            name: document.getElementById('emp-name').value,
+            name: sanitizeInput(document.getElementById('emp-name').value),  // Sanitize critical field
             jobTitleId: document.getElementById('emp-job-id').value,  // Use hidden field with ID
             departmentId: document.getElementById('emp-dept').value,
             birthDate: document.getElementById('emp-birthdate').value,
             jenisKelamin: document.getElementById('emp-gender').value,
             bloodType: document.getElementById('emp-blood').value,
             employmentStatus: document.getElementById('emp-status').value,
-            vendorName: document.getElementById('emp-vendor').value || null,
+            vendorName: sanitizeInput(document.getElementById('emp-vendor').value) || null,  // Sanitize critical field
             activeStatus: document.getElementById('emp-active').value,
-            inactiveReason: document.getElementById('emp-inactive-reason').value || null
+            inactiveReason: sanitizeInput(document.getElementById('emp-inactive-reason').value) || null  // Sanitize critical field
         };
 
         const newEmployee = await employeeService.create(employeeData, currentUser);
