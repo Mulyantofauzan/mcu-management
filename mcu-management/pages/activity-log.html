@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Log Audit - MCU Management</title>
+    <link rel="stylesheet" href="../css/output.css">
+    <style>
+        .date-filter {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+        }
+
+        .action-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .action-create {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .action-update {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .action-delete {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .target-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background-color: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            align-items: center;
+            margin-top: 2rem;
+        }
+
+        .pagination button {
+            padding: 0.5rem 1rem;
+            border: 1px solid #e5e7eb;
+            background-color: white;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background-color: #f3f4f6;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination .active {
+            background-color: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+
+        .export-btn {
+            padding: 0.5rem 1rem;
+            background-color: #059669;
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .export-btn:hover {
+            background-color: #047857;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 z-30">
+        <div class="flex flex-col h-full">
+            <!-- Logo -->
+            <div class="p-6 border-b border-gray-200">
+                <h1 class="text-xl font-bold text-primary-600">MCU Management</h1>
+                <p class="text-xs text-gray-500 mt-1">Medical Check Up System</p>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 overflow-y-auto p-4">
+                <ul class="space-y-1">
+                    <li>
+                        <a href="../index.html" class="sidebar-link">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                            </svg>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="tambah-karyawan.html" class="sidebar-link">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                            </svg>
+                            <span>Tambah Karyawan</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="kelola-karyawan.html" class="sidebar-link">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                            </svg>
+                            <span>Kelola Karyawan</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="follow-up.html" class="sidebar-link">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                            </svg>
+                            <span>Follow-Up</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="data-master.html" class="sidebar-link">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
+                            </svg>
+                            <span>Data Master</span>
+                        </a>
+                    </li>
+                    <li id="menu-kelola-user">
+                        <a href="kelola-user.html" class="sidebar-link">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                            </svg>
+                            <span>Kelola User</span>
+                        </a>
+                    </li>
+                    <li id="menu-activity-log">
+                        <a href="activity-log.html" class="sidebar-link active">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span>Activity Log</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="analysis.html" class="sidebar-link">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            <span>Analysis</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="data-terhapus.html" class="sidebar-link">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                            <span>Data Terhapus</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- User Info -->
+            <div class="p-4 border-t border-gray-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
+                        <span class="text-primary-600 font-semibold" id="user-initial">A</span>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-900" id="user-name">Admin</p>
+                        <p class="text-xs text-gray-500" id="user-role">Administrator</p>
+                    </div>
+                    <button onclick="window.handleLogout()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="ml-64 min-h-screen">
+        <!-- Top Bar -->
+        <div class="bg-white border-b border-gray-200">
+            <div class="px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <h1 class="text-2xl font-bold text-gray-900">Activity Log Audit</h1>
+                    <button id="mobile-menu-btn" onclick="window.toggleMobileSidebar()" class="hidden md:hidden text-gray-500">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="p-8">
+            <!-- Filters -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Filter Data</h2>
+                <div class="date-filter">
+                    <div class="filter-group">
+                        <label for="filter-action">Aksi</label>
+                        <select id="filter-action">
+                            <option value="">Semua Aksi</option>
+                            <option value="create">Create</option>
+                            <option value="update">Update</option>
+                            <option value="delete">Delete</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filter-target">Target Entitas</label>
+                        <select id="filter-target">
+                            <option value="">Semua Target</option>
+                            <option value="Employee">Karyawan</option>
+                            <option value="MCU">MCU</option>
+                            <option value="FollowUp">Follow-Up</option>
+                            <option value="User">User</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filter-user">User</label>
+                        <input type="text" id="filter-user" placeholder="Nama atau ID User">
+                    </div>
+                    <div class="filter-group">
+                        <label for="filter-from-date">Dari Tanggal</label>
+                        <input type="date" id="filter-from-date">
+                    </div>
+                    <div class="filter-group">
+                        <label for="filter-to-date">Sampai Tanggal</label>
+                        <input type="date" id="filter-to-date">
+                    </div>
+                    <button id="btn-filter" class="export-btn" onclick="window.applyFilters()">Terapkan Filter</button>
+                    <button id="btn-export" class="export-btn" onclick="window.exportActivityLog()">Export CSV</button>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+                <div id="activity-log-container" class="p-6">
+                    <div class="flex items-center justify-center py-12">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination-container"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../env-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js" defer></script>
+
+    <!-- Configuration -->
+    <script type="module">
+        import { database } from '../js/services/database.js';
+        import { authService } from '../js/services/authService.js';
+        import { showToast } from '../js/utils/uiHelpers.js';
+        import { hideAdminMenuForNonAdmin } from '../js/utils/uiHelpers.js';
+        import { ActivityLogService } from '../js/services/activityLogService.js';
+
+        let activityLogService;
+        let currentUser = null;
+        let currentPage = 1;
+        const itemsPerPage = 20;
+
+        // Initialize
+        async function init() {
+            try {
+                // Check auth
+                currentUser = await authService.getCurrentUser();
+                if (!currentUser) {
+                    window.location.href = '../index.html';
+                    return;
+                }
+
+                // Check permission
+                if (currentUser.role !== 'Admin') {
+                    showToast('Anda tidak memiliki akses ke halaman ini', 'error');
+                    window.location.href = '../index.html';
+                    return;
+                }
+
+                // Update UI with user info
+                document.getElementById('user-name').textContent = currentUser.displayName || currentUser.username;
+                document.getElementById('user-role').textContent = currentUser.role;
+                document.getElementById('user-initial').textContent = (currentUser.displayName || currentUser.username).charAt(0).toUpperCase();
+
+                // Hide admin menu for non-admin
+                hideAdminMenuForNonAdmin(currentUser);
+
+                // Initialize service
+                activityLogService = new ActivityLogService(database);
+
+                // Load activity log
+                await loadActivityLog();
+
+            } catch (error) {
+                console.error('Init error:', error);
+                showToast('Gagal memuat halaman: ' + error.message, 'error');
+            }
+        }
+
+        // Load activity log
+        async function loadActivityLog() {
+            try {
+                const filters = getFilters();
+                const result = await activityLogService.getActivities({
+                    ...filters,
+                    page: currentPage,
+                    limit: itemsPerPage
+                });
+
+                renderTable(result.data);
+                renderPagination(result.totalPages, currentPage);
+
+            } catch (error) {
+                console.error('Load error:', error);
+                showToast('Gagal memuat activity log: ' + error.message, 'error');
+            }
+        }
+
+        // Get filters
+        function getFilters() {
+            return {
+                action: document.getElementById('filter-action').value || null,
+                target: document.getElementById('filter-target').value || null,
+                userName: document.getElementById('filter-user').value || null,
+                fromDate: document.getElementById('filter-from-date').value || null,
+                toDate: document.getElementById('filter-to-date').value || null
+            };
+        }
+
+        // Render table
+        function renderTable(activities) {
+            const container = document.getElementById('activity-log-container');
+
+            if (!activities || activities.length === 0) {
+                container.innerHTML = '<div class="text-center py-8 text-gray-500">Tidak ada data aktivitas</div>';
+                return;
+            }
+
+            let html = `
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-gray-200">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Waktu</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">User</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Aksi</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Target</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Detail</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            activities.forEach(activity => {
+                const actionClass = `action-${activity.action}`;
+                const timestamp = new Date(activity.timestamp).toLocaleString('id-ID');
+
+                html += `
+                    <tr class="border-b border-gray-200 hover:bg-gray-50">
+                        <td class="px-6 py-4 text-sm text-gray-900">${timestamp}</td>
+                        <td class="px-6 py-4 text-sm text-gray-900">${activity.userName || 'System'}</td>
+                        <td class="px-6 py-4 text-sm">
+                            <span class="action-badge ${actionClass}">${activity.action}</span>
+                        </td>
+                        <td class="px-6 py-4 text-sm">
+                            <span class="target-badge">${activity.entityType || activity.target}</span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">${activity.entityId || activity.details || '-'}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // Render pagination
+        function renderPagination(totalPages, currentPage) {
+            const container = document.getElementById('pagination-container');
+
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = '<div class="pagination">';
+
+            // Previous button
+            html += `<button ${currentPage === 1 ? 'disabled' : 'onclick="window.goToPage(' + (currentPage - 1) + ')"'}>← Sebelumnya</button>`;
+
+            // Page numbers
+            const maxPages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxPages / 2));
+            let endPage = Math.min(totalPages, startPage + maxPages - 1);
+            if (endPage - startPage < maxPages - 1) {
+                startPage = Math.max(1, endPage - maxPages + 1);
+            }
+
+            if (startPage > 1) {
+                html += `<button onclick="window.goToPage(1)">1</button>`;
+                if (startPage > 2) html += `<span>...</span>`;
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="${i === currentPage ? 'active' : ''}" onclick="window.goToPage(${i})">${i}</button>`;
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += `<span>...</span>`;
+                html += `<button onclick="window.goToPage(${totalPages})">${totalPages}</button>`;
+            }
+
+            // Next button
+            html += `<button ${currentPage === totalPages ? 'disabled' : 'onclick="window.goToPage(' + (currentPage + 1) + ')"'}>Selanjutnya →</button>`;
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // Expose to window for onclick handlers
+        window.applyFilters = async function() {
+            currentPage = 1;
+            await loadActivityLog();
+            showToast('Filter diterapkan', 'success');
+        };
+
+        window.goToPage = async function(page) {
+            currentPage = page;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            await loadActivityLog();
+        };
+
+        window.exportActivityLog = async function() {
+            try {
+                const filters = getFilters();
+                await activityLogService.exportToCSV(filters);
+                showToast('Activity log berhasil diekspor', 'success');
+            } catch (error) {
+                showToast('Gagal mengekspor: ' + error.message, 'error');
+            }
+        };
+
+        // Initialize on load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

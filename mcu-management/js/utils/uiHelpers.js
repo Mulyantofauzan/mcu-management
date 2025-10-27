@@ -331,9 +331,16 @@ export function generateTable(data, columns, actions = null) {
 export function hideAdminMenuForNonAdmin(user) {
   if (!user) return;
 
-  // Hide Kelola User menu for non-Admin users
-  const kelolaUserMenu = document.getElementById('menu-kelola-user');
-  if (kelolaUserMenu && user.role !== 'Admin') {
-    kelolaUserMenu.style.display = 'none';
+  // Hide admin menus for non-Admin users
+  if (user.role !== 'Admin') {
+    const kelolaUserMenu = document.getElementById('menu-kelola-user');
+    if (kelolaUserMenu) {
+      kelolaUserMenu.style.display = 'none';
+    }
+
+    const activityLogMenu = document.getElementById('menu-activity-log');
+    if (activityLogMenu) {
+      activityLogMenu.style.display = 'none';
+    }
   }
 }
