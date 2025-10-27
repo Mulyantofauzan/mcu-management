@@ -10,13 +10,17 @@ import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal, confirmDialog, getStatusBadge, hideAdminMenuForNonAdmin } from '../utils/uiHelpers.js';
 import { exportEmployeeData } from '../utils/exportHelpers.js';
 import { validateEmployeeForm, validateMCUForm, displayValidationErrors } from '../utils/validation.js';
+import { logger } from '../utils/logger.js';
+import { debounce } from '../utils/debounce.js';
+import { UI } from '../config/constants.js';
+import { safeGet, safeArray, isEmpty } from '../utils/nullSafety.js';
 
 let employees = [];
 let filteredEmployees = [];
 let jobTitles = [];
 let departments = [];
 let currentPage = 1;
-const itemsPerPage = 10;
+const itemsPerPage = UI.ITEMS_PER_PAGE;
 
 async function init() {
     if (!authService.isAuthenticated()) {
@@ -40,10 +44,17 @@ function updateUserInfo() {
 
 async function loadData() {
     try {
+        logger.info('Loading employee data...');
+
         // IMPORTANT: Load master data FIRST before employees
         jobTitles = await masterDataService.getAllJobTitles();
+        logger.database('select', 'jobTitles', jobTitles.length);
+
         departments = await masterDataService.getAllDepartments();
+        logger.database('select', 'departments', departments.length);
+
         employees = await employeeService.getAll();
+        logger.database('select', 'employees', employees.length);
 
         // Enrich employee data with IDs (for Supabase which only stores names)
         employees = employees.map(emp => enrichEmployeeWithIds(emp));
@@ -51,8 +62,9 @@ async function loadData() {
 
         updateStats();
         renderTable();
+        logger.info('Employee data loaded successfully');
     } catch (error) {
-        console.error('Error loading data:', error);
+        logger.error('Error loading employee data:', error);
         showToast('Gagal memuat data: ' + error.message, 'error');
     }
 }
@@ -207,14 +219,20 @@ window.changePage = function(page) {
     }
 };
 
-window.handleSearch = function() {
+// Create debounced search function to prevent excessive filtering
+const debouncedSearch = debounce(() => {
     const search = document.getElementById('search').value.toLowerCase();
-    filteredEmployees = employees.filter(emp =>
-        emp.name.toLowerCase().includes(search) ||
-        emp.employeeId.toLowerCase().includes(search)
-    );
+    filteredEmployees = employees.filter(emp => {
+        const empName = safeGet(emp, 'name', '').toLowerCase();
+        const empId = safeGet(emp, 'employeeId', '').toLowerCase();
+        return empName.includes(search) || empId.includes(search);
+    });
     currentPage = 1; // Reset to first page
     renderTable();
+}, UI.SEARCH_DEBOUNCE_DELAY);
+
+window.handleSearch = function() {
+    debouncedSearch();
 };
 
 window.viewEmployee = async function(employeeId) {
