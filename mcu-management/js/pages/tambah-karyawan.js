@@ -34,6 +34,7 @@ function updateUserInfo() {
         document.getElementById('user-role').textContent = user.role;
         document.getElementById('user-initial').textContent = user.displayName.charAt(0).toUpperCase();
         hideAdminMenuForNonAdmin(user);
+        initializeSidebar(user); // Initialize sidebar with permission checks
     }
 }
 

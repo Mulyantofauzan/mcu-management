@@ -10,6 +10,7 @@ import { masterDataService } from '../services/masterDataService.js';
 import { database } from '../services/database.js';
 import { formatDateDisplay, getCurrentMonthRange, isDateInRange } from '../utils/dateHelpers.js';
 import { showToast, getStatusBadge, hideAdminMenuForNonAdmin } from '../utils/uiHelpers.js';
+import { initializeSidebar } from '../sidebar-manager.js';
 import { seedDatabase, checkAndSeedIfEmpty } from '../seedData.js';
 
 // State
@@ -72,6 +73,8 @@ function updateUserInfo() {
 
     // Hide admin-only menus for non-Admin users
     hideAdminMenuForNonAdmin(user);
+    // Initialize sidebar with permission checks
+    initializeSidebar(user);
   }
 }
 

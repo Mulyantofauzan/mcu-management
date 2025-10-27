@@ -344,6 +344,7 @@
         import { showToast } from '../js/utils/uiHelpers.js';
         import { hideAdminMenuForNonAdmin } from '../js/utils/uiHelpers.js';
         import { ActivityLogService } from '../js/services/activityLogService.js';
+        import { initializeSidebar } from '../js/sidebar-manager.js';
 
         let activityLogService;
         let currentUser = null;
@@ -374,6 +375,9 @@
 
                 // Hide admin menu for non-admin
                 hideAdminMenuForNonAdmin(currentUser);
+
+                // Initialize sidebar with permission checks
+                initializeSidebar(currentUser);
 
                 // Initialize service
                 activityLogService = new ActivityLogService(database);

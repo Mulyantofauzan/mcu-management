@@ -482,6 +482,7 @@
         import { authService } from '../js/services/authService.js';
         import { showToast, hideAdminMenuForNonAdmin } from '../js/utils/uiHelpers.js';
         import { AuditService } from '../js/services/auditService.js';
+        import { initializeSidebar } from '../js/sidebar-manager.js';
 
         let auditService;
         let currentUser = null;
@@ -509,6 +510,9 @@
                 document.getElementById('user-initial').textContent = (currentUser.displayName || currentUser.username).charAt(0).toUpperCase();
 
                 hideAdminMenuForNonAdmin(currentUser);
+
+                // Initialize sidebar with permission checks
+                initializeSidebar(currentUser);
 
                 // Initialize audit service
                 auditService = new AuditService(database);

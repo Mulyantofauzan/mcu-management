@@ -6,12 +6,32 @@
  * - Manages permission-based menu visibility
  */
 
-export function initializeSidebar() {
+export function initializeSidebar(user = null) {
     // Auto-set active link based on current page
     setActiveSidebarLink();
 
     // Add mobile toggle handler
     setupMobileSidebarToggle();
+
+    // Hide admin-only menus for non-admin users
+    if (user) {
+        hideAdminMenus(user);
+    } else {
+        // Try to get user from auth service if not provided
+        try {
+            // Import auth service dynamically to avoid circular dependencies
+            import('../services/authService.js').then(module => {
+                const currentUser = module.authService.getCurrentUser();
+                if (currentUser) {
+                    hideAdminMenus(currentUser);
+                }
+            }).catch(() => {
+                // Silently fail if auth service not available
+            });
+        } catch (err) {
+            // Silently fail
+        }
+    }
 }
 
 /**
