@@ -5,6 +5,7 @@
 import { authService } from '../services/authService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { showToast, openModal, closeModal, confirmDialog, hideAdminMenuForNonAdmin } from '../utils/uiHelpers.js';
+import { initializeSidebar } from '../sidebar-manager.js';
 
 let currentTab = 'jobTitles';
 let currentData = [];

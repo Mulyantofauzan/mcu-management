@@ -9,6 +9,7 @@ import { mcuService } from '../services/mcuService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal, hideAdminMenuForNonAdmin } from '../utils/uiHelpers.js';
+import { initializeSidebar } from '../sidebar-manager.js';
 import { generateRujukanPDF, generateRujukanBalikPDF } from '../utils/rujukanPDFGenerator.js';
 
 let followUpList = [];

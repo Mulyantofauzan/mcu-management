@@ -8,6 +8,7 @@ import { mcuService } from '../services/mcuService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal, confirmDialog, getStatusBadge, hideAdminMenuForNonAdmin } from '../utils/uiHelpers.js';
+import { initializeSidebar } from '../sidebar-manager.js';
 import { exportEmployeeData } from '../utils/exportHelpers.js';
 import { validateEmployeeForm, validateMCUForm, displayValidationErrors } from '../utils/validation.js';
 import { logger } from '../utils/logger.js';

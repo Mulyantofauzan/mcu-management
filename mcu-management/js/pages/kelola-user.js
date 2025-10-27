@@ -5,6 +5,7 @@
 
 import { authService } from '../services/authService.js';
 import { showToast, openModal, closeModal, hideAdminMenuForNonAdmin } from '../utils/uiHelpers.js';
+import { initializeSidebar } from '../sidebar-manager.js';
 import { database } from '../services/database.js';
 import { generateUserId } from '../utils/idGenerator.js';
 import { getCurrentTimestamp } from '../utils/dateHelpers.js';
