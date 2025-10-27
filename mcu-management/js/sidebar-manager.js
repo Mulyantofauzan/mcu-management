@@ -90,8 +90,7 @@ export function hideAdminMenus(user) {
 
     const adminMenus = [
         'menu-kelola-user',
-        'menu-activity-log',
-        'menu-audit-compliance'
+        'menu-activity-log'
     ];
 
     adminMenus.forEach(menuId => {
