@@ -9,6 +9,7 @@ import { masterDataService } from '../services/masterDataService.js';
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal, confirmDialog, getStatusBadge, hideAdminMenuForNonAdmin } from '../utils/uiHelpers.js';
 import { exportEmployeeData } from '../utils/exportHelpers.js';
+import { validateEmployeeForm, validateMCUForm, displayValidationErrors } from '../utils/validation.js';
 
 let employees = [];
 let filteredEmployees = [];
@@ -393,6 +394,13 @@ window.handleEditEmployee = async function(event) {
             inactiveReason: document.getElementById('edit-emp-inactive-reason').value || null
         };
 
+        // Validate form data
+        const validation = validateEmployeeForm(updateData);
+        if (!validation.isValid) {
+            displayValidationErrors(validation.errors, showToast);
+            return;
+        }
+
         await employeeService.update(employeeId, updateData);
 
         showToast('Data karyawan berhasil diupdate', 'success');
@@ -477,6 +485,13 @@ window.handleAddMCU = async function(event) {
             initialResult: document.getElementById('mcu-result').value,
             initialNotes: document.getElementById('mcu-notes').value
         };
+
+        // Validate form data
+        const validation = validateMCUForm(mcuData);
+        if (!validation.isValid) {
+            displayValidationErrors(validation.errors, showToast);
+            return;
+        }
 
         await mcuService.create(mcuData, currentUser);
 
