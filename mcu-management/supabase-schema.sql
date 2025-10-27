@@ -100,10 +100,10 @@ CREATE TABLE IF NOT EXISTS mcus (
     sgot VARCHAR(50),
     sgpt VARCHAR(50),
     cbc VARCHAR(100),
-    xray TEXT,
-    ekg TEXT,
-    treadmill TEXT,
-    kidney_liver_function TEXT,
+    xray VARCHAR(500),  -- Medical examination result
+    ekg VARCHAR(500),   -- Electrocardiogram result
+    treadmill VARCHAR(500),  -- Treadmill test result
+    kidney_liver_function VARCHAR(500),  -- Lab result
     napza VARCHAR(100),
 
     -- Initial result
@@ -157,21 +157,21 @@ CREATE TABLE IF NOT EXISTS activity_log (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id VARCHAR(50),
     user_name VARCHAR(200),
-    action VARCHAR(100) NOT NULL,
-    target VARCHAR(200),
+    action VARCHAR(50) NOT NULL CHECK (action IN ('create', 'update', 'delete', 'login', 'logout', 'export')),
+    target VARCHAR(50) NOT NULL CHECK (target IN ('Employee', 'MCU', 'FollowUp', 'User', 'System')),
     target_id VARCHAR(100),
-    details TEXT,
+    details VARCHAR(1000),  -- Limited length to prevent abuse
 
     -- Audit compliance fields
     ip_address VARCHAR(45), -- supports both IPv4 and IPv6
-    user_agent TEXT,
-    old_value TEXT, -- for change tracking: previous value
-    new_value TEXT, -- for change tracking: new value
+    user_agent VARCHAR(500),  -- Added length constraint
+    old_value VARCHAR(2000), -- Limit change tracking value size
+    new_value VARCHAR(2000), -- Limit change tracking value size
     change_field VARCHAR(100), -- which field was changed
 
     -- Immutability & integrity
     is_immutable BOOLEAN DEFAULT true, -- write-once, cannot be deleted
-    hash_value TEXT, -- SHA256 hash for integrity verification
+    hash_value VARCHAR(64), -- SHA256 hash is always 64 chars
     archived BOOLEAN DEFAULT false,
     archive_date TIMESTAMP WITH TIME ZONE,
 

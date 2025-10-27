@@ -132,7 +132,7 @@ export function validateMCUForm(data) {
     // Validate RR (Respiratory Rate) if provided
     if (data.respiratoryRate) {
         const rr = parseInt(data.respiratoryRate);
-        if (rr < 8 || rr > 60) {
+        if (isNaN(rr) || rr < 8 || rr > 60) {
             errors.push('RR (Pernapasan) tidak valid (harus 8-60 /menit)');
         }
     }
@@ -140,7 +140,7 @@ export function validateMCUForm(data) {
     // Validate Pulse if provided
     if (data.pulse) {
         const pulse = parseInt(data.pulse);
-        if (pulse < 30 || pulse > 200) {
+        if (isNaN(pulse) || pulse < 30 || pulse > 200) {
             errors.push('Nadi tidak valid (harus 30-200 bpm)');
         }
     }
@@ -148,7 +148,7 @@ export function validateMCUForm(data) {
     // Validate temperature if provided
     if (data.temperature) {
         const temp = parseFloat(data.temperature);
-        if (temp < 35 || temp > 42) {
+        if (isNaN(temp) || temp < 35 || temp > 42) {
             errors.push('Suhu tidak valid (harus 35-42 °C)');
         }
     }
@@ -156,7 +156,7 @@ export function validateMCUForm(data) {
     // Validate BMI if provided
     if (data.bmi) {
         const bmi = parseFloat(data.bmi);
-        if (bmi < 10 || bmi > 100) {
+        if (isNaN(bmi) || bmi < 10 || bmi > 100) {
             errors.push('BMI tidak valid (harus 10-100)');
         }
     }

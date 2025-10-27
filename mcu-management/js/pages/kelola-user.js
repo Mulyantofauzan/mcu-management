@@ -12,6 +12,17 @@ import { getCurrentTimestamp } from '../utils/dateHelpers.js';
 
 let users = [];
 
+/**
+ * Safely escape HTML special characters to prevent XSS
+ * @param {string} text - Text to escape
+ * @returns {string} - Escaped text safe for HTML
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 async function init() {
     // Check auth - only Admin can access
     if (!authService.isAuthenticated()) {
@@ -73,18 +84,24 @@ function renderTable() {
         const createdDate = new Date(user.createdAt).toLocaleDateString('id-ID');
         const isCurrentUser = authService.getCurrentUser().userId === user.userId;
 
+        // Escape user input to prevent XSS
+        const safeUsername = escapeHtml(user.username);
+        const safeDisplayName = escapeHtml(user.displayName);
+        const safeRole = escapeHtml(user.role);
+        const safeUserId = escapeHtml(user.userId);
+
         html += '<tr>';
-        html += `<td><span class="font-medium text-gray-900">${user.username}</span></td>`;
-        html += `<td>${user.displayName}</td>`;
-        html += `<td><span class="badge ${user.role === 'Admin' ? 'badge-primary' : 'badge-secondary'}">${user.role}</span></td>`;
+        html += `<td><span class="font-medium text-gray-900">${safeUsername}</span></td>`;
+        html += `<td>${safeDisplayName}</td>`;
+        html += `<td><span class="badge ${safeRole === 'Admin' ? 'badge-primary' : 'badge-secondary'}">${safeRole}</span></td>`;
         html += `<td class="text-sm text-gray-600">${createdDate}</td>`;
         html += '<td>';
 
         if (!isCurrentUser) {
-            html += `<button onclick="window.editUser('${user.userId}')" class="btn btn-sm btn-secondary mr-2" title="Edit">
+            html += `<button onclick="window.editUser('${safeUserId}')" class="btn btn-sm btn-secondary mr-2" title="Edit">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
             </button>`;
-            html += `<button onclick="window.deleteUser('${user.userId}')" class="btn btn-sm btn-danger" title="Hapus">
+            html += `<button onclick="window.deleteUser('${safeUserId}')" class="btn btn-sm btn-danger" title="Hapus">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
             </button>`;
         } else {
