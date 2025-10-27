@@ -853,48 +853,30 @@ export const ActivityLog = {
                     .limit(limit);
 
                 if (error) {
-                    console.error('[ActivityLog] ❌ Supabase query error:', {
-                        code: error.code,
-                        message: error.message,
-                        hint: error.hint,
-                        details: error.details
-                    });
-                    console.warn('[ActivityLog] Falling back to IndexedDB...');
-                    // Fall through to IndexedDB below
+                    // Supabase query failed - fall through to IndexedDB
                 } else if (data && data.length > 0) {
-                    console.log('[ActivityLog] ✓ Retrieved ' + data.length + ' records from Supabase');
                     return data.map(transformActivityLog);
-                } else {
-                    console.log('[ActivityLog] ℹ No records in Supabase activity_log table (checking IndexedDB)');
-                    // Fall through to IndexedDB below
                 }
+                // Fall through to IndexedDB if no data or error
             } catch (err) {
-                console.error('[ActivityLog] ❌ Exception during Supabase query:', {
-                    name: err.name,
-                    message: err.message
-                });
-                console.warn('[ActivityLog] Falling back to IndexedDB...');
-                // Fall through to IndexedDB below
+                // Exception during Supabase query - fall through to IndexedDB
             }
         }
 
         // Try IndexedDB as fallback or primary source
         try {
             const result = await indexedDB.db.activityLog.orderBy('timestamp').reverse().limit(limit).toArray();
-            if (result && result.length > 0) {
-                console.log('[ActivityLog] ✓ Retrieved ' + result.length + ' records from IndexedDB (offline data)');
-            } else {
-                console.log('[ActivityLog] ℹ No records in IndexedDB');
-            }
             return result || [];
         } catch (err) {
-            console.error('[ActivityLog] ❌ IndexedDB also failed:', err.message);
-            console.log('[ActivityLog] Returning empty array - no data source available');
+            // IndexedDB also failed - return empty array
             return [];
         }
     },
 
     async add(activity) {
+        let supabaseSuccess = false;
+
+        // Try Supabase first
         if (useSupabase) {
             const supabase = getSupabaseClient();
             try {
@@ -904,29 +886,28 @@ export const ActivityLog = {
                         user_id: activity.userId,
                         user_name: activity.userName || null,
                         action: activity.action,
-                        target: activity.entityType || activity.target, // Map entityType to target
-                        details: activity.entityId || activity.details, // Map entityId to details
+                        target: activity.entityType || activity.target,
+                        details: activity.entityId || activity.details,
                         timestamp: activity.timestamp
                     })
                     .select()
                     .single();
 
-                if (error) {
-                    console.warn('ActivityLog insert error (table may not exist):', error);
-                    // Silently fail if table doesn't exist - this is expected if migration not run
-                    return activity;
+                if (!error && data) {
+                    supabaseSuccess = true;
+                    return transformActivityLog(data);
                 }
-                return transformActivityLog(data);
             } catch (err) {
-                console.warn('ActivityLog add exception:', err);
-                // Gracefully handle table not existing
-                return activity;
+                // Supabase failed - continue to IndexedDB
             }
         }
+
+        // Always save to IndexedDB as fallback/offline storage
         try {
-            return await indexedDB.db.activityLog.add(activity);
+            const id = await indexedDB.db.activityLog.add(activity);
+            return { ...activity, id };
         } catch (err) {
-            console.warn('ActivityLog IndexedDB add failed:', err);
+            // Last resort - return activity as-is
             return activity;
         }
     }
