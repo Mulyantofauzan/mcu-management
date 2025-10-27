@@ -57,7 +57,7 @@ async function loadMasterData() {
         jobTitles = await masterDataService.getAllJobTitles();
         departments = await masterDataService.getAllDepartments();
     } catch (error) {
-        console.error('Error loading master data:', error);
+
         showToast('Gagal memuat data master', 'error');
     }
 }
@@ -172,7 +172,7 @@ window.handleSearch = async function() {
         resultsContainer.innerHTML = html;
 
     } catch (error) {
-        console.error('Error searching:', error);
+
         showToast('Gagal mencari: ' + error.message, 'error');
     }
 };
@@ -233,7 +233,7 @@ window.handleAddEmployee = async function(event) {
         }, 300);
 
     } catch (error) {
-        console.error('Error adding employee:', error);
+
         showToast('Gagal menambah karyawan: ' + error.message, 'error');
     }
 };
@@ -270,7 +270,7 @@ window.openAddMCUForEmployee = async function(employeeId) {
 
         openModal('add-mcu-modal');
     } catch (error) {
-        console.error('Error opening MCU modal:', error);
+
         showToast('Gagal membuka form MCU: ' + error.message, 'error');
     }
 };
@@ -323,7 +323,7 @@ window.handleAddMCU = async function(event) {
         // User closes modal manually dengan tombol "Batal"
 
     } catch (error) {
-        console.error('Error adding MCU:', error);
+
         showToast('Gagal menambah MCU: ' + error.message, 'error');
     }
 };

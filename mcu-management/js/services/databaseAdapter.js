@@ -15,7 +15,7 @@ import { database as indexedDB } from './database-old.js';  // Direct import of 
 const useSupabase = isSupabaseEnabled();
 
 if (useSupabase) {
-    console.log('🚀 ');
+
 } else {
     console.log('📦 Using IndexedDB (Dexie) as database');
 }
@@ -875,13 +875,13 @@ export const ActivityLog = {
                     .limit(limit);
 
                 if (error) {
-                    console.warn('⚠️ Activity log query failed:', error.message);
+
                     return [];
                 }
 
                 return data ? data.map(transformActivityLog) : [];
             } catch (err) {
-                console.warn('⚠️ Activity log query exception:', err.message);
+
                 return [];
             }
         }
@@ -891,7 +891,7 @@ export const ActivityLog = {
             const result = await indexedDB.db.activityLog.orderBy('timestamp').reverse().limit(limit).toArray();
             return result || [];
         } catch (err) {
-            console.warn('⚠️ IndexedDB activity log query failed:', err.message);
+
             return [];
         }
     },
@@ -934,11 +934,11 @@ export const ActivityLog = {
                 if (!error && data) {
                     return transformActivityLog(data);
                 } else if (error) {
-                    console.warn('⚠️ Activity log insert failed:', error.message);
+
                     throw error;
                 }
             } catch (err) {
-                console.warn('⚠️ Failed to save activity log to Supabase:', err.message);
+
                 throw err;
             }
         }
@@ -948,7 +948,7 @@ export const ActivityLog = {
             const id = await indexedDB.db.activityLog.add(activity);
             return { ...activity, id };
         } catch (err) {
-            console.warn('⚠️ Failed to save activity log to IndexedDB:', err.message);
+
             return activity;
         }
     }

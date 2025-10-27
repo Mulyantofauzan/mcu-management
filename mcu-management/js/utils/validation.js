@@ -209,7 +209,7 @@ export function displayValidationErrors(errors, showToastFn) {
     }
 
     // Log all errors to console for debugging
-    console.warn('Validation errors:', errors);
+
 }
 
 /**

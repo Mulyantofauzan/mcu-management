@@ -298,7 +298,7 @@ window.viewEmployee = async function(employeeId) {
 
         openModal('detail-modal');
     } catch (error) {
-        console.error('Error viewing detail:', error);
+
         showToast('Gagal memuat detail: ' + error.message, 'error');
     }
 };
@@ -363,7 +363,7 @@ window.editEmployee = async function(employeeId) {
 
         openModal('edit-employee-modal');
     } catch (error) {
-        console.error('Error opening edit modal:', error);
+
         showToast('Gagal membuka form edit: ' + error.message, 'error');
     }
 };
@@ -427,7 +427,7 @@ window.handleEditEmployee = async function(event) {
         closeEditEmployeeModal();
         await loadData();
     } catch (error) {
-        console.error('Error updating employee:', error);
+
         showToast('Gagal mengupdate karyawan: ' + error.message, 'error');
     }
 };
@@ -462,7 +462,7 @@ window.addMCUForEmployee = async function(employeeId) {
 
         openModal('add-mcu-modal');
     } catch (error) {
-        console.error('Error opening add MCU modal:', error);
+
         showToast('Gagal membuka form MCU: ' + error.message, 'error');
     }
 };
@@ -522,7 +522,7 @@ window.handleAddMCU = async function(event) {
         await loadData();
 
     } catch (error) {
-        console.error('Error adding MCU:', error);
+
         showToast('Gagal menambah MCU: ' + error.message, 'error');
     }
 };
@@ -663,7 +663,7 @@ window.viewMCUDetail = async function(mcuId) {
 
         openModal('mcu-detail-modal');
     } catch (error) {
-        console.error('Error viewing MCU detail:', error);
+
         showToast('Gagal memuat detail MCU: ' + error.message, 'error');
     }
 };
@@ -729,7 +729,7 @@ window.editMCU = async function() {
 
         openModal('edit-mcu-modal');
     } catch (error) {
-        console.error('Error opening edit MCU modal:', error);
+
         showToast('Gagal membuka form edit: ' + error.message, 'error');
     }
 };
@@ -791,7 +791,7 @@ window.handleEditMCU = async function(event) {
             await viewMCUDetail(mcuId);
         }
     } catch (error) {
-        console.error('Error updating MCU:', error);
+
         showToast('Gagal mengupdate MCU: ' + error.message, 'error');
     }
 };
@@ -805,7 +805,7 @@ window.deleteEmployee = function(employeeId) {
                 showToast('Karyawan berhasil dihapus', 'success');
                 await loadData();
             } catch (error) {
-                console.error('Error deleting:', error);
+
                 showToast('Gagal menghapus: ' + error.message, 'error');
             }
         }

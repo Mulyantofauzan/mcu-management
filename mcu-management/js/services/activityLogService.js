@@ -62,7 +62,7 @@ export class ActivityLogService {
             };
 
         } catch (error) {
-            console.error('Error getting activities:', error);
+
             throw error;
         }
     }
@@ -181,7 +181,7 @@ export class ActivityLogService {
             return { success: true, recordsExported: activities.length };
 
         } catch (error) {
-            console.error('Error exporting to CSV:', error);
+
             throw error;
         }
     }
@@ -234,7 +234,7 @@ export class ActivityLogService {
             return stats;
 
         } catch (error) {
-            console.error('Error getting statistics:', error);
+
             throw error;
         }
     }

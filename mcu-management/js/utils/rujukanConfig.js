@@ -105,7 +105,7 @@ export function updateRujukanConfig(newConfig) {
     }
   });
 
-  console.log('[RujukanConfig] Updated configuration:', rujukanConfig);
+
 }
 
 /**

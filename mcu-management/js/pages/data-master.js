@@ -58,7 +58,7 @@ async function loadData() {
 
         renderTable();
     } catch (error) {
-        console.error('Error loading data:', error);
+
         showToast('Gagal memuat data: ' + error.message, 'error');
     }
 }
@@ -160,7 +160,7 @@ window.handleSubmit = async function(event) {
         closeCrudModal();
         await loadData();
     } catch (error) {
-        console.error('Error saving:', error);
+
         showToast('Gagal menyimpan: ' + error.message, 'error');
     }
 };
@@ -175,7 +175,7 @@ window.deleteItem = function(id) {
                 showToast('Data berhasil dihapus', 'success');
                 await loadData();
             } catch (error) {
-                console.error('Error deleting:', error);
+
                 showToast('Gagal menghapus: ' + error.message, 'error');
             }
         }

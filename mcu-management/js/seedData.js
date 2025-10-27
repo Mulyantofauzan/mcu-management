@@ -67,19 +67,19 @@ function generateRandomBMI() {
 
 export async function seedDatabase() {
   try {
-    console.log('Starting database seeding...');
+
 
     // Clear existing data (only for IndexedDB, not Supabase)
     // For Supabase, we skip clearing to preserve production data
     try {
       await database.clearAll();
-      console.log('Database cleared');
+
     } catch (error) {
       console.log('Skipping clearAll (likely using Supabase)');
     }
 
     // 1. Create Master Data
-    console.log('Creating master data...');
+
 
     const departments = [];
     const departmentNames = ['IT', 'HR', 'Finance', 'Operations', 'Marketing'];
@@ -87,7 +87,7 @@ export async function seedDatabase() {
       const dept = await masterDataService.createDepartment({ name });
       departments.push(dept);
     }
-    console.log(`Created ${departments.length} departments`);
+
 
     const jobTitles = [];
     const jobTitleNames = ['Manager', 'Staff', 'Supervisor', 'Officer', 'Analyst', 'Specialist', 'Coordinator'];
@@ -95,7 +95,7 @@ export async function seedDatabase() {
       const job = await masterDataService.createJobTitle({ name });
       jobTitles.push(job);
     }
-    console.log(`Created ${jobTitles.length} job titles`);
+
 
     const vendors = [];
     const vendorNames = ['PT Vendor A', 'PT Vendor B', 'CV Outsource C'];
@@ -103,10 +103,10 @@ export async function seedDatabase() {
       const vendor = await masterDataService.createVendor({ name });
       vendors.push(vendor);
     }
-    console.log(`Created ${vendors.length} vendors`);
+
 
     // 2. Create Users
-    console.log('Creating users...');
+
 
     await authService.createUser({
       username: 'admin',
@@ -125,7 +125,7 @@ export async function seedDatabase() {
     console.log('Created 2 users (admin/admin123, petugas/petugas123)');
 
     // 3. Create Employees
-    console.log('Creating employees...');
+
 
     const employees = [];
     for (let i = 0; i < 50; i++) {
@@ -146,10 +146,10 @@ export async function seedDatabase() {
       const employee = await employeeService.create(employeeData);
       employees.push(employee);
     }
-    console.log(`Created ${employees.length} employees`);
+
 
     // 4. Create MCU Records
-    console.log('Creating MCU records...');
+
 
     const dummyUser = { userId: 'SYSTEM', username: 'system' };
     let mcuCount = 0;
@@ -214,26 +214,26 @@ export async function seedDatabase() {
       }
     }
 
-    console.log(`Created ${mcuCount} MCU records`);
+
 
     // 5. Create some soft-deleted records for testing restore
-    console.log('Creating soft-deleted records...');
+
 
     const employeesToDelete = employees.slice(0, 3);
     for (const emp of employeesToDelete) {
       await employeeService.softDelete(emp.employeeId);
     }
 
-    console.log(`Soft-deleted ${employeesToDelete.length} employees with their MCUs`);
 
-    console.log('✅ Database seeding completed successfully!');
-    console.log('Summary:');
-    console.log(`- Departments: ${departments.length}`);
-    console.log(`- Job Titles: ${jobTitles.length}`);
-    console.log(`- Vendors: ${vendors.length}`);
+
+
+
+
+
+
     console.log(`- Users: 2 (admin, petugas)`);
     console.log(`- Employees: ${employees.length} (${employeesToDelete.length} soft-deleted)`);
-    console.log(`- MCU Records: ${mcuCount}`);
+
 
     return {
       success: true,
@@ -249,7 +249,7 @@ export async function seedDatabase() {
     };
 
   } catch (error) {
-    console.error('Error seeding database:', error);
+
     return {
       success: false,
       error: error.message
@@ -269,25 +269,25 @@ export async function checkAndSeedIfEmpty() {
 
   if (!enableAutoSeed) {
     console.log('ℹ️ Auto-seeding DISABLED (production mode)');
-    console.log('💡 To enable for development: Set window.ENV.ENABLE_AUTO_SEED = true');
+
     return { success: true, message: 'Auto-seeding disabled for production' };
   }
 
   // Development mode: Auto-seed if database is empty
-  console.warn('⚠️ DEVELOPMENT MODE: Auto-seeding enabled');
+
 
   try {
     // Check if users exist (more important than employees for login)
     const users = await database.getAll('users');
     if (!users || users.length === 0) {
-      console.log('No users found. Auto-seeding database...');
+
       return await seedDatabase();
     }
 
     console.log(`Database already has ${users.length} user(s)`);
     return { success: true, message: 'Database already has data' };
   } catch (error) {
-    console.error('Error checking database:', error);
+
     return { success: false, error: error.message };
   }
 }

@@ -45,7 +45,7 @@ async function init() {
     // Check and seed if empty
     const seedResult = await checkAndSeedIfEmpty();
     if (seedResult.success && seedResult.counts) {
-      console.log('Database seeded:', seedResult.counts);
+
     }
 
     // Set default date range (empty = show all)
@@ -57,9 +57,9 @@ async function init() {
     // Initialize filter dropdowns after data loads
     await initializeFilters();
 
-    console.log('Dashboard initialized');
+
   } catch (error) {
-    console.error('Init error:', error);
+
     showToast('Error initializing dashboard: ' + error.message, 'error');
   }
 }
@@ -164,7 +164,7 @@ async function loadData() {
     updateActivityList();
 
   } catch (error) {
-    console.error('Load data error:', error);
+
     showToast('Error loading data: ' + error.message, 'error');
   }
 }
@@ -593,7 +593,7 @@ async function updateMCUTrendChart() {
       }
     });
   } catch (error) {
-    console.error('Error creating trend chart:', error);
+
   }
 }
 
@@ -865,7 +865,7 @@ async function updateActivityList() {
 
     container.innerHTML = html;
   } catch (error) {
-    console.error('Error loading activity list:', error);
+
     container.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">Gagal memuat aktivitas</p>';
   }
 }

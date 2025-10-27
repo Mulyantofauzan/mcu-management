@@ -66,7 +66,7 @@ export function exportToCSV(data, filename, columnMapping = null) {
 
     showToast('Data berhasil diekspor ke CSV', 'success');
   } catch (error) {
-    console.error('Error exporting CSV:', error);
+
     showToast('Gagal mengekspor data: ' + error.message, 'error');
   }
 }
@@ -101,7 +101,7 @@ export async function exportToPDF(elementId, filename) {
     await html2pdf().set(opt).from(element).save();
     showToast('PDF berhasil diekspor', 'success');
   } catch (error) {
-    console.error('Error exporting PDF:', error);
+
     showToast('Gagal mengekspor PDF: ' + error.message, 'error');
   }
 }

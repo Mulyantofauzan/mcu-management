@@ -73,7 +73,7 @@ async function loadUsers() {
         users = await database.getAll('users');
         renderTable();
     } catch (error) {
-        console.error('Error loading users:', error);
+
         showToast('Gagal memuat data user: ' + error.message, 'error');
     }
 }
@@ -188,7 +188,7 @@ window.handleAddUser = async function(event) {
         await loadUsers();
 
     } catch (error) {
-        console.error('Error adding user:', error);
+
         showToast('Gagal menambahkan user: ' + error.message, 'error');
     }
 };
@@ -213,7 +213,7 @@ window.editUser = async function(userId) {
 
         openModal('edit-user-modal');
     } catch (error) {
-        console.error('Error loading user:', error);
+
         showToast('Gagal memuat data user: ' + error.message, 'error');
     }
 };
@@ -297,7 +297,7 @@ window.handleEditUser = async function(event) {
         }
 
     } catch (error) {
-        console.error('Error updating user:', error);
+
         showToast('Gagal mengupdate user: ' + error.message, 'error');
     }
 };
@@ -318,7 +318,7 @@ window.deleteUser = async function(userId) {
         showToast('User berhasil dihapus', 'success');
         await loadUsers();
     } catch (error) {
-        console.error('Error deleting user:', error);
+
         showToast('Gagal menghapus user: ' + error.message, 'error');
     }
 };

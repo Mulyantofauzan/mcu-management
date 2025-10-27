@@ -21,7 +21,7 @@ const getAdapter = async () => {
 
 // Check which database is being used
 if (isSupabaseEnabled()) {
-    console.log();
+
 } else {
     console.log('📦 Using IndexedDB (Dexie) as fallback database');
 }
@@ -31,7 +31,7 @@ if (isSupabaseEnabled()) {
  */
 class DatabaseService {
     constructor() {
-        console.log('Database initialized successfully');
+
     }
 
     // Users
@@ -180,7 +180,7 @@ class DatabaseService {
             });
         } catch (err) {
             // Activity log is non-critical - don't block main operations
-            console.warn('⚠️ Failed to log activity:', err.message);
+
             return null;
         }
     }

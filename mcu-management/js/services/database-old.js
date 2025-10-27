@@ -15,7 +15,7 @@ class MCUDatabase {
   async init() {
     // Check if Dexie is available
     if (typeof Dexie === 'undefined') {
-      console.error('Dexie is not loaded. Please include Dexie library.');
+
       // Fallback to localStorage mode
       this.useFallback = true;
       return;
@@ -47,11 +47,11 @@ class MCUDatabase {
     } catch (error) {
       // If version conflict, delete and recreate
       if (error.name === 'VersionError') {
-        console.warn('⚠️ IndexedDB version conflict. Deleting old database...');
+
         await this.db.delete();
         // Recreate with correct version
         await this.db.open();
-        console.log('✅ IndexedDB recreated successfully');
+
       } else {
         throw error;
       }
@@ -68,7 +68,7 @@ class MCUDatabase {
       this.logActivity('create', tableName, data);
       return id;
     } catch (error) {
-      console.error(`Error adding to ${tableName}:`, error);
+
       throw error;
     }
   }
@@ -80,7 +80,7 @@ class MCUDatabase {
     try {
       return await this.db[tableName].get(id);
     } catch (error) {
-      console.error(`Error getting from ${tableName}:`, error);
+
       throw error;
     }
   }
@@ -92,7 +92,7 @@ class MCUDatabase {
     try {
       return await this.db[tableName].toArray();
     } catch (error) {
-      console.error(`Error getting all from ${tableName}:`, error);
+
       throw error;
     }
   }
@@ -106,7 +106,7 @@ class MCUDatabase {
       this.logActivity('update', tableName, { id, ...data });
       return true;
     } catch (error) {
-      console.error(`Error updating ${tableName}:`, error);
+
       throw error;
     }
   }
@@ -120,7 +120,7 @@ class MCUDatabase {
       this.logActivity('delete', tableName, { id });
       return true;
     } catch (error) {
-      console.error(`Error deleting from ${tableName}:`, error);
+
       throw error;
     }
   }
@@ -132,7 +132,7 @@ class MCUDatabase {
     try {
       return await this.db[tableName].filter(filterFn).toArray();
     } catch (error) {
-      console.error(`Error querying ${tableName}:`, error);
+
       throw error;
     }
   }
@@ -168,7 +168,7 @@ class MCUDatabase {
           }
         }
       } catch (error) {
-        console.error('Error logging activity:', error);
+
       }
     }
   }
@@ -185,7 +185,7 @@ class MCUDatabase {
         .limit(limit)
         .toArray();
     } catch (error) {
-      console.error('Error getting activity log:', error);
+
       return [];
     }
   }

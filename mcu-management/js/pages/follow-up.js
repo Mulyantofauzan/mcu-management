@@ -48,11 +48,11 @@ window.downloadRujukanPDFAction = function(mcuId) {
       generateRujukanPDF(employeeData, mcu);
       showToast('Surat Rujukan siap dicetak. Gunakan Ctrl+S atau Simpan PDF di print dialog.', 'success');
     } catch (error) {
-      console.error('Error generating PDF:', error);
+
       showToast('Gagal membuat surat rujukan: ' + error.message, 'error');
     }
   }).catch(error => {
-    console.error('Error loading MCU:', error);
+
     showToast('Gagal memuat data MCU: ' + error.message, 'error');
   });
 };
@@ -69,7 +69,7 @@ window.downloadRujukanBalikAction = function(employeeId) {
     generateRujukanBalikPDF(employee);
     showToast('Surat Rujukan Balik siap dicetak. Gunakan Ctrl+S atau Simpan PDF di print dialog.', 'success');
   } catch (error) {
-    console.error('Error generating rujukan balik:', error);
+
     showToast('Gagal membuat surat rujukan balik: ' + error.message, 'error');
   }
 };
@@ -106,7 +106,7 @@ async function loadMasterData() {
     // Enrich employees with IDs (for Supabase which only stores names)
     employees = employees.map(emp => enrichEmployeeWithIds(emp));
   } catch (error) {
-    console.error('Error loading master data:', error);
+
   }
 }
 
@@ -134,7 +134,7 @@ window.loadFollowUpList = async function() {
 
     showToast('Data berhasil dimuat', 'success');
   } catch (error) {
-    console.error('Error loading follow-up list:', error);
+
     showToast('Gagal memuat data: ' + error.message, 'error');
   }
 };
@@ -257,7 +257,7 @@ window.openFollowUpModal = async function(mcuId) {
 
     openModal('followup-modal');
   } catch (error) {
-    console.error('Error opening modal:', error);
+
     showToast('Gagal membuka modal: ' + error.message, 'error');
   }
 };
@@ -302,7 +302,7 @@ window.handleFollowUpSubmit = async function(event) {
     }, 500);
 
   } catch (error) {
-    console.error('Error saving follow-up:', error);
+
     showToast('Gagal menyimpan follow-up: ' + error.message, 'error');
   }
 };
@@ -357,7 +357,7 @@ window.openMCUUpdateModal = async function(mcuId) {
 
     openModal('mcu-update-modal');
   } catch (error) {
-    console.error('Error opening MCU update modal:', error);
+
     showToast('Gagal membuka modal: ' + error.message, 'error');
   }
 };
@@ -426,7 +426,7 @@ window.handleMCUUpdate = async function(event) {
     await loadFollowUpList();
 
   } catch (error) {
-    console.error('Error updating MCU:', error);
+
     showToast('Gagal mengupdate MCU: ' + error.message, 'error');
   }
 };

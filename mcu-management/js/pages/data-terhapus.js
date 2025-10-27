@@ -47,7 +47,7 @@ async function loadData() {
         document.getElementById('total-count').textContent = deletedEmployees.length;
         renderTable();
     } catch (error) {
-        console.error('Error loading data:', error);
+
         showToast('Gagal memuat data: ' + error.message, 'error');
     }
 }
@@ -169,7 +169,7 @@ window.restoreEmployee = function(employeeId) {
                 showToast('Karyawan berhasil di-restore (termasuk MCU)', 'success');
                 await loadData();
             } catch (error) {
-                console.error('Error restoring:', error);
+
                 showToast('Gagal restore: ' + error.message, 'error');
             }
         }
@@ -188,7 +188,7 @@ window.permanentDelete = function(employeeId) {
                         showToast('Data berhasil dihapus permanen', 'success');
                         await loadData();
                     } catch (error) {
-                        console.error('Error deleting:', error);
+
                         showToast('Gagal menghapus: ' + error.message, 'error');
                     }
                 }
@@ -213,7 +213,7 @@ window.bulkRestore = function() {
                         await employeeService.restore(employeeId);
                         successCount++;
                     } catch (error) {
-                        console.error(`Error restoring ${employeeId}:`, error);
+
                         failCount++;
                     }
                 }
@@ -227,7 +227,7 @@ window.bulkRestore = function() {
                     showToast(`${successCount} berhasil, ${failCount} gagal di-restore`, 'warning');
                 }
             } catch (error) {
-                console.error('Error in bulk restore:', error);
+
                 showToast('Gagal restore: ' + error.message, 'error');
             }
         }
@@ -253,7 +253,7 @@ window.bulkDelete = function() {
                                 await employeeService.permanentDelete(employeeId);
                                 successCount++;
                             } catch (error) {
-                                console.error(`Error deleting ${employeeId}:`, error);
+
                                 failCount++;
                             }
                         }
@@ -267,7 +267,7 @@ window.bulkDelete = function() {
                             showToast(`${successCount} berhasil, ${failCount} gagal dihapus`, 'warning');
                         }
                     } catch (error) {
-                        console.error('Error in bulk delete:', error);
+
                         showToast('Gagal menghapus: ' + error.message, 'error');
                     }
                 }
