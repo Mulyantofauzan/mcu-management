@@ -14,6 +14,11 @@ import { seedDatabase, checkAndSeedIfEmpty } from '../seedData.js';
 
 // State
 let currentDateRange = { startDate: '', endDate: '' }; // Default: empty filter (show all)
+let currentFilters = {
+  employeeType: '', // 'Karyawan PST' or 'Vendor'
+  department: '',   // department name
+  mcuStatus: ''     // 'Fit', 'Follow-Up', 'Unfit', etc.
+};
 let latestMCUs = [];
 let employees = [];
 let departments = [];
@@ -45,8 +50,11 @@ async function init() {
     // Set default date range (empty = show all)
     setDateRange('', '');
 
-    // Load data
+    // Load data (which will also populate filter dropdowns)
     await loadData();
+
+    // Initialize filter dropdowns after data loads
+    await initializeFilters();
 
     console.log('Dashboard initialized');
   } catch (error) {
@@ -104,12 +112,41 @@ async function loadData() {
     // Get latest MCU per employee
     latestMCUs = await mcuService.getLatestMCUPerEmployee();
 
-    // Filter by date range (if dates are set)
-    const filteredMCUs = (!currentDateRange.startDate && !currentDateRange.endDate)
-      ? latestMCUs
-      : latestMCUs.filter(mcu =>
-          isDateInRange(mcu.mcuDate, currentDateRange.startDate, currentDateRange.endDate)
-        );
+    // Apply all filters (date range, employee type, department, MCU status)
+    const filteredMCUs = latestMCUs.filter(mcu => {
+      // Filter by date range
+      if (currentDateRange.startDate && currentDateRange.endDate) {
+        if (!isDateInRange(mcu.mcuDate, currentDateRange.startDate, currentDateRange.endDate)) {
+          return false;
+        }
+      }
+
+      // Filter by employee type (Karyawan PST / Vendor)
+      if (currentFilters.employeeType) {
+        const employee = employees.find(e => e.employeeId === mcu.employeeId);
+        if (!employee || employee.employmentStatus !== currentFilters.employeeType) {
+          return false;
+        }
+      }
+
+      // Filter by department
+      if (currentFilters.department) {
+        const employee = employees.find(e => e.employeeId === mcu.employeeId);
+        if (!employee || employee.department !== currentFilters.department) {
+          return false;
+        }
+      }
+
+      // Filter by MCU status
+      if (currentFilters.mcuStatus) {
+        const mcuResult = mcu.finalResult || mcu.initialResult || '';
+        if (mcuResult !== currentFilters.mcuStatus) {
+          return false;
+        }
+      }
+
+      return true;
+    });
 
     // Update KPIs
     updateKPIs(filteredMCUs);
@@ -830,6 +867,33 @@ async function updateActivityList() {
   }
 }
 
+// Initialize filter dropdowns
+async function initializeFilters() {
+  // Populate department dropdown
+  const departmentSelect = document.getElementById('filter-department');
+  if (departmentSelect && departments.length > 0) {
+    departments.forEach(dept => {
+      const option = document.createElement('option');
+      option.value = dept.name;
+      option.textContent = dept.name;
+      departmentSelect.appendChild(option);
+    });
+  }
+
+  // Add event listeners to filters
+  document.getElementById('filter-employee-type')?.addEventListener('change', handleFilterChange);
+  document.getElementById('filter-department')?.addEventListener('change', handleFilterChange);
+  document.getElementById('filter-mcu-status')?.addEventListener('change', handleFilterChange);
+}
+
+// Handle filter changes (auto-apply when filter changes)
+async function handleFilterChange() {
+  currentFilters.employeeType = document.getElementById('filter-employee-type').value;
+  currentFilters.department = document.getElementById('filter-department').value;
+  currentFilters.mcuStatus = document.getElementById('filter-mcu-status').value;
+  await loadData();
+}
+
 // Event Handlers
 window.applyDateFilter = async function() {
   const startDate = document.getElementById('start-date').value;
@@ -842,14 +906,26 @@ window.applyDateFilter = async function() {
 
   currentDateRange = { startDate, endDate };
   await loadData();
-  showToast('Filter tanggal diterapkan', 'success');
+  showToast('Filter diterapkan', 'success');
 };
 
 window.resetDateFilter = async function() {
+  // Reset all filters
   currentDateRange = { startDate: '', endDate: '' };
+  currentFilters = {
+    employeeType: '',
+    department: '',
+    mcuStatus: ''
+  };
+
+  // Update UI
   setDateRange('', '');
+  document.getElementById('filter-employee-type').value = '';
+  document.getElementById('filter-department').value = '';
+  document.getElementById('filter-mcu-status').value = '';
+
   await loadData();
-  showToast('Filter direset (tampilkan semua data)', 'success');
+  showToast('Semua filter direset (tampilkan semua data)', 'success');
 };
 
 window.handleLogout = function() {

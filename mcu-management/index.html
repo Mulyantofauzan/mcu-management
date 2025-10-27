@@ -186,9 +186,9 @@
 
         <!-- Page Content -->
         <main class="p-6" id="main-content">
-            <!-- Date Range Picker -->
+            <!-- Filters -->
             <div class="mb-6 card">
-                <div class="flex items-center gap-4">
+                <div class="flex flex-wrap items-end gap-4">
                     <div>
                         <label class="label">Tanggal Mulai</label>
                         <input type="date" id="start-date" class="input" />
@@ -197,8 +197,33 @@
                         <label class="label">Tanggal Akhir</label>
                         <input type="date" id="end-date" class="input" />
                     </div>
+                    <div>
+                        <label class="label">Status Karyawan</label>
+                        <select id="filter-employee-type" class="input">
+                            <option value="">Semua Status</option>
+                            <option value="Karyawan PST">Karyawan PST</option>
+                            <option value="Vendor">Vendor</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label">Departemen</label>
+                        <select id="filter-department" class="input">
+                            <option value="">Semua Departemen</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label">MCU Status</label>
+                        <select id="filter-mcu-status" class="input">
+                            <option value="">Semua Status MCU</option>
+                            <option value="Fit">Fit</option>
+                            <option value="Fit With Note">Fit With Note</option>
+                            <option value="Temporary Unfit">Temporary Unfit</option>
+                            <option value="Follow-Up">Follow-Up</option>
+                            <option value="Unfit">Unfit</option>
+                        </select>
+                    </div>
                     <div class="self-end">
-                        <button onclick="window.applyDateFilter()" class="btn btn-primary">Filter</button>
+                        <button onclick="window.applyDateFilter()" class="btn btn-primary">Terapkan Filter</button>
                         <button onclick="window.resetDateFilter()" class="btn btn-secondary">Reset</button>
                     </div>
                 </div>
