@@ -68,9 +68,14 @@ async function init() {
 function updateUserInfo() {
   const user = authService.getCurrentUser();
   if (user) {
-    document.getElementById('user-name').textContent = user.displayName;
-    document.getElementById('user-role').textContent = user.role;
-    document.getElementById('user-initial').textContent = user.displayName.charAt(0).toUpperCase();
+    // Safely access user properties with fallbacks
+    const displayName = user?.displayName || 'User';
+    const role = user?.role || 'Petugas';
+    const initial = (displayName && displayName.length > 0) ? displayName.charAt(0).toUpperCase() : '?';
+
+    document.getElementById('user-name').textContent = displayName;
+    document.getElementById('user-role').textContent = role;
+    document.getElementById('user-initial').textContent = initial;
 
     // Hide admin-only menus for non-Admin users
     hideAdminMenuForNonAdmin(user);
@@ -88,15 +93,17 @@ function setDateRange(startDate, endDate) {
 // Helper: Add jobTitleId and departmentId based on names (for Supabase)
 // Supabase stores job_title and department as names, we need IDs for lookups
 function enrichEmployeeWithIds(emp, jobTitles, departments) {
+  if (!emp || typeof emp !== 'object') return emp;
+
   if (!emp.jobTitleId && emp.jobTitle) {
-    const job = jobTitles.find(j => j.name === emp.jobTitle);
-    if (job) {
+    const job = Array.isArray(jobTitles) ? jobTitles.find(j => j?.name === emp.jobTitle) : null;
+    if (job?.id) {
       emp.jobTitleId = job.id; // Supabase uses numeric id
     }
   }
   if (!emp.departmentId && emp.department) {
-    const dept = departments.find(d => d.name === emp.department);
-    if (dept) {
+    const dept = Array.isArray(departments) ? departments.find(d => d?.name === emp.department) : null;
+    if (dept?.id) {
       emp.departmentId = dept.id; // Supabase uses numeric id
     }
   }
@@ -236,24 +243,31 @@ function updateCharts(filteredMCUs) {
 
 function updateDepartmentChart(filteredMCUs) {
   const ctx = document.getElementById('chart-department');
+  if (!ctx) return;
 
   // Count MCUs per department
   const deptCounts = {};
-  departments.forEach(dept => {
-    deptCounts[dept.name] = 0;
-  });
-
-  filteredMCUs.forEach(mcu => {
-    const employee = employees.find(e => e.employeeId === mcu.employeeId);
-    if (employee && employee.departmentId) {
-      // Supabase: employee.departmentId enriched by enrichEmployeeWithIds()
-      // departments have numeric id as primary key
-      const dept = departments.find(d => d.id === employee.departmentId);
-      if (dept && deptCounts[dept.name] !== undefined) {
-        deptCounts[dept.name]++;
+  if (Array.isArray(departments)) {
+    departments.forEach(dept => {
+      if (dept?.name) {
+        deptCounts[dept.name] = 0;
       }
-    }
-  });
+    });
+  }
+
+  if (Array.isArray(filteredMCUs)) {
+    filteredMCUs.forEach(mcu => {
+      const employee = Array.isArray(employees) ? employees.find(e => e?.employeeId === mcu?.employeeId) : null;
+      if (employee?.departmentId) {
+        // Supabase: employee.departmentId enriched by enrichEmployeeWithIds()
+        // departments have numeric id as primary key
+        const dept = Array.isArray(departments) ? departments.find(d => d?.id === employee.departmentId) : null;
+        if (dept?.name && deptCounts[dept.name] !== undefined) {
+          deptCounts[dept.name]++;
+        }
+      }
+    });
+  }
 
   const labels = Object.keys(deptCounts);
   const data = Object.values(deptCounts);
@@ -799,13 +813,16 @@ async function updateActivityList() {
 
     let html = '';
     for (const activity of activities) {
+      // Null safety checks for activity object
+      if (!activity || typeof activity !== 'object') continue;
+
       let activityText = '';
 
       // Support both camelCase and snake_case from database transform
-      const userName = activity.userName || activity.user_name || 'System';
-      const entityType = activity.entityType || activity.target;
-      const entityId = activity.entityId || activity.details;
-      const action = activity.action;
+      const userName = activity?.userName || activity?.user_name || 'System';
+      const entityType = activity?.entityType || activity?.target;
+      const entityId = activity?.entityId || activity?.details;
+      const action = activity?.action;
 
       // Build detailed activity text based on entity type
       if (entityType === 'Employee') {
@@ -813,20 +830,20 @@ async function updateActivityList() {
           'create': 'menambahkan karyawan',
           'update': 'mengupdate data karyawan',
           'delete': 'menghapus karyawan'
-        }[action] || action;
+        }[action] || (action || 'mengubah');
 
         let employeeName = entityId || 'Karyawan';
-        const emp = employees.find(e => e.employeeId === entityId);
-        if (emp) employeeName = emp.name;
+        const emp = Array.isArray(employees) ? employees.find(e => e?.employeeId === entityId) : null;
+        if (emp?.name) employeeName = emp.name;
 
-        activityText = `<strong>${userName}</strong> ${actionText} <strong>${employeeName}</strong>`;
+        activityText = `<strong>${userName || 'System'}</strong> ${actionText} <strong>${employeeName}</strong>`;
       } else if (entityType === 'MCU') {
         let employeeName = '';
         try {
           const mcu = await database.get('mcus', entityId);
-          if (mcu) {
-            const emp = employees.find(e => e.employeeId === mcu.employeeId);
-            if (emp) employeeName = emp.name;
+          if (mcu?.employeeId) {
+            const emp = Array.isArray(employees) ? employees.find(e => e?.employeeId === mcu.employeeId) : null;
+            if (emp?.name) employeeName = emp.name;
           }
         } catch (e) {
           // Silent fail
@@ -875,12 +892,14 @@ async function updateActivityList() {
 async function initializeFilters() {
   // Populate department dropdown
   const departmentSelect = document.getElementById('filter-department');
-  if (departmentSelect && departments.length > 0) {
+  if (departmentSelect && Array.isArray(departments) && departments.length > 0) {
     departments.forEach(dept => {
-      const option = document.createElement('option');
-      option.value = dept.name;
-      option.textContent = dept.name;
-      departmentSelect.appendChild(option);
+      if (dept?.name) {
+        const option = document.createElement('option');
+        option.value = dept.name;
+        option.textContent = dept.name;
+        departmentSelect.appendChild(option);
+      }
     });
   }
 
@@ -892,9 +911,13 @@ async function initializeFilters() {
 
 // Handle filter changes (auto-apply when filter changes)
 async function handleFilterChange() {
-  currentFilters.employeeType = document.getElementById('filter-employee-type').value;
-  currentFilters.department = document.getElementById('filter-department').value;
-  currentFilters.mcuStatus = document.getElementById('filter-mcu-status').value;
+  const employeeTypeEl = document.getElementById('filter-employee-type');
+  const departmentEl = document.getElementById('filter-department');
+  const mcuStatusEl = document.getElementById('filter-mcu-status');
+
+  currentFilters.employeeType = employeeTypeEl?.value || '';
+  currentFilters.department = departmentEl?.value || '';
+  currentFilters.mcuStatus = mcuStatusEl?.value || '';
   await loadData();
 }
 
