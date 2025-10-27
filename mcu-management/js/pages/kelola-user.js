@@ -69,10 +69,12 @@ function updateUserInfo() {
         document.getElementById('user-role').textContent = role;
         document.getElementById('user-initial').textContent = initial;
 
-        // Initialize sidebar - handles permission checks internally
+        // Initialize sidebar - handles sidebar active link
         initializeSidebar(user);
-            // Apply permission checks to show/hide admin menus
-            hideAdminMenus(user);    }
+
+        // Apply permission checks to show/hide admin menus
+        hideAdminMenus(user);
+    }
 }
 
 async function loadUsers() {

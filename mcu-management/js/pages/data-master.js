@@ -41,7 +41,8 @@ function updateUserInfo() {
         // Initialize sidebar - handles permission checks internally
         initializeSidebar(user);
             // Apply permission checks to show/hide admin menus
-            hideAdminMenus(user);    }
+            hideAdminMenus(user);
+    }
 }
 
 async function loadData() {

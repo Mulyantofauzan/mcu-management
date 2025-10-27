@@ -92,26 +92,30 @@ export function hideAdminMenus(user) {
         'menu-activity-log'
     ];
 
-    // If user is Admin, SHOW all menus
-    if (user && user.role === 'Admin') {
-        adminMenus.forEach(menuId => {
-            const element = document.getElementById(menuId);
-            if (element) {
-                element.style.display = '';  // Show menu
-            }
-        });
+    // Debug logging
+    if (!user) {
         return;
     }
 
-    // For non-Admin users, HIDE admin menus
-    if (user) {
-        adminMenus.forEach(menuId => {
-            const element = document.getElementById(menuId);
-            if (element) {
-                element.style.display = 'none';  // Hide menu
-            }
-        });
-    }
+    const isAdmin = user.role === 'Admin';
+
+    adminMenus.forEach(menuId => {
+        const element = document.getElementById(menuId);
+        if (!element) {
+            return;
+        }
+
+        // If user is Admin, SHOW all menus
+        if (isAdmin) {
+            element.style.display = '';  // Show menu
+            element.classList.remove('hidden');  // Remove hidden class if any
+            element.parentElement?.classList?.remove('hidden');  // Also remove from parent if needed
+        } else {
+            // For non-Admin users, HIDE admin menus
+            element.style.display = 'none';  // Hide menu
+            element.classList.add('hidden');  // Add hidden class as backup
+        }
+    });
 }
 
 /**
@@ -135,5 +139,9 @@ export function updateUserInfo(user) {
     }
 }
 
-// Auto-initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', initializeSidebar);
+// Auto-initialize when DOM is ready (but don't try to get user)
+document.addEventListener('DOMContentLoaded', () => {
+    setActiveSidebarLink();
+    setupMobileSidebarToggle();
+    // Note: hideAdminMenus should be called from each page after user is loaded
+});
