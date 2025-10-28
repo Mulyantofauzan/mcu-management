@@ -121,46 +121,61 @@ COMMENT ON TABLE mfa_audit_log IS 'Audit trail of MFA-specific events (setup, ve
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can view their own audit logs
-CREATE POLICY IF NOT EXISTS "Users can view their own audit logs"
-  ON audit_logs FOR SELECT
-  USING (
-    auth.uid() = user_id
-    OR EXISTS (
-      SELECT 1 FROM users
-      WHERE id = auth.uid()
-      AND role = 'Admin'
-    )
-  );
+DO $$ BEGIN
+  CREATE POLICY "Users can view their own audit logs"
+    ON audit_logs FOR SELECT
+    USING (
+      auth.uid() = user_id
+      OR EXISTS (
+        SELECT 1 FROM users
+        WHERE id = auth.uid()
+        AND role = 'Admin'
+      )
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Policy: Only system can insert audit logs
-CREATE POLICY IF NOT EXISTS "Only system can insert audit logs"
-  ON audit_logs FOR INSERT
-  WITH CHECK (true);
+DO $$ BEGIN
+  CREATE POLICY "Only system can insert audit logs"
+    ON audit_logs FOR INSERT
+    WITH CHECK (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Policy: Audit logs are immutable (no updates/deletes)
-CREATE POLICY IF NOT EXISTS "Audit logs are immutable"
-  ON audit_logs FOR UPDATE
-  USING (false);
+DO $$ BEGIN
+  CREATE POLICY "Audit logs are immutable"
+    ON audit_logs FOR UPDATE
+    USING (false);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Enable RLS on mfa_audit_log
 ALTER TABLE mfa_audit_log ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can view their own MFA audit logs
-CREATE POLICY IF NOT EXISTS "Users can view their own MFA audit logs"
-  ON mfa_audit_log FOR SELECT
-  USING (
-    auth.uid() = user_id
-    OR EXISTS (
-      SELECT 1 FROM users
-      WHERE id = auth.uid()
-      AND role = 'Admin'
-    )
-  );
+DO $$ BEGIN
+  CREATE POLICY "Users can view their own MFA audit logs"
+    ON mfa_audit_log FOR SELECT
+    USING (
+      auth.uid() = user_id
+      OR EXISTS (
+        SELECT 1 FROM users
+        WHERE id = auth.uid()
+        AND role = 'Admin'
+      )
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Policy: Only system can insert MFA audit logs
-CREATE POLICY IF NOT EXISTS "Only system can insert MFA audit logs"
-  ON mfa_audit_log FOR INSERT
-  WITH CHECK (true);
+DO $$ BEGIN
+  CREATE POLICY "Only system can insert MFA audit logs"
+    ON mfa_audit_log FOR INSERT
+    WITH CHECK (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ============================================================================
 -- Backup: Create views for easy audit reporting
