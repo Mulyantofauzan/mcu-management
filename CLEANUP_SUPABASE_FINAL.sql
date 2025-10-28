@@ -1,9 +1,12 @@
 -- ⚠️ FINAL CLEANUP SCRIPT - REMOVE ALL WEEK 2 TABLES FROM SUPABASE
 -- Run this in Supabase SQL Editor to fully clean up
 
--- Drop archive tables
+-- Drop child archive tables first
 DROP TABLE IF EXISTS public.audit_logs_archive_202501 CASCADE;
 DROP TABLE IF EXISTS public.audit_logs_archive_202502 CASCADE;
+
+-- Drop parent archive table
+DROP TABLE IF EXISTS public.audit_logs_archive CASCADE;
 
 -- Drop all RLS policies on audit tables
 DROP POLICY IF EXISTS "Users can view own audit logs" ON public.audit_logs;
@@ -39,7 +42,8 @@ DROP INDEX IF EXISTS public.idx_mfa_audit_log_event_type CASCADE;
 DROP TABLE IF EXISTS public.mfa_audit_log CASCADE;
 DROP TABLE IF EXISTS public.audit_logs CASCADE;
 
--- Verify cleanup was successful - should show NO audit-related tables
+-- ✅ Verify cleanup was successful - should show NO audit-related tables
+-- Run this query to confirm all tables are deleted
 SELECT
   table_name,
   table_schema
@@ -48,9 +52,14 @@ WHERE table_schema = 'public'
   AND (table_name LIKE '%audit%' OR table_name LIKE '%mfa%')
 ORDER BY table_name;
 
--- List all public tables (to verify what remains)
+-- Expected result: (0 rows) - no audit or mfa tables should remain
+
+-- ✅ List all remaining public tables (what's left after cleanup)
 SELECT
   table_name
 FROM information_schema.tables
 WHERE table_schema = 'public'
 ORDER BY table_name;
+
+-- Expected: Only original tables should remain (employees, mcus, users, etc)
+-- Should NOT see: audit_logs, audit_logs_archive, audit_logs_archive_*, mfa_audit_log
