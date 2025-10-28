@@ -1,0 +1,35 @@
+/*
+  # HTTP Strict Transport Security (HSTS)
+  # Forces HTTPS for all connections, prevents SSL stripping
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+
+  # Clickjacking Protection
+  # Prevents embedding site in iframes
+  X-Frame-Options: DENY
+
+  # MIME Type Sniffing Protection
+  # Prevents browser from guessing MIME types
+  X-Content-Type-Options: nosniff
+
+  # XSS Protection (Legacy, but good for older browsers)
+  X-XSS-Protection: 1; mode=block
+
+  # Referrer Policy
+  # Controls how much referrer information is shared
+  Referrer-Policy: strict-origin-when-cross-origin
+
+  # Permissions Policy
+  # Disables unnecessary browser features
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=()
+
+  # Content Security Policy (CSP)
+  # Prevents inline scripts and restricts resource loading
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+
+/pages/login
+  # Stricter CSP for login page
+  # Only self-hosted resources
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
