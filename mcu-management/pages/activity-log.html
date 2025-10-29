@@ -223,6 +223,9 @@
         // Initialize
         async function init() {
             try {
+                // Wait for sidebar to load before accessing elements
+                await window.waitForSidebar();
+
                 // Check auth
                 currentUser = await authService.getCurrentUser();
                 if (!currentUser) {
@@ -241,9 +244,13 @@
                 const displayName = currentUser?.displayName || currentUser?.username || 'User';
                 const initial = (displayName && displayName.length > 0) ? displayName.charAt(0).toUpperCase() : '?';
 
-                document.getElementById('user-name').textContent = displayName;
-                document.getElementById('user-role').textContent = currentUser?.role || 'Petugas';
-                document.getElementById('user-initial').textContent = initial;
+                const userNameEl = document.getElementById('user-name');
+                const userRoleEl = document.getElementById('user-role');
+                const userInitialEl = document.getElementById('user-initial');
+
+                if (userNameEl) userNameEl.textContent = displayName;
+                if (userRoleEl) userRoleEl.textContent = currentUser?.role || 'Petugas';
+                if (userInitialEl) userInitialEl.textContent = initial;
 
                 // Initialize sidebar - handles sidebar active link
                 initializeSidebar(currentUser);

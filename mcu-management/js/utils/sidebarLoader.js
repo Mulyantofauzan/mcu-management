@@ -20,6 +20,8 @@ async function loadSidebar() {
             // Create container if doesn't exist
             sidebarContainer = document.createElement('aside');
             sidebarContainer.id = 'sidebar';
+            // Keep sidebar hidden until content is loaded
+            sidebarContainer.style.visibility = 'hidden';
             document.body.insertBefore(sidebarContainer, document.body.firstChild);
         }
 
@@ -29,12 +31,20 @@ async function loadSidebar() {
         // Initialize sidebar functionality
         initializeSidebar();
 
+        // Show sidebar now that content is loaded
+        sidebarContainer.style.visibility = 'visible';
+
         // Dispatch event to notify pages that sidebar is loaded
         document.dispatchEvent(new CustomEvent('sidebarLoaded', {
             detail: { sidebar: sidebarContainer }
         }));
     } catch (error) {
         console.error('Error loading sidebar:', error);
+        // Still show sidebar even on error
+        const sidebarContainer = document.getElementById('sidebar');
+        if (sidebarContainer) {
+            sidebarContainer.style.visibility = 'visible';
+        }
         // Still dispatch event even on error so page doesn't hang
         document.dispatchEvent(new CustomEvent('sidebarLoaded', {
             detail: { error: error.message }
@@ -180,11 +190,11 @@ window.waitForSidebar = function() {
             resolve();
         }, { once: true });
 
-        // Timeout after 5 seconds just in case
+        // Timeout after 2 seconds just in case
         setTimeout(() => {
             console.warn('Sidebar took too long to load');
             resolve();
-        }, 5000);
+        }, 2000);
     });
 };
 
