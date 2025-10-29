@@ -28,7 +28,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-gray-50">
-    <!-- SIDEBAR -->
+    <!-- STANDARD SIDEBAR -->
     <aside id="sidebar" class="sidebar fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 z-30">
         <div class="flex flex-col h-full">
             <!-- Logo -->
@@ -120,7 +120,7 @@
                         </a>
                     </li>
 
-                    <!-- Report Periode -->
+                    <!-- Laporan Periode -->
                     <li>
                         <a href="../pages/report-period.html" class="sidebar-link" data-page="report-period">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -130,7 +130,7 @@
                         </a>
                     </li>
 
-                    <!-- Employee Health History -->
+                    <!-- Riwayat Kesehatan -->
                     <li>
                         <a href="../pages/employee-health-history.html" class="sidebar-link" data-page="employee-health-history">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -410,11 +410,12 @@
                     return;
                 }
 
-                // Display employee info
-                let dept = deptCache.get(employee.departmentId);
+                // Display employee info (ensure department ID is string for consistency)
+                const deptId = String(employee.departmentId);
+                let dept = deptCache.get(deptId);
                 if (!dept) {
-                    dept = await masterDataService.getDepartmentById(employee.departmentId);
-                    if (dept) deptCache.set(employee.departmentId, dept);
+                    dept = await masterDataService.getDepartmentById(deptId);
+                    if (dept) deptCache.set(deptId, dept);
                 }
 
                 document.getElementById('info-name').textContent = employee.name;
@@ -466,10 +467,13 @@
 
         // Display status summary
         function displayStatusSummary(mcus) {
-            const fitCount = mcus.filter(m => m.status === 'Fit').length;
-            const unfitCount = mcus.filter(m => m.status === 'Unfit').length;
-            const followupCount = mcus.filter(m => m.status === 'Follow-Up').length;
-            const latestStatus = mcus.length > 0 ? mcus[0].status : '-';
+            // Count based on initialResult if available, otherwise use status
+            const fitCount = mcus.filter(m => (m.initialResult || m.status) === 'Fit').length;
+            const unfitCount = mcus.filter(m => (m.initialResult || m.status) === 'Unfit').length;
+            const followupCount = mcus.filter(m => (m.initialResult || m.status) === 'Follow-Up').length;
+
+            // Get latest status from most recent MCU
+            const latestStatus = mcus.length > 0 ? (mcus[0].initialResult || mcus[0].status) : '-';
 
             document.getElementById('status-fit').textContent = fitCount;
             document.getElementById('status-unfit').textContent = unfitCount;
@@ -487,11 +491,11 @@
             // Sort by date
             const sortedMCUs = [...mcus].sort((a, b) => new Date(a.mcuDate) - new Date(b.mcuDate));
 
-            // Map status to numeric value for visualization
-            const statusMap = { 'Fit': 3, 'Follow-Up': 2, 'Unfit': 1 };
+            // Map initial result to numeric value for visualization (Fit=3, Follow-Up=2, Temporary Unfit=1.5, Unfit=1)
+            const statusMap = { 'Fit': 3, 'Follow-Up': 2, 'Temporary Unfit': 1.5, 'Unfit': 1 };
             const labels = sortedMCUs.map(m => new Date(m.mcuDate).toLocaleDateString('id-ID'));
-            const data = sortedMCUs.map(m => statusMap[m.status] || 0);
-            const colors = sortedMCUs.map(m => getStatusChartColor(m.status));
+            const data = sortedMCUs.map(m => statusMap[m.initialResult] || statusMap[m.status] || 0);
+            const colors = sortedMCUs.map(m => getStatusChartColor(m.initialResult || m.status));
 
             if (healthChart) {
                 healthChart.destroy();
@@ -525,7 +529,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    const statusMap = { 3: 'Fit', 2: 'Follow-Up', 1: 'Unfit' };
+                                    const statusMap = { 3: 'Fit', 2: 'Follow-Up', 1.5: 'Temporary Unfit', 1: 'Unfit' };
                                     return statusMap[context.parsed.y] || 'N/A';
                                 }
                             }
@@ -537,7 +541,7 @@
                             max: 3,
                             ticks: {
                                 callback: function(value) {
-                                    const statusMap = { 0: '', 1: 'Unfit', 2: 'Follow-Up', 3: 'Fit' };
+                                    const statusMap = { 0: '', 1: 'Unfit', 1.5: 'Temp Unfit', 2: 'Follow-Up', 3: 'Fit' };
                                     return statusMap[value] || '';
                                 }
                             }
@@ -555,29 +559,44 @@
             let html = '';
             sortedMCUs.forEach(mcu => {
                 const mcuDate = new Date(mcu.mcuDate).toLocaleDateString('id-ID');
-                const hasNotes = mcu.initialNotes || mcu.finalNotes;
+                const hasInitialNotes = mcu.initialNotes && mcu.initialNotes.trim().length > 0;
+                const hasFinalNotes = mcu.finalNotes && mcu.finalNotes.trim().length > 0;
+                const hasNotes = hasInitialNotes || hasFinalNotes;
                 const notes = (mcu.initialNotes || mcu.finalNotes || '').substring(0, 100);
 
-                // Determine card type
-                let cardType = mcu.status;
+                // Determine card type based on initialResult and notes
+                let cardType = '';
                 let cardClass = '';
                 let icon = '';
 
-                if (mcu.status === 'Fit') {
+                const initialResult = mcu.initialResult || mcu.status;
+
+                if (initialResult === 'Fit') {
                     if (hasNotes) {
                         cardType = 'Fit with Note';
                         cardClass = 'border-blue-200 bg-blue-50';
                         icon = '📝';
                     } else {
+                        cardType = 'Fit';
                         cardClass = 'border-green-200 bg-green-50';
                         icon = '✅';
                     }
-                } else if (mcu.status === 'Follow-Up') {
+                } else if (initialResult === 'Follow-Up') {
+                    cardType = 'Follow-Up';
                     cardClass = 'border-yellow-200 bg-yellow-50';
                     icon = '⏳';
-                } else if (mcu.status === 'Unfit') {
+                } else if (initialResult === 'Temporary Unfit') {
+                    cardType = 'Temporary Unfit';
+                    cardClass = 'border-orange-200 bg-orange-50';
+                    icon = '⚠️';
+                } else if (initialResult === 'Unfit') {
+                    cardType = 'Unfit';
                     cardClass = 'border-red-200 bg-red-50';
                     icon = '❌';
+                } else {
+                    cardType = initialResult || 'N/A';
+                    cardClass = 'border-gray-200 bg-gray-50';
+                    icon = '❓';
                 }
 
                 html += `
@@ -627,6 +646,7 @@
         function getStatusColor(status) {
             switch(status) {
                 case 'Fit': return 'text-green-600';
+                case 'Temporary Unfit': return 'text-orange-600';
                 case 'Unfit': return 'text-red-600';
                 case 'Follow-Up': return 'text-yellow-600';
                 default: return 'text-gray-600';
@@ -636,6 +656,7 @@
         function getStatusChartColor(status) {
             switch(status) {
                 case 'Fit': return '#10b981';
+                case 'Temporary Unfit': return '#f97316';
                 case 'Unfit': return '#ef4444';
                 case 'Follow-Up': return '#f59e0b';
                 default: return '#6b7280';
@@ -645,6 +666,7 @@
         function getStatusBadgeClass(status) {
             switch(status) {
                 case 'Fit': return 'bg-green-100 text-green-800';
+                case 'Temporary Unfit': return 'bg-orange-100 text-orange-800';
                 case 'Unfit': return 'bg-red-100 text-red-800';
                 case 'Follow-Up': return 'bg-yellow-100 text-yellow-800';
                 default: return 'bg-gray-100 text-gray-800';

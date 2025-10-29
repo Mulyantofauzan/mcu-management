@@ -24,7 +24,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-gray-50">
-    <!-- SIDEBAR -->
+    <!-- STANDARD SIDEBAR -->
     <aside id="sidebar" class="sidebar fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 z-30">
         <div class="flex flex-col h-full">
             <!-- Logo -->
@@ -116,9 +116,9 @@
                         </a>
                     </li>
 
-                    <!-- Report Periode -->
+                    <!-- Laporan Periode -->
                     <li>
-                        <a href="../pages/report-period.html" class="sidebar-link active" data-page="report-period">
+                        <a href="../pages/report-period.html" class="sidebar-link" data-page="report-period">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
@@ -126,7 +126,7 @@
                         </a>
                     </li>
 
-                    <!-- Employee Health History -->
+                    <!-- Riwayat Kesehatan -->
                     <li>
                         <a href="../pages/employee-health-history.html" class="sidebar-link" data-page="employee-health-history">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -398,18 +398,20 @@
 
                     uniqueEmployees.add(employee.employeeId);
 
-                    // Get department from cache or fetch
-                    let dept = deptCache.get(employee.departmentId);
+                    // Get department from cache or fetch (ensure ID is string for consistency)
+                    const deptId = String(employee.departmentId);
+                    let dept = deptCache.get(deptId);
                     if (!dept) {
-                        dept = await masterDataService.getDepartmentById(employee.departmentId);
-                        if (dept) deptCache.set(employee.departmentId, dept);
+                        dept = await masterDataService.getDepartmentById(deptId);
+                        if (dept) deptCache.set(deptId, dept);
                     }
 
-                    // Get job title from cache or fetch
-                    let jobTitle = jobTitleCache.get(employee.jobTitleId);
+                    // Get job title from cache or fetch (ensure ID is string for consistency)
+                    const jobId = String(employee.jobTitleId);
+                    let jobTitle = jobTitleCache.get(jobId);
                     if (!jobTitle) {
-                        jobTitle = await masterDataService.getJobTitleById(employee.jobTitleId);
-                        if (jobTitle) jobTitleCache.set(employee.jobTitleId, jobTitle);
+                        jobTitle = await masterDataService.getJobTitleById(jobId);
+                        if (jobTitle) jobTitleCache.set(jobId, jobTitle);
                     }
 
                     report.push({
