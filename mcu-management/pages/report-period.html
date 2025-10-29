@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Periode MCU - MCU Management</title>
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="../assets/images/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+    <link rel="manifest" href="../assets/site.webmanifest">
+
+    <link rel="stylesheet" href="../css/output.css">
+
+    <!-- Environment Configuration -->
+    <script src="../env-config.js"></script>
+
+    <!-- Dexie (IndexedDB) - Fallback -->
+    <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-50">
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 z-30">
+        <div class="flex flex-col h-full">
+            <!-- Logo -->
+            <div class="p-6 border-b border-gray-200">
+                <h1 class="text-xl font-bold text-primary-600">MCU Management</h1>
+                <p class="text-xs text-gray-500 mt-1">Medical Check Up System</p>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 overflow-y-auto p-4">
+                <ul class="space-y-1">
+                    <!-- Dashboard -->
+                    <li>
+                        <a href="../index.html" class="sidebar-link" data-page="dashboard">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                            </svg>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+
+                    <!-- Tambah Karyawan -->
+                    <li>
+                        <a href="../pages/tambah-karyawan.html" class="sidebar-link" data-page="tambah-karyawan">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                            </svg>
+                            <span>Tambah Karyawan</span>
+                        </a>
+                    </li>
+
+                    <!-- Kelola Karyawan -->
+                    <li>
+                        <a href="../pages/kelola-karyawan.html" class="sidebar-link" data-page="kelola-karyawan">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                            </svg>
+                            <span>Kelola Karyawan</span>
+                        </a>
+                    </li>
+
+                    <!-- Follow-Up -->
+                    <li>
+                        <a href="../pages/follow-up.html" class="sidebar-link" data-page="follow-up">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                            </svg>
+                            <span>Follow-Up</span>
+                        </a>
+                    </li>
+
+                    <!-- Data Master -->
+                    <li>
+                        <a href="../pages/data-master.html" class="sidebar-link" data-page="data-master">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
+                            </svg>
+                            <span>Data Master</span>
+                        </a>
+                    </li>
+
+                    <!-- Kelola User (Admin Only) -->
+                    <li id="menu-kelola-user">
+                        <a href="../pages/kelola-user.html" class="sidebar-link" data-page="kelola-user">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                            </svg>
+                            <span>Kelola User</span>
+                        </a>
+                    </li>
+
+                    <!-- Activity Log (Admin Only) -->
+                    <li id="menu-activity-log">
+                        <a href="../pages/activity-log.html" class="sidebar-link" data-page="activity-log">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span>Activity Log</span>
+                        </a>
+                    </li>
+
+                    <!-- Analysis -->
+                    <li>
+                        <a href="../pages/analysis.html" class="sidebar-link" data-page="analysis">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            <span>Analysis</span>
+                        </a>
+                    </li>
+
+                    <!-- Report Periode -->
+                    <li>
+                        <a href="../pages/report-period.html" class="sidebar-link" data-page="report-period">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span>Laporan Periode</span>
+                        </a>
+                    </li>
+
+                    <!-- Data Terhapus -->
+                    <li>
+                        <a href="../pages/data-terhapus.html" class="sidebar-link" data-page="data-terhapus">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                            <span>Data Terhapus</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- User Info -->
+            <div class="p-4 border-t border-gray-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
+                        <span class="text-primary-600 font-semibold" id="user-initial">A</span>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-900" id="user-name">Admin</p>
+                        <p class="text-xs text-gray-500" id="user-role">Administrator</p>
+                    </div>
+                    <button onclick="window.handleLogout()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="ml-64 min-h-screen">
+        <!-- HEADER -->
+        <header class="bg-white border-b border-gray-200 sticky top-0 z-20">
+            <div class="px-6 py-4">
+                <nav class="flex">
+                    <ol class="inline-flex items-center space-x-1">
+                        <li><a href="../index.html" class="text-sm text-gray-500">Dashboard</a></li>
+                        <li><span class="text-gray-400 mx-2">/</span></li>
+                        <li><span class="text-sm font-medium text-gray-700">Laporan Periode</span></li>
+                    </ol>
+                </nav>
+            </div>
+        </header>
+
+        <!-- MAIN -->
+        <main class="p-6">
+            <!-- PAGE TITLE -->
+            <div class="mb-6">
+                <h1 class="text-2xl font-bold text-gray-900">Laporan Periode MCU</h1>
+                <p class="text-gray-500">Laporan karyawan dan hasil MCU dalam periode tertentu</p>
+            </div>
+
+            <!-- FILTERS SECTION -->
+            <div class="card mb-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Filter Laporan</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Start Date -->
+                    <div>
+                        <label for="filter-start-date" class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
+                        <input type="date" id="filter-start-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    </div>
+
+                    <!-- End Date -->
+                    <div>
+                        <label for="filter-end-date" class="block text-sm font-medium text-gray-700 mb-1">Tanggal Akhir</label>
+                        <input type="date" id="filter-end-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    </div>
+
+                    <!-- Department Filter -->
+                    <div>
+                        <label for="filter-department" class="block text-sm font-medium text-gray-700 mb-1">Departemen</label>
+                        <select id="filter-department" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            <option value="">Semua Departemen</option>
+                        </select>
+                    </div>
+
+                    <!-- Status Filter -->
+                    <div>
+                        <label for="filter-status" class="block text-sm font-medium text-gray-700 mb-1">Status MCU</label>
+                        <select id="filter-status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            <option value="">Semua Status</option>
+                            <option value="Fit">Fit</option>
+                            <option value="Unfit">Unfit</option>
+                            <option value="Follow-Up">Follow-Up</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Button Group -->
+                <div class="flex gap-2 mt-4">
+                    <button onclick="window.generateReport()" class="btn btn-primary">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Buat Laporan
+                    </button>
+                    <button onclick="window.exportToCSV()" class="btn btn-secondary" id="export-btn" disabled>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Export CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- STATISTICS SECTION -->
+            <div id="statistics-section" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" style="display: none;">
+                <div class="card">
+                    <p class="text-sm text-gray-600 font-medium">Total Karyawan</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2" id="stat-total-employees">0</p>
+                </div>
+                <div class="card">
+                    <p class="text-sm text-gray-600 font-medium">Total MCU</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2" id="stat-total-mcu">0</p>
+                </div>
+                <div class="card">
+                    <p class="text-sm text-gray-600 font-medium">Fit</p>
+                    <p class="text-3xl font-bold text-green-600 mt-2" id="stat-fit">0</p>
+                    <p class="text-xs text-gray-500 mt-1" id="stat-fit-percent">0%</p>
+                </div>
+                <div class="card">
+                    <p class="text-sm text-gray-600 font-medium">Unfit / Follow-Up</p>
+                    <p class="text-3xl font-bold text-red-600 mt-2" id="stat-unfit">0</p>
+                    <p class="text-xs text-gray-500 mt-1" id="stat-unfit-percent">0%</p>
+                </div>
+            </div>
+
+            <!-- RESULTS TABLE -->
+            <div class="card">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Hasil Laporan</h2>
+                    <p class="text-sm text-gray-500" id="result-count"></p>
+                </div>
+                <div class="table-container" id="results-table">
+                    <p class="text-center text-gray-500 py-8">Silakan isi filter dan klik "Buat Laporan" untuk melihat hasil</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script type="module">
+        import { authService } from '../js/services/authService.js';
+        import { mcuService } from '../js/services/mcuService.js';
+        import { employeeService } from '../js/services/employeeService.js';
+        import { masterDataService } from '../js/services/masterDataService.js';
+        import { showToast } from '../js/utils/uiHelpers.js';
+        import { initializeSidebar, hideAdminMenus } from '../js/sidebar-manager.js';
+
+        // Check authentication
+        if (!authService.isAuthenticated()) {
+            window.location.href = 'login.html';
+        }
+
+        // Initialize page
+        async function init() {
+            const user = authService.getCurrentUser();
+            if (user) {
+                const displayName = user?.displayName || 'User';
+                const role = user?.role || 'Petugas';
+                const initial = (displayName && displayName.length > 0) ? displayName.charAt(0).toUpperCase() : '?';
+
+                document.getElementById('user-name').textContent = displayName;
+                document.getElementById('user-role').textContent = role;
+                document.getElementById('user-initial').textContent = initial;
+
+                initializeSidebar(user);
+                hideAdminMenus(user);
+            }
+
+            // Load departments for filter
+            try {
+                const departments = await masterDataService.getAllDepartments();
+                const select = document.getElementById('filter-department');
+                departments.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.id;
+                    option.textContent = dept.name;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Failed to load departments:', error);
+            }
+
+            // Set default dates (last 30 days)
+            const endDate = new Date();
+            const startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+            document.getElementById('filter-start-date').valueAsDate = startDate;
+            document.getElementById('filter-end-date').valueAsDate = endDate;
+        }
+
+        // Store report data and services globally
+        window.reportData = [];
+        window.mcuService = mcuService;
+        window.employeeService = employeeService;
+        window.masterDataService = masterDataService;
+        window.showToast = showToast;
+
+        // Generate report
+        window.generateReport = async function() {
+            try {
+                const startDateStr = document.getElementById('filter-start-date').value;
+                const endDateStr = document.getElementById('filter-end-date').value;
+                const departmentId = document.getElementById('filter-department').value;
+                const status = document.getElementById('filter-status').value;
+
+                if (!startDateStr || !endDateStr) {
+                    showToast('Silakan isi tanggal mulai dan akhir', 'warning');
+                    return;
+                }
+
+                // Show loading
+                const resultsTable = document.getElementById('results-table');
+                resultsTable.innerHTML = '<p class="text-center text-gray-500 py-8">Memproses data...</p>';
+
+                // Get MCUs in date range
+                const startDate = new Date(startDateStr);
+                const endDate = new Date(endDateStr);
+                endDate.setHours(23, 59, 59, 999);
+
+                const allMCUs = await mcuService.getAll();
+                const filteredMCUs = allMCUs.filter(mcu => {
+                    const mcuDate = new Date(mcu.mcuDate);
+                    return mcuDate >= startDate && mcuDate <= endDate;
+                });
+
+                // Get all employees
+                const employees = await employeeService.getAll();
+
+                // Build report
+                const report = [];
+                const uniqueEmployees = new Set();
+
+                for (const mcu of filteredMCUs) {
+                    const employee = employees.find(e => e.employeeId === mcu.employeeId);
+                    if (!employee) continue;
+
+                    // Apply filters
+                    if (departmentId && employee.departmentId !== parseInt(departmentId)) continue;
+                    if (status && mcu.status !== status) continue;
+
+                    uniqueEmployees.add(employee.employeeId);
+
+                    const dept = await masterDataService.getDepartmentById(employee.departmentId);
+                    const jobTitle = await masterDataService.getJobTitleById(employee.jobTitleId);
+
+                    report.push({
+                        employeeId: employee.employeeId,
+                        employeeName: employee.name,
+                        department: dept?.name || 'N/A',
+                        jobTitle: jobTitle?.name || 'N/A',
+                        mcuDate: new Date(mcu.mcuDate).toLocaleDateString('id-ID'),
+                        mcuType: mcu.mcuType || 'N/A',
+                        status: mcu.status,
+                        initialResult: mcu.initialResult,
+                        finalResult: mcu.finalResult || '-',
+                        notes: mcu.initialNotes || mcu.finalNotes || '-'
+                    });
+                }
+
+                window.reportData = report;
+
+                // Display results
+                displayResults(report, uniqueEmployees.size);
+
+                // Calculate and display statistics
+                displayStatistics(report, uniqueEmployees.size);
+
+                showToast('Laporan berhasil dibuat', 'success');
+                document.getElementById('export-btn').disabled = false;
+            } catch (error) {
+                console.error('Error generating report:', error);
+                showToast('Gagal membuat laporan: ' + error.message, 'error');
+                document.getElementById('results-table').innerHTML = '<p class="text-center text-red-500 py-8">Terjadi kesalahan saat membuat laporan</p>';
+            }
+        };
+
+        // Display results table
+        function displayResults(data, totalEmployees) {
+            const resultsTable = document.getElementById('results-table');
+
+            if (data.length === 0) {
+                resultsTable.innerHTML = '<p class="text-center text-gray-500 py-8">Tidak ada data untuk periode ini</p>';
+                document.getElementById('result-count').textContent = '0 hasil';
+                return;
+            }
+
+            let html = '<div class="table-container"><table class="table"><thead><tr>';
+            html += '<th>No</th>';
+            html += '<th>ID Karyawan</th>';
+            html += '<th>Nama Karyawan</th>';
+            html += '<th>Departemen</th>';
+            html += '<th>Jabatan</th>';
+            html += '<th>Tanggal MCU</th>';
+            html += '<th>Tipe MCU</th>';
+            html += '<th>Status</th>';
+            html += '<th>Hasil Awal</th>';
+            html += '<th>Hasil Akhir</th>';
+            html += '</tr></thead><tbody>';
+
+            data.forEach((row, idx) => {
+                html += '<tr>';
+                html += `<td><span class="text-sm text-gray-600">${idx + 1}</span></td>`;
+                html += `<td><span class="text-sm text-gray-600">${row.employeeId}</span></td>`;
+                html += `<td><span class="font-medium text-gray-900">${row.employeeName}</span></td>`;
+                html += `<td><span class="text-sm text-gray-600">${row.department}</span></td>`;
+                html += `<td><span class="text-sm text-gray-600">${row.jobTitle}</span></td>`;
+                html += `<td><span class="text-sm text-gray-600">${row.mcuDate}</span></td>`;
+                html += `<td><span class="text-sm text-gray-600">${row.mcuType}</span></td>`;
+                html += `<td><span class="px-2 py-1 rounded text-xs font-medium ${getStatusBadgeClass(row.status)}">${row.status}</span></td>`;
+                html += `<td><span class="text-sm text-gray-600">${row.initialResult}</span></td>`;
+                html += `<td><span class="text-sm text-gray-600">${row.finalResult}</span></td>`;
+                html += '</tr>';
+            });
+
+            html += '</tbody></table></div>';
+            resultsTable.innerHTML = html;
+            document.getElementById('result-count').textContent = `${data.length} hasil`;
+        }
+
+        // Display statistics
+        function displayStatistics(data, totalEmployees) {
+            const statsSection = document.getElementById('statistics-section');
+            statsSection.style.display = 'grid';
+
+            const totalMCU = data.length;
+            const fitCount = data.filter(d => d.status === 'Fit').length;
+            const unfitCount = data.filter(d => d.status === 'Unfit' || d.status === 'Follow-Up').length;
+
+            document.getElementById('stat-total-employees').textContent = totalEmployees;
+            document.getElementById('stat-total-mcu').textContent = totalMCU;
+            document.getElementById('stat-fit').textContent = fitCount;
+            document.getElementById('stat-fit-percent').textContent = totalMCU > 0 ? ((fitCount / totalMCU) * 100).toFixed(1) + '%' : '0%';
+            document.getElementById('stat-unfit').textContent = unfitCount;
+            document.getElementById('stat-unfit-percent').textContent = totalMCU > 0 ? ((unfitCount / totalMCU) * 100).toFixed(1) + '%' : '0%';
+        }
+
+        // Export to CSV
+        window.exportToCSV = function() {
+            if (window.reportData.length === 0) {
+                showToast('Tidak ada data untuk diexport', 'warning');
+                return;
+            }
+
+            const headers = ['No', 'ID Karyawan', 'Nama Karyawan', 'Departemen', 'Jabatan', 'Tanggal MCU', 'Tipe MCU', 'Status', 'Hasil Awal', 'Hasil Akhir', 'Catatan'];
+            const rows = window.reportData.map((row, idx) => [
+                idx + 1,
+                row.employeeId,
+                row.employeeName,
+                row.department,
+                row.jobTitle,
+                row.mcuDate,
+                row.mcuType,
+                row.status,
+                row.initialResult,
+                row.finalResult,
+                row.notes
+            ]);
+
+            const csv = [headers, ...rows].map(row =>
+                row.map(cell => `"${cell.toString().replace(/"/g, '""')}"`).join(',')
+            ).join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+
+            link.setAttribute('href', url);
+            link.setAttribute('download', `laporan-mcu-${new Date().toISOString().split('T')[0]}.csv`);
+            link.click();
+
+            showToast('Laporan berhasil diexport', 'success');
+        };
+
+        // Get status badge class
+        function getStatusBadgeClass(status) {
+            switch(status) {
+                case 'Fit':
+                    return 'bg-green-100 text-green-800';
+                case 'Unfit':
+                    return 'bg-red-100 text-red-800';
+                case 'Follow-Up':
+                    return 'bg-yellow-100 text-yellow-800';
+                default:
+                    return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        // Handle logout
+        window.handleLogout = function() {
+            authService.logout();
+        };
+
+        // Initialize
+        init();
+    </script>
+</body>
+</html>
