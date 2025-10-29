@@ -1,6 +1,7 @@
 /**
  * Sidebar Loader - Dynamically loads sidebar from template
  * Usage: Include this script in your page, it will auto-load sidebar
+ * Pages can listen for 'sidebarLoaded' event to know when sidebar is ready
  */
 
 async function loadSidebar() {
@@ -17,7 +18,7 @@ async function loadSidebar() {
         let sidebarContainer = document.getElementById('sidebar');
         if (!sidebarContainer) {
             // Create container if doesn't exist
-            sidebarContainer = document.createElement('div');
+            sidebarContainer = document.createElement('aside');
             sidebarContainer.id = 'sidebar';
             document.body.insertBefore(sidebarContainer, document.body.firstChild);
         }
@@ -27,8 +28,17 @@ async function loadSidebar() {
 
         // Initialize sidebar functionality
         initializeSidebar();
+
+        // Dispatch event to notify pages that sidebar is loaded
+        document.dispatchEvent(new CustomEvent('sidebarLoaded', {
+            detail: { sidebar: sidebarContainer }
+        }));
     } catch (error) {
         console.error('Error loading sidebar:', error);
+        // Still dispatch event even on error so page doesn't hang
+        document.dispatchEvent(new CustomEvent('sidebarLoaded', {
+            detail: { error: error.message }
+        }));
     }
 }
 
@@ -145,6 +155,31 @@ window.handleLogout = async function() {
         console.error('Logout error:', error);
         alert('Error: ' + error.message);
     }
+};
+
+/**
+ * Helper function for pages to wait until sidebar is loaded
+ * Usage: await waitForSidebar();
+ */
+window.waitForSidebar = function() {
+    return new Promise((resolve) => {
+        // Check if sidebar already loaded
+        if (document.getElementById('sidebar') && document.querySelector('.sidebar-link')) {
+            resolve();
+            return;
+        }
+
+        // Wait for sidebarLoaded event
+        document.addEventListener('sidebarLoaded', () => {
+            resolve();
+        }, { once: true });
+
+        // Timeout after 5 seconds just in case
+        setTimeout(() => {
+            console.warn('Sidebar took too long to load');
+            resolve();
+        }, 5000);
+    });
 };
 
 // Auto-load sidebar when DOM is ready

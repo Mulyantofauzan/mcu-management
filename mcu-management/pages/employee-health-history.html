@@ -180,15 +180,22 @@
 
         // Initialize page
         async function init() {
+            // Wait for sidebar to load before accessing elements
+            await window.waitForSidebar();
+
             const user = authService.getCurrentUser();
             if (user) {
                 const displayName = user?.displayName || 'User';
                 const role = user?.role || 'Petugas';
                 const initial = (displayName && displayName.length > 0) ? displayName.charAt(0).toUpperCase() : '?';
 
-                document.getElementById('user-name').textContent = displayName;
-                document.getElementById('user-role').textContent = role;
-                document.getElementById('user-initial').textContent = initial;
+                const userNameEl = document.getElementById('user-name');
+                const userRoleEl = document.getElementById('user-role');
+                const userInitialEl = document.getElementById('user-initial');
+
+                if (userNameEl) userNameEl.textContent = displayName;
+                if (userRoleEl) userRoleEl.textContent = role;
+                if (userInitialEl) userInitialEl.textContent = initial;
 
                 initializeSidebar(user);
                 hideAdminMenus(user);

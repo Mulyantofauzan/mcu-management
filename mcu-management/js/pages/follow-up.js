@@ -102,6 +102,9 @@ function updateUserInfo() {
             // Apply permission checks to show/hide admin menus
             hideAdminMenus(user);
     }
+    
+    // Wait for sidebar to load before updating user info
+    await window.waitForSidebar();
 }
 
 async function loadMasterData() {

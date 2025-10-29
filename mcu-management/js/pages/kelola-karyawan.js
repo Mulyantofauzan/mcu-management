@@ -28,6 +28,9 @@ async function init() {
         window.location.href = 'login.html';
         return;
     }
+    
+    // Wait for sidebar to load before updating user info
+    await window.waitForSidebar();
 
     updateUserInfo();
     await loadData();

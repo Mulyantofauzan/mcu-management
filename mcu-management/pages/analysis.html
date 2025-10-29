@@ -85,6 +85,10 @@
         if (!authService.isAuthenticated()) {
             window.location.href = 'login.html';
         }
+
+        // Wait for sidebar to load before accessing elements
+        await window.waitForSidebar();
+
         const user = authService.getCurrentUser();
         if (user) {
             // Safely access user properties with fallbacks
@@ -92,9 +96,14 @@
             const role = user?.role || 'Petugas';
             const initial = (displayName && displayName.length > 0) ? displayName.charAt(0).toUpperCase() : '?';
 
-            document.getElementById('user-name').textContent = displayName;
-            document.getElementById('user-role').textContent = role;
-            document.getElementById('user-initial').textContent = initial;
+            // Now safe to access sidebar elements
+            const userNameEl = document.getElementById('user-name');
+            const userRoleEl = document.getElementById('user-role');
+            const userInitialEl = document.getElementById('user-initial');
+
+            if (userNameEl) userNameEl.textContent = displayName;
+            if (userRoleEl) userRoleEl.textContent = role;
+            if (userInitialEl) userInitialEl.textContent = initial;
 
             // Initialize sidebar - handles sidebar active link
             initializeSidebar(user);
