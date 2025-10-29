@@ -59,13 +59,19 @@ function initializeSidebar() {
         }
     });
 
-    // Set user info (if available)
-    if (window.currentUser) {
-        setUserInfo();
+    // Try to get user info and set sidebar
+    // First check if window.currentUser is available
+    let currentUser = window.currentUser;
+
+    // If not available, try to get from auth service (dynamic import)
+    if (!currentUser && window.authService) {
+        currentUser = window.authService.getCurrentUser();
     }
 
-    // Set admin-only menus visibility
-    if (window.currentUser) {
+    // Set user info if available
+    if (currentUser) {
+        window.currentUser = currentUser; // Store for updateAdminMenuVisibility
+        setUserInfo();
         updateAdminMenuVisibility();
     }
 }
@@ -123,7 +129,7 @@ function updateAdminMenuVisibility() {
     const kelolaUserMenu = document.getElementById('menu-kelola-user');
     const activityLogMenu = document.getElementById('menu-activity-log');
 
-    const isAdmin = window.currentUser && window.currentUser.role === 'Administrator';
+    const isAdmin = window.currentUser && window.currentUser.role === 'Admin';
 
     if (kelolaUserMenu) {
         kelolaUserMenu.style.display = isAdmin ? 'block' : 'none';
