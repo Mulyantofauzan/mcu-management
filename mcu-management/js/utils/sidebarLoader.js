@@ -151,14 +151,21 @@ function setUserInfo() {
     const userNameEl = document.getElementById('user-name');
     const userRoleEl = document.getElementById('user-role');
 
-    if (userInitialEl && window.currentUser.name) {
-        userInitialEl.textContent = window.currentUser.name.charAt(0).toUpperCase();
+    if (!window.currentUser) {
+        return;
+    }
+
+    // Support both 'name' and 'displayName' fields
+    const displayName = window.currentUser.displayName || window.currentUser.name || 'User';
+
+    if (userInitialEl && displayName) {
+        userInitialEl.textContent = displayName.charAt(0).toUpperCase();
     }
     if (userNameEl) {
-        userNameEl.textContent = window.currentUser.name || 'User';
+        userNameEl.textContent = displayName;
     }
     if (userRoleEl) {
-        userRoleEl.textContent = window.currentUser.role || 'User';
+        userRoleEl.textContent = window.currentUser.role || 'Petugas';
     }
 }
 
@@ -209,22 +216,57 @@ window.handleLogout = async function() {
  */
 window.waitForSidebar = function() {
     return new Promise((resolve) => {
+        // Helper to check if sidebar is properly ready
+        function checkSidebarReady() {
+            const sidebar = document.getElementById('sidebar');
+            const userElements = document.getElementById('user-name') &&
+                                document.getElementById('user-role') &&
+                                document.getElementById('user-initial');
+            const sidebarLinks = document.querySelector('.sidebar-link');
+
+            return sidebar && userElements && sidebarLinks;
+        }
+
         // Check if sidebar already loaded
-        if (document.getElementById('sidebar') && document.querySelector('.sidebar-link')) {
+        if (checkSidebarReady()) {
+            console.debug('Sidebar already loaded');
             resolve();
             return;
         }
 
         // Wait for sidebarLoaded event
-        document.addEventListener('sidebarLoaded', () => {
-            resolve();
-        }, { once: true });
+        let eventHandler = () => {
+            // Double-check sidebar is ready
+            if (checkSidebarReady()) {
+                console.debug('Sidebar loaded via event');
+                resolve();
+            } else {
+                console.warn('Sidebar event fired but not fully ready, waiting...');
+                // Retry after a short delay
+                setTimeout(() => {
+                    if (checkSidebarReady()) {
+                        resolve();
+                    } else {
+                        // Try one more time after 500ms
+                        setTimeout(resolve, 500);
+                    }
+                }, 100);
+            }
+        };
 
-        // Timeout after 3 seconds just in case (increased to avoid false warnings on slow networks)
+        document.addEventListener('sidebarLoaded', eventHandler, { once: true });
+
+        // Timeout after 5 seconds with better error handling
         setTimeout(() => {
-            console.debug('Sidebar load completed or timeout reached');
-            resolve();
-        }, 3000);
+            if (checkSidebarReady()) {
+                console.debug('Sidebar ready after timeout check');
+                resolve();
+            } else {
+                console.warn('Sidebar timeout - elements may not be fully ready');
+                // Still resolve to prevent hanging, but sidebar might be incomplete
+                resolve();
+            }
+        }, 5000);
     });
 };
 
