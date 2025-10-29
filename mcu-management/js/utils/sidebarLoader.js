@@ -6,20 +6,39 @@
 
 async function loadSidebar() {
     try {
-        // Determine sidebar template path based on current location
-        let sidebarPath = '../templates/sidebar.html';
+        // Determine sidebar template path using different strategies
+        let sidebarPath = null;
+        const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*\.html$/, '').replace(/\/$/, '');
 
-        // Check if we're in root directory (index.html)
-        if (window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/')) {
-            sidebarPath = 'templates/sidebar.html';
+        // Try different possible paths
+        const possiblePaths = [
+            baseUrl + '/templates/sidebar.html',  // For root (index.html)
+            baseUrl + '/../templates/sidebar.html', // For pages folder
+            '/mcu-management/templates/sidebar.html' // Absolute path
+        ];
+
+        let response = null;
+        let lastError = null;
+
+        for (const path of possiblePaths) {
+            try {
+                response = await fetch(path);
+                if (response.ok) {
+                    sidebarPath = path;
+                    break;
+                }
+            } catch (e) {
+                lastError = e;
+                // Try next path
+                continue;
+            }
         }
 
-        // Fetch sidebar template
-        const response = await fetch(sidebarPath);
-        if (!response.ok) {
-            throw new Error(`Failed to load sidebar: ${response.statusText}`);
+        if (!response || !response.ok) {
+            throw lastError || new Error(`Failed to load sidebar from any path. Tried: ${possiblePaths.join(', ')}`);
         }
 
+        console.debug(`Sidebar loaded from: ${sidebarPath}`);
         const sidebarHTML = await response.text();
 
         // Find or create sidebar container
@@ -48,6 +67,9 @@ async function loadSidebar() {
         }));
     } catch (error) {
         console.error('Error loading sidebar:', error);
+        console.error('Current URL:', window.location.href);
+        console.error('Pathname:', window.location.pathname);
+
         // Still show sidebar even on error
         const sidebarContainer = document.getElementById('sidebar');
         if (sidebarContainer) {
