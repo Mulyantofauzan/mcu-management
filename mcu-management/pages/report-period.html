@@ -118,11 +118,21 @@
 
                     <!-- Report Periode -->
                     <li>
-                        <a href="../pages/report-period.html" class="sidebar-link" data-page="report-period">
+                        <a href="../pages/report-period.html" class="sidebar-link active" data-page="report-period">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
                             <span>Laporan Periode</span>
+                        </a>
+                    </li>
+
+                    <!-- Employee Health History -->
+                    <li>
+                        <a href="../pages/employee-health-history.html" class="sidebar-link" data-page="employee-health-history">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                            </svg>
+                            <span>Riwayat Kesehatan</span>
                         </a>
                     </li>
 
@@ -299,6 +309,17 @@
                 hideAdminMenus(user);
             }
 
+            // Highlight active sidebar link
+            const currentPage = 'report-period';
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                const dataPage = link.getAttribute('data-page');
+                if (dataPage === currentPage) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+
             // Load departments for filter
             try {
                 const departments = await masterDataService.getAllDepartments();
@@ -327,6 +348,10 @@
         window.employeeService = employeeService;
         window.masterDataService = masterDataService;
         window.showToast = showToast;
+
+        // Cache for master data
+        let deptCache = new Map();
+        let jobTitleCache = new Map();
 
         // Generate report
         window.generateReport = async function() {
@@ -373,14 +398,25 @@
 
                     uniqueEmployees.add(employee.employeeId);
 
-                    const dept = await masterDataService.getDepartmentById(employee.departmentId);
-                    const jobTitle = await masterDataService.getJobTitleById(employee.jobTitleId);
+                    // Get department from cache or fetch
+                    let dept = deptCache.get(employee.departmentId);
+                    if (!dept) {
+                        dept = await masterDataService.getDepartmentById(employee.departmentId);
+                        if (dept) deptCache.set(employee.departmentId, dept);
+                    }
+
+                    // Get job title from cache or fetch
+                    let jobTitle = jobTitleCache.get(employee.jobTitleId);
+                    if (!jobTitle) {
+                        jobTitle = await masterDataService.getJobTitleById(employee.jobTitleId);
+                        if (jobTitle) jobTitleCache.set(employee.jobTitleId, jobTitle);
+                    }
 
                     report.push({
                         employeeId: employee.employeeId,
                         employeeName: employee.name,
-                        department: dept?.name || 'N/A',
-                        jobTitle: jobTitle?.name || 'N/A',
+                        department: (dept && dept.name) ? dept.name : 'N/A',
+                        jobTitle: (jobTitle && jobTitle.name) ? jobTitle.name : 'N/A',
                         mcuDate: new Date(mcu.mcuDate).toLocaleDateString('id-ID'),
                         mcuType: mcu.mcuType || 'N/A',
                         status: mcu.status,

@@ -258,6 +258,13 @@
                 </div>
             </div>
 
+            <!-- MCU CARDS -->
+            <div id="mcu-cards-section" class="mb-6" style="display: none;">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Riwayat MCU (Card View)</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="mcu-cards-container">
+                </div>
+            </div>
+
             <!-- CHART SECTION -->
             <div id="chart-section" class="card mb-6" style="display: none;">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">Timeline Riwayat MCU</h2>
@@ -326,6 +333,17 @@
                 hideAdminMenus(user);
             }
 
+            // Highlight active sidebar link
+            const currentPage = 'employee-health-history';
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                const dataPage = link.getAttribute('data-page');
+                if (dataPage === currentPage) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+
             // Load employees
             try {
                 allEmployees = await employeeService.getAll();
@@ -343,6 +361,10 @@
                 showToast('Gagal memuat daftar karyawan', 'error');
             }
         }
+
+        // Cache for master data
+        let deptCache = new Map();
+        let jobTitleCache = new Map();
 
         // Handle employee selection
         window.onEmployeeSelect = async function() {
@@ -389,9 +411,14 @@
                 }
 
                 // Display employee info
-                const dept = await masterDataService.getDepartmentById(employee.departmentId);
+                let dept = deptCache.get(employee.departmentId);
+                if (!dept) {
+                    dept = await masterDataService.getDepartmentById(employee.departmentId);
+                    if (dept) deptCache.set(employee.departmentId, dept);
+                }
+
                 document.getElementById('info-name').textContent = employee.name;
-                document.getElementById('info-department').textContent = dept?.name || 'N/A';
+                document.getElementById('info-department').textContent = (dept && dept.name) ? dept.name : 'N/A';
                 document.getElementById('info-total-mcu').textContent = allMCUs.length;
                 document.getElementById('employee-info-section').style.display = 'grid';
 
@@ -399,12 +426,15 @@
                 displayStatusSummary(filteredMCUs);
                 document.getElementById('status-summary-section').style.display = 'grid';
 
+                // Display MCU cards
+                displayMCUCards(filteredMCUs);
+
                 // Display chart
                 displayHealthChart(filteredMCUs);
                 document.getElementById('chart-section').style.display = 'block';
 
                 // Display history table
-                displayHistoryTable(filteredMCUs);
+                await displayHistoryTable(filteredMCUs);
                 document.getElementById('history-section').style.display = 'block';
             } catch (error) {
                 console.error('Error loading employee data:', error);
@@ -515,6 +545,58 @@
                     }
                 }
             });
+        }
+
+        // Display MCU cards
+        function displayMCUCards(mcus) {
+            const sortedMCUs = [...mcus].sort((a, b) => new Date(b.mcuDate) - new Date(a.mcuDate));
+            const container = document.getElementById('mcu-cards-container');
+
+            let html = '';
+            sortedMCUs.forEach(mcu => {
+                const mcuDate = new Date(mcu.mcuDate).toLocaleDateString('id-ID');
+                const hasNotes = mcu.initialNotes || mcu.finalNotes;
+                const notes = (mcu.initialNotes || mcu.finalNotes || '').substring(0, 100);
+
+                // Determine card type
+                let cardType = mcu.status;
+                let cardClass = '';
+                let icon = '';
+
+                if (mcu.status === 'Fit') {
+                    if (hasNotes) {
+                        cardType = 'Fit with Note';
+                        cardClass = 'border-blue-200 bg-blue-50';
+                        icon = '📝';
+                    } else {
+                        cardClass = 'border-green-200 bg-green-50';
+                        icon = '✅';
+                    }
+                } else if (mcu.status === 'Follow-Up') {
+                    cardClass = 'border-yellow-200 bg-yellow-50';
+                    icon = '⏳';
+                } else if (mcu.status === 'Unfit') {
+                    cardClass = 'border-red-200 bg-red-50';
+                    icon = '❌';
+                }
+
+                html += `
+                    <div class="border rounded-lg p-4 ${cardClass}">
+                        <div class="flex items-start justify-between mb-2">
+                            <span class="text-2xl">${icon}</span>
+                            <span class="text-xs font-semibold text-gray-500 bg-white px-2 py-1 rounded">${mcuDate}</span>
+                        </div>
+                        <p class="text-sm font-semibold text-gray-900 mb-1">${cardType}</p>
+                        <p class="text-xs text-gray-600 mb-2">Tipe: ${mcu.mcuType || 'N/A'}</p>
+                        ${mcu.initialResult ? `<p class="text-xs text-gray-700"><strong>Hasil Awal:</strong> ${mcu.initialResult}</p>` : ''}
+                        ${mcu.finalResult ? `<p class="text-xs text-gray-700"><strong>Hasil Akhir:</strong> ${mcu.finalResult}</p>` : ''}
+                        ${hasNotes ? `<p class="text-xs text-gray-600 mt-2 italic">📌 ${notes}${notes.length >= 100 ? '...' : ''}</p>` : ''}
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            document.getElementById('mcu-cards-section').style.display = 'block';
         }
 
         // Display history table
