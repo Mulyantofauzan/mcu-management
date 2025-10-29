@@ -173,7 +173,7 @@ async function loadData() {
     updateFollowUpList();
 
     // Update activity
-    updateActivityList();
+    await updateActivityList();
 
   } catch (error) {
 

@@ -81,6 +81,9 @@ async function init() {
     return;
   }
 
+  // Wait for sidebar to load before updating user info
+  await window.waitForSidebar();
+
   updateUserInfo();
   await loadMasterData();
   await loadFollowUpList();
@@ -99,12 +102,9 @@ function updateUserInfo() {
     document.getElementById('user-initial').textContent = initial;
     // Initialize sidebar - handles permission checks internally
     initializeSidebar(user);
-            // Apply permission checks to show/hide admin menus
-            hideAdminMenus(user);
-    }
-    
-    // Wait for sidebar to load before updating user info
-    await window.waitForSidebar();
+    // Apply permission checks to show/hide admin menus
+    hideAdminMenus(user);
+  }
 }
 
 async function loadMasterData() {
