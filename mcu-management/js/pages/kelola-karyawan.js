@@ -38,19 +38,41 @@ async function init() {
 
 function updateUserInfo() {
     const user = authService.getCurrentUser();
-    if (user) {
-        // Safely access user properties with fallbacks
-        const displayName = user?.displayName || 'User';
-        const role = user?.role || 'Petugas';
-        const initial = (displayName && displayName.length > 0) ? displayName.charAt(0).toUpperCase() : '?';
+    if (!user) {
+        console.debug('No user available in updateUserInfo');
+        return;
+    }
 
-        document.getElementById('user-name').textContent = displayName;
-        document.getElementById('user-role').textContent = role;
-        document.getElementById('user-initial').textContent = initial;
-        // Initialize sidebar - handles permission checks internally
+    // Get display name with fallbacks
+    const displayName = user?.displayName || user?.name || user?.username || 'User';
+    const role = user?.role || 'Petugas';
+    const initial = (displayName && displayName.length > 0) ? displayName.charAt(0).toUpperCase() : '?';
+
+    // Safely update user info elements if they exist
+    const userNameEl = document.getElementById('user-name');
+    const userRoleEl = document.getElementById('user-role');
+    const userInitialEl = document.getElementById('user-initial');
+
+    if (userNameEl) {
+        userNameEl.textContent = displayName;
+    }
+    if (userRoleEl) {
+        userRoleEl.textContent = role;
+    }
+    if (userInitialEl) {
+        userInitialEl.textContent = initial;
+    }
+
+    // Store user globally for sidebar to use
+    window.currentUser = user;
+
+    // Initialize sidebar - handles permission checks internally
+    if (typeof initializeSidebar === 'function') {
         initializeSidebar(user);
-            // Apply permission checks to show/hide admin menus
-            hideAdminMenus(user);
+    }
+    // Apply permission checks to show/hide admin menus
+    if (typeof hideAdminMenus === 'function') {
+        hideAdminMenus(user);
     }
 }
 

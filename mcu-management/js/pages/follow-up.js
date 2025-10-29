@@ -92,18 +92,39 @@ async function init() {
 function updateUserInfo() {
   const user = authService.getCurrentUser();
   if (user) {
+    // Store user globally
+    window.currentUser = user;
+
     // Safely access user properties with fallbacks
-    const displayName = user?.displayName || 'User';
+    const displayName = user?.displayName || user?.name || user?.username || 'User';
     const role = user?.role || 'Petugas';
     const initial = (displayName && displayName.length > 0) ? displayName.charAt(0).toUpperCase() : '?';
 
-    document.getElementById('user-name').textContent = displayName;
-    document.getElementById('user-role').textContent = role;
-    document.getElementById('user-initial').textContent = initial;
+    // Safe DOM access with null checks
+    const userNameEl = document.getElementById('user-name');
+    if (userNameEl) {
+      userNameEl.textContent = displayName;
+    }
+
+    const userRoleEl = document.getElementById('user-role');
+    if (userRoleEl) {
+      userRoleEl.textContent = role;
+    }
+
+    const userInitialEl = document.getElementById('user-initial');
+    if (userInitialEl) {
+      userInitialEl.textContent = initial;
+    }
+
     // Initialize sidebar - handles permission checks internally
-    initializeSidebar(user);
+    if (typeof initializeSidebar === 'function') {
+      initializeSidebar(user);
+    }
+
     // Apply permission checks to show/hide admin menus
-    hideAdminMenus(user);
+    if (typeof hideAdminMenus === 'function') {
+      hideAdminMenus(user);
+    }
   }
 }
 

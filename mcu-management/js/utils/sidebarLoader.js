@@ -1,119 +1,202 @@
 /**
  * Sidebar Loader - Dynamically loads sidebar from template
- * Usage: Include this script in your page, it will auto-load sidebar
- * Pages can listen for 'sidebarLoaded' event to know when sidebar is ready
+ * This script handles all sidebar loading and coordination with module pages
  */
 
+// Global state tracking
+let sidebarLoadingPromise = null;
+let sidebarLoaded = false;
+
+/**
+ * Main sidebar loading function
+ */
 async function loadSidebar() {
-    try {
-        // Determine sidebar template path using different strategies
-        let sidebarPath = null;
-        const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*\.html$/, '').replace(/\/$/, '');
+    // If already loading or loaded, return the promise
+    if (sidebarLoadingPromise) {
+        return sidebarLoadingPromise;
+    }
 
-        // Try different possible paths
-        const possiblePaths = [
-            baseUrl + '/templates/sidebar.html',  // For root (index.html)
-            baseUrl + '/../templates/sidebar.html', // For pages folder
-            '/mcu-management/templates/sidebar.html' // Absolute path
-        ];
+    if (sidebarLoaded) {
+        return Promise.resolve();
+    }
 
-        let response = null;
-        let lastError = null;
+    // Create the loading promise
+    sidebarLoadingPromise = (async () => {
+        try {
+            console.debug('[Sidebar] Starting sidebar load...');
 
-        for (const path of possiblePaths) {
-            try {
-                response = await fetch(path);
-                if (response.ok) {
-                    sidebarPath = path;
-                    break;
-                }
-            } catch (e) {
-                lastError = e;
-                // Try next path
-                continue;
+            // Determine sidebar template path
+            let sidebarPath = await findSidebarPath();
+            if (!sidebarPath) {
+                throw new Error('Could not locate sidebar template');
             }
+
+            console.debug(`[Sidebar] Loading from: ${sidebarPath}`);
+
+            // Fetch sidebar HTML
+            const response = await fetch(sidebarPath);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch sidebar: ${response.status} ${response.statusText}`);
+            }
+
+            const sidebarHTML = await response.text();
+            if (!sidebarHTML || sidebarHTML.trim().length === 0) {
+                throw new Error('Sidebar template is empty');
+            }
+
+            // Inject sidebar into DOM
+            await injectSidebar(sidebarHTML);
+
+            // Initialize sidebar functionality
+            initializeSidebarFunctionality();
+
+            // Mark as loaded
+            sidebarLoaded = true;
+            console.debug('[Sidebar] Sidebar loaded successfully');
+
+            // Dispatch event for legacy code
+            document.dispatchEvent(new CustomEvent('sidebarLoaded', {
+                detail: { success: true }
+            }));
+
+            return true;
+        } catch (error) {
+            console.error('[Sidebar] Error loading sidebar:', error);
+            console.error('[Sidebar] Current URL:', window.location.href);
+
+            // Show sidebar anyway, dispatch error event
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar) {
+                sidebar.style.visibility = 'visible';
+            }
+
+            document.dispatchEvent(new CustomEvent('sidebarLoaded', {
+                detail: { success: false, error: error.message }
+            }));
+
+            sidebarLoaded = true; // Mark as loaded even on error to prevent hanging
+            return false;
         }
+    })();
 
-        if (!response || !response.ok) {
-            throw lastError || new Error(`Failed to load sidebar from any path. Tried: ${possiblePaths.join(', ')}`);
+    return sidebarLoadingPromise;
+}
+
+/**
+ * Find sidebar template path using multiple strategies
+ */
+async function findSidebarPath() {
+    const currentPath = window.location.pathname;
+    const isAtRoot = currentPath === '/' || currentPath.endsWith('index.html');
+    const isInPages = currentPath.includes('/pages/');
+
+    // Generate possible paths
+    const possiblePaths = [];
+
+    if (isAtRoot) {
+        // From root: /index.html -> /templates/sidebar.html
+        possiblePaths.push(window.location.origin + '/templates/sidebar.html');
+        possiblePaths.push('/templates/sidebar.html');
+    } else if (isInPages) {
+        // From pages: /pages/kelola-karyawan.html -> /templates/sidebar.html
+        possiblePaths.push(window.location.origin + '/templates/sidebar.html');
+        possiblePaths.push('/templates/sidebar.html');
+        possiblePaths.push(window.location.origin + '/pages/../templates/sidebar.html');
+        possiblePaths.push('../templates/sidebar.html');
+    }
+
+    // Add mcu-management specific path for Cloudflare Pages
+    possiblePaths.push('/mcu-management/templates/sidebar.html');
+
+    // Try each path
+    for (const path of possiblePaths) {
+        try {
+            const response = await fetch(path, { method: 'HEAD' });
+            if (response.ok) {
+                console.debug(`[Sidebar] Found sidebar at: ${path}`);
+                return path;
+            }
+        } catch (e) {
+            // Continue to next path
         }
+    }
 
-        console.debug(`Sidebar loaded from: ${sidebarPath}`);
-        const sidebarHTML = await response.text();
-
-        // Find or create sidebar container
-        let sidebarContainer = document.getElementById('sidebar');
-        if (!sidebarContainer) {
-            // Create container if doesn't exist
-            sidebarContainer = document.createElement('aside');
-            sidebarContainer.id = 'sidebar';
-            // Keep sidebar hidden until content is loaded
-            sidebarContainer.style.visibility = 'hidden';
-            document.body.insertBefore(sidebarContainer, document.body.firstChild);
+    // If HEAD doesn't work, try GET on each path
+    for (const path of possiblePaths) {
+        try {
+            const response = await fetch(path);
+            if (response.ok) {
+                console.debug(`[Sidebar] Found sidebar at: ${path}`);
+                return path;
+            }
+        } catch (e) {
+            // Continue to next path
         }
+    }
 
-        // Set sidebar content
-        sidebarContainer.innerHTML = sidebarHTML;
+    console.error(`[Sidebar] Could not find sidebar at any of these paths:`, possiblePaths);
+    return null;
+}
 
-        // Initialize sidebar functionality
-        initializeSidebar();
+/**
+ * Inject sidebar into DOM
+ */
+async function injectSidebar(html) {
+    // Find or create sidebar container
+    let sidebarContainer = document.getElementById('sidebar');
 
-        // Show sidebar now that content is loaded
-        sidebarContainer.style.visibility = 'visible';
+    if (!sidebarContainer) {
+        sidebarContainer = document.createElement('aside');
+        sidebarContainer.id = 'sidebar';
+        document.body.insertBefore(sidebarContainer, document.body.firstChild);
+    }
 
-        // Dispatch event to notify pages that sidebar is loaded
-        document.dispatchEvent(new CustomEvent('sidebarLoaded', {
-            detail: { sidebar: sidebarContainer }
-        }));
+    // Hide sidebar until ready
+    sidebarContainer.style.visibility = 'hidden';
+
+    // Inject HTML
+    sidebarContainer.innerHTML = html;
+
+    // Wait for next frame to ensure DOM is updated
+    await new Promise(resolve => requestAnimationFrame(resolve));
+
+    // Show sidebar
+    sidebarContainer.style.visibility = 'visible';
+}
+
+/**
+ * Initialize sidebar functionality after HTML is injected
+ */
+function initializeSidebarFunctionality() {
+    try {
+        // Set active link
+        setActiveSidebarLink();
+
+        // Set user info if available
+        updateSidebarUserInfo();
+
+        // Update menu visibility
+        updateAdminMenuVisibility();
     } catch (error) {
-        console.error('Error loading sidebar:', error);
-        console.error('Current URL:', window.location.href);
-        console.error('Pathname:', window.location.pathname);
-
-        // Still show sidebar even on error
-        const sidebarContainer = document.getElementById('sidebar');
-        if (sidebarContainer) {
-            sidebarContainer.style.visibility = 'visible';
-        }
-        // Still dispatch event even on error so page doesn't hang
-        document.dispatchEvent(new CustomEvent('sidebarLoaded', {
-            detail: { error: error.message }
-        }));
+        console.error('[Sidebar] Error initializing sidebar functionality:', error);
     }
 }
 
 /**
- * Initialize sidebar functionality
+ * Set active sidebar link based on current page
  */
-function initializeSidebar() {
-    // Set active link based on current page
-    const currentPage = getCurrentPageName();
+function setActiveSidebarLink() {
+    const currentPageName = getCurrentPageName();
     const sidebarLinks = document.querySelectorAll('.sidebar-link');
 
     sidebarLinks.forEach(link => {
-        const page = link.getAttribute('data-page');
-        if (page === currentPage) {
+        const dataPage = link.getAttribute('data-page');
+        if (dataPage === currentPageName) {
             link.classList.add('active');
         } else {
             link.classList.remove('active');
         }
     });
-
-    // Try to get user info and set sidebar
-    // First check if window.currentUser is available
-    let currentUser = window.currentUser;
-
-    // If not available, try to get from auth service (dynamic import)
-    if (!currentUser && window.authService) {
-        currentUser = window.authService.getCurrentUser();
-    }
-
-    // Set user info if available
-    if (currentUser) {
-        window.currentUser = currentUser; // Store for updateAdminMenuVisibility
-        setUserInfo();
-        updateAdminMenuVisibility();
-    }
 }
 
 /**
@@ -121,10 +204,9 @@ function initializeSidebar() {
  */
 function getCurrentPageName() {
     const path = window.location.pathname;
-    const filename = path.split('/').pop();
-    const pageName = filename.replace('.html', '');
+    const filename = path.split('/').pop().replace('.html', '');
 
-    // Map filenames to page names
+    // Map filenames to page data attributes
     const pageMap = {
         '': 'dashboard',
         'index': 'dashboard',
@@ -140,33 +222,51 @@ function getCurrentPageName() {
         'data-terhapus': 'data-terhapus'
     };
 
-    return pageMap[pageName] || pageName;
+    return pageMap[filename] || filename;
 }
 
 /**
- * Set user info in sidebar
+ * Update sidebar with user info
  */
-function setUserInfo() {
+function updateSidebarUserInfo() {
     const userInitialEl = document.getElementById('user-initial');
     const userNameEl = document.getElementById('user-name');
     const userRoleEl = document.getElementById('user-role');
 
-    if (!window.currentUser) {
+    // Get user from window.currentUser or window.authService
+    let user = window.currentUser;
+    if (!user && window.authService && typeof window.authService.getCurrentUser === 'function') {
+        try {
+            user = window.authService.getCurrentUser();
+        } catch (e) {
+            console.debug('[Sidebar] Could not get user from authService:', e.message);
+        }
+    }
+
+    if (!user) {
+        console.debug('[Sidebar] No user data available yet');
         return;
     }
 
-    // Support both 'name' and 'displayName' fields
-    const displayName = window.currentUser.displayName || window.currentUser.name || 'User';
+    // Store for later use
+    window.currentUser = user;
 
+    // Get display name with fallbacks
+    const displayName = user.displayName || user.name || user.username || 'User';
+
+    // Update sidebar elements
     if (userInitialEl && displayName) {
         userInitialEl.textContent = displayName.charAt(0).toUpperCase();
     }
-    if (userNameEl) {
+    if (userNameEl && displayName) {
         userNameEl.textContent = displayName;
     }
     if (userRoleEl) {
-        userRoleEl.textContent = window.currentUser.role || 'Petugas';
+        const role = user.role || 'Petugas';
+        userRoleEl.textContent = role;
     }
+
+    console.debug(`[Sidebar] Updated user info: ${displayName}`);
 }
 
 /**
@@ -176,7 +276,9 @@ function updateAdminMenuVisibility() {
     const kelolaUserMenu = document.getElementById('menu-kelola-user');
     const activityLogMenu = document.getElementById('menu-activity-log');
 
-    const isAdmin = window.currentUser && window.currentUser.role === 'Admin';
+    // Check if user is admin
+    const user = window.currentUser;
+    const isAdmin = user && (user.role === 'Admin' || user.role === 'Administrator');
 
     if (kelolaUserMenu) {
         kelolaUserMenu.style.display = isAdmin ? 'block' : 'none';
@@ -184,95 +286,121 @@ function updateAdminMenuVisibility() {
     if (activityLogMenu) {
         activityLogMenu.style.display = isAdmin ? 'block' : 'none';
     }
+
+    if (isAdmin) {
+        console.debug('[Sidebar] Showing admin menus');
+    }
 }
 
 /**
- * Handle logout - called from sidebar button
+ * Handle logout button click
  */
 window.handleLogout = async function() {
     try {
         if (confirm('Apa kamu yakin ingin logout?')) {
-            // Clear user session
-            if (window.authService) {
+            // Try to call authService logout
+            if (window.authService && typeof window.authService.logout === 'function') {
                 await window.authService.logout();
             } else {
-                // Fallback if authService not available
+                // Fallback: clear local storage
                 localStorage.removeItem('auth_token');
+                localStorage.removeItem('currentUser');
                 sessionStorage.clear();
             }
 
             // Redirect to login
-            window.location.href = '../pages/login.html';
+            const loginPath = window.location.pathname.includes('/pages/')
+                ? '../pages/login.html'
+                : './pages/login.html';
+            window.location.href = loginPath;
         }
     } catch (error) {
-        console.error('Logout error:', error);
-        alert('Error: ' + error.message);
+        console.error('[Sidebar] Logout error:', error);
+        // Still try to redirect
+        window.location.href = '../pages/login.html';
     }
 };
 
 /**
- * Helper function for pages to wait until sidebar is loaded
- * Usage: await waitForSidebar();
+ * Public API: Wait for sidebar to be fully loaded
+ * Usage: await window.waitForSidebar();
  */
 window.waitForSidebar = function() {
     return new Promise((resolve) => {
-        // Helper to check if sidebar is properly ready
-        function checkSidebarReady() {
-            const sidebar = document.getElementById('sidebar');
-            const userElements = document.getElementById('user-name') &&
-                                document.getElementById('user-role') &&
-                                document.getElementById('user-initial');
-            const sidebarLinks = document.querySelector('.sidebar-link');
-
-            return sidebar && userElements && sidebarLinks;
-        }
-
-        // Check if sidebar already loaded
-        if (checkSidebarReady()) {
-            console.debug('Sidebar already loaded');
+        // If sidebar already loaded, resolve immediately
+        if (sidebarLoaded) {
+            console.debug('[Sidebar] Sidebar already loaded, resolving immediately');
             resolve();
             return;
         }
 
-        // Wait for sidebarLoaded event
-        let eventHandler = () => {
-            // Double-check sidebar is ready
-            if (checkSidebarReady()) {
-                console.debug('Sidebar loaded via event');
-                resolve();
-            } else {
-                console.warn('Sidebar event fired but not fully ready, waiting...');
-                // Retry after a short delay
+        // Helper to check if sidebar DOM is fully ready
+        function isSidebarReady() {
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar) return false;
+
+            const userElements = {
+                initial: document.getElementById('user-initial'),
+                name: document.getElementById('user-name'),
+                role: document.getElementById('user-role')
+            };
+
+            const hasUserElements = userElements.initial && userElements.name && userElements.role;
+            const hasLinks = !!document.querySelector('.sidebar-link');
+
+            return sidebar && hasUserElements && hasLinks;
+        }
+
+        // Check immediately
+        if (isSidebarReady()) {
+            console.debug('[Sidebar] Sidebar DOM ready on check');
+            resolve();
+            return;
+        }
+
+        // Listen for sidebarLoaded event
+        let resolved = false;
+
+        const eventHandler = () => {
+            if (!resolved) {
+                resolved = true;
+
+                // Wait a tick for DOM to fully settle
                 setTimeout(() => {
-                    if (checkSidebarReady()) {
-                        resolve();
-                    } else {
-                        // Try one more time after 500ms
-                        setTimeout(resolve, 500);
-                    }
-                }, 100);
+                    console.debug('[Sidebar] Sidebar event fired, DOM settled');
+                    resolve();
+                }, 0);
             }
         };
 
         document.addEventListener('sidebarLoaded', eventHandler, { once: true });
 
-        // Timeout after 5 seconds with better error handling
+        // Timeout: resolve after 8 seconds (increased from 5s)
         setTimeout(() => {
-            if (checkSidebarReady()) {
-                console.debug('Sidebar ready after timeout check');
-                resolve();
-            } else {
-                console.warn('Sidebar timeout - elements may not be fully ready');
-                // Still resolve to prevent hanging, but sidebar might be incomplete
+            if (!resolved) {
+                resolved = true;
+                console.warn('[Sidebar] Timeout waiting for sidebar (8s), resolving anyway');
                 resolve();
             }
-        }, 5000);
+        }, 8000);
     });
 };
 
-// Auto-load sidebar when DOM is ready
+/**
+ * Start loading sidebar immediately
+ */
+// Auto-load sidebar when this script is loaded
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadSidebar);
+    // DOM is still loading
+    document.addEventListener('DOMContentLoaded', () => {
+        console.debug('[Sidebar] DOMContentLoaded fired, loading sidebar...');
+        loadSidebar();
+    });
 } else {
+    // DOM is already loaded
+    console.debug('[Sidebar] DOM already loaded, loading sidebar immediately...');
     loadSidebar();
 }
+
+// Also expose loading promise globally
+window.sidebarLoadingPromise = () => sidebarLoadingPromise || loadSidebar();
