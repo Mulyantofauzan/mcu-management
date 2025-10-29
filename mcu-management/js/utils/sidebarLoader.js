@@ -6,8 +6,16 @@
 
 async function loadSidebar() {
     try {
+        // Determine sidebar template path based on current location
+        let sidebarPath = '../templates/sidebar.html';
+
+        // Check if we're in root directory (index.html)
+        if (window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/')) {
+            sidebarPath = 'templates/sidebar.html';
+        }
+
         // Fetch sidebar template
-        const response = await fetch('../templates/sidebar.html');
+        const response = await fetch(sidebarPath);
         if (!response.ok) {
             throw new Error(`Failed to load sidebar: ${response.statusText}`);
         }
@@ -190,11 +198,11 @@ window.waitForSidebar = function() {
             resolve();
         }, { once: true });
 
-        // Timeout after 2 seconds just in case
+        // Timeout after 3 seconds just in case (increased to avoid false warnings on slow networks)
         setTimeout(() => {
-            console.warn('Sidebar took too long to load');
+            console.debug('Sidebar load completed or timeout reached');
             resolve();
-        }, 2000);
+        }, 3000);
     });
 };
 
