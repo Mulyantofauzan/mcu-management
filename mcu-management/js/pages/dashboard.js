@@ -61,10 +61,14 @@ async function init() {
     // Initialize filter dropdowns after data loads
     await initializeFilters();
 
+    // Show page content after initialization complete
+    document.body.classList.add('initialized');
 
   } catch (error) {
 
     showToast('Error initializing dashboard: ' + error.message, 'error');
+    // Still show page even on error
+    document.body.classList.add('initialized');
   }
 }
 

@@ -75,18 +75,28 @@ window.downloadRujukanBalikAction = function(employeeId) {
 };
 
 async function init() {
-  // Check auth
-  if (!authService.isAuthenticated()) {
-    window.location.href = 'login.html';
-    return;
+  try {
+    // Check auth
+    if (!authService.isAuthenticated()) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    // Wait for sidebar to load before updating user info
+    await window.waitForSidebar();
+
+    updateUserInfo();
+    await loadMasterData();
+    await loadFollowUpList();
+
+    // Show page content after initialization complete
+    document.body.classList.add('initialized');
+  } catch (error) {
+    console.error('Initialization error:', error);
+    showToast('Error initializing page: ' + error.message, 'error');
+    // Still show page even on error
+    document.body.classList.add('initialized');
   }
-
-  // Wait for sidebar to load before updating user info
-  await window.waitForSidebar();
-
-  updateUserInfo();
-  await loadMasterData();
-  await loadFollowUpList();
 }
 
 function updateUserInfo() {

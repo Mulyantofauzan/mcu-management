@@ -120,14 +120,20 @@
         .export-btn:hover {
             background-color: #047857;
         }
+
+        body {
+            opacity: 0;
+            transition: opacity 0.2s ease-in;
+        }
+
+        body.initialized {
+            opacity: 1;
+        }
     </style>
-    <!-- Sidebar Loader - Dynamically load sidebar from template -->
-    <script src="../js/utils/sidebarLoader.js"></script>
 </head>
 <body class="bg-gray-50">
     <!-- Sidebar -->
     <!-- Sidebar loaded dynamically from templates/sidebar.html -->
-    <!-- The sidebarLoader.js script will load sidebar content and set active page -->
 
 
     <!-- Main Content -->

@@ -38,26 +38,36 @@ function sanitizeInput(input) {
 }
 
 async function init() {
-    // Check auth - only Admin can access
-    if (!authService.isAuthenticated()) {
-        window.location.href = 'login.html';
-        return;
+    try {
+        // Check auth - only Admin can access
+        if (!authService.isAuthenticated()) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // Wait for sidebar to load before updating user info
+        await window.waitForSidebar();
+
+        const currentUser = authService.getCurrentUser();
+        if (currentUser.role !== 'Admin') {
+            showToast('Hanya Admin yang dapat mengakses halaman ini', 'error');
+            setTimeout(() => {
+                window.location.href = '../index.html';
+            }, 2000);
+            return;
+        }
+
+        updateUserInfo();
+        await loadUsers();
+
+        // Show page content after initialization complete
+        document.body.classList.add('initialized');
+    } catch (error) {
+        console.error('Initialization error:', error);
+        showToast('Error initializing page: ' + error.message, 'error');
+        // Still show page even on error
+        document.body.classList.add('initialized');
     }
-
-    // Wait for sidebar to load before updating user info
-    await window.waitForSidebar();
-
-    const currentUser = authService.getCurrentUser();
-    if (currentUser.role !== 'Admin') {
-        showToast('Hanya Admin yang dapat mengakses halaman ini', 'error');
-        setTimeout(() => {
-            window.location.href = '../index.html';
-        }, 2000);
-        return;
-    }
-
-    updateUserInfo();
-    await loadUsers();
 }
 
 function updateUserInfo() {

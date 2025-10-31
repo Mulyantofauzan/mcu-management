@@ -15,16 +15,26 @@ let departments = [];
 let selectedEmployees = new Set();
 
 async function init() {
-    if (!authService.isAuthenticated()) {
-        window.location.href = 'login.html';
-        return;
-    }
-    
-    // Wait for sidebar to load before updating user info
-    await window.waitForSidebar();
+    try {
+        if (!authService.isAuthenticated()) {
+            window.location.href = 'login.html';
+            return;
+        }
 
-    updateUserInfo();
-    await loadData();
+        // Wait for sidebar to load before updating user info
+        await window.waitForSidebar();
+
+        updateUserInfo();
+        await loadData();
+
+        // Show page content after initialization complete
+        document.body.classList.add('initialized');
+    } catch (error) {
+        console.error('Initialization error:', error);
+        showToast('Error initializing page: ' + error.message, 'error');
+        // Still show page even on error
+        document.body.classList.add('initialized');
+    }
 }
 
 function updateUserInfo() {

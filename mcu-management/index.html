@@ -27,10 +27,17 @@
     <!-- Dexie (IndexedDB) - Fallback (defer) -->
     <script defer src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
 
-    <!-- Sidebar Loader - Dynamically load sidebar from template -->
-    <script src="js/utils/sidebarLoader.js"></script>
-
     <style>
+        /* Hide body until page is fully initialized (prevents flash of unstyled content) */
+        body {
+            opacity: 0;
+            transition: opacity 0.2s ease-in;
+        }
+
+        body.initialized {
+            opacity: 1;
+        }
+
         /* Sidebar transition */
         .sidebar {
             transition: transform 0.3s ease-in-out;
@@ -45,7 +52,6 @@
 </head>
 <body class="bg-gray-50">
     <!-- Sidebar loaded dynamically from templates/sidebar.html -->
-    <!-- The sidebarLoader.js script will load sidebar content and set active page -->
 
     <!-- Main Content -->
     <div class="ml-64 min-h-screen">
