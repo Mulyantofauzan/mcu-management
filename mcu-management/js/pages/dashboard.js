@@ -8,11 +8,10 @@ import { employeeService } from '../services/employeeService.js';
 import { mcuService } from '../services/mcuService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { database } from '../services/database.js';
-import { formatDateDisplay, getCurrentMonthRange, isDateInRange } from '../utils/dateHelpers.js';
-import { showToast, getStatusBadge } from '../utils/uiHelpers.js';
+import { formatDateDisplay, isDateInRange } from '../utils/dateHelpers.js';
+import { showToast } from '../utils/uiHelpers.js';
 import { sessionManager } from '../utils/sessionManager.js';
-import { initializeSidebar, hideAdminMenus } from '../sidebar-manager.js';
-import { seedDatabase, checkAndSeedIfEmpty } from '../seedData.js';
+import { checkAndSeedIfEmpty } from '../seedData.js';
 
 // State
 let currentDateRange = { startDate: '', endDate: '' }; // Default: empty filter (show all)

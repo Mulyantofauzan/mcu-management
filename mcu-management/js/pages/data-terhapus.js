@@ -7,7 +7,6 @@ import { employeeService } from '../services/employeeService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { formatDateDisplay } from '../utils/dateHelpers.js';
 import { showToast, confirmDialog } from '../utils/uiHelpers.js';
-import { initializeSidebar, hideAdminMenus } from '../sidebar-manager.js';
 
 let deletedEmployees = [];
 let jobTitles = [];
