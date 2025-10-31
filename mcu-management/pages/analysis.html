@@ -104,36 +104,39 @@
 
     <script type="module">
         import { authService } from '../js/services/authService.js';
-        import { initializeSidebar, hideAdminMenus } from '../js/sidebar-manager.js';
+        import { initSidebar } from '../js/utils/sidebarInit.js';
 
         if (!authService.isAuthenticated()) {
             window.location.href = 'login.html';
         }
 
-        // Wait for sidebar to load before accessing elements
-        await window.waitForSidebar();
+        try {
+            const user = authService.getCurrentUser();
+            if (user) {
+                // Safely access user properties with fallbacks
+                const displayName = user?.displayName || 'User';
+                const role = user?.role || 'Petugas';
+                const initial = (displayName && displayName.length > 0) ? displayName.charAt(0).toUpperCase() : '?';
 
-        const user = authService.getCurrentUser();
-        if (user) {
-            // Safely access user properties with fallbacks
-            const displayName = user?.displayName || 'User';
-            const role = user?.role || 'Petugas';
-            const initial = (displayName && displayName.length > 0) ? displayName.charAt(0).toUpperCase() : '?';
+                // Now safe to access sidebar elements
+                const userNameEl = document.getElementById('user-name');
+                const userRoleEl = document.getElementById('user-role');
+                const userInitialEl = document.getElementById('user-initial');
 
-            // Now safe to access sidebar elements
-            const userNameEl = document.getElementById('user-name');
-            const userRoleEl = document.getElementById('user-role');
-            const userInitialEl = document.getElementById('user-initial');
+                if (userNameEl) userNameEl.textContent = displayName;
+                if (userRoleEl) userRoleEl.textContent = role;
+                if (userInitialEl) userInitialEl.textContent = initial;
 
-            if (userNameEl) userNameEl.textContent = displayName;
-            if (userRoleEl) userRoleEl.textContent = role;
-            if (userInitialEl) userInitialEl.textContent = initial;
+                // Initialize sidebar - handles sidebar active link and admin menus
+                await initSidebar();
+            }
 
-            // Initialize sidebar - handles sidebar active link
-            initializeSidebar(user);
-
-            // Apply permission checks to show/hide admin menus
-            hideAdminMenus(user);
+            // Mark page as initialized (triggers CSS fade-in)
+            document.body.classList.add('initialized');
+        } catch (error) {
+            console.error('Analysis page init error:', error);
+            // Still mark as initialized to prevent stuck blank screen
+            document.body.classList.add('initialized');
         }
     </script>
 </body>

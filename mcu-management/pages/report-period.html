@@ -174,7 +174,7 @@
         import { employeeService } from '../js/services/employeeService.js';
         import { masterDataService } from '../js/services/masterDataService.js';
         import { showToast } from '../js/utils/uiHelpers.js';
-        import { initializeSidebar, hideAdminMenus } from '../js/sidebar-manager.js';
+        import { initSidebar } from '../js/utils/sidebarInit.js';
 
         // Check authentication
         if (!authService.isAuthenticated()) {
@@ -183,26 +183,24 @@
 
         // Initialize page
         async function init() {
-            // Wait for sidebar to load before accessing elements
-            await window.waitForSidebar();
+            try {
+                const user = authService.getCurrentUser();
+                if (user) {
+                    const displayName = user?.displayName || 'User';
+                    const role = user?.role || 'Petugas';
+                    const initial = (displayName && displayName.length > 0) ? displayName.charAt(0).toUpperCase() : '?';
 
-            const user = authService.getCurrentUser();
-            if (user) {
-                const displayName = user?.displayName || 'User';
-                const role = user?.role || 'Petugas';
-                const initial = (displayName && displayName.length > 0) ? displayName.charAt(0).toUpperCase() : '?';
+                    const userNameEl = document.getElementById('user-name');
+                    const userRoleEl = document.getElementById('user-role');
+                    const userInitialEl = document.getElementById('user-initial');
 
-                const userNameEl = document.getElementById('user-name');
-                const userRoleEl = document.getElementById('user-role');
-                const userInitialEl = document.getElementById('user-initial');
+                    if (userNameEl) userNameEl.textContent = displayName;
+                    if (userRoleEl) userRoleEl.textContent = role;
+                    if (userInitialEl) userInitialEl.textContent = initial;
 
-                if (userNameEl) userNameEl.textContent = displayName;
-                if (userRoleEl) userRoleEl.textContent = role;
-                if (userInitialEl) userInitialEl.textContent = initial;
-
-                initializeSidebar(user);
-                hideAdminMenus(user);
-            }
+                    // Initialize sidebar - handles sidebar active link and admin menus
+                    await initSidebar();
+                }
 
             // Highlight active sidebar link
             const currentPage = 'report-period';
@@ -215,8 +213,7 @@
                 }
             });
 
-            // Load departments for filter
-            try {
+                // Load departments for filter
                 const departments = await masterDataService.getAllDepartments();
                 const select = document.getElementById('filter-department');
                 departments.forEach(dept => {
@@ -225,16 +222,22 @@
                     option.textContent = dept.name;
                     select.appendChild(option);
                 });
+
+                // Set default dates (last 30 days)
+                const endDate = new Date();
+                const startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+                document.getElementById('filter-start-date').valueAsDate = startDate;
+                document.getElementById('filter-end-date').valueAsDate = endDate;
+
+                // Mark page as initialized (triggers CSS fade-in)
+                document.body.classList.add('initialized');
             } catch (error) {
-                console.error('Failed to load departments:', error);
+                console.error('Init error:', error);
+                showToast('Gagal memuat halaman: ' + error.message, 'error');
+                // Still mark as initialized to prevent stuck blank screen
+                document.body.classList.add('initialized');
             }
-
-            // Set default dates (last 30 days)
-            const endDate = new Date();
-            const startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-            document.getElementById('filter-start-date').valueAsDate = startDate;
-            document.getElementById('filter-end-date').valueAsDate = endDate;
         }
 
         // Store report data and services globally
