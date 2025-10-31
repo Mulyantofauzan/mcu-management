@@ -77,6 +77,12 @@ class EmployeeService {
       });
     }
 
+    // Log activity
+    const currentUser = window.authService?.getCurrentUser();
+    if (currentUser?.userId) {
+      await database.logActivity('delete', 'Employee', employeeId, currentUser.userId);
+    }
+
     return true;
   }
 
@@ -88,12 +94,18 @@ class EmployeeService {
     });
 
     // Restore all associated MCU records (cascade restore)
-    const mcus = await database.query('mcus', mcu => mcu.employeeId === employeeId && mcu.deletedAt);
+    const mcus = await database.query('mcus', mcu => mcu.employeeId === employeeId && mcu.deletedAt !== null);
     for (const mcu of mcus) {
       await database.update('mcus', mcu.mcuId, {
         deletedAt: null,
         updatedAt: getCurrentTimestamp()
       });
+    }
+
+    // Log activity
+    const currentUser = window.authService?.getCurrentUser();
+    if (currentUser?.userId) {
+      await database.logActivity('update', 'Employee', employeeId, currentUser.userId);
     }
 
     return true;

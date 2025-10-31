@@ -168,3 +168,6 @@ window.handleLogout = async function() {
         window.location.href = '../pages/login.html';
     }
 };
+
+// Auto-run on page load
+window.addEventListener('DOMContentLoaded', initSidebar);
