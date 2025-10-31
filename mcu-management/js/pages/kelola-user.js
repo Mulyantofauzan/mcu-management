@@ -46,7 +46,6 @@ async function init() {
         }
 
         // Wait for sidebar to load before updating user info
-        await window.waitForSidebar();
 
         const currentUser = authService.getCurrentUser();
         if (currentUser.role !== 'Admin') {
