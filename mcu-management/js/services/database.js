@@ -45,6 +45,7 @@ class DatabaseService {
             case 'departments': return await adp.MasterData.getDepartments();
             case 'jobTitles': return await adp.MasterData.getJobTitles();
             case 'vendors': return await adp.MasterData.getVendors();
+            case 'doctors': return await adp.MasterData.getDoctors();
             case 'activityLog': return await adp.ActivityLog.getAll();
             default: throw new Error(`Unknown table: ${tableName}`);
         }
@@ -71,6 +72,10 @@ class DatabaseService {
                 return typeof data === 'object' && data.vendorId
                     ? await adp.MasterData.addVendor(data)
                     : await adp.MasterData.addVendor(data.name || data);
+            case 'doctors':
+                return typeof data === 'object' && data.doctorId
+                    ? await adp.MasterData.addDoctor(data)
+                    : await adp.MasterData.addDoctor(data.name || data);
             case 'activityLog': return await adp.ActivityLog.add(data);
             default: throw new Error(`Unknown table: ${tableName}`);
         }
@@ -86,6 +91,7 @@ class DatabaseService {
             case 'departments': return await adp.MasterData.updateDepartment(id, data.name);
             case 'jobTitles': return await adp.MasterData.updateJobTitle(id, data.name);
             case 'vendors': return await adp.MasterData.updateVendor(id, data.name);
+            case 'doctors': return await adp.MasterData.updateDoctor(id, data.name);
             default: throw new Error(`Unknown table: ${tableName}`);
         }
     }
@@ -100,6 +106,7 @@ class DatabaseService {
             case 'jobTitles': return await adp.MasterData.deleteJobTitle(id);
             case 'departments': return await adp.MasterData.deleteDepartment(id);
             case 'vendors': return await adp.MasterData.deleteVendor(id);
+            case 'doctors': return await adp.MasterData.deleteDoctor(id);
             default: throw new Error(`Delete not supported for: ${tableName}`);
         }
     }
@@ -114,6 +121,7 @@ class DatabaseService {
             case 'jobTitles': return await adp.MasterData.deleteJobTitle(id);
             case 'departments': return await adp.MasterData.deleteDepartment(id);
             case 'vendors': return await adp.MasterData.deleteVendor(id);
+            case 'doctors': return await adp.MasterData.deleteDoctor(id);
             default: throw new Error(`Hard delete not supported for: ${tableName}`);
         }
     }
@@ -136,6 +144,10 @@ class DatabaseService {
             case 'vendors': {
                 const all = await adp.MasterData.getVendors();
                 return all.find(item => item.id === id || item.vendorId === id);
+            }
+            case 'doctors': {
+                const all = await adp.MasterData.getDoctors();
+                return all.find(item => item.id === id || item.doctorId === id);
             }
             default: throw new Error(`Get not supported for: ${tableName}`);
         }
@@ -180,7 +192,12 @@ class DatabaseService {
             });
         } catch (err) {
             // Activity log is non-critical - don't block main operations
-
+            console.warn('⚠️ Activity log save failed (non-critical):', {
+                action,
+                entityType,
+                entityId,
+                error: err.message
+            });
             return null;
         }
     }

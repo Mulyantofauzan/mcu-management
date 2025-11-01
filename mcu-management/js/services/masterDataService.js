@@ -9,7 +9,8 @@ import {
   generateJobTitleId,
   generateDepartmentId,
   generateStatusId,
-  generateVendorId
+  generateVendorId,
+  generateDoctorId
 } from '../utils/idGenerator.js';
 import { getCurrentTimestamp } from '../utils/dateHelpers.js';
 import { cacheManager } from '../utils/cacheManager.js';
@@ -248,6 +249,73 @@ class MasterDataService {
     // Invalidate cache
     cacheManager.clear('vendors:all');
     cacheManager.clear(`vendor:${id}`);
+    return true;
+  }
+
+  // Doctors
+  async createDoctor(data) {
+    const doctor = {
+      doctorId: generateDoctorId(),
+      name: data.name,
+      createdAt: getCurrentTimestamp(),
+      updatedAt: getCurrentTimestamp()
+    };
+    await database.add('doctors', doctor);
+    // Invalidate cache
+    cacheManager.clear('doctors:all');
+    return doctor;
+  }
+
+  async getAllDoctors() {
+    // Check cache first
+    const cached = cacheManager.get('doctors:all');
+    if (cached) {
+      console.debug('[Cache] getAllDoctors - HIT');
+      return cached;
+    }
+
+    // Cache miss - fetch from database
+    const data = await database.getAll('doctors');
+    cacheManager.set('doctors:all', data);
+    return data;
+  }
+
+  async getDoctorById(id) {
+    // Check cache first
+    const cacheKey = `doctor:${id}`;
+    const cached = cacheManager.get(cacheKey);
+    if (cached) {
+      console.debug(`[Cache] getDoctorById(${id}) - HIT`);
+      return cached;
+    }
+
+    // Cache miss - fetch from database
+    const data = await database.get('doctors', id);
+    cacheManager.set(cacheKey, data);
+    return data;
+  }
+
+  async updateDoctor(id, data) {
+    await database.update('doctors', id, {
+      name: data.name,
+      updatedAt: getCurrentTimestamp()
+    });
+    // Invalidate cache
+    cacheManager.clear('doctors:all');
+    cacheManager.clear(`doctor:${id}`);
+    return await this.getDoctorById(id);
+  }
+
+  async deleteDoctor(id) {
+    // Check if in use
+    const mcuRecords = await database.query('mcu', mcu => mcu.doctor === id && !mcu.deletedAt);
+    if (mcuRecords.length > 0) {
+      throw new Error(`Tidak dapat menghapus. Dokter ini digunakan di ${mcuRecords.length} catatan MCU.`);
+    }
+    await database.delete('doctors', id);
+    // Invalidate cache
+    cacheManager.clear('doctors:all');
+    cacheManager.clear(`doctor:${id}`);
     return true;
   }
 }

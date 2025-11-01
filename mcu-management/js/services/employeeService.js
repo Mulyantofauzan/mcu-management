@@ -94,8 +94,11 @@ class EmployeeService {
     });
 
     // Restore all associated MCU records (cascade restore)
-    const mcus = await database.query('mcus', mcu => mcu.employeeId === employeeId && mcu.deletedAt !== null);
-    for (const mcu of mcus) {
+    // IMPORTANT: Must include deleted records to restore them
+    const allMCUs = await database.getAll('mcus', true); // true = includeDeleted
+    const deletedMCUs = allMCUs.filter(mcu => mcu.employeeId === employeeId && mcu.deletedAt);
+
+    for (const mcu of deletedMCUs) {
       await database.update('mcus', mcu.mcuId, {
         deletedAt: null,
         updatedAt: getCurrentTimestamp()

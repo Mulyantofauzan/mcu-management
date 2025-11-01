@@ -141,6 +141,12 @@ export function generateUserId() {
   return `USR-${timestamp}-${random}`;
 }
 
+export function generateDoctorId() {
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substr(2, 5).toUpperCase();
+  return `DOC-${timestamp}-${random}`;
+}
+
 export function generateUUID() {
   return idGenerator.generateUUID();
 }

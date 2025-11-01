@@ -287,12 +287,19 @@
                 const uniqueEmployees = new Set();
 
                 for (const mcu of filteredMCUs) {
+                    // Skip soft-deleted MCU records
+                    if (mcu.deletedAt) continue;
+
                     const employee = employees.find(e => e.employeeId === mcu.employeeId);
                     if (!employee) continue;
 
+                    // Skip soft-deleted employees
+                    if (employee.deletedAt) continue;
+
                     // Apply filters
                     if (departmentId && employee.departmentId !== parseInt(departmentId)) continue;
-                    if (status && mcu.status !== status) continue;
+                    // Filter by status/result if provided (use initialResult field)
+                    if (status && mcu.initialResult !== status) continue;
 
                     uniqueEmployees.add(employee.employeeId);
 
@@ -319,7 +326,7 @@
                         jobTitle: (jobTitle && jobTitle.name) ? jobTitle.name : 'N/A',
                         mcuDate: new Date(mcu.mcuDate).toLocaleDateString('id-ID'),
                         mcuType: mcu.mcuType || 'N/A',
-                        status: mcu.status,
+                        status: mcu.initialResult,
                         initialResult: mcu.initialResult,
                         finalResult: mcu.finalResult || '-',
                         notes: mcu.initialNotes || mcu.finalNotes || '-'

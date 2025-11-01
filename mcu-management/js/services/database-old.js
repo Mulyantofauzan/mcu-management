@@ -41,6 +41,11 @@ class MCUDatabase {
       users: 'userId, username, role, active'
     });
 
+    // Version 3: Add doctors table for referral data
+    this.db.version(3).stores({
+      doctors: 'doctorId, name'
+    });
+
     try {
       await this.db.open();
       console.log('IndexedDB initialized successfully (version ' + this.db.verno + ')');

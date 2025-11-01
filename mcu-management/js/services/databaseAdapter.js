@@ -835,6 +835,73 @@ export const MasterData = {
             return true;
         }
         return await indexedDB.db.vendors.delete(id);
+    },
+
+    async getDoctors() {
+        if (useSupabase) {
+            const supabase = getSupabaseClient();
+            const { data, error } = await supabase
+                .from('doctors')
+                .select('*')
+                .order('name', { ascending: true });
+
+            if (error) throw error;
+            return data.map(item => transformMasterDataItem(item, 'doctor'));
+        }
+        return await indexedDB.db.doctors.toArray();
+    },
+
+    async addDoctor(dataOrName) {
+        // Support both object (with doctorId) and string (just name)
+        const isObject = typeof dataOrName === 'object' && dataOrName !== null;
+        const name = isObject ? dataOrName.name : dataOrName;
+        const fullData = isObject ? dataOrName : { name };
+
+        if (useSupabase) {
+            const supabase = getSupabaseClient();
+            const { data, error } = await supabase
+                .from('doctors')
+                .insert({ name })
+                .select()
+                .single();
+
+            if (error) throw error;
+            return transformMasterDataItem(data);
+        }
+        // For IndexedDB, use the full object if provided (includes ID and timestamps)
+        return await indexedDB.db.doctors.add(fullData);
+    },
+
+    async updateDoctor(id, name) {
+        if (useSupabase) {
+            const supabase = getSupabaseClient();
+            const { data, error } = await supabase
+                .from('doctors')
+                .update({ name })
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return transformMasterDataItem(data, 'doctor');
+        }
+        // Dexie: use where().modify() for non-primary key fields
+        await indexedDB.db.doctors.where('doctorId').equals(id).modify({ name });
+        return await indexedDB.db.doctors.where('doctorId').equals(id).first();
+    },
+
+    async deleteDoctor(id) {
+        if (useSupabase) {
+            const supabase = getSupabaseClient();
+            const { error } = await supabase
+                .from('doctors')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            return true;
+        }
+        return await indexedDB.db.doctors.delete(id);
     }
 };
 
@@ -875,13 +942,17 @@ export const ActivityLog = {
                     .limit(limit);
 
                 if (error) {
-
+                    console.error('❌ Supabase activity_log SELECT error:', {
+                        message: error.message,
+                        code: error.code,
+                        details: error.details
+                    });
                     return [];
                 }
 
                 return data ? data.map(transformActivityLog) : [];
             } catch (err) {
-
+                console.error('❌ ActivityLog.getAll() failed:', err);
                 return [];
             }
         }
@@ -934,11 +1005,16 @@ export const ActivityLog = {
                 if (!error && data) {
                     return transformActivityLog(data);
                 } else if (error) {
-
+                    console.error('❌ Supabase activity_log INSERT error:', {
+                        message: error.message,
+                        code: error.code,
+                        details: error.details,
+                        hint: error.hint
+                    });
                     throw error;
                 }
             } catch (err) {
-
+                console.error('❌ ActivityLog.add() failed:', err);
                 throw err;
             }
         }

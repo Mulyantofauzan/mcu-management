@@ -13,6 +13,7 @@ import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
 let searchResults = [];
 let jobTitles = [];
 let departments = [];
+let doctors = [];
 let currentEmployee = null;
 
 /**
@@ -95,6 +96,7 @@ async function loadMasterData() {
     try {
         jobTitles = await masterDataService.getAllJobTitles();
         departments = await masterDataService.getAllDepartments();
+        doctors = await masterDataService.getAllDoctors();
     } catch (error) {
 
         showToast('Gagal memuat data master', 'error');
@@ -162,6 +164,28 @@ function populateDropdowns() {
     });
 
     deptSelect.appendChild(deptFragment);  // Single DOM operation
+
+    // Doctors - MCU form dropdown
+    const doctorSelect = document.getElementById('mcu-doctor');
+    if (doctorSelect) {
+        doctorSelect.innerHTML = '';
+
+        const doctorFragment = document.createDocumentFragment();
+
+        const defaultDoctorOption = document.createElement('option');
+        defaultDoctorOption.value = '';
+        defaultDoctorOption.textContent = 'Pilih Dokter...';
+        doctorFragment.appendChild(defaultDoctorOption);
+
+        doctors.forEach(doctor => {
+            const option = document.createElement('option');
+            option.value = doctor.doctorId;
+            option.textContent = doctor.name;  // SAFE: textContent auto-escapes
+            doctorFragment.appendChild(option);
+        });
+
+        doctorSelect.appendChild(doctorFragment);  // Single DOM operation
+    }
 }
 
 window.handleSearch = async function() {
@@ -346,6 +370,7 @@ window.handleAddMCU = async function(event) {
             sgpt: document.getElementById('mcu-sgpt').value || null,
             cbc: document.getElementById('mcu-cbc').value || null,
             napza: document.getElementById('mcu-napza').value || null,
+            doctor: document.getElementById('mcu-doctor').value || null,
             recipient: document.getElementById('mcu-recipient').value || null,
             keluhanUtama: document.getElementById('mcu-keluhan').value || null,
             diagnosisKerja: document.getElementById('mcu-diagnosis').value || null,
@@ -354,18 +379,55 @@ window.handleAddMCU = async function(event) {
             initialNotes: document.getElementById('mcu-notes').value
         };
 
-        await mcuService.create(mcuData, currentUser);
+        const createdMCU = await mcuService.create(mcuData, currentUser);
 
         showToast('MCU berhasil ditambahkan!', 'success');
 
-        // Manual close (user can copy data before closing)
-        // User closes modal manually dengan tombol "Batal"
+        // Make form read-only after successful save
+        disableMCUForm();
+
+        // Show MCU ID in read-only format
+        if (createdMCU && createdMCU.mcuId) {
+            const form = document.getElementById('mcu-form');
+            const mcuIdDiv = document.createElement('div');
+            mcuIdDiv.className = 'mb-4 p-3 bg-green-50 border border-green-200 rounded-lg';
+            mcuIdDiv.innerHTML = `
+                <p class="text-sm text-gray-600">MCU ID (Copy untuk referensi):</p>
+                <p class="text-lg font-semibold text-green-700 cursor-pointer select-all" id="mcu-id-display">${createdMCU.mcuId}</p>
+            `;
+            form.insertBefore(mcuIdDiv, form.querySelector('.modal-footer'));
+        }
 
     } catch (error) {
 
         showToast('Gagal menambah MCU: ' + error.message, 'error');
     }
 };
+
+/**
+ * Disable all MCU form inputs to make it read-only
+ */
+function disableMCUForm() {
+    const form = document.getElementById('mcu-form');
+    if (!form) return;
+
+    // Disable all inputs, selects, textareas
+    const inputs = form.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+        input.disabled = true;
+        input.classList.add('opacity-75', 'cursor-not-allowed');
+    });
+
+    // Change submit button to close button
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.textContent = 'Tutup Form';
+        submitBtn.type = 'button';
+        submitBtn.onclick = function() {
+            window.closeAddMCUModal();
+        };
+    }
+}
 
 window.handleLogout = function() {
     authService.logout();
