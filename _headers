@@ -1,4 +1,9 @@
 /*
+  # Compression
+  # Cloudflare automatically gzip compresses responses (>1024 bytes)
+  # Set cache control for optimal performance
+  Cache-Control: public, max-age=3600
+
   # HTTP Strict Transport Security (HSTS)
   # Forces HTTPS for all connections, prevents SSL stripping
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload

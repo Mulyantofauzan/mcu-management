@@ -1,6 +1,7 @@
 /**
  * Master Data Service
  * Handles CRUD for master data: JobTitle, Department, StatusMCU, Vendor
+ * Includes in-memory caching to reduce database queries
  */
 
 import { database } from './database.js';
@@ -11,6 +12,7 @@ import {
   generateVendorId
 } from '../utils/idGenerator.js';
 import { getCurrentTimestamp } from '../utils/dateHelpers.js';
+import { cacheManager } from '../utils/cacheManager.js';
 
 class MasterDataService {
   // Job Titles
@@ -22,15 +24,38 @@ class MasterDataService {
       updatedAt: getCurrentTimestamp()
     };
     await database.add('jobTitles', jobTitle);
+    // Invalidate cache
+    cacheManager.clear('jobTitles:all');
     return jobTitle;
   }
 
   async getAllJobTitles() {
-    return await database.getAll('jobTitles');
+    // Check cache first
+    const cached = cacheManager.get('jobTitles:all');
+    if (cached) {
+      console.debug('[Cache] getAllJobTitles - HIT');
+      return cached;
+    }
+
+    // Cache miss - fetch from database
+    const data = await database.getAll('jobTitles');
+    cacheManager.set('jobTitles:all', data);
+    return data;
   }
 
   async getJobTitleById(id) {
-    return await database.get('jobTitles', id);
+    // Check cache first
+    const cacheKey = `jobTitle:${id}`;
+    const cached = cacheManager.get(cacheKey);
+    if (cached) {
+      console.debug(`[Cache] getJobTitleById(${id}) - HIT`);
+      return cached;
+    }
+
+    // Cache miss - fetch from database
+    const data = await database.get('jobTitles', id);
+    cacheManager.set(cacheKey, data);
+    return data;
   }
 
   async updateJobTitle(id, data) {
@@ -38,6 +63,9 @@ class MasterDataService {
       name: data.name,
       updatedAt: getCurrentTimestamp()
     });
+    // Invalidate cache
+    cacheManager.clear('jobTitles:all');
+    cacheManager.clear(`jobTitle:${id}`);
     return await this.getJobTitleById(id);
   }
 
@@ -48,6 +76,9 @@ class MasterDataService {
       throw new Error(`Tidak dapat menghapus. Jabatan ini digunakan oleh ${employees.length} karyawan.`);
     }
     await database.delete('jobTitles', id);
+    // Invalidate cache
+    cacheManager.clear('jobTitles:all');
+    cacheManager.clear(`jobTitle:${id}`);
     return true;
   }
 
@@ -60,15 +91,38 @@ class MasterDataService {
       updatedAt: getCurrentTimestamp()
     };
     await database.add('departments', department);
+    // Invalidate cache
+    cacheManager.clear('departments:all');
     return department;
   }
 
   async getAllDepartments() {
-    return await database.getAll('departments');
+    // Check cache first
+    const cached = cacheManager.get('departments:all');
+    if (cached) {
+      console.debug('[Cache] getAllDepartments - HIT');
+      return cached;
+    }
+
+    // Cache miss - fetch from database
+    const data = await database.getAll('departments');
+    cacheManager.set('departments:all', data);
+    return data;
   }
 
   async getDepartmentById(id) {
-    return await database.get('departments', id);
+    // Check cache first
+    const cacheKey = `department:${id}`;
+    const cached = cacheManager.get(cacheKey);
+    if (cached) {
+      console.debug(`[Cache] getDepartmentById(${id}) - HIT`);
+      return cached;
+    }
+
+    // Cache miss - fetch from database
+    const data = await database.get('departments', id);
+    cacheManager.set(cacheKey, data);
+    return data;
   }
 
   async updateDepartment(id, data) {
@@ -76,6 +130,9 @@ class MasterDataService {
       name: data.name,
       updatedAt: getCurrentTimestamp()
     });
+    // Invalidate cache
+    cacheManager.clear('departments:all');
+    cacheManager.clear(`department:${id}`);
     return await this.getDepartmentById(id);
   }
 
@@ -86,6 +143,9 @@ class MasterDataService {
       throw new Error(`Tidak dapat menghapus. Departemen ini digunakan oleh ${employees.length} karyawan.`);
     }
     await database.delete('departments', id);
+    // Invalidate cache
+    cacheManager.clear('departments:all');
+    cacheManager.clear(`department:${id}`);
     return true;
   }
 
@@ -131,15 +191,38 @@ class MasterDataService {
       updatedAt: getCurrentTimestamp()
     };
     await database.add('vendors', vendor);
+    // Invalidate cache
+    cacheManager.clear('vendors:all');
     return vendor;
   }
 
   async getAllVendors() {
-    return await database.getAll('vendors');
+    // Check cache first
+    const cached = cacheManager.get('vendors:all');
+    if (cached) {
+      console.debug('[Cache] getAllVendors - HIT');
+      return cached;
+    }
+
+    // Cache miss - fetch from database
+    const data = await database.getAll('vendors');
+    cacheManager.set('vendors:all', data);
+    return data;
   }
 
   async getVendorById(id) {
-    return await database.get('vendors', id);
+    // Check cache first
+    const cacheKey = `vendor:${id}`;
+    const cached = cacheManager.get(cacheKey);
+    if (cached) {
+      console.debug(`[Cache] getVendorById(${id}) - HIT`);
+      return cached;
+    }
+
+    // Cache miss - fetch from database
+    const data = await database.get('vendors', id);
+    cacheManager.set(cacheKey, data);
+    return data;
   }
 
   async updateVendor(id, data) {
@@ -147,6 +230,9 @@ class MasterDataService {
       name: data.name,
       updatedAt: getCurrentTimestamp()
     });
+    // Invalidate cache
+    cacheManager.clear('vendors:all');
+    cacheManager.clear(`vendor:${id}`);
     return await this.getVendorById(id);
   }
 
@@ -159,6 +245,9 @@ class MasterDataService {
       throw new Error(`Tidak dapat menghapus. Vendor ini digunakan oleh ${employees.length} karyawan.`);
     }
     await database.delete('vendors', id);
+    // Invalidate cache
+    cacheManager.clear('vendors:all');
+    cacheManager.clear(`vendor:${id}`);
     return true;
   }
 }
