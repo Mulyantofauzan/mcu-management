@@ -19,6 +19,7 @@ let employees = [];
 let filteredEmployees = [];
 let jobTitles = [];
 let departments = [];
+let doctors = [];
 let currentPage = 1;
 const itemsPerPage = UI.ITEMS_PER_PAGE;
 
@@ -94,6 +95,9 @@ async function loadData() {
 
         departments = await masterDataService.getAllDepartments();
         logger.database('select', 'departments', departments.length);
+
+        doctors = await masterDataService.getAllDoctors();
+        logger.database('select', 'doctors', doctors.length);
 
         employees = await employeeService.getAll();
         logger.database('select', 'employees', employees.length);
@@ -472,6 +476,28 @@ window.handleEditEmployee = async function(event) {
     }
 };
 
+// Populate doctor dropdown in both add and edit forms
+function populateDoctorDropdown(selectId) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+
+    // Keep the placeholder option
+    const placeholder = select.querySelector('option[value=""]');
+
+    // Clear existing options except placeholder
+    while (select.options.length > 1) {
+        select.remove(1);
+    }
+
+    // Add doctor options
+    doctors.forEach(doctor => {
+        const option = document.createElement('option');
+        option.value = doctor.id;
+        option.textContent = doctor.name;
+        select.appendChild(option);
+    });
+}
+
 window.addMCUForEmployee = async function(employeeId) {
     try {
         // Find employee data
@@ -499,6 +525,9 @@ window.addMCUForEmployee = async function(employeeId) {
         // Set default date to today
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('mcu-date').value = today;
+
+        // Populate doctor dropdown
+        populateDoctorDropdown('mcu-doctor');
 
         openModal('add-mcu-modal');
     } catch (error) {
@@ -538,6 +567,7 @@ window.handleAddMCU = async function(event) {
             sgpt: document.getElementById('mcu-sgpt').value || null,
             cbc: document.getElementById('mcu-cbc').value || null,
             napza: document.getElementById('mcu-napza').value || null,
+            doctor: document.getElementById('mcu-doctor').value || null,
             recipient: document.getElementById('mcu-recipient').value || null,
             keluhanUtama: document.getElementById('mcu-keluhan').value || null,
             diagnosisKerja: document.getElementById('mcu-diagnosis').value || null,
@@ -628,6 +658,10 @@ window.viewMCUDetail = async function(mcuId) {
         document.getElementById('mcu-detail-rr').textContent = mcu.respiratoryRate || '-';
         document.getElementById('mcu-detail-pulse').textContent = mcu.pulse || '-';
         document.getElementById('mcu-detail-temp').textContent = mcu.temperature || '-';
+
+        // Fill doctor data
+        const doctor = doctors.find(d => d.id === mcu.doctor);
+        document.getElementById('mcu-detail-doctor').textContent = doctor?.name || '-';
 
         // Fill referral data
         document.getElementById('mcu-detail-recipient').textContent = mcu.recipient || '-';
@@ -751,6 +785,11 @@ window.editMCU = async function() {
 
         // Fill referral data
         document.getElementById('edit-mcu-recipient').value = mcu.recipient || '';
+
+        // Populate and set doctor dropdown
+        populateDoctorDropdown('edit-mcu-doctor');
+        document.getElementById('edit-mcu-doctor').value = mcu.doctor || '';
+
         document.getElementById('edit-mcu-keluhan').value = mcu.keluhanUtama || '';
         document.getElementById('edit-mcu-diagnosis').value = mcu.diagnosisKerja || '';
         document.getElementById('edit-mcu-alasan').value = mcu.alasanRujuk || '';
@@ -806,6 +845,7 @@ window.handleEditMCU = async function(event) {
             treadmill: document.getElementById('edit-mcu-treadmill').value || null,
             kidneyLiverFunction: document.getElementById('edit-mcu-kidney').value || null,
             napza: document.getElementById('edit-mcu-napza').value || null,
+            doctor: document.getElementById('edit-mcu-doctor').value || null,
             recipient: document.getElementById('edit-mcu-recipient').value || null,
             keluhanUtama: document.getElementById('edit-mcu-keluhan').value || null,
             diagnosisKerja: document.getElementById('edit-mcu-diagnosis').value || null,

@@ -1,5 +1,5 @@
 /**
- * Data Master Page - CRUD for Job Titles, Departments, Vendors
+ * Data Master Page - CRUD for Job Titles, Departments, Vendors, Doctors
  */
 
 import { authService } from '../services/authService.js';
@@ -13,7 +13,8 @@ let editingId = null;
 const tabConfig = {
     jobTitles: { title: 'Jabatan', getAll: () => masterDataService.getAllJobTitles(), create: (d) => masterDataService.createJobTitle(d), update: (id, d) => masterDataService.updateJobTitle(id, d), delete: (id) => masterDataService.deleteJobTitle(id) },
     departments: { title: 'Departemen', getAll: () => masterDataService.getAllDepartments(), create: (d) => masterDataService.createDepartment(d), update: (id, d) => masterDataService.updateDepartment(id, d), delete: (id) => masterDataService.deleteDepartment(id) },
-    vendors: { title: 'Vendor', getAll: () => masterDataService.getAllVendors(), create: (d) => masterDataService.createVendor(d), update: (id, d) => masterDataService.updateVendor(id, d), delete: (id) => masterDataService.deleteVendor(id) }
+    vendors: { title: 'Vendor', getAll: () => masterDataService.getAllVendors(), create: (d) => masterDataService.createVendor(d), update: (id, d) => masterDataService.updateVendor(id, d), delete: (id) => masterDataService.deleteVendor(id) },
+    doctors: { title: 'Dokter', getAll: () => masterDataService.getAllDoctors(), create: (d) => masterDataService.createDoctor(d), update: (id, d) => masterDataService.updateDoctor(id, d), delete: (id) => masterDataService.deleteDoctor(id) }
 };
 
 async function init() {
