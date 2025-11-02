@@ -311,7 +311,7 @@ class MasterDataService {
 
   async deleteDoctor(id) {
     // Check if in use
-    const mcuRecords = await database.query('mcu', mcu => mcu.doctor === id && !mcu.deletedAt);
+    const mcuRecords = await database.query('mcus', mcu => mcu.doctor === id && !mcu.deletedAt);
     if (mcuRecords.length > 0) {
       throw new Error(`Tidak dapat menghapus. Dokter ini digunakan di ${mcuRecords.length} catatan MCU.`);
     }
