@@ -16,6 +16,7 @@ let filteredList = [];
 let employees = [];
 let departments = [];
 let jobTitles = [];
+let doctors = [];
 let currentMCU = null;
 
 // Download Surat Rujukan PDF from table action button
@@ -32,6 +33,16 @@ window.downloadRujukanPDFAction = function(mcuId) {
       return;
     }
 
+    // Get doctor name from MCU data
+    let doctorName = 'Dr. -';
+    if (mcu.doctor) {
+      // Find doctor by ID - handle numeric and string comparison
+      const doctor = doctors.find(d => String(d.id) === String(mcu.doctor) || d.id === mcu.doctor);
+      if (doctor) {
+        doctorName = doctor.name;
+      }
+    }
+
     // Prepare data untuk PDF
     const employeeData = {
       name: employee.name,
@@ -40,7 +51,8 @@ window.downloadRujukanPDFAction = function(mcuId) {
       jobTitle: employee.jobTitle,
       department: employee.department,
       employmentStatus: employee.employmentStatus,
-      vendorName: employee.vendorName
+      vendorName: employee.vendorName,
+      doctorName: doctorName  // Pass actual doctor name from MCU data
     };
 
     try {
@@ -141,6 +153,7 @@ async function loadMasterData() {
     employees = await employeeService.getAll();
     departments = await masterDataService.getAllDepartments();
     jobTitles = await masterDataService.getAllJobTitles();
+    doctors = await masterDataService.getAllDoctors();
 
     // Enrich employees with IDs (for Supabase which only stores names)
     employees = employees.map(emp => enrichEmployeeWithIds(emp));

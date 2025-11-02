@@ -16,7 +16,9 @@ export function generateRujukanPDF(employee, mcu) {
     throw new Error('Data karyawan atau MCU tidak lengkap');
   }
 
-  const content = generateRujukanHTML(employee, mcu);
+  // Use doctor name from employee data if provided, otherwise use fallback
+  const doctorName = employee.doctorName || 'Dr. -';
+  const content = generateRujukanHTML(employee, mcu, doctorName);
   openPrintDialog(content);
 }
 
@@ -93,7 +95,7 @@ function getCompanyName(employee) {
  * Generate HTML untuk Surat Rujukan dan Surat Rujukan Balik
  * Sesuai template yang diberikan user
  */
-function generateRujukanHTML(employee, mcu) {
+function generateRujukanHTML(employee, mcu, doctorName) {
   const config = rujukanConfig;
   const currentDate = new Date();
   const day = String(currentDate.getDate()).padStart(2, '0');
@@ -212,7 +214,7 @@ function generateRujukanHTML(employee, mcu) {
             <p style="margin: 4px 0;">${config.clinic.city}, <span style="border-bottom: 1px dotted #666; display: inline-block; width: 150px;">${day} ${getMonthName(parseInt(month))}</span> 20${year}</p>
             <p style="margin: 4px 0;">Dokter FAR PT. PST</p>
             <div style="height: 28px;"></div>
-            <p style="margin: 4px 0; font-weight: 600;">${config.clinic.doctorName}</p>
+            <p style="margin: 4px 0; font-weight: 600;">${doctorName || config.clinic.doctorName}</p>
           </div>
         </div>
 

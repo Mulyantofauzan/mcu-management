@@ -659,8 +659,11 @@ window.viewMCUDetail = async function(mcuId) {
         document.getElementById('mcu-detail-pulse').textContent = mcu.pulse || '-';
         document.getElementById('mcu-detail-temp').textContent = mcu.temperature || '-';
 
-        // Fill doctor data
-        const doctor = doctors.find(d => d.id === mcu.doctor);
+        // Fill doctor data - compare as numbers to handle Supabase numeric IDs
+        const doctor = doctors.find(d => {
+            // Handle numeric and string ID comparison for Supabase/IndexedDB compatibility
+            return String(d.id) === String(mcu.doctor) || d.id === mcu.doctor || d.doctorId === mcu.doctor;
+        });
         document.getElementById('mcu-detail-doctor').textContent = doctor?.name || '-';
 
         // Fill referral data
