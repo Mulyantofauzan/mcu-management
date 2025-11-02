@@ -133,7 +133,7 @@ window.switchTab = async function(tab) {
     currentTab = tab;
 
     // Update tab styling
-    ['jobTitles', 'departments', 'vendors'].forEach(t => {
+    ['jobTitles', 'departments', 'vendors', 'doctors'].forEach(t => {
         const tabEl = document.getElementById('tab-' + t);
         if (t === tab) {
             tabEl.className = 'px-4 py-2 font-medium text-primary-600 border-b-2 border-primary-600';
