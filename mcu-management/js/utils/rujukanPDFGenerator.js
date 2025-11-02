@@ -35,19 +35,46 @@ export function generateRujukanBalikPDF(employee) {
 
 /**
  * Open browser print dialog
+ * Compatible with Safari and other browsers
  */
 function openPrintDialog(content) {
-  const printWindow = window.open('', '_blank');
-  printWindow.document.write(content);
-  printWindow.document.close();
+  try {
+    const printWindow = window.open('', '_blank');
 
-  printWindow.onload = function() {
-    printWindow.focus();
-    printWindow.print();
-    setTimeout(() => {
-      printWindow.close();
-    }, 500);
-  };
+    // Check if window.open was blocked or failed (Safari may block or delay)
+    if (!printWindow) {
+      throw new Error('Tidak dapat membuka jendela print. Pastikan pop-up tidak diblokir browser.');
+    }
+
+    // Ensure document is accessible before writing
+    if (printWindow.document && typeof printWindow.document.write === 'function') {
+      printWindow.document.write(content);
+      printWindow.document.close();
+
+      // For Safari compatibility, use setTimeout to ensure content is rendered
+      setTimeout(() => {
+        try {
+          printWindow.focus();
+          printWindow.print();
+        } catch (e) {
+          console.error('Error during print:', e);
+        }
+      }, 100);
+
+      // Close after print (user may cancel, so delay)
+      setTimeout(() => {
+        try {
+          printWindow.close();
+        } catch (e) {
+          // Window may have been closed by user
+        }
+      }, 2000);
+    } else {
+      throw new Error('Tidak dapat akses document di print window');
+    }
+  } catch (error) {
+    throw new Error('Gagal membuka jendela print: ' + error.message);
+  }
 }
 
 /**

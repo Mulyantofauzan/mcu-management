@@ -759,56 +759,94 @@ window.editMCU = async function() {
         // Close detail modal first
         closeMCUDetailModal();
 
-        // Fill edit MCU form
-        document.getElementById('edit-mcu-id').value = mcu.mcuId;
-        document.getElementById('edit-mcu-type').value = mcu.mcuType;
-        document.getElementById('edit-mcu-date').value = mcu.mcuDate;
-
-        // Fill examination fields
-        document.getElementById('edit-mcu-bmi').value = mcu.bmi || '';
-        document.getElementById('edit-mcu-bp').value = mcu.bloodPressure || '';
-        document.getElementById('edit-mcu-rr').value = mcu.respiratoryRate || '';
-        document.getElementById('edit-mcu-pulse').value = mcu.pulse || '';
-        document.getElementById('edit-mcu-temp').value = mcu.temperature || '';
-        document.getElementById('edit-mcu-vision').value = mcu.vision || '';
-        document.getElementById('edit-mcu-audio').value = mcu.audiometry || '';
-        document.getElementById('edit-mcu-spiro').value = mcu.spirometry || '';
-        document.getElementById('edit-mcu-hbsag').value = mcu.hbsag || '';
-        document.getElementById('edit-mcu-sgot').value = mcu.sgot || '';
-        document.getElementById('edit-mcu-sgpt').value = mcu.sgpt || '';
-        document.getElementById('edit-mcu-cbc').value = mcu.cbc || '';
-        document.getElementById('edit-mcu-xray').value = mcu.xray || '';
-        document.getElementById('edit-mcu-ekg').value = mcu.ekg || '';
-        document.getElementById('edit-mcu-treadmill').value = mcu.treadmill || '';
-        document.getElementById('edit-mcu-kidney').value = mcu.kidneyLiverFunction || '';
-        document.getElementById('edit-mcu-napza').value = mcu.napza || '';
-
-        // Fill referral data
-        document.getElementById('edit-mcu-recipient').value = mcu.recipient || '';
-
-        // Populate and set doctor dropdown
-        populateDoctorDropdown('edit-mcu-doctor');
-        document.getElementById('edit-mcu-doctor').value = mcu.doctor || '';
-
-        document.getElementById('edit-mcu-keluhan').value = mcu.keluhanUtama || '';
-        document.getElementById('edit-mcu-diagnosis').value = mcu.diagnosisKerja || '';
-        document.getElementById('edit-mcu-alasan').value = mcu.alasanRujuk || '';
-
-        // Fill results
-        document.getElementById('edit-mcu-initial-result').value = mcu.initialResult;
-        document.getElementById('edit-mcu-initial-notes').value = mcu.initialNotes;
-
-        if (mcu.finalResult) {
-            document.getElementById('edit-mcu-final-result').value = mcu.finalResult;
-            document.getElementById('edit-mcu-final-notes').value = mcu.finalNotes || '';
-            document.getElementById('edit-final-result-section').classList.remove('hidden');
-        } else {
-            document.getElementById('edit-final-result-section').classList.add('hidden');
-        }
-
+        // Open the modal FIRST so DOM elements are visible
         openModal('edit-mcu-modal');
-    } catch (error) {
 
+        // Use setTimeout to ensure DOM is ready before setting values
+        setTimeout(() => {
+            try {
+                // Reset form first
+                const form = document.getElementById('edit-mcu-form');
+                if (form) form.reset();
+
+                // Fill edit MCU form with current values
+                document.getElementById('edit-mcu-id').value = mcu.mcuId || '';
+                document.getElementById('edit-mcu-type').value = mcu.mcuType || '';
+                document.getElementById('edit-mcu-date').value = mcu.mcuDate || '';
+
+                // Fill examination fields - use explicit value assignment
+                const bioFields = {
+                    'edit-mcu-bmi': mcu.bmi,
+                    'edit-mcu-bp': mcu.bloodPressure,
+                    'edit-mcu-rr': mcu.respiratoryRate,
+                    'edit-mcu-pulse': mcu.pulse,
+                    'edit-mcu-temp': mcu.temperature,
+                    'edit-mcu-vision': mcu.vision,
+                    'edit-mcu-audio': mcu.audiometry,
+                    'edit-mcu-spiro': mcu.spirometry,
+                    'edit-mcu-sgot': mcu.sgot,
+                    'edit-mcu-sgpt': mcu.sgpt,
+                    'edit-mcu-cbc': mcu.cbc,
+                    'edit-mcu-xray': mcu.xray,
+                    'edit-mcu-ekg': mcu.ekg,
+                    'edit-mcu-treadmill': mcu.treadmill,
+                    'edit-mcu-kidney': mcu.kidneyLiverFunction,
+                    'edit-mcu-napza': mcu.napza,
+                    'edit-mcu-recipient': mcu.recipient,
+                    'edit-mcu-keluhan': mcu.keluhanUtama,
+                    'edit-mcu-diagnosis': mcu.diagnosisKerja,
+                    'edit-mcu-alasan': mcu.alasanRujuk
+                };
+
+                // Set all bio fields
+                Object.entries(bioFields).forEach(([id, value]) => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.value = value || '';
+                        // Trigger change event for any dependent fields
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                });
+
+                // Set HBSAG dropdown value
+                const hbsagEl = document.getElementById('edit-mcu-hbsag');
+                if (hbsagEl) {
+                    hbsagEl.value = mcu.hbsag || '';
+                }
+
+                // Populate doctor dropdown and set value
+                populateDoctorDropdown('edit-mcu-doctor');
+                // Set doctor after dropdown is populated
+                setTimeout(() => {
+                    const doctorEl = document.getElementById('edit-mcu-doctor');
+                    if (doctorEl && mcu.doctor) {
+                        doctorEl.value = mcu.doctor;
+                    }
+                }, 50);
+
+                // Fill results
+                const initialResultEl = document.getElementById('edit-mcu-initial-result');
+                const initialNotesEl = document.getElementById('edit-mcu-initial-notes');
+                if (initialResultEl) initialResultEl.value = mcu.initialResult || '';
+                if (initialNotesEl) initialNotesEl.value = mcu.initialNotes || '';
+
+                // Show/hide final result section
+                if (mcu.finalResult) {
+                    const finalResultEl = document.getElementById('edit-mcu-final-result');
+                    const finalNotesEl = document.getElementById('edit-mcu-final-notes');
+                    if (finalResultEl) finalResultEl.value = mcu.finalResult;
+                    if (finalNotesEl) finalNotesEl.value = mcu.finalNotes || '';
+                    document.getElementById('edit-final-result-section').classList.remove('hidden');
+                } else {
+                    document.getElementById('edit-final-result-section').classList.add('hidden');
+                }
+            } catch (error) {
+                console.error('Error filling form fields:', error);
+            }
+        }, 50);
+
+    } catch (error) {
+        console.error('Edit MCU error:', error);
         showToast('Gagal membuka form edit: ' + error.message, 'error');
     }
 };
