@@ -116,6 +116,7 @@ export function transformMasterDataItem(item, type) {
     if (type === 'jobTitle') transformed.jobTitleId = item.id;
     if (type === 'department') transformed.departmentId = item.id;
     if (type === 'vendor') transformed.vendorId = item.id;
+    if (type === 'doctor') transformed.doctorId = item.id;
 
     return transformed;
 }

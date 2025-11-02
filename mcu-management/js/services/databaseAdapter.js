@@ -860,9 +860,12 @@ export const MasterData = {
         const name = isObject ? dataOrName.name : dataOrName;
         const fullData = isObject ? dataOrName : { name };
 
+        console.log('🔍 addDoctor() - Input:', dataOrName, '| Using Supabase:', getUseSupabase());
+
         if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             // Let Supabase auto-generate the ID (SERIAL)
+            console.log('📤 Sending to Supabase:', { name });
             const { data, error } = await supabase
                 .from('doctors')
                 .insert({ name })
@@ -870,9 +873,10 @@ export const MasterData = {
                 .single();
 
             if (error) throw error;
-            return transformMasterDataItem(data);
+            return transformMasterDataItem(data, 'doctor');
         }
         // For IndexedDB, use the full object if provided (includes ID and timestamps)
+        console.log('📥 Sending to IndexedDB:', fullData);
         return await indexedDB.db.doctors.add(fullData);
     },
 
