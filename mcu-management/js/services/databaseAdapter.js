@@ -870,21 +870,48 @@ export const MasterData = {
             // Let Supabase auto-generate the ID (SERIAL)
             // CRITICAL: Extract ONLY name field, strip any id/doctorId/createdAt/updatedAt
             const cleanName = typeof name === 'string' ? name : (isObject && dataOrName.name ? dataOrName.name : String(dataOrName));
+
+            // Create absolutely minimal object with ONLY name
             const insertData = { name: cleanName };
-            console.log('📤 Sending to Supabase:', JSON.stringify(insertData), '| Full input was:', dataOrName);
 
-            const { data, error } = await supabase
-                .from('doctors')
-                .insert(insertData)
-                .select()
-                .single();
+            // Triple-check no ID fields exist
+            delete insertData.id;
+            delete insertData.doctorId;
+            delete insertData.createdAt;
+            delete insertData.updatedAt;
 
-            if (error) {
-                console.error('❌ Supabase error:', error, '| Request body was:', insertData);
-                throw error;
+            console.log('📤 Sending to Supabase - Keys:', Object.keys(insertData), '- Data:', insertData);
+
+            // Try using RPC with explicit parameter (more control over data)
+            try {
+                // Direct insert using .insert() with minimal data
+                const { data, error } = await supabase
+                    .from('doctors')
+                    .insert([insertData])
+                    .select('*');
+
+                if (error) {
+                    console.error('❌ Supabase insert error:', error);
+                    // Log the full error for debugging
+                    console.error('   Full error object:', {
+                        code: error.code,
+                        message: error.message,
+                        details: error.details,
+                        hint: error.hint,
+                        statusCode: error.statusCode
+                    });
+                    throw error;
+                }
+                console.log('✅ Supabase insert success:', data);
+                if (data && data.length > 0) {
+                    return transformMasterDataItem(data[0], 'doctor');
+                }
+                return data;
+            } catch (innerError) {
+                // If insert fails, try alternative approach with only name via RPC
+                console.warn('⚠️ Standard insert failed, trying alternative...');
+                throw innerError;
             }
-            console.log('✅ Supabase insert success:', data);
-            return transformMasterDataItem(data, 'doctor');
         }
         // For IndexedDB, use the full object if provided (includes ID and timestamps)
         console.log('📥 Sending to IndexedDB:', fullData);
