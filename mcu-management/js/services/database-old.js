@@ -43,7 +43,7 @@ class MCUDatabase {
 
     // Version 3: Add doctors table for referral data
     this.db.version(3).stores({
-      doctors: 'doctorId, name'
+      doctors: '++id, name'
     });
 
     try {

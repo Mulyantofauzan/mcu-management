@@ -254,8 +254,9 @@ class MasterDataService {
 
   // Doctors
   async createDoctor(data) {
+    // For Supabase: ID is auto-generated (SERIAL)
+    // For IndexedDB: Dexie will auto-generate if not provided
     const doctor = {
-      doctorId: generateDoctorId(),
       name: data.name,
       createdAt: getCurrentTimestamp(),
       updatedAt: getCurrentTimestamp()
