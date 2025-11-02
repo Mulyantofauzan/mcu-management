@@ -868,10 +868,14 @@ export const MasterData = {
         if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             // Let Supabase auto-generate the ID (SERIAL)
-            console.log('📤 Sending to Supabase:', { name });
+            // CRITICAL: Extract ONLY name field, strip any id/doctorId/createdAt/updatedAt
+            const cleanName = typeof name === 'string' ? name : (isObject && dataOrName.name ? dataOrName.name : String(dataOrName));
+            const insertData = { name: cleanName };
+            console.log('📤 Sending to Supabase:', insertData, '| Full input was:', dataOrName);
+
             const { data, error } = await supabase
                 .from('doctors')
-                .insert({ name })
+                .insert(insertData)
                 .select()
                 .single();
 
