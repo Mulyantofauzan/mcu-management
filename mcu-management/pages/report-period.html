@@ -256,7 +256,7 @@
             try {
                 const startDateStr = document.getElementById('filter-start-date').value;
                 const endDateStr = document.getElementById('filter-end-date').value;
-                const departmentId = document.getElementById('filter-department').value;
+                const departmentFilterValue = document.getElementById('filter-department').value;
                 const status = document.getElementById('filter-status').value;
 
                 if (!startDateStr || !endDateStr) {
@@ -296,27 +296,48 @@
                     // Skip soft-deleted employees
                     if (employee.deletedAt) continue;
 
-                    // Apply filters
-                    if (departmentId && employee.departmentId !== parseInt(departmentId)) continue;
+                    // Apply department filter - normalize both to numbers for comparison
+                    if (departmentFilterValue) {
+                        const filterDeptId = parseInt(departmentFilterValue);
+                        const empDeptId = parseInt(employee.departmentId);
+                        if (empDeptId !== filterDeptId) continue;
+                    }
+
                     // Filter by status/result if provided (use initialResult field)
                     if (status && mcu.initialResult !== status) continue;
 
                     uniqueEmployees.add(employee.employeeId);
 
-                    // Get department from cache or fetch (ensure ID is string for consistency)
-                    const deptId = String(employee.departmentId);
-                    let dept = deptCache.get(deptId);
-                    if (!dept) {
-                        dept = await masterDataService.getDepartmentById(deptId);
-                        if (dept) deptCache.set(deptId, dept);
+                    // Get department from cache or fetch by numeric ID
+                    const deptId = employee.departmentId || employee.departmentId;
+                    let dept = null;
+
+                    if (deptCache.has(deptId)) {
+                        dept = deptCache.get(deptId);
+                    } else {
+                        try {
+                            // getDepartmentById should handle numeric IDs from Supabase
+                            dept = await masterDataService.getDepartmentById(deptId);
+                            if (dept) deptCache.set(deptId, dept);
+                        } catch (e) {
+                            console.warn('Failed to fetch department:', deptId, e);
+                        }
                     }
 
-                    // Get job title from cache or fetch (ensure ID is string for consistency)
-                    const jobId = String(employee.jobTitleId);
-                    let jobTitle = jobTitleCache.get(jobId);
-                    if (!jobTitle) {
-                        jobTitle = await masterDataService.getJobTitleById(jobId);
-                        if (jobTitle) jobTitleCache.set(jobId, jobTitle);
+                    // Get job title from cache or fetch by numeric ID
+                    const jobId = employee.jobTitleId || employee.jobTitleId;
+                    let jobTitle = null;
+
+                    if (jobTitleCache.has(jobId)) {
+                        jobTitle = jobTitleCache.get(jobId);
+                    } else {
+                        try {
+                            // getJobTitleById should handle numeric IDs from Supabase
+                            jobTitle = await masterDataService.getJobTitleById(jobId);
+                            if (jobTitle) jobTitleCache.set(jobId, jobTitle);
+                        } catch (e) {
+                            console.warn('Failed to fetch job title:', jobId, e);
+                        }
                     }
 
                     report.push({
@@ -326,8 +347,8 @@
                         jobTitle: (jobTitle && jobTitle.name) ? jobTitle.name : 'N/A',
                         mcuDate: new Date(mcu.mcuDate).toLocaleDateString('id-ID'),
                         mcuType: mcu.mcuType || 'N/A',
-                        status: mcu.initialResult,
-                        initialResult: mcu.initialResult,
+                        status: mcu.initialResult || '-',
+                        initialResult: mcu.initialResult || '-',
                         finalResult: mcu.finalResult || '-',
                         notes: mcu.initialNotes || mcu.finalNotes || '-'
                     });
@@ -341,7 +362,7 @@
                 // Calculate and display statistics
                 displayStatistics(report, uniqueEmployees.size);
 
-                showToast('Laporan berhasil dibuat', 'success');
+                showToast('Laporan berhasil dibuat (' + report.length + ' data)', 'success');
                 document.getElementById('export-btn').disabled = false;
             } catch (error) {
                 console.error('Error generating report:', error);
