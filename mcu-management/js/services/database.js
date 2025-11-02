@@ -182,7 +182,7 @@ class DatabaseService {
         }
 
         try {
-            return await adp.ActivityLog.add({
+            const result = await adp.ActivityLog.add({
                 action,
                 entityType,
                 entityId,
@@ -190,13 +190,16 @@ class DatabaseService {
                 userName,
                 timestamp: new Date().toISOString()
             });
+            console.log('✅ Activity log saved:', { action, entityType, entityId, result });
+            return result;
         } catch (err) {
             // Activity log is non-critical - don't block main operations
-            console.warn('⚠️ Activity log save failed (non-critical):', {
+            console.error('❌ Activity log save FAILED (non-critical):', {
                 action,
                 entityType,
                 entityId,
-                error: err.message
+                error: err.message,
+                stack: err.stack
             });
             return null;
         }

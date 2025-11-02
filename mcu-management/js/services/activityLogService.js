@@ -31,6 +31,10 @@ export class ActivityLogService {
                 // Get all records (with high limit to get everything)
                 const result = await this.database.getActivityLog(10000);
                 this.allActivities = result || [];
+                console.log('📊 Activity Log loaded:', {
+                    count: this.allActivities.length,
+                    records: this.allActivities.slice(0, 3)
+                });
             }
 
             // Filter activities

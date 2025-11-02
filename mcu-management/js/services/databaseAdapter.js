@@ -949,6 +949,7 @@ export const ActivityLog = {
         if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             try {
+                console.log('🔍 Fetching activity logs from Supabase...');
                 const { data, error } = await supabase
                     .from('activity_log')
                     .select('*')
@@ -959,24 +960,35 @@ export const ActivityLog = {
                     console.error('❌ Supabase activity_log SELECT error:', {
                         message: error.message,
                         code: error.code,
-                        details: error.details
+                        details: error.details,
+                        hint: error.hint
                     });
                     return [];
                 }
 
-                return data ? data.map(transformActivityLog) : [];
+                const transformed = data ? data.map(transformActivityLog) : [];
+                console.log('✅ Activity logs fetched:', {
+                    count: transformed.length,
+                    records: transformed.slice(0, 2)
+                });
+                return transformed;
             } catch (err) {
-                console.error('❌ ActivityLog.getAll() failed:', err);
+                console.error('❌ ActivityLog.getAll() failed:', {
+                    message: err.message,
+                    stack: err.stack
+                });
                 return [];
             }
         }
 
         // IndexedDB primary source (only when Supabase is disabled)
         try {
+            console.log('🔍 Fetching activity logs from IndexedDB...');
             const result = await indexedDB.db.activityLog.orderBy('timestamp').reverse().limit(limit).toArray();
+            console.log('✅ IndexedDB activity logs:', result?.length || 0);
             return result || [];
         } catch (err) {
-
+            console.error('❌ IndexedDB activity log fetch failed:', err);
             return [];
         }
     },
@@ -988,6 +1000,12 @@ export const ActivityLog = {
             try {
                 // Calculate integrity hash for immutability verification
                 const hashValue = activity.hashValue || await calculateAuditHash(activity);
+
+                console.log('📝 Inserting activity log to Supabase:', {
+                    action: activity.action,
+                    entityType: activity.entityType,
+                    entityId: activity.entityId
+                });
 
                 const { data, error } = await supabase
                     .from('activity_log')
@@ -1017,7 +1035,9 @@ export const ActivityLog = {
                     .single();
 
                 if (!error && data) {
-                    return transformActivityLog(data);
+                    const result = transformActivityLog(data);
+                    console.log('✅ Activity log inserted successfully:', { id: data.id });
+                    return result;
                 } else if (error) {
                     console.error('❌ Supabase activity_log INSERT error:', {
                         message: error.message,
@@ -1028,17 +1048,26 @@ export const ActivityLog = {
                     throw error;
                 }
             } catch (err) {
-                console.error('❌ ActivityLog.add() failed:', err);
+                console.error('❌ ActivityLog.add() failed:', {
+                    message: err.message,
+                    stack: err.stack,
+                    activity: activity
+                });
                 throw err;
             }
         }
 
         // IndexedDB primary storage (only when Supabase is disabled)
         try {
+            console.log('📝 Inserting activity log to IndexedDB:', activity);
             const id = await indexedDB.db.activityLog.add(activity);
+            console.log('✅ Activity log inserted to IndexedDB:', id);
             return { ...activity, id };
         } catch (err) {
-
+            console.error('❌ IndexedDB activity log insert failed:', {
+                message: err.message,
+                stack: err.stack
+            });
             return activity;
         }
     }

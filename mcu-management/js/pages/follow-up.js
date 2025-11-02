@@ -34,13 +34,29 @@ window.downloadRujukanPDFAction = function(mcuId) {
     }
 
     // Get doctor name from MCU data
+    console.log('🔍 Follow-up Doctor lookup debug:', {
+      mcuDoctorValue: mcu.doctor,
+      mcuDoctorType: typeof mcu.doctor,
+      doctorsCount: doctors.length,
+      doctorsList: doctors.map(d => ({ id: d.id, idType: typeof d.id, name: d.name }))
+    });
+
     let doctorName = 'Dr. -';
     if (mcu.doctor) {
       // Find doctor by ID - handle numeric and string comparison
-      const doctor = doctors.find(d => String(d.id) === String(mcu.doctor) || d.id === mcu.doctor);
+      const doctor = doctors.find(d => {
+        const match = String(d.id) === String(mcu.doctor) || d.id === mcu.doctor;
+        if (match) console.log('✅ Follow-up: Doctor match found:', { dId: d.id, mcuDoctor: mcu.doctor, name: d.name });
+        return match;
+      });
       if (doctor) {
         doctorName = doctor.name;
+        console.log('📋 Follow-up: Doctor found:', doctorName);
+      } else {
+        console.log('❌ Follow-up: Doctor NOT found for ID:', mcu.doctor);
       }
+    } else {
+      console.log('⚠️ Follow-up: No doctor ID in MCU:', mcu);
     }
 
     // Prepare data untuk PDF
@@ -155,10 +171,21 @@ async function loadMasterData() {
     jobTitles = await masterDataService.getAllJobTitles();
     doctors = await masterDataService.getAllDoctors();
 
+    console.log('✅ Master data loaded:', {
+      employeeCount: employees?.length || 0,
+      departmentCount: departments?.length || 0,
+      jobTitleCount: jobTitles?.length || 0,
+      doctorCount: doctors?.length || 0,
+      doctorsList: doctors?.map(d => ({ id: d.id, name: d.name })) || []
+    });
+
     // Enrich employees with IDs (for Supabase which only stores names)
     employees = employees.map(emp => enrichEmployeeWithIds(emp));
   } catch (error) {
-
+    console.error('❌ loadMasterData failed:', {
+      message: error.message,
+      stack: error.stack
+    });
   }
 }
 
