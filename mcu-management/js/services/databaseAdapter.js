@@ -900,8 +900,9 @@ export const MasterData = {
             return transformMasterDataItem(data, 'doctor');
         }
         // Dexie: use where().modify() for non-primary key fields
-        await indexedDB.db.doctors.where('doctorId').equals(id).modify({ name });
-        return await indexedDB.db.doctors.where('doctorId').equals(id).first();
+        // NOTE: IndexedDB doctors table uses 'id' as primary key (not 'doctorId')
+        await indexedDB.db.doctors.update(id, { name });
+        return await indexedDB.db.doctors.get(id);
     },
 
     async deleteDoctor(id) {

@@ -66,16 +66,38 @@ class MCUDatabase {
 
     try {
       await this.db.open();
-      console.log('IndexedDB initialized successfully (version ' + this.db.verno + ')');
+      console.log('✅ IndexedDB initialized successfully (version ' + this.db.verno + ')');
     } catch (error) {
-      // If version conflict, delete and recreate
-      if (error.name === 'VersionError') {
+      // If version conflict or upgrade error, delete and recreate
+      if (error.name === 'VersionError' || error.name === 'UpgradeError') {
+        console.warn('⚠️ IndexedDB upgrade error detected:', error.message);
+        console.log('🔄 Deleting and recreating database...');
+        try {
+          await this.db.delete();
+          this.db = new Dexie('MCU_Database');
 
-        await this.db.delete();
-        // Recreate with correct version
-        await this.db.open();
+          // Redefine with consolidated schema
+          this.db.version(6).stores({
+            employees: 'employeeId, name, departmentId, jobTitleId, activeStatus, deletedAt',
+            mcus: 'mcuId, employeeId, mcuDate, mcuType, status, deletedAt, lastUpdatedTimestamp',
+            mcuChanges: 'changeId, mcuId, changedAt, changedBy',
+            jobTitles: 'jobTitleId, name',
+            departments: 'departmentId, name',
+            statusMCU: 'statusId, name',
+            vendors: 'vendorId, name',
+            users: 'userId, username, role, active',
+            doctors: 'id, name',
+            activityLog: '++id, timestamp, action, entityType, entityId'
+          });
 
+          await this.db.open();
+          console.log('✅ IndexedDB recreated successfully (version ' + this.db.verno + ')');
+        } catch (recreateError) {
+          console.error('❌ Failed to recreate database:', recreateError);
+          throw recreateError;
+        }
       } else {
+        console.error('❌ IndexedDB initialization error:', error);
         throw error;
       }
     }
