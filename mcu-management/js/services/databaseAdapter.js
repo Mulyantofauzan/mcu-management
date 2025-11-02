@@ -921,28 +921,6 @@ export const MasterData = {
 };
 
 /**
- * Helper function to calculate SHA256-like hash for audit integrity
- * (Note: For production, use actual crypto library)
- */
-async function calculateAuditHash(activity) {
-    try {
-        const dataToHash = JSON.stringify({
-            userId: activity.userId,
-            action: activity.action,
-            target: activity.target || activity.entityType,
-            timestamp: activity.timestamp,
-            oldValue: activity.oldValue,
-            newValue: activity.newValue
-        });
-
-        // Simple base64 encoding for now (in production use crypto.subtle.digest)
-        return btoa(dataToHash).substring(0, 64);
-    } catch (err) {
-        return null;
-    }
-}
-
-/**
  * ACTIVITY LOG
  */
 export const ActivityLog = {
@@ -999,40 +977,24 @@ export const ActivityLog = {
         if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             try {
-                // Calculate integrity hash for immutability verification
-                const hashValue = activity.hashValue || await calculateAuditHash(activity);
-
                 console.log('📝 Inserting activity log to Supabase:', {
                     action: activity.action,
                     entityType: activity.entityType,
                     entityId: activity.entityId
                 });
 
-                // Build insert object with ONLY core required fields that definitely exist
-                // This ensures compatibility with basic activity_log schema
-                const insertData = {
-                    user_id: activity.userId,
-                    user_name: activity.userName || null,
-                    action: activity.action,
-                    target: activity.entityType || activity.target,
-                    details: activity.entityId || activity.details,
-                    timestamp: activity.timestamp
-                };
-
-                // OPTIONAL: Only add fields if they exist in the actual schema
-                // These will fail silently if columns don't exist
-                // Conditionally add fields for newer schema versions
-                if (activity.entityId !== undefined) insertData.target_id = activity.entityId;
-                if (activity.ipAddress !== undefined) insertData.ip_address = activity.ipAddress;
-                if (activity.userAgent !== undefined) insertData.user_agent = activity.userAgent;
-                if (activity.oldValue !== undefined) insertData.old_value = activity.oldValue;
-                if (activity.newValue !== undefined) insertData.new_value = activity.newValue;
-                if (activity.changeField !== undefined) insertData.change_field = activity.changeField;
-                // Skip is_immutable, hash_value, archived - not in basic schema
-
+                // Insert basic activity log data
                 const { data, error } = await supabase
                     .from('activity_log')
-                    .insert(insertData)
+                    .insert({
+                        user_id: activity.userId,
+                        user_name: activity.userName || null,
+                        action: activity.action,
+                        target: activity.entityType || activity.target,
+                        target_id: activity.entityId,
+                        details: activity.entityId || activity.details,
+                        timestamp: activity.timestamp
+                    })
                     .select()
                     .single();
 
