@@ -22,16 +22,34 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 let supabase = null;
 let useSupabase = false;
 
-if (SUPABASE_URL && SUPABASE_ANON_KEY && typeof window.supabase !== 'undefined') {
-    try {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        useSupabase = true;
-        console.log();
-    } catch (error) {
-        console.error('❌ Failed to initialize Supabase:', error);
-        console.log('📦 Falling back to IndexedDB');
+// Function to initialize Supabase when CDN script is loaded
+async function initSupabase() {
+    if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+        // Wait for Supabase library to be available (loaded via CDN)
+        let attempts = 0;
+        while (typeof window.supabase === 'undefined' && attempts < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+
+        if (typeof window.supabase !== 'undefined') {
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                useSupabase = true;
+                console.log('✅ Supabase client initialized successfully');
+            } catch (error) {
+                console.error('❌ Failed to initialize Supabase:', error);
+                console.log('📦 Falling back to IndexedDB');
+            }
+        } else {
+            console.warn('⚠️ Supabase library failed to load from CDN');
+            console.log('📦 Falling back to IndexedDB');
+        }
     }
 }
+
+// Initialize Supabase immediately
+initSupabase();
 
 /**
  * Check if Supabase is available and configured
