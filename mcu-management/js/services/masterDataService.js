@@ -254,22 +254,18 @@ class MasterDataService {
 
   // Doctors
   async createDoctor(data) {
-    // For Supabase: ID is auto-generated (SERIAL)
-    // For IndexedDB: Dexie will auto-generate if not provided
-    const doctor = {
-      name: data.name,
-      createdAt: getCurrentTimestamp(),
-      updatedAt: getCurrentTimestamp()
-    };
-    const result = await database.add('doctors', doctor);
+    // CRITICAL: Pass ONLY the name string to prevent any ID field from being generated
+    // This ensures:
+    // - Supabase receives only { name } and auto-generates numeric ID
+    // - IndexedDB receives only name and auto-generates ID separately
+    const result = await database.add('doctors', data.name);
     // Invalidate cache
     cacheManager.clear('doctors:all');
 
-    // Return only name and createdAt to prevent ID field from being sent to Supabase
-    // on subsequent operations
+    // Return fresh object with only name
     return {
-      name: doctor.name,
-      createdAt: doctor.createdAt
+      name: String(data.name).trim(),
+      createdAt: getCurrentTimestamp()
     };
   }
 
