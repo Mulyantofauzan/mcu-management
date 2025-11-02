@@ -11,20 +11,23 @@ import { isSupabaseEnabled, getSupabaseClient } from '../config/supabase.js';
 import { transformUser, transformEmployee, transformMCU, transformMCUChange, transformMasterDataItem, transformActivityLog } from './databaseAdapter-transforms.js';
 import { database as indexedDB } from './database-old.js';  // Direct import of IndexedDB instance (no circular dependency)
 
-// Determine which database to use
-const useSupabase = isSupabaseEnabled();
-
-if (useSupabase) {
-
-} else {
-    console.log('📦 Using IndexedDB (Dexie) as database');
-}
+// Determine which database to use (lazy - check when needed, not on load)
+// This allows Supabase to finish initializing asynchronously
+const getUseSupabase = () => {
+    const enabled = isSupabaseEnabled();
+    if (enabled) {
+        console.log('✅ Using Supabase as database');
+    } else {
+        console.log('📦 Using IndexedDB (Dexie) as fallback database');
+    }
+    return enabled;
+};
 
 /**
  * Get database instance
  */
 export function getDatabase() {
-    if (useSupabase) {
+    if (getUseSupabase()) {
         return getSupabaseClient();
     }
     return indexedDB;
@@ -46,7 +49,7 @@ export function isUsingSupabase() {
  */
 export const Users = {
     async getAll() {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('users')
@@ -60,7 +63,7 @@ export const Users = {
     },
 
     async getByUsername(username) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('users')
@@ -75,7 +78,7 @@ export const Users = {
     },
 
     async getById(userId) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('users')
@@ -90,7 +93,7 @@ export const Users = {
     },
 
     async add(user) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error} = await supabase
                 .from('users')
@@ -112,7 +115,7 @@ export const Users = {
     },
 
     async update(userId, updates) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const updateData = {};
             if (updates.username) updateData.username = updates.username;
@@ -136,7 +139,7 @@ export const Users = {
     },
 
     async delete(userId) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { error } = await supabase
                 .from('users')
@@ -155,7 +158,7 @@ export const Users = {
  */
 export const Employees = {
     async getAll(includeDeleted = false) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             let query = supabase.from('employees').select('*');
 
@@ -176,7 +179,7 @@ export const Employees = {
     },
 
     async getById(employeeId) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('employees')
@@ -191,7 +194,7 @@ export const Employees = {
     },
 
     async add(employee) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
 
             // Resolve job title ID to name
@@ -243,7 +246,7 @@ export const Employees = {
     },
 
     async update(employeeId, updates) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const updateData = {};
 
@@ -308,7 +311,7 @@ export const Employees = {
     },
 
     async hardDelete(employeeId) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { error } = await supabase
                 .from('employees')
@@ -332,7 +335,7 @@ export const Employees = {
  */
 export const MCUs = {
     async getAll(includeDeleted = false) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             let query = supabase.from('mcus').select('*');
 
@@ -353,7 +356,7 @@ export const MCUs = {
     },
 
     async getById(mcuId) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('mcus')
@@ -368,7 +371,7 @@ export const MCUs = {
     },
 
     async getByEmployeeId(employeeId) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('mcus')
@@ -387,7 +390,7 @@ export const MCUs = {
     },
 
     async add(mcu) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('mcus')
@@ -437,7 +440,7 @@ export const MCUs = {
     },
 
     async update(mcuId, updates) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const updateData = {};
 
@@ -504,7 +507,7 @@ export const MCUs = {
     },
 
     async hardDelete(mcuId) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { error } = await supabase
                 .from('mcus')
@@ -528,7 +531,7 @@ export const MCUs = {
  */
 export const MCUChanges = {
     async getAll() {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('mcu_changes')
@@ -542,7 +545,7 @@ export const MCUChanges = {
     },
 
     async getById(id) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('mcu_changes')
@@ -557,7 +560,7 @@ export const MCUChanges = {
     },
 
     async getByMcuId(mcuId) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('mcu_changes')
@@ -575,7 +578,7 @@ export const MCUChanges = {
     },
 
     async add(change) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('mcu_changes')
@@ -596,7 +599,7 @@ export const MCUChanges = {
     },
 
     async update(id, updates) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const updateData = {};
             if (updates.fieldName) updateData.field_name = updates.fieldName;
@@ -618,7 +621,7 @@ export const MCUChanges = {
     },
 
     async delete(id) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { error } = await supabase
                 .from('mcu_changes')
@@ -637,7 +640,7 @@ export const MCUChanges = {
  */
 export const MasterData = {
     async getJobTitles() {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('job_titles')
@@ -651,7 +654,7 @@ export const MasterData = {
     },
 
     async getDepartments() {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('departments')
@@ -665,7 +668,7 @@ export const MasterData = {
     },
 
     async getVendors() {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('vendors')
@@ -684,7 +687,7 @@ export const MasterData = {
         const name = isObject ? dataOrName.name : dataOrName;
         const fullData = isObject ? dataOrName : { name };
 
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error} = await supabase
                 .from('job_titles')
@@ -705,7 +708,7 @@ export const MasterData = {
         const name = isObject ? dataOrName.name : dataOrName;
         const fullData = isObject ? dataOrName : { name };
 
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('departments')
@@ -726,7 +729,7 @@ export const MasterData = {
         const name = isObject ? dataOrName.name : dataOrName;
         const fullData = isObject ? dataOrName : { name };
 
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('vendors')
@@ -742,7 +745,7 @@ export const MasterData = {
     },
 
     async updateJobTitle(id, name) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('job_titles')
@@ -760,7 +763,7 @@ export const MasterData = {
     },
 
     async updateDepartment(id, name) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('departments')
@@ -778,7 +781,7 @@ export const MasterData = {
     },
 
     async updateVendor(id, name) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('vendors')
@@ -796,7 +799,7 @@ export const MasterData = {
     },
 
     async deleteJobTitle(id) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { error } = await supabase
                 .from('job_titles')
@@ -810,7 +813,7 @@ export const MasterData = {
     },
 
     async deleteDepartment(id) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { error } = await supabase
                 .from('departments')
@@ -824,7 +827,7 @@ export const MasterData = {
     },
 
     async deleteVendor(id) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { error } = await supabase
                 .from('vendors')
@@ -838,7 +841,7 @@ export const MasterData = {
     },
 
     async getDoctors() {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('doctors')
@@ -857,7 +860,7 @@ export const MasterData = {
         const name = isObject ? dataOrName.name : dataOrName;
         const fullData = isObject ? dataOrName : { name };
 
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('doctors')
@@ -873,7 +876,7 @@ export const MasterData = {
     },
 
     async updateDoctor(id, name) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('doctors')
@@ -891,7 +894,7 @@ export const MasterData = {
     },
 
     async deleteDoctor(id) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { error } = await supabase
                 .from('doctors')
@@ -932,7 +935,7 @@ async function calculateAuditHash(activity) {
  */
 export const ActivityLog = {
     async getAll(limit = 50) {
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             try {
                 const { data, error } = await supabase
@@ -969,7 +972,7 @@ export const ActivityLog = {
 
     async add(activity) {
         // When Supabase is enabled, use ONLY Supabase (no IndexedDB caching to prevent duplicates)
-        if (useSupabase) {
+        if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             try {
                 // Calculate integrity hash for immutability verification
