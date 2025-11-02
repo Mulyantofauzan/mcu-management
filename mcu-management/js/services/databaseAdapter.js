@@ -1008,30 +1008,27 @@ export const ActivityLog = {
                     entityId: activity.entityId
                 });
 
-                // Build insert object with core required fields first
-                // Optional fields will be added if they exist in the schema
+                // Build insert object with ONLY core required fields that definitely exist
+                // This ensures compatibility with basic activity_log schema
                 const insertData = {
                     user_id: activity.userId,
                     user_name: activity.userName || null,
                     action: activity.action,
                     target: activity.entityType || activity.target,
-                    target_id: activity.entityId,
                     details: activity.entityId || activity.details,
                     timestamp: activity.timestamp
                 };
 
-                // Conditionally add optional fields that may not exist in older schemas
-                // These columns are part of the enhanced schema but migrations may be pending
+                // OPTIONAL: Only add fields if they exist in the actual schema
+                // These will fail silently if columns don't exist
+                // Conditionally add fields for newer schema versions
+                if (activity.entityId !== undefined) insertData.target_id = activity.entityId;
                 if (activity.ipAddress !== undefined) insertData.ip_address = activity.ipAddress;
                 if (activity.userAgent !== undefined) insertData.user_agent = activity.userAgent;
                 if (activity.oldValue !== undefined) insertData.old_value = activity.oldValue;
                 if (activity.newValue !== undefined) insertData.new_value = activity.newValue;
                 if (activity.changeField !== undefined) insertData.change_field = activity.changeField;
-                if (hashValue !== undefined) {
-                    insertData.is_immutable = true;
-                    insertData.hash_value = hashValue;
-                }
-                // Don't try to insert 'archived' if it doesn't exist - migration not applied yet
+                // Skip is_immutable, hash_value, archived - not in basic schema
 
                 const { data, error } = await supabase
                     .from('activity_log')
