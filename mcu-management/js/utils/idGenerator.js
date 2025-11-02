@@ -142,9 +142,10 @@ export function generateUserId() {
 }
 
 export function generateDoctorId() {
+  // Generate numeric ID: timestamp (base 36) + random number
   const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substr(2, 5).toUpperCase();
-  return `DOC-${timestamp}-${random}`;
+  const random = Math.floor(Math.random() * 10000).toString().padStart(5, '0');
+  return `${timestamp}${random}`;
 }
 
 export function generateUUID() {
