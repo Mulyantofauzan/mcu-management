@@ -20,6 +20,9 @@ const getUseSupabase = () => {
     } else {
         console.log('📦 Using IndexedDB (Dexie) as fallback database');
     }
+    if (!enabled) {
+        console.warn('⚠️ WARNING: Supabase is NOT initialized. Check if CDN script loaded and credentials are set.');
+    }
     return enabled;
 };
 
