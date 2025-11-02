@@ -861,84 +861,21 @@ export const MasterData = {
         // Support both object (with doctorId) and string (just name)
         const isObject = typeof dataOrName === 'object' && dataOrName !== null;
         const name = isObject ? dataOrName.name : dataOrName;
-        const fullData = isObject ? { ...dataOrName } : { name };  // Clone to prevent mutations
-
-        console.log('🔍 addDoctor() - Input:', dataOrName, '| Using Supabase:', getUseSupabase());
+        const fullData = isObject ? dataOrName : { name };
 
         if (getUseSupabase()) {
             const supabase = getSupabaseClient();
-            // Let Supabase auto-generate the ID (SERIAL)
-            // CRITICAL: Extract ONLY name field, strip any id/doctorId/createdAt/updatedAt
-            const cleanName = typeof name === 'string' ? name : (isObject && dataOrName.name ? dataOrName.name : String(dataOrName));
+            const { data, error} = await supabase
+                .from('doctors')
+                .insert({ name })
+                .select()
+                .single();
 
-            // Create absolutely minimal object with ONLY name
-            const insertData = { name: cleanName };
-
-            // Triple-check no ID fields exist
-            delete insertData.id;
-            delete insertData.doctorId;
-            delete insertData.createdAt;
-            delete insertData.updatedAt;
-
-            console.log('📤 Sending to Supabase - Keys:', Object.keys(insertData), '- Data:', insertData);
-
-            // AGGRESSIVE LOGGING: Show exact request body
-            console.log('🔎 DEBUG: insertData type:', typeof insertData);
-            console.log('🔎 DEBUG: insertData JSON:', JSON.stringify(insertData));
-            console.log('🔎 DEBUG: insertData.name =', insertData.name, '(type:', typeof insertData.name, ')');
-            console.log('🔎 DEBUG: insertData.id =', insertData.id);
-            console.log('🔎 DEBUG: insertData.doctorId =', insertData.doctorId);
-            for (let key in insertData) {
-                console.log('🔎 DEBUG: key="' + key + '" value="' + insertData[key] + '" type=' + typeof insertData[key]);
-            }
-
-            // Try using RPC with explicit parameter (more control over data)
-            try {
-                // Direct insert using .insert() with minimal data
-                console.log('🚀 About to call supabase.from(doctors).insert()');
-
-                // CRITICAL: Verify insertData is clean right before insert
-                const keysBeforeInsert = Object.keys(insertData);
-                console.log('🔐 Final check - Keys before Supabase.insert():', keysBeforeInsert);
-                if (keysBeforeInsert.length !== 1 || !keysBeforeInsert.includes('name')) {
-                    console.error('🚨 CRITICAL ERROR: insertData has wrong keys!', keysBeforeInsert);
-                    console.error('   insertData contents:', insertData);
-                    throw new Error('insertData is corrupt - expected only {name}, got: ' + keysBeforeInsert.join(', '));
-                }
-
-                const { data, error } = await supabase
-                    .from('doctors')
-                    .insert([insertData])
-                    .select('*');
-
-                if (error) {
-                    console.error('❌ Supabase insert error:', error);
-                    // Log the full error for debugging
-                    console.error('   Full error object:', {
-                        code: error.code,
-                        message: error.message,
-                        details: error.details,
-                        hint: error.hint,
-                        statusCode: error.statusCode
-                    });
-                    throw error;
-                }
-                console.log('✅ Supabase insert success:', data);
-                if (data && data.length > 0) {
-                    return transformMasterDataItem(data[0], 'doctor');
-                }
-                return data;
-            } catch (innerError) {
-                // If insert fails, try alternative approach with only name via RPC
-                console.warn('⚠️ Standard insert failed, trying alternative...');
-                throw innerError;
-            }
+            if (error) throw error;
+            return transformMasterDataItem(data, 'doctor');
         }
         // For IndexedDB, use the full object if provided (includes ID and timestamps)
-        console.log('📥 Sending to IndexedDB:', fullData);
-        const result = await indexedDB.db.doctors.add(fullData);
-        console.log('✅ IndexedDB add success, generated id:', result);
-        return result;
+        return await indexedDB.db.doctors.add(fullData);
     },
 
     async updateDoctor(id, name) {
