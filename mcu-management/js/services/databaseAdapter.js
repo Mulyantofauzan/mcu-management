@@ -896,6 +896,16 @@ export const MasterData = {
             try {
                 // Direct insert using .insert() with minimal data
                 console.log('🚀 About to call supabase.from(doctors).insert()');
+
+                // CRITICAL: Verify insertData is clean right before insert
+                const keysBeforeInsert = Object.keys(insertData);
+                console.log('🔐 Final check - Keys before Supabase.insert():', keysBeforeInsert);
+                if (keysBeforeInsert.length !== 1 || !keysBeforeInsert.includes('name')) {
+                    console.error('🚨 CRITICAL ERROR: insertData has wrong keys!', keysBeforeInsert);
+                    console.error('   insertData contents:', insertData);
+                    throw new Error('insertData is corrupt - expected only {name}, got: ' + keysBeforeInsert.join(', '));
+                }
+
                 const { data, error } = await supabase
                     .from('doctors')
                     .insert([insertData])
