@@ -858,13 +858,19 @@ export const MasterData = {
         // Support both object (with doctorId) and string (just name)
         const isObject = typeof dataOrName === 'object' && dataOrName !== null;
         const name = isObject ? dataOrName.name : dataOrName;
+        const doctorId = isObject ? dataOrName.doctorId : null;
         const fullData = isObject ? dataOrName : { name };
 
         if (getUseSupabase()) {
             const supabase = getSupabaseClient();
+            // Supabase table uses 'id' as primary key, but data has 'doctorId'
+            const insertData = {
+                id: doctorId,
+                name: name
+            };
             const { data, error } = await supabase
                 .from('doctors')
-                .insert({ name })
+                .insert(insertData)
                 .select()
                 .single();
 
