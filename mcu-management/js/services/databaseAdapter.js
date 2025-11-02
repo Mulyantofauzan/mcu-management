@@ -882,9 +882,20 @@ export const MasterData = {
 
             console.log('📤 Sending to Supabase - Keys:', Object.keys(insertData), '- Data:', insertData);
 
+            // AGGRESSIVE LOGGING: Show exact request body
+            console.log('🔎 DEBUG: insertData type:', typeof insertData);
+            console.log('🔎 DEBUG: insertData JSON:', JSON.stringify(insertData));
+            console.log('🔎 DEBUG: insertData.name =', insertData.name, '(type:', typeof insertData.name, ')');
+            console.log('🔎 DEBUG: insertData.id =', insertData.id);
+            console.log('🔎 DEBUG: insertData.doctorId =', insertData.doctorId);
+            for (let key in insertData) {
+                console.log('🔎 DEBUG: key="' + key + '" value="' + insertData[key] + '" type=' + typeof insertData[key]);
+            }
+
             // Try using RPC with explicit parameter (more control over data)
             try {
                 // Direct insert using .insert() with minimal data
+                console.log('🚀 About to call supabase.from(doctors).insert()');
                 const { data, error } = await supabase
                     .from('doctors')
                     .insert([insertData])
