@@ -261,10 +261,16 @@ class MasterDataService {
       createdAt: getCurrentTimestamp(),
       updatedAt: getCurrentTimestamp()
     };
-    await database.add('doctors', doctor);
+    const result = await database.add('doctors', doctor);
     // Invalidate cache
     cacheManager.clear('doctors:all');
-    return doctor;
+
+    // Return only name and createdAt to prevent ID field from being sent to Supabase
+    // on subsequent operations
+    return {
+      name: doctor.name,
+      createdAt: doctor.createdAt
+    };
   }
 
   async getAllDoctors() {

@@ -865,10 +865,18 @@ export const MasterData = {
 
         if (getUseSupabase()) {
             const supabase = getSupabaseClient();
+            // CRITICAL: Create brand new object with ONLY name field
+            // Do NOT use spread operator or object references
+            // Supabase SDK might be reading unexpected properties
+            const cleanData = {};
+            cleanData.name = String(name).trim();
+
+            console.log('📤 Sending to Supabase with clean data:', cleanData);
+
             const { data, error} = await supabase
                 .from('doctors')
-                .insert({ name })
-                .select()
+                .insert([cleanData])
+                .select('*')
                 .single();
 
             if (error) throw error;
