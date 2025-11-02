@@ -1008,30 +1008,34 @@ export const ActivityLog = {
                     entityId: activity.entityId
                 });
 
+                // Build insert object with core required fields first
+                // Optional fields will be added if they exist in the schema
+                const insertData = {
+                    user_id: activity.userId,
+                    user_name: activity.userName || null,
+                    action: activity.action,
+                    target: activity.entityType || activity.target,
+                    target_id: activity.entityId,
+                    details: activity.entityId || activity.details,
+                    timestamp: activity.timestamp
+                };
+
+                // Conditionally add optional fields that may not exist in older schemas
+                // These columns are part of the enhanced schema but migrations may be pending
+                if (activity.ipAddress !== undefined) insertData.ip_address = activity.ipAddress;
+                if (activity.userAgent !== undefined) insertData.user_agent = activity.userAgent;
+                if (activity.oldValue !== undefined) insertData.old_value = activity.oldValue;
+                if (activity.newValue !== undefined) insertData.new_value = activity.newValue;
+                if (activity.changeField !== undefined) insertData.change_field = activity.changeField;
+                if (hashValue !== undefined) {
+                    insertData.is_immutable = true;
+                    insertData.hash_value = hashValue;
+                }
+                // Don't try to insert 'archived' if it doesn't exist - migration not applied yet
+
                 const { data, error } = await supabase
                     .from('activity_log')
-                    .insert({
-                        user_id: activity.userId,
-                        user_name: activity.userName || null,
-                        action: activity.action,
-                        target: activity.entityType || activity.target,
-                        target_id: activity.entityId,
-                        details: activity.entityId || activity.details,
-
-                        // Audit compliance fields
-                        ip_address: activity.ipAddress || null,
-                        user_agent: activity.userAgent || null,
-                        old_value: activity.oldValue || null,
-                        new_value: activity.newValue || null,
-                        change_field: activity.changeField || null,
-
-                        // Immutability
-                        is_immutable: true,
-                        hash_value: hashValue,
-                        archived: false,
-
-                        timestamp: activity.timestamp
-                    })
+                    .insert(insertData)
                     .select()
                     .single();
 
