@@ -55,6 +55,15 @@ class MCUDatabase {
       return db.doctors.clear();
     });
 
+    // Version 5: Force reset doctors table with clean schema
+    this.db.version(5).stores({
+      doctors: '++id, name'
+    }).upgrade(db => {
+      // Force clear doctors again to ensure clean state
+      console.log('🔄 Force clearing doctors table (version 5)');
+      return db.doctors.clear();
+    });
+
     try {
       await this.db.open();
       console.log('IndexedDB initialized successfully (version ' + this.db.verno + ')');

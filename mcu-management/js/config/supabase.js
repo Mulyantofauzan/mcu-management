@@ -49,7 +49,12 @@ async function initSupabase() {
 }
 
 // Initialize Supabase immediately
-initSupabase();
+console.log('🔍 Supabase initialization starting...');
+console.log('   SUPABASE_URL:', SUPABASE_URL ? '✅ Set' : '❌ Not set');
+console.log('   SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? '✅ Set (hidden)' : '❌ Not set');
+initSupabase().then(() => {
+    console.log('🔍 Supabase initialization complete');
+});
 
 /**
  * Check if Supabase is available and configured

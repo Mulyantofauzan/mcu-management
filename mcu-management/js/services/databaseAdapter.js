@@ -861,7 +861,7 @@ export const MasterData = {
         // Support both object (with doctorId) and string (just name)
         const isObject = typeof dataOrName === 'object' && dataOrName !== null;
         const name = isObject ? dataOrName.name : dataOrName;
-        const fullData = isObject ? dataOrName : { name };
+        const fullData = isObject ? { ...dataOrName } : { name };  // Clone to prevent mutations
 
         console.log('🔍 addDoctor() - Input:', dataOrName, '| Using Supabase:', getUseSupabase());
 
@@ -871,7 +871,7 @@ export const MasterData = {
             // CRITICAL: Extract ONLY name field, strip any id/doctorId/createdAt/updatedAt
             const cleanName = typeof name === 'string' ? name : (isObject && dataOrName.name ? dataOrName.name : String(dataOrName));
             const insertData = { name: cleanName };
-            console.log('📤 Sending to Supabase:', insertData, '| Full input was:', dataOrName);
+            console.log('📤 Sending to Supabase:', JSON.stringify(insertData), '| Full input was:', dataOrName);
 
             const { data, error } = await supabase
                 .from('doctors')
@@ -879,12 +879,18 @@ export const MasterData = {
                 .select()
                 .single();
 
-            if (error) throw error;
+            if (error) {
+                console.error('❌ Supabase error:', error, '| Request body was:', insertData);
+                throw error;
+            }
+            console.log('✅ Supabase insert success:', data);
             return transformMasterDataItem(data, 'doctor');
         }
         // For IndexedDB, use the full object if provided (includes ID and timestamps)
         console.log('📥 Sending to IndexedDB:', fullData);
-        return await indexedDB.db.doctors.add(fullData);
+        const result = await indexedDB.db.doctors.add(fullData);
+        console.log('✅ IndexedDB add success, generated id:', result);
+        return result;
     },
 
     async updateDoctor(id, name) {
