@@ -46,6 +46,15 @@ class MCUDatabase {
       doctors: '++id, name'
     });
 
+    // Version 4: Clear old doctor data with text IDs
+    this.db.version(4).stores({
+      doctors: '++id, name'
+    }).upgrade(db => {
+      // Clear all old doctors data to prevent sync errors
+      // Old data had text IDs (mhho7xe703956), new data uses numeric IDs (1, 2, 3)
+      return db.doctors.clear();
+    });
+
     try {
       await this.db.open();
       console.log('IndexedDB initialized successfully (version ' + this.db.verno + ')');
