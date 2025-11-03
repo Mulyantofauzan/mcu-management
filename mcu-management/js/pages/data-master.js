@@ -83,19 +83,6 @@ async function loadData() {
         const config = tabConfig[currentTab];
         currentData = await config.getAll();
 
-        // Debug log loaded data
-        console.log(`📥 Loaded ${currentTab}:`, {
-            count: currentData.length,
-            sample: currentData[0],
-            allIds: currentData.map(item => ({
-                id: item.id,
-                jobTitleId: item.jobTitleId,
-                departmentId: item.departmentId,
-                vendorId: item.vendorId,
-                name: item.name
-            }))
-        });
-
         renderTable();
     } catch (error) {
 

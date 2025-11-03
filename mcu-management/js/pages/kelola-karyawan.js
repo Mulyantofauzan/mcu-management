@@ -660,23 +660,11 @@ window.viewMCUDetail = async function(mcuId) {
         document.getElementById('mcu-detail-temp').textContent = mcu.temperature || '-';
 
         // Fill doctor data - compare as numbers to handle Supabase numeric IDs
-        console.log('🔍 Doctor lookup debug:', {
-            mcuDoctorValue: mcu.doctor,
-            mcuDoctorType: typeof mcu.doctor,
-            doctorsAvailable: doctors.length,
-            doctorsList: doctors.map(d => ({ id: d.id, idType: typeof d.id, doctorId: d.doctorId, name: d.name }))
-        });
-
         const doctor = doctors.find(d => {
             // Handle numeric and string ID comparison for Supabase/IndexedDB compatibility
-            const match = String(d.id) === String(mcu.doctor) || d.id === mcu.doctor || d.doctorId === mcu.doctor;
-            if (match) {
-                console.log('✅ Doctor match found:', { dId: d.id, mcuDoctor: mcu.doctor, name: d.name });
-            }
-            return match;
+            return String(d.id) === String(mcu.doctor) || d.id === mcu.doctor || d.doctorId === mcu.doctor;
         });
 
-        console.log('📋 Doctor result:', { found: !!doctor, doctorName: doctor?.name });
         document.getElementById('mcu-detail-doctor').textContent = doctor?.name || '-';
 
         // Fill referral data
