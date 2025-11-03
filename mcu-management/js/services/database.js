@@ -190,7 +190,6 @@ class DatabaseService {
                 userName,
                 timestamp: new Date().toISOString()
             });
-            console.log('✅ Activity log saved:', { action, entityType, entityId, result });
             return result;
         } catch (err) {
             // Activity log is non-critical - don't block main operations

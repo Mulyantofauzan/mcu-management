@@ -15,14 +15,6 @@ import { database as indexedDB } from './database-old.js';  // Direct import of 
 // This allows Supabase to finish initializing asynchronously
 const getUseSupabase = () => {
     const enabled = isSupabaseEnabled();
-    if (enabled) {
-        console.log('✅ Using Supabase as database');
-    } else {
-        console.log('📦 Using IndexedDB (Dexie) as fallback database');
-    }
-    if (!enabled) {
-        console.warn('⚠️ WARNING: Supabase is NOT initialized. Check if CDN script loaded and credentials are set.');
-    }
     return enabled;
 };
 
@@ -871,8 +863,6 @@ export const MasterData = {
             const cleanData = {};
             cleanData.name = String(name).trim();
 
-            console.log('📤 Sending to Supabase with clean data:', cleanData);
-
             const { data, error} = await supabase
                 .from('doctors')
                 .insert([cleanData])
@@ -928,7 +918,6 @@ export const ActivityLog = {
         if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             try {
-                console.log('🔍 Fetching activity logs from Supabase...');
                 const { data, error } = await supabase
                     .from('activity_log')
                     .select('*')
@@ -936,38 +925,23 @@ export const ActivityLog = {
                     .limit(limit);
 
                 if (error) {
-                    console.error('❌ Supabase activity_log SELECT error:', {
-                        message: error.message,
-                        code: error.code,
-                        details: error.details,
-                        hint: error.hint
-                    });
+                    console.error('❌ Activity log fetch failed:', error.message);
                     return [];
                 }
 
-                const transformed = data ? data.map(transformActivityLog) : [];
-                console.log('✅ Activity logs fetched:', {
-                    count: transformed.length,
-                    records: transformed.slice(0, 2)
-                });
-                return transformed;
+                return data ? data.map(transformActivityLog) : [];
             } catch (err) {
-                console.error('❌ ActivityLog.getAll() failed:', {
-                    message: err.message,
-                    stack: err.stack
-                });
+                console.error('❌ Activity log fetch error:', err.message);
                 return [];
             }
         }
 
         // IndexedDB primary source (only when Supabase is disabled)
         try {
-            console.log('🔍 Fetching activity logs from IndexedDB...');
             const result = await indexedDB.db.activityLog.orderBy('timestamp').reverse().limit(limit).toArray();
-            console.log('✅ IndexedDB activity logs:', result?.length || 0);
             return result || [];
         } catch (err) {
-            console.error('❌ IndexedDB activity log fetch failed:', err);
+            console.error('❌ Activity log IndexedDB fetch failed:', err.message);
             return [];
         }
     },
@@ -977,12 +951,6 @@ export const ActivityLog = {
         if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             try {
-                console.log('📝 Inserting activity log to Supabase:', {
-                    action: activity.action,
-                    entityType: activity.entityType,
-                    entityId: activity.entityId
-                });
-
                 // Insert basic activity log data
                 const { data, error } = await supabase
                     .from('activity_log')
@@ -1000,7 +968,6 @@ export const ActivityLog = {
 
                 if (!error && data) {
                     const result = transformActivityLog(data);
-                    console.log('✅ Activity log inserted successfully:', { id: data.id });
                     return result;
                 } else if (error) {
                     console.error('❌ Supabase activity_log INSERT error:', {
@@ -1023,9 +990,7 @@ export const ActivityLog = {
 
         // IndexedDB primary storage (only when Supabase is disabled)
         try {
-            console.log('📝 Inserting activity log to IndexedDB:', activity);
             const id = await indexedDB.db.activityLog.add(activity);
-            console.log('✅ Activity log inserted to IndexedDB:', id);
             return { ...activity, id };
         } catch (err) {
             console.error('❌ IndexedDB activity log insert failed:', {
