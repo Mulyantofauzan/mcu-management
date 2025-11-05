@@ -7,6 +7,7 @@ import { employeeService } from '../services/employeeService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { formatDateDisplay } from '../utils/dateHelpers.js';
 import { showToast, confirmDialog } from '../utils/uiHelpers.js';
+import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 
 let deletedEmployees = [];
 let jobTitles = [];
@@ -319,4 +320,10 @@ window.handleLogout = function() {
     authService.logout();
 };
 
-init();
+// ✅ FIX: Wait for Supabase to be ready before initializing
+supabaseReady.then(() => {
+  init();
+}).catch(err => {
+  console.error('Failed to wait for Supabase:', err);
+  init();
+});

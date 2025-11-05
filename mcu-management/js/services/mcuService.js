@@ -41,6 +41,7 @@ class MCUService {
       napza: mcuData.napza || null,
 
       // Rujukan fields
+      doctor: mcuData.doctor || null,  // ✅ FIX: Add doctor field (was missing!)
       recipient: mcuData.recipient || null,
       keluhanUtama: mcuData.keluhanUtama || null,
       diagnosisKerja: mcuData.diagnosisKerja || null,

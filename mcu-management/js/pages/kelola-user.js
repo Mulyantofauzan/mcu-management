@@ -8,6 +8,7 @@ import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
 import { database } from '../services/database.js';
 import { generateUserId } from '../utils/idGenerator.js';
 import { getCurrentTimestamp } from '../utils/dateHelpers.js';
+import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 
 let users = [];
 
@@ -366,5 +367,10 @@ window.handleLogout = function() {
     authService.logout();
 };
 
-// Initialize
-init();
+// ✅ FIX: Wait for Supabase to be ready before initializing
+supabaseReady.then(() => {
+  init();
+}).catch(err => {
+  console.error('Failed to wait for Supabase:', err);
+  init();
+});

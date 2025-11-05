@@ -14,6 +14,7 @@ import { logger } from '../utils/logger.js';
 import { debounce } from '../utils/debounce.js';
 import { UI } from '../config/constants.js';
 import { safeGet, safeArray, isEmpty } from '../utils/nullSafety.js';
+import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 
 let employees = [];
 let filteredEmployees = [];
@@ -947,4 +948,10 @@ window.handleLogout = function() {
     authService.logout();
 };
 
-init();
+// ✅ FIX: Wait for Supabase to be ready before initializing
+supabaseReady.then(() => {
+  init();
+}).catch(err => {
+  console.error('Failed to wait for Supabase:', err);
+  init();
+});

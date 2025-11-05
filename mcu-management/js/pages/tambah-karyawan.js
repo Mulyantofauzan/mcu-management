@@ -9,6 +9,7 @@ import { mcuService } from '../services/mcuService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
+import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 
 let searchResults = [];
 let jobTitles = [];
@@ -434,4 +435,10 @@ window.handleLogout = function() {
 };
 
 // Initialize
-init();
+// ✅ FIX: Wait for Supabase to be ready before initializing
+supabaseReady.then(() => {
+  init();
+}).catch(err => {
+  console.error('Failed to wait for Supabase:', err);
+  init();
+});

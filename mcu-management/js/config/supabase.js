@@ -52,8 +52,20 @@ async function initSupabase() {
 console.log('🔍 Supabase initialization starting...');
 console.log('   SUPABASE_URL:', SUPABASE_URL ? '✅ Set' : '❌ Not set');
 console.log('   SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? '✅ Set (hidden)' : '❌ Not set');
-initSupabase().then(() => {
-    console.log('🔍 Supabase initialization complete');
+
+// ✅ FIX: Create a promise that can be awaited by init() functions
+// This prevents race condition where app tries to use Supabase before it's initialized
+export const supabaseReady = initSupabase().then(() => {
+    console.log('✅ Supabase initialization complete');
+    if (useSupabase && supabase) {
+        console.log('✅ Supabase client is ready and enabled');
+    } else {
+        console.log('📦 Using IndexedDB (Supabase not configured)');
+    }
+    return { ready: true, enabled: useSupabase };
+}).catch(err => {
+    console.error('❌ Supabase initialization failed:', err);
+    return { ready: true, enabled: false };
 });
 
 /**

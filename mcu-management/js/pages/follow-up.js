@@ -10,6 +10,7 @@ import { masterDataService } from '../services/masterDataService.js';
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
 import { generateRujukanPDF, generateRujukanBalikPDF } from '../utils/rujukanPDFGenerator.js';
+import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 
 let followUpList = [];
 let filteredList = [];
@@ -492,5 +493,10 @@ window.handleLogout = function() {
   authService.logout();
 };
 
-// Initialize
-init();
+// ✅ FIX: Wait for Supabase to be ready before initializing
+supabaseReady.then(() => {
+  init();
+}).catch(err => {
+  console.error('Failed to wait for Supabase:', err);
+  init();
+});

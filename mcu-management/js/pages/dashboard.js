@@ -12,6 +12,7 @@ import { formatDateDisplay, isDateInRange } from '../utils/dateHelpers.js';
 import { showToast } from '../utils/uiHelpers.js';
 import { sessionManager } from '../utils/sessionManager.js';
 import { checkAndSeedIfEmpty } from '../seedData.js';
+import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 
 // State
 let currentDateRange = { startDate: '', endDate: '' }; // Default: empty filter (show all)
@@ -1002,4 +1003,11 @@ window.reseedDatabase = async function() {
 };
 
 // Initialize on load
-init();
+// ✅ FIX: Wait for Supabase to be ready before initializing
+supabaseReady.then(() => {
+  init();
+}).catch(err => {
+  console.error('Failed to wait for Supabase:', err);
+  // Still initialize even if Supabase wait failed
+  init();
+});

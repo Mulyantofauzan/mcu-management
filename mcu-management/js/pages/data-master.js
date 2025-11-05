@@ -5,6 +5,7 @@
 import { authService } from '../services/authService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { showToast, openModal, closeModal, confirmDialog } from '../utils/uiHelpers.js';
+import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 
 let currentTab = 'jobTitles';
 let currentData = [];
@@ -213,4 +214,10 @@ window.handleLogout = function() {
     authService.logout();
 };
 
-init();
+// ✅ FIX: Wait for Supabase to be ready before initializing
+supabaseReady.then(() => {
+  init();
+}).catch(err => {
+  console.error('Failed to wait for Supabase:', err);
+  init();
+});
