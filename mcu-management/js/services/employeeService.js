@@ -61,6 +61,13 @@ class EmployeeService {
     };
 
     await database.update('employees', employeeId, updateData);
+
+    // Log activity
+    const currentUser = window.authService?.getCurrentUser();
+    if (currentUser?.userId) {
+      await database.logActivity('update', 'Employee', employeeId, currentUser.userId);
+    }
+
     return await this.getById(employeeId);
   }
 

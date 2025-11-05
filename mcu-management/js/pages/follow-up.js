@@ -20,8 +20,14 @@ let doctors = [];
 let currentMCU = null;
 
 // Download Surat Rujukan PDF from table action button
-window.downloadRujukanPDFAction = function(mcuId) {
-  mcuService.getById(mcuId).then(mcu => {
+window.downloadRujukanPDFAction = async function(mcuId) {
+  try {
+    // Pastikan master data sudah loaded (termasuk doctors)
+    if (!doctors || doctors.length === 0) {
+      await loadMasterData();
+    }
+
+    const mcu = await mcuService.getById(mcuId);
     if (!mcu) {
       showToast('MCU data tidak ditemukan', 'error');
       return;
@@ -57,17 +63,11 @@ window.downloadRujukanPDFAction = function(mcuId) {
       doctorName: doctorName  // Pass actual doctor name from MCU data
     };
 
-    try {
-      generateRujukanPDF(employeeData, mcu);
-      showToast('Surat Rujukan siap dicetak. Gunakan Ctrl+S atau Simpan PDF di print dialog.', 'success');
-    } catch (error) {
-
-      showToast('Gagal membuat surat rujukan: ' + error.message, 'error');
-    }
-  }).catch(error => {
-
-    showToast('Gagal memuat data MCU: ' + error.message, 'error');
-  });
+    generateRujukanPDF(employeeData, mcu);
+    showToast('Surat Rujukan siap dicetak. Gunakan Ctrl+S atau Simpan PDF di print dialog.', 'success');
+  } catch (error) {
+    showToast('Gagal membuat surat rujukan: ' + error.message, 'error');
+  }
 };
 
 // Download Surat Rujukan Balik (Return Referral) from table action button

@@ -599,6 +599,11 @@ window.handleAddMCU = async function(event) {
 
 window.viewMCUDetail = async function(mcuId) {
     try {
+        // Pastikan master data sudah loaded (termasuk doctors)
+        if (!doctors || doctors.length === 0) {
+            await loadMasterData();
+        }
+
         const mcu = await mcuService.getById(mcuId);
         if (!mcu) {
             showToast('MCU tidak ditemukan', 'error');
