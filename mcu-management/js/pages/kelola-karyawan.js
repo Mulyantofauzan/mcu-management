@@ -525,8 +525,8 @@ window.addMCUForEmployee = async function(employeeId) {
         // Fill employee summary
         document.getElementById('mcu-emp-name').textContent = employee.name;
         document.getElementById('mcu-emp-id').textContent = employee.employeeId;
-        document.getElementById('mcu-emp-job').textContent = jobTitle?.name || '-';
-        document.getElementById('mcu-emp-dept').textContent = department?.name || '-';
+        document.getElementById('mcu-emp-job').textContent = jobTitle?.name || empJobTitle || '-';
+        document.getElementById('mcu-emp-dept').textContent = department?.name || empDept || '-';
         document.getElementById('mcu-employee-id').value = employeeId;
 
         // Reset form
@@ -642,8 +642,8 @@ window.viewMCUDetail = async function(mcuId) {
         // Fill employee info
         document.getElementById('mcu-detail-emp-name').textContent = emp?.name || '-';
         document.getElementById('mcu-detail-emp-id').textContent = emp?.employeeId || '-';
-        document.getElementById('mcu-detail-emp-job').textContent = job?.name || '-';
-        document.getElementById('mcu-detail-emp-dept').textContent = dept?.name || '-';
+        document.getElementById('mcu-detail-emp-job').textContent = job?.name || empJobTitle || '-';
+        document.getElementById('mcu-detail-emp-dept').textContent = dept?.name || empDept || '-';
 
         // Fill MCU info
         document.getElementById('mcu-detail-id').textContent = mcu.mcuId;

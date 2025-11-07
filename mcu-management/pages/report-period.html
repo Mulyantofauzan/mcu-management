@@ -351,8 +351,8 @@
                     report.push({
                         employeeId: employee.employeeId,
                         employeeName: employee.name,
-                        department: (dept && dept.name) ? dept.name : 'N/A',
-                        jobTitle: (jobTitle && jobTitle.name) ? jobTitle.name : 'N/A',
+                        department: (dept && dept.name) ? dept.name : (empDept || 'N/A'),
+                        jobTitle: (jobTitle && jobTitle.name) ? jobTitle.name : (empJobTitle || 'N/A'),
                         mcuDate: new Date(mcu.mcuDate).toLocaleDateString('id-ID'),
                         mcuType: mcu.mcuType || 'N/A',
                         status: mcu.initialResult || '-',

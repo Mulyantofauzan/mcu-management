@@ -168,8 +168,8 @@ class DatabaseService {
     }
 
     async logActivity(action, entityType, entityId, userId = null) {
-        // Filter out 'update' actions - only log create, delete, and other meaningful actions
-        const allowedActions = ['create', 'delete', 'restore', 'follow-up'];
+        // Only log CRUD operations - create, read, update, delete
+        const allowedActions = ['create', 'update', 'delete', 'restore'];
         if (!allowedActions.includes(action)) {
             return null;
         }

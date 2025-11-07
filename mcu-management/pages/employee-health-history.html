@@ -337,7 +337,7 @@
                 );
 
                 document.getElementById('info-name').textContent = employee.name;
-                document.getElementById('info-department').textContent = (dept && dept.name) ? dept.name : 'N/A';
+                document.getElementById('info-department').textContent = (dept && dept.name) ? dept.name : (empDept || 'N/A');
                 document.getElementById('info-total-mcu').textContent = allMCUs.length;
                 document.getElementById('employee-info-section').style.display = 'grid';
 
