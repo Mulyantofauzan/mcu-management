@@ -320,11 +320,11 @@
                     // Skip soft-deleted employees
                     if (employee.deletedAt) continue;
 
-                    // Apply department filter - normalize both to numbers for comparison
+                    // Apply department filter
+                    // ✅ FIX: Match by NAME not ID (employees stores department name, not ID!)
                     if (departmentFilterValue) {
-                        const filterDeptId = parseInt(departmentFilterValue);
-                        const empDeptId = parseInt(employee.departmentId);
-                        if (empDeptId !== filterDeptId) continue;
+                        const filterDept = allDepartments.find(d => d.id == departmentFilterValue);
+                        if (filterDept && employee.department !== filterDept.name) continue;
                     }
 
                     // Filter by status/result if provided (use initialResult field)
@@ -332,25 +332,11 @@
 
                     uniqueEmployees.add(employee.employeeId);
 
-                    // ✅ FIX: Find department from loaded list (not fetch per employee)
-                    const deptId = employee.departmentId;
-                    const dept = allDepartments.find(d => {
-                        // Try matching both string and number IDs
-                        return String(d.id) === String(deptId) ||
-                               String(d.departmentId) === String(deptId) ||
-                               d.id === deptId ||
-                               d.departmentId === deptId;
-                    });
+                    // ✅ FIX: Match department by name (not ID, employees stores department as TEXT name)
+                    const dept = allDepartments.find(d => d.name === employee.department);
 
-                    // ✅ FIX: Find job title from loaded list (not fetch per employee)
-                    const jobId = employee.jobTitleId;
-                    const jobTitle = allJobTitles.find(j => {
-                        // Try matching both string and number IDs
-                        return String(j.id) === String(jobId) ||
-                               String(j.jobTitleId) === String(jobId) ||
-                               j.id === jobId ||
-                               j.jobTitleId === jobId;
-                    });
+                    // ✅ FIX: Match job title by name (not ID, employees stores job_title as TEXT name)
+                    const jobTitle = allJobTitles.find(j => j.name === employee.job_title);
 
                     report.push({
                         employeeId: employee.employeeId,

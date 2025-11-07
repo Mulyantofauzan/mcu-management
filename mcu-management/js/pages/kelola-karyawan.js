@@ -509,8 +509,9 @@ window.addMCUForEmployee = async function(employeeId) {
         }
 
         // Get job title and department
-        const jobTitle = jobTitles.find(j => j.jobTitleId === employee.jobTitleId);
-        const department = departments.find(d => d.departmentId === employee.departmentId);
+        // ✅ FIX: employees table stores names, not IDs! Match by name not ID
+        const jobTitle = jobTitles.find(j => j.name === employee.job_title);
+        const department = departments.find(d => d.name === employee.department);
 
         // Fill employee summary
         document.getElementById('mcu-emp-name').textContent = employee.name;
@@ -568,7 +569,11 @@ window.handleAddMCU = async function(event) {
             sgpt: document.getElementById('mcu-sgpt').value || null,
             cbc: document.getElementById('mcu-cbc').value || null,
             napza: document.getElementById('mcu-napza').value || null,
-            doctor: document.getElementById('mcu-doctor').value || null,
+            // ✅ FIX: Convert doctor ID to number (doctors.id is INTEGER)
+            doctor: (() => {
+                const val = document.getElementById('mcu-doctor').value;
+                return val ? parseInt(val, 10) : null;
+            })(),
             recipient: document.getElementById('mcu-recipient').value || null,
             keluhanUtama: document.getElementById('mcu-keluhan').value || null,
             diagnosisKerja: document.getElementById('mcu-diagnosis').value || null,
@@ -612,9 +617,9 @@ window.viewMCUDetail = async function(mcuId) {
         }
 
         const emp = employees.find(e => e.employeeId === mcu.employeeId);
-        // Note: employees are already enriched in loadData()
-        const job = jobTitles.find(j => j.id === emp?.jobTitleId);
-        const dept = departments.find(d => d.id === emp?.departmentId);
+        // ✅ FIX: Match by NAME not ID (employees stores names, not IDs!)
+        const job = jobTitles.find(j => j.name === emp?.job_title);
+        const dept = departments.find(d => d.name === emp?.department);
 
         // Fill employee info
         document.getElementById('mcu-detail-emp-name').textContent = emp?.name || '-';
@@ -893,7 +898,11 @@ window.handleEditMCU = async function(event) {
             treadmill: document.getElementById('edit-mcu-treadmill').value || null,
             kidneyLiverFunction: document.getElementById('edit-mcu-kidney').value || null,
             napza: document.getElementById('edit-mcu-napza').value || null,
-            doctor: document.getElementById('edit-mcu-doctor').value || null,
+            // ✅ FIX: Convert doctor ID to number (doctors.id is INTEGER)
+            doctor: (() => {
+                const val = document.getElementById('edit-mcu-doctor').value;
+                return val ? parseInt(val, 10) : null;
+            })(),
             recipient: document.getElementById('edit-mcu-recipient').value || null,
             keluhanUtama: document.getElementById('edit-mcu-keluhan').value || null,
             diagnosisKerja: document.getElementById('edit-mcu-diagnosis').value || null,
