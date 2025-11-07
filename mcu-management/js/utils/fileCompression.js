@@ -49,6 +49,8 @@ class FileCompression {
   async compressImage(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
+      // Preserve original MIME type
+      const originalType = file.type || 'image/jpeg';
 
       reader.onload = (event) => {
         const img = new Image();
@@ -74,10 +76,12 @@ class FileCompression {
           ctx.drawImage(img, 0, 0, width, height);
 
           // Convert to blob with compression
+          // Use 'image/jpeg' for canvas.toBlob (always outputs JPEG),
+          // but preserve original file type in File metadata for validation
           canvas.toBlob(
             (blob) => {
               const compressedFile = new File([blob], file.name, {
-                type: 'image/jpeg',
+                type: originalType,  // Preserve original MIME type
                 lastModified: file.lastModified,
               });
 
