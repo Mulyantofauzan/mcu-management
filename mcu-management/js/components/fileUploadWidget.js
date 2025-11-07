@@ -330,8 +330,12 @@ class FileUploadWidget {
         throw new Error(`Maximum ${this.maxFiles} files allowed`);
       }
 
+      // DEBUG: Log file info BEFORE detectMimeType
+      console.log(`[FileUploadWidget.uploadFile] INITIAL - File: ${file.name}, type: "${file.type}", size: ${file.size}`);
+
       // First, detect MIME type from extension if browser didn't set it
       file = fileCompression.detectMimeType(file);
+      console.log(`[FileUploadWidget.uploadFile] AFTER detectMimeType - File: ${file.name}, type: "${file.type}", size: ${file.size}`);
 
       // Validate file
       fileCompression.validateFile(file);
@@ -342,6 +346,7 @@ class FileUploadWidget {
       // Compress file
       this.showProgress(file.name, 0);
       const compressedFile = await fileCompression.compressFile(file);
+      console.log(`[FileUploadWidget.uploadFile] AFTER compressFile - File: ${compressedFile.name}, type: "${compressedFile.type}", size: ${compressedFile.size}`);
 
       // Initialize service if needed
       if (!googleDriveService.uploadEndpoint) {
