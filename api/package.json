@@ -1,0 +1,15 @@
+{
+  "name": "mcu-management-api",
+  "version": "1.0.0",
+  "description": "Vercel Serverless API for MCU Management System",
+  "main": "uploadToGoogleDrive.js",
+  "engines": {
+    "node": "20.x"
+  },
+  "dependencies": {
+    "googleapis": "^118.0.0",
+    "@supabase/supabase-js": "^2.38.0",
+    "uuid": "^9.0.0",
+    "busboy": "^1.3.0"
+  }
+}
