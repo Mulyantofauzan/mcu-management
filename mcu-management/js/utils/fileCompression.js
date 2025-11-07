@@ -20,6 +20,16 @@ class FileCompression {
   }
 
   /**
+   * Extract MIME type from filename
+   * @param {string} fileName - File name
+   * @returns {string|null} - MIME type or null if unknown
+   */
+  getMimeTypeFromFilename(fileName) {
+    const extension = fileName.toLowerCase().split('.').pop();
+    return this.MIME_TYPES[extension] || null;
+  }
+
+  /**
    * Detect MIME type from file extension if browser didn't set it
    * @param {File} file - File to check
    * @returns {File} - File with corrected MIME type
@@ -30,20 +40,25 @@ class FileCompression {
       return file;
     }
 
-    // Extract file extension
-    const fileName = file.name.toLowerCase();
-    const extension = fileName.split('.').pop();
-    const detectedType = this.MIME_TYPES[extension];
+    // Try to detect from filename
+    const detectedType = this.getMimeTypeFromFilename(file.name);
 
     if (detectedType) {
       logger.info(`Auto-detected MIME type for ${file.name}: ${detectedType}`);
-      // Create a new File object with correct MIME type
-      // IMPORTANT: Convert File to Blob first using slice() - this creates a Blob from file content
-      const fileBlob = file.slice(0, file.size, detectedType);
-      return new File([fileBlob], file.name, {
+      // Create a new File with the correct MIME type
+      // Note: We need to read the file as Blob to preserve content properly
+      const fileBlob = file.slice(0, file.size);
+      const newFile = new File([fileBlob], file.name, {
         type: detectedType,
         lastModified: file.lastModified,
       });
+      // Store the detected type explicitly as a custom property for verification
+      Object.defineProperty(newFile, '__detectedMimeType', {
+        value: detectedType,
+        enumerable: false,
+        writable: false
+      });
+      return newFile;
     }
 
     return file;

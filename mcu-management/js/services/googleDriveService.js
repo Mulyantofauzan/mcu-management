@@ -25,6 +25,22 @@ class GoogleDriveService {
   }
 
   /**
+   * Get MIME type from filename (fallback for unreliable file.type)
+   * @param {string} fileName - File name
+   * @returns {string|null} - MIME type or null
+   */
+  getMimeTypeFromFileName(fileName) {
+    const mimeTypes = {
+      'pdf': 'application/pdf',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+    };
+    const extension = fileName.toLowerCase().split('.').pop();
+    return mimeTypes[extension] || null;
+  }
+
+  /**
    * Upload file to Google Drive
    * Frontend calls this, which triggers backend Cloud Function
    * @param {File} file - File object from input
@@ -48,10 +64,17 @@ class GoogleDriveService {
         throw new Error(`File size exceeds 5MB limit. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
       }
 
-      // Validate file type
+      // Validate file type - use fallback to filename check
       const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
-      if (!ALLOWED_TYPES.includes(file.type)) {
-        throw new Error(`File type not allowed. Allowed: PDF, JPEG, PNG. Provided: ${file.type}`);
+      let actualMimeType = file.type;
+
+      // If file.type is unreliable or missing, try to detect from filename
+      if (!actualMimeType || actualMimeType === 'application/octet-stream') {
+        actualMimeType = this.getMimeTypeFromFileName(file.name);
+      }
+
+      if (!ALLOWED_TYPES.includes(actualMimeType)) {
+        throw new Error(`File type not allowed. Allowed: PDF, JPEG, PNG. Provided: ${file.type || 'unknown'} (detected: ${actualMimeType || 'unknown'})`);
       }
 
       // Prepare form data for upload
@@ -60,7 +83,8 @@ class GoogleDriveService {
       formData.append('employeeId', employeeId);
       formData.append('userId', currentUser?.userId || 'unknown');
       formData.append('userName', currentUser?.displayName || 'Unknown');
-      formData.append('mimeType', file.type); // Also pass mimetype separately for safety
+      // Pass the actualMimeType we validated, not the unreliable file.type
+      formData.append('mimeType', actualMimeType);
 
       // Call Cloud Function endpoint
       logger.info(`Uploading file: ${file.name} for employee ${employeeId}`);
