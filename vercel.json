@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd mcu-management && npm run build",
+  "buildCommand": "npm install && cd mcu-management && npm install && npm run build",
   "outputDirectory": "mcu-management/dist",
   "functions": {
     "api/**/*.js": {
