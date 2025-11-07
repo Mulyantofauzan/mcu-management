@@ -28,10 +28,25 @@ class EmployeeService {
 
     await database.add('employees', employee);
 
-    // Log activity with details
+    // Log activity with details - fetch department and job title names
     if (currentUser) {
+      let deptName = 'Unknown';
+      let jobName = 'Unknown';
+
+      // Fetch department name by ID
+      if (employee.departmentId) {
+        const dept = await database.get('departments', employee.departmentId);
+        deptName = dept?.name || 'Unknown';
+      }
+
+      // Fetch job title name by ID
+      if (employee.jobTitleId) {
+        const job = await database.get('jobTitles', employee.jobTitleId);
+        jobName = job?.name || 'Unknown';
+      }
+
       await database.logActivity('create', 'Employee', employee.employeeId, currentUser.userId,
-        `Created employee: ${employee.name} (${employee.employeeId}). Department: ${employee.departmentId}, Job Title: ${employee.jobTitleId}`);
+        `Created employee: ${employee.name} (${employee.employeeId}). Department: ${deptName}, Job Title: ${jobName}`);
     }
 
     return employee;
