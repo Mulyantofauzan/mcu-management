@@ -951,52 +951,77 @@ export const ActivityLog = {
         if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             try {
-                // ✅ FIX: Add verbose logging to debug activity log insertion
+                // ✅ FIX: Build insert data ONLY with columns we know exist
+                // Try minimal schema first - user_id, action, timestamp are definitely safe
+                // Some schemas might not have target_id, so we'll try without it first
                 const insertData = {
-                    user_id: activity.userId,
-                    user_name: activity.userName || null,
-                    action: activity.action,
-                    target: activity.entityType || activity.target,
-                    target_id: activity.entityId,  // ✅ FIX: Use entityId for target_id (was duplicated in details)
-                    details: activity.details || null,  // ✅ FIX: Use actual details, not entityId
-                    timestamp: activity.timestamp
+                    user_id: activity.userId || null,
+                    action: activity.action
                 };
 
-                console.log('📝 [ActivityLog] Attempting Supabase insert:', {
-                    insertData,
-                    isSupabaseEnabled: getUseSupabase(),
-                    timestamp: new Date().toISOString()
+                // Add optional fields if they exist in the activity object
+                if (activity.userName) insertData.user_name = activity.userName;
+                if (activity.entityType || activity.target) insertData.target = activity.entityType || activity.target;
+                if (activity.entityId) insertData.target_id = activity.entityId;  // Try this optional column
+                if (activity.details) insertData.details = activity.details;
+                if (activity.timestamp) insertData.timestamp = activity.timestamp;
+
+                console.log('📝 [ActivityLog] Attempting insert with columns:', {
+                    columns: Object.keys(insertData),
+                    data: insertData
                 });
 
-                // Insert basic activity log data
-                const { data, error } = await supabase
+                // Try to insert with select
+                let result = await supabase
                     .from('activity_log')
                     .insert([insertData])
-                    .select()
-                    .single();
+                    .select();
 
-                if (!error && data) {
-                    const result = transformActivityLog(data);
-                    console.log('✅ [ActivityLog] INSERT successful:', { id: data.id, action: data.action });
-                    return result;
-                } else if (error) {
-                    console.error('❌ [ActivityLog] Supabase INSERT error:', {
-                        message: error.message,
-                        code: error.code,
-                        details: error.details,
-                        hint: error.hint,
-                        insertData
-                    });
-                    throw error;
+                if (result.error) {
+                    // If target_id column doesn't exist, try without it
+                    if (result.error.message && result.error.message.includes('target_id')) {
+                        console.warn('⚠️ [ActivityLog] target_id column not found, retrying without it...');
+
+                        const insertDataMinimal = {
+                            user_id: activity.userId || null,
+                            action: activity.action
+                        };
+                        if (activity.userName) insertDataMinimal.user_name = activity.userName;
+                        if (activity.entityType || activity.target) insertDataMinimal.target = activity.entityType || activity.target;
+                        if (activity.details) insertDataMinimal.details = activity.details;
+                        if (activity.timestamp) insertDataMinimal.timestamp = activity.timestamp;
+
+                        result = await supabase
+                            .from('activity_log')
+                            .insert([insertDataMinimal])
+                            .select();
+                    }
+
+                    if (result.error) {
+                        console.error('❌ [ActivityLog] Supabase INSERT error:', {
+                            message: result.error.message,
+                            code: result.error.code,
+                            details: result.error.details
+                        });
+                        throw result.error;
+                    }
+                }
+
+                if (result.data && result.data.length > 0) {
+                    console.log('✅ [ActivityLog] INSERT successful:', { id: result.data[0].id });
+                    return result.data[0];
+                } else {
+                    console.warn('⚠️ [ActivityLog] INSERT returned no data');
+                    return null;
                 }
             } catch (err) {
                 console.error('❌ [ActivityLog] INSERT exception:', {
                     message: err.message,
                     code: err.code,
-                    stack: err.stack,
-                    activity: activity
+                    stack: err.stack
                 });
-                throw err;
+                // Don't re-throw - activity log is non-critical
+                return null;
             }
         }
 
