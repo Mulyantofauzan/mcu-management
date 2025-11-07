@@ -267,9 +267,9 @@
         window.masterDataService = masterDataService;
         window.showToast = showToast;
 
-        // Cache for master data
-        let deptCache = new Map();
-        let jobTitleCache = new Map();
+        // ✅ FIX: Load all master data upfront instead of fetching per employee
+        let allDepartments = [];
+        let allJobTitles = [];
 
         // Generate report
         window.generateReport = async function() {
@@ -287,6 +287,10 @@
                 // Show loading
                 const resultsTable = document.getElementById('results-table');
                 resultsTable.innerHTML = '<p class="text-center text-gray-500 py-8">Memproses data...</p>';
+
+                // ✅ FIX: Load master data once at the start
+                allDepartments = await masterDataService.getAllDepartments();
+                allJobTitles = await masterDataService.getAllJobTitles();
 
                 // Get MCUs in date range
                 const startDate = new Date(startDateStr);
@@ -328,37 +332,25 @@
 
                     uniqueEmployees.add(employee.employeeId);
 
-                    // Get department from cache or fetch by numeric ID
-                    const deptId = employee.departmentId || employee.departmentId;
-                    let dept = null;
+                    // ✅ FIX: Find department from loaded list (not fetch per employee)
+                    const deptId = employee.departmentId;
+                    const dept = allDepartments.find(d => {
+                        // Try matching both string and number IDs
+                        return String(d.id) === String(deptId) ||
+                               String(d.departmentId) === String(deptId) ||
+                               d.id === deptId ||
+                               d.departmentId === deptId;
+                    });
 
-                    if (deptCache.has(deptId)) {
-                        dept = deptCache.get(deptId);
-                    } else {
-                        try {
-                            // getDepartmentById should handle numeric IDs from Supabase
-                            dept = await masterDataService.getDepartmentById(deptId);
-                            if (dept) deptCache.set(deptId, dept);
-                        } catch (e) {
-                            console.warn('Failed to fetch department:', deptId, e);
-                        }
-                    }
-
-                    // Get job title from cache or fetch by numeric ID
-                    const jobId = employee.jobTitleId || employee.jobTitleId;
-                    let jobTitle = null;
-
-                    if (jobTitleCache.has(jobId)) {
-                        jobTitle = jobTitleCache.get(jobId);
-                    } else {
-                        try {
-                            // getJobTitleById should handle numeric IDs from Supabase
-                            jobTitle = await masterDataService.getJobTitleById(jobId);
-                            if (jobTitle) jobTitleCache.set(jobId, jobTitle);
-                        } catch (e) {
-                            console.warn('Failed to fetch job title:', jobId, e);
-                        }
-                    }
+                    // ✅ FIX: Find job title from loaded list (not fetch per employee)
+                    const jobId = employee.jobTitleId;
+                    const jobTitle = allJobTitles.find(j => {
+                        // Try matching both string and number IDs
+                        return String(j.id) === String(jobId) ||
+                               String(j.jobTitleId) === String(jobId) ||
+                               j.id === jobId ||
+                               j.jobTitleId === jobId;
+                    });
 
                     report.push({
                         employeeId: employee.employeeId,

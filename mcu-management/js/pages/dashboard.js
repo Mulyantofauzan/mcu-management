@@ -849,19 +849,20 @@ async function updateActivityList() {
       const entityId = activity?.entityId || activity?.details;
       const action = activity?.action;
 
-      // Build detailed activity text based on entity type
+      // ✅ FIX: Build detailed activity text with user-friendly format
       if (entityType === 'Employee') {
         const actionText = {
-          'create': 'menambahkan karyawan',
-          'update': 'mengupdate data karyawan',
-          'delete': 'menghapus karyawan'
-        }[action] || (action || 'mengubah');
+          'create': 'baru saja menambahkan karyawan',
+          'delete': 'baru saja menghapus karyawan'
+        }[action];
+
+        if (!actionText) continue; // Skip if action not in allowed list
 
         let employeeName = entityId || 'Karyawan';
         const emp = Array.isArray(employees) ? employees.find(e => e?.employeeId === entityId) : null;
         if (emp?.name) employeeName = emp.name;
 
-        activityText = `<strong>${userName || 'System'}</strong> ${actionText} <strong>${employeeName}</strong>`;
+        activityText = `<strong>${userName}</strong> ${actionText}: <strong>${employeeName}</strong>`;
       } else if (entityType === 'MCU') {
         let employeeName = '';
         try {
@@ -875,20 +876,17 @@ async function updateActivityList() {
         }
 
         if (action === 'create') {
-          activityText = `<strong>${employeeName || 'Karyawan'}</strong> baru saja MCU`;
-        } else if (action === 'update') {
-          activityText = `<strong>${employeeName || 'Karyawan'}</strong> baru saja Follow-Up`;
+          activityText = `<strong>${userName}</strong> baru saja menambahkan MCU: <strong>${employeeName || 'Karyawan'}</strong>`;
+        } else if (action === 'follow-up') {
+          activityText = `<strong>${userName}</strong> baru saja melakukan Follow-Up: <strong>${employeeName || 'Karyawan'}</strong>`;
+        } else if (action === 'delete') {
+          activityText = `<strong>${userName}</strong> baru saja menghapus MCU: <strong>${employeeName || 'Karyawan'}</strong>`;
         } else {
-          activityText = `<strong>${userName}</strong> menghapus data MCU`;
+          continue; // Skip other actions
         }
       } else {
-        const actionText = {
-          'create': 'menambahkan',
-          'update': 'mengupdate',
-          'delete': 'menghapus'
-        }[action] || action;
-
-        activityText = `<strong>${userName}</strong> ${actionText} ${entityType || 'item'}`;
+        // Skip other entity types
+        continue;
       }
 
       html += `

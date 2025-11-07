@@ -327,13 +327,16 @@
                     return;
                 }
 
-                // Display employee info (ensure department ID is string for consistency)
-                const deptId = String(employee.departmentId);
-                let dept = deptCache.get(deptId);
-                if (!dept) {
-                    dept = await masterDataService.getDepartmentById(deptId);
-                    if (dept) deptCache.set(deptId, dept);
-                }
+                // ✅ FIX: Load all departments upfront and find match
+                const allDepts = await masterDataService.getAllDepartments();
+                const deptId = employee.departmentId;
+                const dept = allDepts.find(d => {
+                    // Try matching both string and number IDs
+                    return String(d.id) === String(deptId) ||
+                           String(d.departmentId) === String(deptId) ||
+                           d.id === deptId ||
+                           d.departmentId === deptId;
+                });
 
                 document.getElementById('info-name').textContent = employee.name;
                 document.getElementById('info-department').textContent = (dept && dept.name) ? dept.name : 'N/A';

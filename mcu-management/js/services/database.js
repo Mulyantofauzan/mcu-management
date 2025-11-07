@@ -168,6 +168,13 @@ class DatabaseService {
     }
 
     async logActivity(action, entityType, entityId, userId = null) {
+        // ✅ FIX: Filter out 'update' actions - only log create, delete, and other meaningful actions
+        const allowedActions = ['create', 'delete', 'restore', 'follow-up'];
+        if (!allowedActions.includes(action)) {
+            console.debug(`⊘ [DB] Activity skipped (action '${action}' not in allowed list): ${entityType}:${entityId}`);
+            return null;
+        }
+
         const adp = await getAdapter();
 
         // Get user name if userId is provided
