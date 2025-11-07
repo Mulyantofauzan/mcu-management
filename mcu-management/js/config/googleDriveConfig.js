@@ -21,15 +21,32 @@
  *    firebase deploy --only functions:uploadToGoogleDrive
  */
 
-// Google Drive configuration
+// Get environment variables safely - lazy evaluation
+function getEnvVar(varName) {
+  // Try window.ENV first (from env-config.js)
+  if (typeof window !== 'undefined' && window.ENV && window.ENV[varName]) {
+    return window.ENV[varName];
+  }
+  // Fallback to process.env (for Node.js/build time)
+  if (typeof process !== 'undefined' && process.env && process.env[varName]) {
+    return process.env[varName];
+  }
+  return null;
+}
+
+// Google Drive configuration with lazy getters
 export const googleDriveConfig = {
   // Root folder ID for MCU Documents (set from Google Drive URL)
   // Format: https://drive.google.com/drive/folders/1ABC123XYZ... → ID: 1ABC123XYZ...
-  rootFolderId: typeof window !== 'undefined' && window.ENV ? window.ENV.VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID : (typeof process !== 'undefined' ? process.env.VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID : null) || null,
+  get rootFolderId() {
+    return getEnvVar('VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID');
+  },
 
   // Vercel Serverless Function endpoint for file uploads
   // Format: https://vercel-project.vercel.app/api/uploadToGoogleDrive
-  uploadEndpoint: typeof window !== 'undefined' && window.ENV ? window.ENV.VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT : (typeof process !== 'undefined' ? process.env.VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT : null) || null,
+  get uploadEndpoint() {
+    return getEnvVar('VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT');
+  },
 
   // File upload settings
   maxFileSize: 5 * 1024 * 1024, // 5MB
