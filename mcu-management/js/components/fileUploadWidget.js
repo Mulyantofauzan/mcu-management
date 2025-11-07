@@ -330,6 +330,9 @@ class FileUploadWidget {
         throw new Error(`Maximum ${this.maxFiles} files allowed`);
       }
 
+      // First, detect MIME type from extension if browser didn't set it
+      file = fileCompression.detectMimeType(file);
+
       // Validate file
       fileCompression.validateFile(file);
 
