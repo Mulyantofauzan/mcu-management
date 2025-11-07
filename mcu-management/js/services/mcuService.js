@@ -189,6 +189,7 @@ class MCUService {
       'vision', 'audiometry', 'spirometry',
       'xray', 'ekg', 'treadmill', 'kidneyLiverFunction', 'hbsag',
       'sgot', 'sgpt', 'cbc', 'napza',
+      'doctor', // ✅ FIX: Include doctor field so it gets saved during edit!
       'recipient', 'keluhanUtama', 'diagnosisKerja', 'alasanRujuk'
     ];
 

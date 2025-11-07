@@ -510,8 +510,17 @@ window.addMCUForEmployee = async function(employeeId) {
 
         // Get job title and department
         // ✅ FIX: employees table stores names, not IDs! Match by name not ID
-        const jobTitle = jobTitles.find(j => j.name === employee.job_title);
-        const department = departments.find(d => d.name === employee.department);
+        // Normalize comparison: trim whitespace and case-insensitive as fallback
+        const empJobTitle = (employee.job_title || '').trim();
+        const jobTitle = jobTitles.find(j =>
+            j.name === empJobTitle ||
+            (j.name && j.name.trim().toLowerCase() === empJobTitle.toLowerCase())
+        );
+        const empDept = (employee.department || '').trim();
+        const department = departments.find(d =>
+            d.name === empDept ||
+            (d.name && d.name.trim().toLowerCase() === empDept.toLowerCase())
+        );
 
         // Fill employee summary
         document.getElementById('mcu-emp-name').textContent = employee.name;
@@ -618,8 +627,17 @@ window.viewMCUDetail = async function(mcuId) {
 
         const emp = employees.find(e => e.employeeId === mcu.employeeId);
         // ✅ FIX: Match by NAME not ID (employees stores names, not IDs!)
-        const job = jobTitles.find(j => j.name === emp?.job_title);
-        const dept = departments.find(d => d.name === emp?.department);
+        // Normalize comparison: trim whitespace and case-insensitive as fallback
+        const empJobTitle = (emp?.job_title || '').trim();
+        const job = jobTitles.find(j =>
+            j.name === empJobTitle ||
+            (j.name && j.name.trim().toLowerCase() === empJobTitle.toLowerCase())
+        );
+        const empDept = (emp?.department || '').trim();
+        const dept = departments.find(d =>
+            d.name === empDept ||
+            (d.name && d.name.trim().toLowerCase() === empDept.toLowerCase())
+        );
 
         // Fill employee info
         document.getElementById('mcu-detail-emp-name').textContent = emp?.name || '-';

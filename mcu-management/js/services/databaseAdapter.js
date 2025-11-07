@@ -461,6 +461,8 @@ export const MCUs = {
                 treadmill: 'treadmill',
                 kidneyLiverFunction: 'kidney_liver_function',
                 napza: 'napza',
+                // ✅ FIX: Add doctor field mapping (for referral data)
+                doctor: 'doctor',
                 recipient: 'recipient',
                 keluhanUtama: 'keluhan_utama',
                 diagnosisKerja: 'diagnosis_kerja',

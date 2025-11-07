@@ -333,10 +333,20 @@
                     uniqueEmployees.add(employee.employeeId);
 
                     // ✅ FIX: Match department by name (not ID, employees stores department as TEXT name)
-                    const dept = allDepartments.find(d => d.name === employee.department);
+                    // Normalize comparison: trim whitespace and case-insensitive as fallback
+                    const empDept = (employee.department || '').trim();
+                    const dept = allDepartments.find(d =>
+                        d.name === empDept ||
+                        (d.name && d.name.trim().toLowerCase() === empDept.toLowerCase())
+                    );
 
                     // ✅ FIX: Match job title by name (not ID, employees stores job_title as TEXT name)
-                    const jobTitle = allJobTitles.find(j => j.name === employee.job_title);
+                    // Normalize comparison: trim whitespace and case-insensitive as fallback
+                    const empJobTitle = (employee.job_title || '').trim();
+                    const jobTitle = allJobTitles.find(j =>
+                        j.name === empJobTitle ||
+                        (j.name && j.name.trim().toLowerCase() === empJobTitle.toLowerCase())
+                    );
 
                     report.push({
                         employeeId: employee.employeeId,

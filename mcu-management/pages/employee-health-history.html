@@ -329,7 +329,12 @@
 
                 // ✅ FIX: Match department by name (employees stores department as TEXT name)
                 const allDepts = await masterDataService.getAllDepartments();
-                const dept = allDepts.find(d => d.name === employee.department);
+                // Normalize comparison: trim whitespace and case-insensitive as fallback
+                const empDept = (employee.department || '').trim();
+                const dept = allDepts.find(d =>
+                    d.name === empDept ||
+                    (d.name && d.name.trim().toLowerCase() === empDept.toLowerCase())
+                );
 
                 document.getElementById('info-name').textContent = employee.name;
                 document.getElementById('info-department').textContent = (dept && dept.name) ? dept.name : 'N/A';
