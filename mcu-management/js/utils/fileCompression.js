@@ -25,17 +25,24 @@ class FileCompression {
    * @returns {File} - File with corrected MIME type
    */
   detectMimeType(file) {
+    console.log(`[detectMimeType] File: ${file.name}, Current type: "${file.type}"`);
+
     // If file already has MIME type, use it
     if (file.type && file.type !== 'application/octet-stream') {
+      console.log(`[detectMimeType] Type is good (${file.type}), returning as-is`);
       return file;
     }
 
     // Extract file extension
     const fileName = file.name.toLowerCase();
     const extension = fileName.split('.').pop();
+    console.log(`[detectMimeType] Extension detected: "${extension}"`);
+
     const detectedType = this.MIME_TYPES[extension];
+    console.log(`[detectMimeType] Mapped type: "${detectedType}"`);
 
     if (detectedType) {
+      console.log(`[detectMimeType] Creating new File with type: ${detectedType}`);
       logger.info(`Auto-detected MIME type for ${file.name}: ${detectedType}`);
       // Create a new File object with correct MIME type
       return new File([file], file.name, {
@@ -44,6 +51,7 @@ class FileCompression {
       });
     }
 
+    console.log(`[detectMimeType] No mapping found, returning file as-is`);
     return file;
   }
 
