@@ -96,7 +96,7 @@ async function handler(req, res) {
             file = {
               buffer: Buffer.concat(chunks),
               filename: filename,
-              mimetype: mimetype,
+              mimetype: mimetype || 'application/octet-stream', // Fallback if not provided
               size: Buffer.concat(chunks).length,
             };
           });

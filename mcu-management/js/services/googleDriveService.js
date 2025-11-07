@@ -56,10 +56,11 @@ class GoogleDriveService {
 
       // Prepare form data for upload
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', file, file.name); // Include filename and type
       formData.append('employeeId', employeeId);
       formData.append('userId', currentUser?.userId || 'unknown');
       formData.append('userName', currentUser?.displayName || 'Unknown');
+      formData.append('mimeType', file.type); // Also pass mimetype separately for safety
 
       // Call Cloud Function endpoint
       logger.info(`Uploading file: ${file.name} for employee ${employeeId}`);
