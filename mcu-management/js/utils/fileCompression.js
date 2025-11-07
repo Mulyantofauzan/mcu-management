@@ -45,7 +45,9 @@ class FileCompression {
       console.log(`[detectMimeType] Creating new File with type: ${detectedType}`);
       logger.info(`Auto-detected MIME type for ${file.name}: ${detectedType}`);
       // Create a new File object with correct MIME type
-      return new File([file], file.name, {
+      // IMPORTANT: Convert File to Blob first using slice() - this creates a Blob from file content
+      const fileBlob = file.slice(0, file.size, detectedType);
+      return new File([fileBlob], file.name, {
         type: detectedType,
         lastModified: file.lastModified,
       });
