@@ -11,7 +11,8 @@
       "Bash(ls:*)",
       "Bash(awk:*)",
       "Bash(npx firebase:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(git push)"
     ],
     "deny": [],
     "ask": []

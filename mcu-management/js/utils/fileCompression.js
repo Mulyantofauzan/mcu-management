@@ -10,6 +10,41 @@ class FileCompression {
   constructor() {
     this.MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB target
     this.MAX_DIMENSION = 2048; // Max width/height for images
+    // MIME type mapping for common file extensions
+    this.MIME_TYPES = {
+      'pdf': 'application/pdf',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+    };
+  }
+
+  /**
+   * Detect MIME type from file extension if browser didn't set it
+   * @param {File} file - File to check
+   * @returns {File} - File with corrected MIME type
+   */
+  detectMimeType(file) {
+    // If file already has MIME type, use it
+    if (file.type && file.type !== 'application/octet-stream') {
+      return file;
+    }
+
+    // Extract file extension
+    const fileName = file.name.toLowerCase();
+    const extension = fileName.split('.').pop();
+    const detectedType = this.MIME_TYPES[extension];
+
+    if (detectedType) {
+      logger.info(`Auto-detected MIME type for ${file.name}: ${detectedType}`);
+      // Create a new File object with correct MIME type
+      return new File([file], file.name, {
+        type: detectedType,
+        lastModified: file.lastModified,
+      });
+    }
+
+    return file;
   }
 
   /**
@@ -18,6 +53,8 @@ class FileCompression {
    * @returns {Promise<File>} - Compressed file
    */
   async compressFile(file) {
+    // First, ensure file has correct MIME type
+    file = this.detectMimeType(file);
     try {
       logger.info(`Compressing file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
 
