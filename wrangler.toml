@@ -1,0 +1,29 @@
+name = "mcu-management"
+type = "javascript"
+account_id = ""
+workers_dev = true
+route = ""
+zone_id = ""
+compatibility_date = "2024-10-25"
+
+[env.production]
+name = "mcu-management-prod"
+
+# Environment variables
+[env.production.vars]
+GOOGLE_DRIVE_ROOT_FOLDER_ID = "1XJ2utC4aWHUdhdqerfRr96E3SSILmntH"
+SUPABASE_URL = "https://your-project.supabase.co"
+
+# Secrets (set via wrangler secret)
+# wrangler secret put GOOGLE_CREDENTIALS --env production
+# wrangler secret put SUPABASE_SERVICE_ROLE_KEY --env production
+
+# Build configuration
+[build]
+command = "npm install"
+cwd = "./functions"
+
+# Files to upload
+[build.upload]
+format = "service-worker"
+main = "./uploadToGoogleDrive.ts"
