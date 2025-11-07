@@ -959,8 +959,8 @@ export const ActivityLog = {
                     user_name: activity.userName || null,
                     action: activity.action,
                     target: activity.entityType || activity.target || null,
-                    // Store entityId in details since there's no target_id column
-                    details: activity.details || (activity.entityId ? `Entity: ${activity.entityId}` : null),
+                    // Store entityId in details (as plain value, not formatted string)
+                    details: activity.details || activity.entityId || null,
                     timestamp: activity.timestamp
                 };
 
