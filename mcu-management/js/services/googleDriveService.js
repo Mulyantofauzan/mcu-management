@@ -55,6 +55,53 @@ class GoogleDriveService {
   }
 
   /**
+   * Ensure file has reliable MIME type - override file.type if necessary
+   * @param {File} file - File object
+   * @returns {File} - File with corrected MIME type property
+   */
+  ensureMimeType(file) {
+    // Try all methods to get the correct MIME type
+    let mimeType = null;
+
+    // Method 1: Check if file already has correct type
+    if (file.type && file.type !== 'application/octet-stream') {
+      mimeType = file.type;
+    }
+
+    // Method 2: Try to detect from filename
+    if (!mimeType) {
+      mimeType = this.getMimeTypeFromFileName(file.name);
+    }
+
+    // Method 3: Check custom property if it exists
+    if (!mimeType && file.__detectedMimeType) {
+      mimeType = file.__detectedMimeType;
+    }
+
+    // If we found a MIME type, create a new File with it properly set
+    if (mimeType && file.type !== mimeType) {
+      logger.info(`Overriding file MIME type from "${file.type}" to "${mimeType}"`);
+      try {
+        // Create a new File with the correct type
+        const newFile = new File([file], file.name, {
+          type: mimeType,
+          lastModified: file.lastModified,
+        });
+        // Also set it as a property for extra safety
+        Object.defineProperty(newFile, 'type', {
+          value: mimeType,
+          writable: false
+        });
+        return newFile;
+      } catch (e) {
+        logger.warn(`Failed to create new File object: ${e.message}`);
+      }
+    }
+
+    return file;
+  }
+
+  /**
    * Upload file to Google Drive
    * Frontend calls this, which triggers backend Cloud Function
    * @param {File} file - File object from input
@@ -72,40 +119,22 @@ class GoogleDriveService {
         throw new Error('File and employeeId are required');
       }
 
+      // Ensure file has correct MIME type
+      file = this.ensureMimeType(file);
+
       // Validate file size before compression (should be pre-compressed by frontend)
       const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
       if (file.size > MAX_FILE_SIZE) {
         throw new Error(`File size exceeds 5MB limit. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
       }
 
-      // Validate file type - use multi-level fallback approach
+      // Validate file type - should now have correct MIME type after ensureMimeType()
       const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
-      const ALLOWED_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png'];
-
       let actualMimeType = file.type;
-      logger.info(`Initial file.type: "${actualMimeType}", filename: "${file.name}"`);
-
-      // If file.type is unreliable or missing, try to detect from filename
-      if (!actualMimeType || actualMimeType === 'application/octet-stream') {
-        logger.info(`File.type unreliable, attempting detection from filename...`);
-        actualMimeType = this.getMimeTypeFromFileName(file.name);
-        logger.info(`Detection result: ${actualMimeType}`);
-      }
-
-      // Last resort: check file extension directly
-      if (!actualMimeType) {
-        const ext = file.name.toLowerCase().split('.').pop();
-        if (ALLOWED_EXTENSIONS.includes(ext)) {
-          const extensionMap = { 'pdf': 'application/pdf', 'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png' };
-          actualMimeType = extensionMap[ext];
-          logger.info(`Using extension-based fallback: ${ext} -> ${actualMimeType}`);
-        }
-      }
-
-      logger.info(`Final actualMimeType: ${actualMimeType}`);
+      logger.info(`File after ensureMimeType: type="${actualMimeType}", filename="${file.name}"`);
 
       if (!ALLOWED_TYPES.includes(actualMimeType)) {
-        throw new Error(`File type not allowed. Allowed: PDF, JPEG, PNG. Provided: ${file.type || 'unknown'} (detected: ${actualMimeType || 'unknown'})`);
+        throw new Error(`File type not allowed. Allowed: PDF, JPEG, PNG. Provided: ${file.type || 'unknown'}`);
       }
 
       // Prepare form data for upload
