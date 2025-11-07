@@ -144,6 +144,10 @@ function updateStats() {
     const active = employees.filter(e => e.activeStatus === 'Active').length;
     document.getElementById('stat-active').textContent = active;
 
+    // ✅ FIX: Add inactive employee count
+    const inactive = employees.filter(e => e.activeStatus === 'Inactive').length;
+    document.getElementById('stat-inactive').textContent = inactive;
+
     const company = employees.filter(e => e.employmentStatus === 'Karyawan PST').length;
     document.getElementById('stat-company').textContent = company;
 
