@@ -964,12 +964,6 @@ export const ActivityLog = {
                     timestamp: activity.timestamp
                 };
 
-                console.log('📝 [ActivityLog] Inserting with actual schema columns:', {
-                    columns: Object.keys(insertData),
-                    insertData,
-                    timestamp: new Date().toISOString()
-                });
-
                 // Insert to Supabase
                 const { data, error } = await supabase
                     .from('activity_log')
@@ -977,34 +971,16 @@ export const ActivityLog = {
                     .select();
 
                 if (error) {
-                    console.error('❌ [ActivityLog] Supabase INSERT error:', {
-                        message: error.message,
-                        code: error.code,
-                        details: error.details,
-                        hint: error.hint,
-                        insertedColumns: Object.keys(insertData)
-                    });
                     throw error;
                 }
 
                 if (data && data.length > 0) {
-                    console.log('✅ [ActivityLog] INSERT successful:', {
-                        id: data[0].id,
-                        action: data[0].action,
-                        timestamp: data[0].timestamp
-                    });
                     return data[0];
                 } else {
-                    console.warn('⚠️ [ActivityLog] INSERT returned no data');
                     return null;
                 }
             } catch (err) {
-                console.error('❌ [ActivityLog] INSERT exception:', {
-                    message: err.message,
-                    code: err.code,
-                    stack: err.stack
-                });
-                // Activity log is non-critical - don't block main operations
+                // ✅ Silently fail - activity log is non-critical
                 return null;
             }
         }

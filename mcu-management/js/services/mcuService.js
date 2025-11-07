@@ -209,9 +209,9 @@ class MCUService {
       await database.add('mcuChanges', change);
     }
 
-    // Log activity
+    // Log activity - use 'follow-up' action for follow-up updates
     if (currentUser) {
-      await database.logActivity('update', 'MCU', mcuId, currentUser.userId);
+      await database.logActivity('follow-up', 'MCU', mcuId, currentUser.userId);
     }
 
     return newMCU;

@@ -105,7 +105,6 @@ async function init() {
     // Show page content after initialization complete
     document.body.classList.add('initialized');
   } catch (error) {
-    console.error('Initialization error:', error);
     showToast('Error initializing page: ' + error.message, 'error');
     // Still show page even on error
     document.body.classList.add('initialized');
@@ -161,10 +160,7 @@ async function loadMasterData() {
     // Enrich employees with IDs (for Supabase which only stores names)
     employees = employees.map(emp => enrichEmployeeWithIds(emp));
   } catch (error) {
-    console.error('❌ loadMasterData failed:', {
-      message: error.message,
-      stack: error.stack
-    });
+    // Silent fail - master data load error will be handled gracefully
   }
 }
 
@@ -493,10 +489,10 @@ window.handleLogout = function() {
   authService.logout();
 };
 
-// ✅ FIX: Wait for Supabase to be ready before initializing
+// Initialize page when ready
 supabaseReady.then(() => {
   init();
 }).catch(err => {
-  console.error('Failed to wait for Supabase:', err);
+  // Still initialize even if Supabase wait failed
   init();
 });

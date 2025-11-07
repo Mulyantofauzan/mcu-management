@@ -59,9 +59,9 @@ function openPrintDialog(content) {
           printWindow.focus();
           printWindow.print();
         } catch (e) {
-          console.error('Error during print:', e);
+          // Silent fail - print dialog may have been cancelled
         }
-      }, 100);
+      }, 300);
 
       // Close after print (user may cancel, so delay)
       setTimeout(() => {
@@ -109,42 +109,54 @@ function generateRujukanHTML(employee, mcu, doctorName) {
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Surat Rujukan - ${employee.name}</title>
-      <script src="https://cdn.tailwindcss.com"></script>
       <style>
-        @media print {
-          body { background: white !important; }
-          .page { box-shadow: none !important; margin: 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+          background: white !important;
+          font-family: Arial, sans-serif;
+          padding: 10px;
+        }
+        .page {
+          box-shadow: none !important;
+          margin: 0;
+          background: white;
+          max-width: 900px;
+          margin: 0 auto;
         }
         .icon-column {
           background-color: rgb(30, 58, 138) !important;
-          background: rgb(30, 58, 138) !important;
           color: white !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
         }
         @media print {
-          .icon-column {
-            background-color: rgb(30, 58, 138) !important;
-            background: rgb(30, 58, 138) !important;
-            color: white !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-            color-adjust: exact !important;
+          body {
+            background: white !important;
+            padding: 0;
+          }
+          .page {
+            box-shadow: none !important;
+            margin: 0;
+            max-width: 100%;
+            padding: 20px;
           }
         }
       </style>
     </head>
-    <body class="bg-white">
-     <div class="page bg-white w-[900px] shadow-md p-6 relative">
-    <div class="flex justify-between items-start">
+    <body style="background: white; font-family: Arial, sans-serif; margin: 0; padding: 10px;">
+     <div style="background: white; max-width: 900px; padding: 20px; margin: 0 auto; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
       <!-- Logo kiri -->
-      <div class="flex-shrink-0">
-        <img 
+      <div style="flex-shrink: 0;">
+        <img
           src="https://s3.nevaobjects.id/saffix-storige/saffmedic-sekata/company/klinik_sekata_medical_center-1-09052025084603.png"
           alt="Sekata Medical Center Logo"
-          class="w-40 object-contain">
+          style="width: 160px; object-fit: contain;">
       </div>
 
       <!-- Area kanan -->
-      <div class="flex">
+      <div style="display: flex;">
         <!-- Kolom teks kanan -->
         <div style="display: flex; flex-direction: column; text-align: right; font-size: 13px; line-height: 1.2; margin-right: 0; justify-content: center;">
           <!-- Alamat sejajar dengan ikon lokasi -->

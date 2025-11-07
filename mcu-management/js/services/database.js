@@ -168,10 +168,9 @@ class DatabaseService {
     }
 
     async logActivity(action, entityType, entityId, userId = null) {
-        // ✅ FIX: Filter out 'update' actions - only log create, delete, and other meaningful actions
+        // Filter out 'update' actions - only log create, delete, and other meaningful actions
         const allowedActions = ['create', 'delete', 'restore', 'follow-up'];
         if (!allowedActions.includes(action)) {
-            console.debug(`⊘ [DB] Activity skipped (action '${action}' not in allowed list): ${entityType}:${entityId}`);
             return null;
         }
 
@@ -197,22 +196,9 @@ class DatabaseService {
                 userName,
                 timestamp: new Date().toISOString()
             });
-            console.log('✅ [DB] Activity logged successfully:', { action, entityType, entityId });
             return result;
         } catch (err) {
-            // ✅ FIX: Log detailed error information for debugging
-            console.error('❌ [DB] Activity log FAILED:', {
-                action,
-                entityType,
-                entityId,
-                userId,
-                error: err.message,
-                code: err.code,
-                stack: err.stack,
-                timestamp: new Date().toISOString()
-            });
             // Activity log is non-critical - don't block main operations
-            // but we WILL log the error for debugging
             return null;
         }
     }

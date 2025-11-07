@@ -866,13 +866,16 @@ async function updateActivityList() {
       } else if (entityType === 'MCU') {
         let employeeName = '';
         try {
-          const mcu = await database.get('mcus', entityId);
-          if (mcu?.employeeId) {
-            const emp = Array.isArray(employees) ? employees.find(e => e?.employeeId === mcu.employeeId) : null;
-            if (emp?.name) employeeName = emp.name;
+          // Validate entityId exists and looks like an MCU ID (MCU-xxxxx format)
+          if (entityId && entityId.length > 0 && entityId.startsWith('MCU-')) {
+            const mcu = await database.get('mcus', entityId);
+            if (mcu?.employeeId) {
+              const emp = Array.isArray(employees) ? employees.find(e => e?.employeeId === mcu.employeeId) : null;
+              if (emp?.name) employeeName = emp.name;
+            }
           }
         } catch (e) {
-          // Silent fail
+          // Silent fail - invalid entityId
         }
 
         if (action === 'create') {
@@ -1001,11 +1004,9 @@ window.reseedDatabase = async function() {
 };
 
 // Initialize on load
-// ✅ FIX: Wait for Supabase to be ready before initializing
 supabaseReady.then(() => {
   init();
 }).catch(err => {
-  console.error('Failed to wait for Supabase:', err);
   // Still initialize even if Supabase wait failed
   init();
 });
