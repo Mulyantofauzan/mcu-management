@@ -224,7 +224,9 @@ window.permanentDelete = function(employeeId) {
                 '⚠️ Konfirmasi kedua: Anda yakin ingin menghapus permanen?',
                 async () => {
                     try {
-                        await employeeService.permanentDelete(employeeId);
+                        // ✅ FIX: Pass currentUser to permanentDelete for activity logging
+                        const currentUser = authService.getCurrentUser();
+                        await employeeService.permanentDelete(employeeId, currentUser);
                         showToast('Data berhasil dihapus permanen', 'success');
                         await loadData();
                     } catch (error) {
@@ -287,10 +289,12 @@ window.bulkDelete = function() {
                     try {
                         let successCount = 0;
                         let failCount = 0;
+                        // ✅ FIX: Get currentUser once before loop for activity logging
+                        const currentUser = authService.getCurrentUser();
 
                         for (const employeeId of selectedEmployees) {
                             try {
-                                await employeeService.permanentDelete(employeeId);
+                                await employeeService.permanentDelete(employeeId, currentUser);
                                 successCount++;
                             } catch (error) {
 

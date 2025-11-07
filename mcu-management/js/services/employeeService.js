@@ -121,7 +121,11 @@ class EmployeeService {
     return true;
   }
 
-  async permanentDelete(employeeId) {
+  async permanentDelete(employeeId, currentUser) {
+    // Get employee info for audit detail
+    const employee = await this.getById(employeeId);
+    const employeeName = employee?.name || 'Unknown';
+
     // Delete all associated MCU records (hard delete)
     const mcus = await database.query('mcus', mcu => mcu.employeeId === employeeId);
     for (const mcu of mcus) {
@@ -133,10 +137,23 @@ class EmployeeService {
 
       // Hard delete MCU
       await database.hardDelete('mcus', mcu.mcuId);
+
+      // ✅ FIX: Log each MCU deletion
+      if (currentUser?.userId) {
+        await database.logActivity('delete', 'MCU', mcu.mcuId, currentUser.userId,
+          `MCU deleted (cascade from employee delete): ${mcu.mcuId}`);
+      }
     }
 
     // Hard delete employee
     await database.hardDelete('employees', employeeId);
+
+    // ✅ FIX: Log employee deletion with details
+    if (currentUser?.userId) {
+      await database.logActivity('delete', 'Employee', employeeId, currentUser.userId,
+        `Employee permanently deleted: ${employeeName} (${employeeId}). Associated ${mcus.length} MCU records also deleted.`);
+    }
+
     return true;
   }
 

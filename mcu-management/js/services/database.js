@@ -167,7 +167,7 @@ class DatabaseService {
         return await adp.ActivityLog.getAll(limit);
     }
 
-    async logActivity(action, entityType, entityId, userId = null) {
+    async logActivity(action, entityType, entityId, userId = null, details = null) {
         // Only log CRUD operations - create, read, update, delete
         const allowedActions = ['create', 'update', 'delete', 'restore'];
         if (!allowedActions.includes(action)) {
@@ -194,11 +194,14 @@ class DatabaseService {
                 entityId,
                 userId,
                 userName,
+                // ✅ FIX: Include details field for audit trail
+                details: details || null,
                 timestamp: new Date().toISOString()
             });
             return result;
         } catch (err) {
             // Activity log is non-critical - don't block main operations
+            console.warn('[Activity Log Error]', err.message);
             return null;
         }
     }

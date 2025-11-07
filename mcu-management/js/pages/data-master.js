@@ -199,7 +199,9 @@ window.deleteItem = function(id) {
         async () => {
             try {
                 const config = tabConfig[currentTab];
-                await config.delete(id);
+                // ✅ FIX: Pass currentUser to delete function for activity logging
+                const currentUser = authService.getCurrentUser();
+                await config.delete(id, currentUser);
                 showToast('Data berhasil dihapus', 'success');
                 await loadData();
             } catch (error) {

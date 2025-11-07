@@ -355,6 +355,13 @@ window.deleteUser = async function(userId) {
     try {
         await database.delete('users', userId);
 
+        // ✅ FIX: Log user deletion activity
+        const currentUser = authService.getCurrentUser();
+        if (currentUser?.userId) {
+            await database.logActivity('delete', 'User', userId, currentUser.userId,
+                `User deleted: ${user.displayName} (${user.username})`);
+        }
+
         showToast('User berhasil dihapus', 'success');
         await loadUsers();
     } catch (error) {
