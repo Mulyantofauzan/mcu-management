@@ -16,6 +16,10 @@ window.ENV = {
   SUPABASE_URL: 'https://xqyuktsfjvdqfhulobai.supabase.co',
   SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxeXVrdHNmanZkcWZodWxvYmFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MjkxNzQsImV4cCI6MjA3NjQwNTE3NH0.8_lmNISdJ7AMi0QgAqBoPathoiUeH_WZRDqFaAiRDwY',
 
+  // Google Drive Configuration
+  VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID: '1XJ2utC4aWHUdhdqerfRr96E3SSILmntH',
+  VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT: 'https://mcu-management.vercel.app/api/uploadToGoogleDrive',
+
   // Production mode: Disable auto-seeding (prevent dummy data)
   // Set to true ONLY for development/testing
   ENABLE_AUTO_SEED: false
