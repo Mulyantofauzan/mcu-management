@@ -190,16 +190,22 @@ class DatabaseService {
                 userName,
                 timestamp: new Date().toISOString()
             });
+            console.log('✅ [DB] Activity logged successfully:', { action, entityType, entityId });
             return result;
         } catch (err) {
-            // Activity log is non-critical - don't block main operations
-            console.error('❌ Activity log save FAILED (non-critical):', {
+            // ✅ FIX: Log detailed error information for debugging
+            console.error('❌ [DB] Activity log FAILED:', {
                 action,
                 entityType,
                 entityId,
+                userId,
                 error: err.message,
-                stack: err.stack
+                code: err.code,
+                stack: err.stack,
+                timestamp: new Date().toISOString()
             });
+            // Activity log is non-critical - don't block main operations
+            // but we WILL log the error for debugging
             return null;
         }
     }

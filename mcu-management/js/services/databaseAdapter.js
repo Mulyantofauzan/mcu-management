@@ -951,36 +951,48 @@ export const ActivityLog = {
         if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             try {
+                // ✅ FIX: Add verbose logging to debug activity log insertion
+                const insertData = {
+                    user_id: activity.userId,
+                    user_name: activity.userName || null,
+                    action: activity.action,
+                    target: activity.entityType || activity.target,
+                    target_id: activity.entityId,  // ✅ FIX: Use entityId for target_id (was duplicated in details)
+                    details: activity.details || null,  // ✅ FIX: Use actual details, not entityId
+                    timestamp: activity.timestamp
+                };
+
+                console.log('📝 [ActivityLog] Attempting Supabase insert:', {
+                    insertData,
+                    isSupabaseEnabled: getUseSupabase(),
+                    timestamp: new Date().toISOString()
+                });
+
                 // Insert basic activity log data
                 const { data, error } = await supabase
                     .from('activity_log')
-                    .insert({
-                        user_id: activity.userId,
-                        user_name: activity.userName || null,
-                        action: activity.action,
-                        target: activity.entityType || activity.target,
-                        target_id: activity.entityId,
-                        details: activity.entityId || activity.details,
-                        timestamp: activity.timestamp
-                    })
+                    .insert([insertData])
                     .select()
                     .single();
 
                 if (!error && data) {
                     const result = transformActivityLog(data);
+                    console.log('✅ [ActivityLog] INSERT successful:', { id: data.id, action: data.action });
                     return result;
                 } else if (error) {
-                    console.error('❌ Supabase activity_log INSERT error:', {
+                    console.error('❌ [ActivityLog] Supabase INSERT error:', {
                         message: error.message,
                         code: error.code,
                         details: error.details,
-                        hint: error.hint
+                        hint: error.hint,
+                        insertData
                     });
                     throw error;
                 }
             } catch (err) {
-                console.error('❌ ActivityLog.add() failed:', {
+                console.error('❌ [ActivityLog] INSERT exception:', {
                     message: err.message,
+                    code: err.code,
                     stack: err.stack,
                     activity: activity
                 });

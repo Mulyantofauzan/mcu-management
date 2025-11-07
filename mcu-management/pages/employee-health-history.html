@@ -206,6 +206,7 @@
         import { masterDataService } from '../js/services/masterDataService.js';
         import { showToast } from '../js/utils/uiHelpers.js';
         import { initSidebar } from '../js/utils/sidebarInit.js';
+        import { supabaseReady } from '../js/config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 
         // Check authentication
         if (!authService.isAuthenticated()) {
@@ -594,8 +595,13 @@
             authService.logout();
         };
 
-        // Initialize
-        init();
+        // ✅ FIX: Wait for Supabase to be ready before initializing
+        supabaseReady.then(() => {
+            init();
+        }).catch(err => {
+            console.error('Failed to wait for Supabase:', err);
+            init();  // Fallback: still run init even if Supabase fails
+        });
     </script>
 </body>
 </html>
