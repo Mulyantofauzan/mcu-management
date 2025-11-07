@@ -34,9 +34,6 @@ class GoogleDriveService {
    */
   async uploadFile(file, employeeId, currentUser) {
     try {
-      // DEBUG: Log file type before validation
-      console.log(`[GoogleDriveService.uploadFile] Received file: ${file.name}, type: "${file.type}", size: ${file.size}`);
-
       if (!this.uploadEndpoint) {
         throw new Error('Google Drive service not initialized. Check uploadEndpoint configuration.');
       }
@@ -53,7 +50,6 @@ class GoogleDriveService {
 
       // Validate file type
       const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
-      console.log(`[GoogleDriveService.uploadFile] Checking file.type "${file.type}" against allowed: ${ALLOWED_TYPES.join(', ')}`);
       if (!ALLOWED_TYPES.includes(file.type)) {
         throw new Error(`File type not allowed. Allowed: PDF, JPEG, PNG. Provided: ${file.type}`);
       }
