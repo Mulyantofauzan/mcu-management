@@ -150,6 +150,15 @@ async function loadData() {
 
     // Apply all filters (date range, employee type, department, MCU status)
     const filteredMCUs = latestMCUs.filter(mcu => {
+      // Get employee for this MCU
+      const employee = employees.find(e => e.employeeId === mcu.employeeId);
+
+      // ✅ FIX: Exclude inactive employees (like soft-deleted)
+      // Only include MCUs from active employees
+      if (!employee || employee.activeStatus !== 'Active') {
+        return false;
+      }
+
       // Filter by date range
       if (currentDateRange.startDate && currentDateRange.endDate) {
         if (!isDateInRange(mcu.mcuDate, currentDateRange.startDate, currentDateRange.endDate)) {
@@ -159,16 +168,14 @@ async function loadData() {
 
       // Filter by employee type (Karyawan PST / Vendor)
       if (currentFilters.employeeType) {
-        const employee = employees.find(e => e.employeeId === mcu.employeeId);
-        if (!employee || employee.employmentStatus !== currentFilters.employeeType) {
+        if (employee.employmentStatus !== currentFilters.employeeType) {
           return false;
         }
       }
 
       // Filter by department
       if (currentFilters.department) {
-        const employee = employees.find(e => e.employeeId === mcu.employeeId);
-        if (!employee || employee.department !== currentFilters.department) {
+        if (employee.department !== currentFilters.department) {
           return false;
         }
       }
@@ -203,8 +210,9 @@ async function loadData() {
 }
 
 function updateKPIs(filteredMCUs) {
-  // Total employees (all active)
-  const activeEmployees = employees.filter(e => !e.deletedAt);
+  // Total employees (all non-deleted AND with activeStatus = 'Active')
+  // ✅ FIX: Exclude inactive employees like we exclude soft-deleted employees
+  const activeEmployees = employees.filter(e => !e.deletedAt && e.activeStatus === 'Active');
   document.getElementById('kpi-total-employees').textContent = activeEmployees.length;
 
   // Total MCU (count of latest MCU in date range)

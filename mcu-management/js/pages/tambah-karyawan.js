@@ -140,7 +140,7 @@ function populateDropdowns() {
         const selectedName = this.value;
         const job = jobTitles.find(j => j.name === selectedName);
         if (job) {
-            document.getElementById('emp-job-id').value = job.jobTitleId;
+            document.getElementById('emp-job-id').value = job.id;  // ✅ FIX: Use job.id not job.jobTitleId
         } else {
             document.getElementById('emp-job-id').value = '';
         }
@@ -159,7 +159,7 @@ function populateDropdowns() {
 
     departments.forEach(dept => {
         const option = document.createElement('option');
-        option.value = dept.departmentId;
+        option.value = dept.id;  // ✅ FIX: Use dept.id not dept.departmentId
         option.textContent = dept.name;  // SAFE: textContent auto-escapes
         deptFragment.appendChild(option);
     });
@@ -180,7 +180,7 @@ function populateDropdowns() {
 
         doctors.forEach(doctor => {
             const option = document.createElement('option');
-            option.value = doctor.doctorId;
+            option.value = doctor.id;  // ✅ FIX: Use doctor.id not doctor.doctorId
             option.textContent = doctor.name;  // SAFE: textContent auto-escapes
             doctorFragment.appendChild(option);
         });
