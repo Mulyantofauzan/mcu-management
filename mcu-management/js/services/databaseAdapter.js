@@ -982,17 +982,15 @@ export const ActivityLog = {
                 // ✅ Silently fail - activity log is non-critical
                 return null;
             }
+            // ✅ IMPORTANT: Return here to prevent IndexedDB fallback execution
+            return null;
         }
 
-        // IndexedDB primary storage (only when Supabase is disabled)
+        // IndexedDB storage (only when Supabase is disabled)
         try {
             const id = await indexedDB.db.activityLog.add(activity);
             return { ...activity, id };
         } catch (err) {
-            console.error('❌ IndexedDB activity log insert failed:', {
-                message: err.message,
-                stack: err.stack
-            });
             return activity;
         }
     }
