@@ -1,0 +1,15 @@
+{
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs18",
+    "codebase": "default"
+  },
+  "hosting": {
+    "public": "mcu-management",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
+}

@@ -117,17 +117,18 @@ function setDateRange(startDate, endDate) {
 
 // Helper: Add jobTitleId and departmentId based on names (for Supabase)
 // Supabase stores job_title and department as names, we need IDs for lookups
-function enrichEmployeeWithIds(emp, jobTitles, departments) {
+// ✅ FIX: Optimized enrichment using Map lookups - O(1) per employee instead of O(n)
+function enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap) {
   if (!emp || typeof emp !== 'object') return emp;
 
   if (!emp.jobTitleId && emp.jobTitle) {
-    const job = Array.isArray(jobTitles) ? jobTitles.find(j => j?.name === emp.jobTitle) : null;
+    const job = jobMap.get(emp.jobTitle);
     if (job?.id) {
       emp.jobTitleId = job.id; // Supabase uses numeric id
     }
   }
   if (!emp.departmentId && emp.department) {
-    const dept = Array.isArray(departments) ? departments.find(d => d?.name === emp.department) : null;
+    const dept = deptMap.get(emp.department);
     if (dept?.id) {
       emp.departmentId = dept.id; // Supabase uses numeric id
     }
@@ -135,18 +136,42 @@ function enrichEmployeeWithIds(emp, jobTitles, departments) {
   return emp;
 }
 
+// ✅ DEPRECATED: Old O(n²) function kept for reference only
+// function enrichEmployeeWithIds(emp, jobTitles, departments) {
+//   if (!emp || typeof emp !== 'object') return emp;
+//
+//   if (!emp.jobTitleId && emp.jobTitle) {
+//     const job = Array.isArray(jobTitles) ? jobTitles.find(j => j?.name === emp.jobTitle) : null;
+//     if (job?.id) {
+//       emp.jobTitleId = job.id; // Supabase uses numeric id
+//     }
+//   }
+//   if (!emp.departmentId && emp.department) {
+//     const dept = Array.isArray(departments) ? departments.find(d => d?.name === emp.department) : null;
+//     if (dept?.id) {
+//       emp.departmentId = dept.id; // Supabase uses numeric id
+//     }
+//   }
+//   return emp;
+// }
+
 async function loadData() {
   try {
     // IMPORTANT: Load master data FIRST before employees
     departments = await masterDataService.getAllDepartments();
     const jobTitles = await masterDataService.getAllJobTitles();
-    employees = await employeeService.getAll();
+    // ✅ FIX: Load ONLY active employees (performance optimization)
+    employees = await employeeService.getActive();
 
-    // Enrich employees with IDs (for Supabase compatibility)
-    employees = employees.map(emp => enrichEmployeeWithIds(emp, jobTitles, departments));
+    // ✅ FIX: Build lookup Maps once for O(1) enrichment (performance optimization)
+    const jobMap = new Map(jobTitles.map(j => [j.name, j]));
+    const deptMap = new Map(departments.map(d => [d.name, d]));
 
-    // Get latest MCU per employee
-    latestMCUs = await mcuService.getLatestMCUPerEmployee();
+    // Enrich employees with IDs using O(1) Map lookups (O(n) total instead of O(n²))
+    employees = employees.map(emp => enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap));
+
+    // Get latest MCU per employee (only for active employees)
+    latestMCUs = await mcuService.getActive();
 
     // Apply all filters (date range, employee type, department, MCU status)
     const filteredMCUs = latestMCUs.filter(mcu => {

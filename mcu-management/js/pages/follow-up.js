@@ -152,30 +152,48 @@ function updateUserInfo() {
 
 async function loadMasterData() {
   try {
-    employees = await employeeService.getAll();
+    // ✅ FIX: Load ONLY active employees (performance optimization)
+    employees = await employeeService.getActive();
     departments = await masterDataService.getAllDepartments();
     jobTitles = await masterDataService.getAllJobTitles();
     doctors = await masterDataService.getAllDoctors();
 
-    // Enrich employees with IDs (for Supabase which only stores names)
-    employees = employees.map(emp => enrichEmployeeWithIds(emp));
+    // ✅ FIX: Build lookup Maps once for O(1) enrichment (performance optimization)
+    const jobMap = new Map(jobTitles.map(j => [j.name, j]));
+    const deptMap = new Map(departments.map(d => [d.name, d]));
+
+    // Enrich employees with IDs using O(1) Map lookups (O(n) total instead of O(n²))
+    employees = employees.map(emp => enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap));
   } catch (error) {
     // Silent fail - master data load error will be handled gracefully
   }
 }
 
-// Helper: Add jobTitleId and departmentId based on names (for Supabase compatibility)
-function enrichEmployeeWithIds(emp) {
+// ✅ FIX: Optimized enrichment using Map lookups - O(1) per employee instead of O(n)
+function enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap) {
   if (!emp.jobTitleId && emp.jobTitle) {
-    const job = jobTitles.find(j => j.name === emp.jobTitle);
+    const job = jobMap.get(emp.jobTitle);
     if (job) emp.jobTitleId = job.id;  // Use 'id' not 'jobTitleId' - Supabase format
   }
   if (!emp.departmentId && emp.department) {
-    const dept = departments.find(d => d.name === emp.department);
+    const dept = deptMap.get(emp.department);
     if (dept) emp.departmentId = dept.id;  // Use 'id' not 'departmentId' - Supabase format
   }
   return emp;
 }
+
+// ✅ DEPRECATED: Old O(n²) function kept for reference only
+// function enrichEmployeeWithIds(emp) {
+//   if (!emp.jobTitleId && emp.jobTitle) {
+//     const job = jobTitles.find(j => j.name === emp.jobTitle);
+//     if (job) emp.jobTitleId = job.id;
+//   }
+//   if (!emp.departmentId && emp.department) {
+//     const dept = departments.find(d => d.name === emp.department);
+//     if (dept) emp.departmentId = dept.id;
+//   }
+//   return emp;
+// }
 
 window.loadFollowUpList = async function() {
   try {

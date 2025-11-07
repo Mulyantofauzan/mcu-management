@@ -81,8 +81,12 @@ async function loadData() {
         jobTitles = await masterDataService.getAllJobTitles();
         departments = await masterDataService.getAllDepartments();
 
-        // Enrich employee data with IDs (for Supabase which only stores names)
-        deletedEmployees = deletedEmployees.map(emp => enrichEmployeeWithIds(emp));
+        // ✅ FIX: Build lookup Maps once for O(1) enrichment (performance optimization)
+        const jobMap = new Map(jobTitles.map(j => [j.name, j]));
+        const deptMap = new Map(departments.map(d => [d.name, d]));
+
+        // Enrich employee data with IDs using O(1) Map lookups (O(n) total instead of O(n²))
+        deletedEmployees = deletedEmployees.map(emp => enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap));
 
         document.getElementById('total-count').textContent = deletedEmployees.length;
         renderTable();
@@ -92,18 +96,31 @@ async function loadData() {
     }
 }
 
-// Helper: Add jobTitleId and departmentId based on names (for Supabase compatibility)
-function enrichEmployeeWithIds(emp) {
+// ✅ FIX: Optimized enrichment using Map lookups - O(1) per employee instead of O(n)
+function enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap) {
     if (!emp.jobTitleId && emp.jobTitle) {
-        const job = jobTitles.find(j => j.name === emp.jobTitle);
+        const job = jobMap.get(emp.jobTitle);
         if (job) emp.jobTitleId = job.id;  // Use 'id' not 'jobTitleId' - Supabase format
     }
     if (!emp.departmentId && emp.department) {
-        const dept = departments.find(d => d.name === emp.department);
+        const dept = deptMap.get(emp.department);
         if (dept) emp.departmentId = dept.id;  // Use 'id' not 'departmentId' - Supabase format
     }
     return emp;
 }
+
+// ✅ DEPRECATED: Old O(n²) function kept for reference only
+// function enrichEmployeeWithIds(emp) {
+//     if (!emp.jobTitleId && emp.jobTitle) {
+//         const job = jobTitles.find(j => j.name === emp.jobTitle);
+//         if (job) emp.jobTitleId = job.id;
+//     }
+//     if (!emp.departmentId && emp.department) {
+//         const dept = departments.find(d => d.name === emp.department);
+//         if (dept) emp.departmentId = dept.id;
+//     }
+//     return emp;
+// }
 
 function renderTable() {
     const container = document.getElementById('deleted-table');

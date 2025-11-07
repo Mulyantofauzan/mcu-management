@@ -85,6 +85,28 @@ class MCUService {
     return mcus.filter(mcu => !mcu.deletedAt);
   }
 
+  // ✅ FIX: Load only MCUs for active employees (performance optimization)
+  async getActive() {
+    const mcus = await this.getAll();
+    const activeEmployees = await database.query('employees',
+      emp => !emp.deletedAt && emp.activeStatus === 'Active'
+    );
+    const activeIds = new Set(activeEmployees.map(e => e.employeeId));
+
+    return mcus.filter(mcu => activeIds.has(mcu.employeeId));
+  }
+
+  // ✅ FIX: Load only deleted MCUs (for trash/deleted page)
+  async getDeleted() {
+    const allMcus = await database.getAll('mcus', true); // Include deleted
+    return allMcus.filter(mcu => mcu.deletedAt);
+  }
+
+  // ✅ FIX: Load all MCUs including deleted (for admin views)
+  async getAllIncludingDeleted() {
+    return await database.getAll('mcus', true);
+  }
+
   async getByEmployee(employeeId) {
     const mcus = await this.getAll();
     return mcus.filter(mcu => mcu.employeeId === employeeId)

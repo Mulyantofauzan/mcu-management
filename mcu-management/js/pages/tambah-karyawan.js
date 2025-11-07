@@ -10,12 +10,14 @@ import { masterDataService } from '../services/masterDataService.js';
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
+import { FileUploadWidget } from '../components/fileUploadWidget.js';  // ✅ NEW: File upload widget
 
 let searchResults = [];
 let jobTitles = [];
 let departments = [];
 let doctors = [];
 let currentEmployee = null;
+let fileUploadWidget = null;  // ✅ NEW: Global widget instance
 
 /**
  * Sanitize string input to prevent XSS
@@ -104,14 +106,24 @@ async function loadMasterData() {
     }
 }
 
-// Helper: Add jobTitleId and departmentId based on names (for Supabase compatibility)
+// ✅ FIX: Optimized enrichment using Map lookups - O(1) per employee instead of O(n)
 function enrichEmployeeWithIds(emp) {
+    // Build Maps on demand (for compatibility with one-off calls in this page)
+    // Since this page has many one-off enrichment calls instead of batch operations,
+    // we build the maps inline to keep the function interface simple
+    const jobMap = new Map(jobTitles.map(j => [j.name, j]));
+    const deptMap = new Map(departments.map(d => [d.name, d]));
+    return enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap);
+}
+
+// ✅ FIX: Optimized enrichment using Map lookups - O(1) per employee instead of O(n)
+function enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap) {
     if (!emp.jobTitleId && emp.jobTitle) {
-        const job = jobTitles.find(j => j.name === emp.jobTitle);
+        const job = jobMap.get(emp.jobTitle);
         if (job) emp.jobTitleId = job.id;  // Use 'id' not 'jobTitleId' - Supabase format
     }
     if (!emp.departmentId && emp.department) {
-        const dept = departments.find(d => d.name === emp.department);
+        const dept = deptMap.get(emp.department);
         if (dept) emp.departmentId = dept.id;  // Use 'id' not 'departmentId' - Supabase format
     }
     return emp;
@@ -332,6 +344,19 @@ window.openAddMCUForEmployee = async function(employeeId) {
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('mcu-date').value = today;
 
+        // ✅ NEW: Initialize file upload widget
+        const fileContainer = document.getElementById('file-upload-container');
+        if (fileContainer) {
+            fileContainer.innerHTML = '';  // Clear previous widget
+            fileUploadWidget = new FileUploadWidget('file-upload-container', {
+                employeeId: employeeId,
+                maxFiles: 5,
+                onUploadComplete: (files) => {
+                    console.log('MCU files uploaded:', files);
+                }
+            });
+        }
+
         openModal('add-mcu-modal');
     } catch (error) {
 
@@ -349,6 +374,9 @@ window.handleAddMCU = async function(event) {
 
     try {
         const currentUser = authService.getCurrentUser();
+
+        // ✅ NEW: Get uploaded files from widget
+        const uploadedFiles = fileUploadWidget ? fileUploadWidget.getUploadedFiles() : [];
 
         const mcuData = {
             employeeId: document.getElementById('mcu-employee-id').value,
@@ -377,12 +405,18 @@ window.handleAddMCU = async function(event) {
             diagnosisKerja: document.getElementById('mcu-diagnosis').value || null,
             alasanRujuk: document.getElementById('mcu-alasan').value || null,
             initialResult: document.getElementById('mcu-result').value,
-            initialNotes: document.getElementById('mcu-notes').value
+            initialNotes: document.getElementById('mcu-notes').value,
+            attachedFiles: uploadedFiles  // ✅ NEW: Include uploaded files with MCU record
         };
 
         const createdMCU = await mcuService.create(mcuData, currentUser);
 
         showToast('MCU berhasil ditambahkan!', 'success');
+
+        // ✅ NEW: Clear file upload widget after successful save
+        if (fileUploadWidget) {
+            fileUploadWidget.clear();
+        }
 
         // Make form read-only after successful save
         disableMCUForm();

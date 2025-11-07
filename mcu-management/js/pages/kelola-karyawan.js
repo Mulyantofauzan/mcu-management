@@ -15,6 +15,7 @@ import { debounce } from '../utils/debounce.js';
 import { UI } from '../config/constants.js';
 import { safeGet, safeArray, isEmpty } from '../utils/nullSafety.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
+import { FileUploadWidget } from '../components/fileUploadWidget.js';  // ✅ NEW: File upload widget
 
 let employees = [];
 let filteredEmployees = [];
@@ -23,6 +24,7 @@ let departments = [];
 let doctors = [];
 let currentPage = 1;
 const itemsPerPage = UI.ITEMS_PER_PAGE;
+let editFileUploadWidget = null;  // ✅ NEW: Global widget instance for edit MCU form
 
 async function init() {
     try {
@@ -100,11 +102,16 @@ async function loadData() {
         doctors = await masterDataService.getAllDoctors();
         logger.database('select', 'doctors', doctors.length);
 
-        employees = await employeeService.getAll();
-        logger.database('select', 'employees', employees.length);
+        // ✅ FIX: Load ONLY active employees (performance optimization)
+        employees = await employeeService.getActive();
+        logger.database('select', 'employees (active only)', employees.length);
 
-        // Enrich employee data with IDs (for Supabase which only stores names)
-        employees = employees.map(emp => enrichEmployeeWithIds(emp));
+        // ✅ FIX: Build lookup Maps once for O(1) enrichment (performance optimization)
+        const jobMap = new Map(jobTitles.map(j => [j.name, j]));
+        const deptMap = new Map(departments.map(d => [d.name, d]));
+
+        // Enrich employee data with IDs using O(1) Map lookups (O(n) total instead of O(n²))
+        employees = employees.map(emp => enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap));
         filteredEmployees = [...employees];
 
         // ✅ FIX: Populate filter dropdowns
@@ -133,20 +140,19 @@ function populateFilterDropdowns() {
     });
 }
 
-// Helper: Add jobTitleId and departmentId based on names (for Supabase)
-// Supabase stores job_title and department as names, we need IDs for lookups
-function enrichEmployeeWithIds(emp) {
-    // Match job title by name to get ID
+// ✅ FIX: Optimized enrichment using Map lookups - O(1) per employee instead of O(n)
+function enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap) {
+    // Match job title by name to get ID using O(1) Map lookup
     if (emp.jobTitle && !emp.jobTitleId) {
-        const job = jobTitles.find(j => j.name === emp.jobTitle);
+        const job = jobMap.get(emp.jobTitle);
         if (job) {
             emp.jobTitleId = job.id;
         }
     }
 
-    // Match department by name to get ID
+    // Match department by name to get ID using O(1) Map lookup
     if (emp.department && !emp.departmentId) {
-        const dept = departments.find(d => d.name === emp.department);
+        const dept = deptMap.get(emp.department);
         if (dept) {
             emp.departmentId = dept.id;
         }
@@ -154,6 +160,27 @@ function enrichEmployeeWithIds(emp) {
 
     return emp;
 }
+
+// ✅ DEPRECATED: Old O(n²) function kept for reference only
+// function enrichEmployeeWithIds(emp) {
+//     // Match job title by name to get ID
+//     if (emp.jobTitle && !emp.jobTitleId) {
+//         const job = jobTitles.find(j => j.name === emp.jobTitle);
+//         if (job) {
+//             emp.jobTitleId = job.id;
+//         }
+//     }
+//
+//     // Match department by name to get ID
+//     if (emp.department && !emp.departmentId) {
+//         const dept = departments.find(d => d.name === emp.department);
+//         if (dept) {
+//             emp.departmentId = dept.id;
+//         }
+//     }
+//
+//     return emp;
+// }
 
 function updateStats() {
     document.getElementById('stat-total').textContent = employees.length;
@@ -939,6 +966,21 @@ window.editMCU = async function() {
                 } else {
                     document.getElementById('edit-final-result-section').classList.add('hidden');
                 }
+
+                // ✅ NEW: Initialize file upload widget for adding more documents
+                const editFileContainer = document.getElementById('edit-file-upload-container');
+                if (editFileContainer) {
+                    editFileContainer.innerHTML = '';  // Clear previous widget
+                    editFileUploadWidget = new FileUploadWidget('edit-file-upload-container', {
+                        employeeId: mcu.employeeId,
+                        mcuId: mcu.mcuId,
+                        maxFiles: 5,
+                        onUploadComplete: (files) => {
+                            console.log('Additional MCU files uploaded:', files);
+                        }
+                    });
+                }
+
             } catch (error) {
                 console.error('Error filling form fields:', error);
             }
@@ -961,6 +1003,9 @@ window.handleEditMCU = async function(event) {
 
     try {
         const currentUser = authService.getCurrentUser();
+
+        // ✅ NEW: Get newly uploaded files from widget
+        const newlyUploadedFiles = editFileUploadWidget ? editFileUploadWidget.getUploadedFiles() : [];
 
         const updateData = {
             mcuType: document.getElementById('edit-mcu-type').value,
@@ -992,7 +1037,8 @@ window.handleEditMCU = async function(event) {
             diagnosisKerja: document.getElementById('edit-mcu-diagnosis').value || null,
             alasanRujuk: document.getElementById('edit-mcu-alasan').value || null,
             initialResult: document.getElementById('edit-mcu-initial-result').value,
-            initialNotes: document.getElementById('edit-mcu-initial-notes').value
+            initialNotes: document.getElementById('edit-mcu-initial-notes').value,
+            newlyUploadedFiles: newlyUploadedFiles  // ✅ NEW: Include newly uploaded files
         };
 
         // Add final result if filled
@@ -1003,6 +1049,11 @@ window.handleEditMCU = async function(event) {
         }
 
         await mcuService.updateFollowUp(mcuId, updateData, currentUser);
+
+        // ✅ NEW: Clear file upload widget after successful save
+        if (editFileUploadWidget) {
+            editFileUploadWidget.clear();
+        }
 
         showToast('Data MCU berhasil diupdate', 'success');
         closeEditMCUModal();

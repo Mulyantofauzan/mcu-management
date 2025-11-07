@@ -6,7 +6,7 @@
     "api/**/*.js": {
       "memory": 512,
       "maxDuration": 30,
-      "runtime": "nodejs20.x"
+      "runtime": "nodejs20"
     }
   },
   "headers": [

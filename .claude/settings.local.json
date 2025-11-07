@@ -9,7 +9,9 @@
       "Bash(git commit:*)",
       "Bash(find:*)",
       "Bash(ls:*)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(npx firebase:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
