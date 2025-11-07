@@ -66,10 +66,11 @@ class MCUService {
     const initialChange = createInitialChangeEntry('mcu', mcu.mcuId, currentUser);
     await database.add('mcuChanges', initialChange);
 
-    // Log activity with details
+    // Log activity with details including employee name
     if (currentUser) {
+      const employeeName = employee?.name || 'Unknown';
       await database.logActivity('create', 'MCU', mcu.mcuId, currentUser.userId,
-        `Created MCU: ${mcu.mcuId}. Type: ${mcu.mcuType}, Date: ${mcu.mcuDate}, Employee: ${mcuData.employeeId}`);
+        `${mcu.mcuId}. Type: ${mcu.mcuType}, Date: ${mcu.mcuDate}, Employee: ${employeeName}`);
     }
 
     return mcu;
@@ -160,8 +161,9 @@ class MCUService {
     // ✅ FIX: Log activity for MCU update with details
     if (currentUser) {
       const changedFields = Object.keys(updates).join(', ');
+      const employeeName = newMCU?.employeeId ? await database.get('employees', newMCU.employeeId).then(e => e?.name || 'Unknown') : 'Unknown';
       await database.logActivity('update', 'MCU', mcuId, currentUser.userId,
-        `Updated MCU: ${mcuId}. Fields: ${changedFields}`);
+        `MCU: ${mcuId}., Employee: ${employeeName}. Fields: ${changedFields}`);
     }
 
     return newMCU;
@@ -221,8 +223,9 @@ class MCUService {
     // Log activity - use 'update' action for follow-up updates (CRUD standard) with details
     if (currentUser) {
       const changedFields = Object.keys(updateData).filter(k => k !== 'updatedAt').join(', ');
+      const employeeName = newMCU?.employeeId ? await database.get('employees', newMCU.employeeId).then(e => e?.name || 'Unknown') : 'Unknown';
       await database.logActivity('update', 'MCU', mcuId, currentUser.userId,
-        `Updated MCU follow-up: ${mcuId}. Fields: ${changedFields || 'none'}`);
+        `Updated MCU follow-up: ${mcuId}. Employee: ${employeeName}. Fields: ${changedFields || 'none'}`);
     }
 
     return newMCU;
@@ -238,8 +241,11 @@ class MCUService {
 
     // ✅ FIX: Log activity for MCU soft delete with details
     if (currentUser) {
+      const employeeId = mcu?.employeeId;
+      const employee = employeeId ? await database.get('employees', employeeId) : null;
+      const employeeName = employee?.name || 'Unknown';
       await database.logActivity('delete', 'MCU', mcuId, currentUser.userId,
-        `Moved MCU to trash: ${mcuId}. Date: ${mcu?.mcuDate}, Employee: ${mcu?.employeeId}`);
+        `Moved MCU to trash: ${mcuId}. Date: ${mcu?.mcuDate}, Employee: ${employeeName}`);
     }
 
     return true;
@@ -268,8 +274,11 @@ class MCUService {
 
     // ✅ FIX: Log activity for MCU permanent delete with details
     if (currentUser) {
+      const employeeId = mcu?.employeeId;
+      const employee = employeeId ? await database.get('employees', employeeId) : null;
+      const employeeName = employee?.name || 'Unknown';
       await database.logActivity('delete', 'MCU', mcuId, currentUser.userId,
-        `Permanently deleted MCU: ${mcuId}. Date: ${mcu?.mcuDate}, Employee: ${mcu?.employeeId}`);
+        `Permanently deleted MCU: ${mcuId}. Date: ${mcu?.mcuDate}, Employee: ${employeeName}`);
     }
 
     return true;
