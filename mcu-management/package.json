@@ -4,10 +4,9 @@
   "description": "Aplikasi Web Manajemen Medical Check Up (MCU)",
   "main": "index.html",
   "scripts": {
-    "dev": "npx tailwindcss -i ./css/input.css -o ./css/output.css --watch",
-    "build": "npm run build:css && npm run build:copy",
+    "dev": "echo 'Run: cd mcu-management && npx tailwindcss -i ./css/input.css -o ./css/output.css --watch'",
+    "build": "sh -c 'rm -rf dist && mkdir -p dist && for item in *; do [ \"$item\" != \"dist\" ] && [ \"$item\" != \"node_modules\" ] && [ \"$item\" != \".git\" ] && cp -r \"$item\" dist/; done && echo \"Build output: dist/\"'",
     "build:css": "npx tailwindcss -i ./css/input.css -o ./css/output.css --minify",
-    "build:copy": "mkdir -p dist && cp -r . dist/ && rm -rf dist/node_modules dist/.git dist/dist",
     "build:dev": "npx tailwindcss -i ./css/input.css -o ./css/output.css"
   },
   "keywords": ["mcu", "medical", "checkup", "management"],
