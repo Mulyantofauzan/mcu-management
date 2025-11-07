@@ -156,6 +156,11 @@ class MCUService {
       await database.add('mcuChanges', change);
     }
 
+    // ✅ FIX: Log activity for MCU update
+    if (currentUser) {
+      await database.logActivity('update', 'MCU', mcuId, currentUser.userId);
+    }
+
     return newMCU;
   }
 
@@ -218,10 +223,16 @@ class MCUService {
     return newMCU;
   }
 
-  async softDelete(mcuId) {
+  async softDelete(mcuId, currentUser) {
     await database.update('mcus', mcuId, {
       deletedAt: getCurrentTimestamp()
     });
+
+    // ✅ FIX: Log activity for MCU soft delete
+    if (currentUser) {
+      await database.logActivity('delete', 'MCU', mcuId, currentUser.userId);
+    }
+
     return true;
   }
 
@@ -233,7 +244,7 @@ class MCUService {
     return true;
   }
 
-  async permanentDelete(mcuId) {
+  async permanentDelete(mcuId, currentUser) {
     // Delete all change records
     const changes = await database.query('mcuChanges', change => change.mcuId === mcuId);
     for (const change of changes) {
@@ -242,6 +253,12 @@ class MCUService {
 
     // Delete MCU
     await database.delete('mcus', mcuId);
+
+    // ✅ FIX: Log activity for MCU permanent delete
+    if (currentUser) {
+      await database.logActivity('delete', 'MCU', mcuId, currentUser.userId);
+    }
+
     return true;
   }
 
