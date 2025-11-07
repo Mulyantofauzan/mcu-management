@@ -952,15 +952,14 @@ export const ActivityLog = {
             const supabase = getSupabaseClient();
             try {
                 // ✅ FIX: Match EXACT Supabase schema columns
-                // Available columns: id, user_id, user_name, action, target, details, timestamp
-                // NOTE: NO target_id column in actual schema!
+                // Available columns: id, user_id, user_name, action, target, target_id, details, timestamp
                 const insertData = {
                     user_id: activity.userId || null,
                     user_name: activity.userName || null,
                     action: activity.action,
                     target: activity.entityType || activity.target || null,
-                    // Store entityId in details (as plain value, not formatted string)
-                    details: activity.details || activity.entityId || null,
+                    target_id: activity.entityId || null,  // ✅ Store entityId in dedicated column
+                    details: activity.details || null,      // ✅ Details only for additional text info
                     timestamp: activity.timestamp
                 };
 

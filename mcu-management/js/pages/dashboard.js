@@ -846,7 +846,7 @@ async function updateActivityList() {
       // Support both camelCase and snake_case from database transform
       const userName = activity?.userName || activity?.user_name || 'System';
       const entityType = activity?.entityType || activity?.target;
-      const entityId = activity?.entityId || activity?.details;
+      const entityId = activity?.target_id || activity?.entityId || activity?.details;  // ✅ Prefer target_id column
       const action = activity?.action;
 
       // ✅ FIX: Build detailed activity text with user-friendly format
