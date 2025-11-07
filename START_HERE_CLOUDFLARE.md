@@ -27,11 +27,11 @@ You probably already have MCU-APP connected to Cloudflare Pages. Just:
 3. Go to: **Settings → Build & deployments**
 4. Change **Build command** to:
    ```
-   npm install && npm run build
+   npm run build
    ```
 5. Change **Build output directory** to:
    ```
-   mcu-management
+   mcu-management/dist
    ```
 6. Click: **Save and deploy**
 

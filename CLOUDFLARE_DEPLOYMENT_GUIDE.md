@@ -21,8 +21,8 @@
 
 **Build Configuration:**
 - Framework: **None** (custom build)
-- Build command: `npm install && npm run build`
-- Build output directory: `mcu-management` (or leave empty)
+- Build command: `npm run build`
+- Build output directory: `mcu-management/dist`
 - Root directory: `.`
 
 Click **Save and Deploy**

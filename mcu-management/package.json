@@ -5,7 +5,9 @@
   "main": "index.html",
   "scripts": {
     "dev": "npx tailwindcss -i ./css/input.css -o ./css/output.css --watch",
-    "build": "npx tailwindcss -i ./css/input.css -o ./css/output.css --minify",
+    "build": "npm run build:css && npm run build:copy",
+    "build:css": "npx tailwindcss -i ./css/input.css -o ./css/output.css --minify",
+    "build:copy": "mkdir -p dist && cp -r . dist/ && rm -rf dist/node_modules dist/.git dist/dist",
     "build:dev": "npx tailwindcss -i ./css/input.css -o ./css/output.css"
   },
   "keywords": ["mcu", "medical", "checkup", "management"],
