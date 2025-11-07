@@ -13,6 +13,7 @@ import { showToast } from '../utils/uiHelpers.js';
 import { sessionManager } from '../utils/sessionManager.js';
 import { checkAndSeedIfEmpty } from '../seedData.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
+import { initSuperSearch } from '../components/superSearch.js';
 
 // State
 let currentDateRange = { startDate: '', endDate: '' }; // Default: empty filter (show all)
@@ -49,6 +50,13 @@ async function init() {
     const seedResult = await checkAndSeedIfEmpty();
     if (seedResult.success && seedResult.counts) {
 
+    }
+
+    // Initialize Super Search
+    try {
+      await initSuperSearch();
+    } catch (error) {
+      console.warn('Failed to initialize Super Search:', error);
     }
 
     // Set default date range (empty = show all)
@@ -1043,6 +1051,15 @@ window.handleLogout = function() {
 window.toggleDebugPanel = function() {
   const panel = document.getElementById('debug-panel');
   panel.classList.toggle('hidden');
+};
+
+// Super Search function
+window.openSuperSearch = async function() {
+  const { getSuperSearch } = await import('../components/superSearch.js');
+  const superSearch = getSuperSearch();
+  if (superSearch) {
+    superSearch.open();
+  }
 };
 
 // Seed function for manual trigger
