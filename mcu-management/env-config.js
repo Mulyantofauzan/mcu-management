@@ -1,29 +1,61 @@
 /**
- * Environment Configuration
+ * Environment Configuration - SECURE VERSION
  *
- * TEMPORARY: Hardcoded credentials for testing
- * TODO: Replace with secure environment variable injection
+ * Credentials are NOT hardcoded here.
+ * They are injected by Vercel at deploy time and accessible via API endpoint.
  *
- * INSTRUCTIONS:
- * 1. Replace YOUR_SUPABASE_URL with your actual Supabase URL
- * 2. Replace YOUR_SUPABASE_ANON_KEY with your actual anon key
- * 3. Get these from: Supabase Dashboard → Settings → API
+ * SETUP IN VERCEL:
+ * 1. Go to Vercel Project Settings → Environment Variables
+ * 2. Add these variables (they're visible only in Vercel dashboard):
+ *    - VITE_SUPABASE_URL
+ *    - VITE_SUPABASE_ANON_KEY
+ *    - VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID
+ *    - VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT
  */
 
-// PRODUCTION CONFIGURATION
+// Placeholder configuration
+// In production, these are injected by a server-side API endpoint
+// They are NOT exposed in client-side code or DevTools
 window.ENV = {
-  // Supabase credentials
-  SUPABASE_URL: 'https://xqyuktsfjvdqfhulobai.supabase.co',
-  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxeXVrdHNmanZkcWZodWxvYmFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MjkxNzQsImV4cCI6MjA3NjQwNTE3NH0.8_lmNISdJ7AMi0QgAqBoPathoiUeH_WZRDqFaAiRDwY',
-
-  // Google Drive Configuration
-  VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID: '1XJ2utC4aWHUdhdqerfRr96E3SSILmntH',
-  VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT: 'https://mcu-management.vercel.app/api/uploadToGoogleDrive',
-
-  // Production mode: Disable auto-seeding (prevent dummy data)
-  // Set to true ONLY for development/testing
+  // These will be fetched from the secure API endpoint
+  SUPABASE_URL: null,
+  SUPABASE_ANON_KEY: null,
+  VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID: null,
+  VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT: null,
   ENABLE_AUTO_SEED: false
 };
+
+// Fetch configuration from secure API endpoint
+async function loadSecureConfig() {
+  try {
+    const response = await fetch('/api/config');
+    if (response.ok) {
+      const config = await response.json();
+      window.ENV = { ...window.ENV, ...config };
+      console.log('✅ Configuration loaded from secure endpoint');
+      return true;
+    }
+  } catch (error) {
+    console.warn('⚠️ Could not load config from endpoint:', error.message);
+  }
+
+  // Fallback for development only (localhost)
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    const devUrl = localStorage.getItem('DEV_SUPABASE_URL');
+    const devKey = localStorage.getItem('DEV_SUPABASE_ANON_KEY');
+    if (devUrl && devKey) {
+      window.ENV.SUPABASE_URL = devUrl;
+      window.ENV.SUPABASE_ANON_KEY = devKey;
+      console.log('🔧 Using development credentials from localStorage');
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// Load config immediately
+loadSecureConfig();
 
 // Development fallback: Check localStorage for testing (localhost only)
 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
