@@ -36,8 +36,22 @@ class GoogleDriveService {
       'jpeg': 'image/jpeg',
       'png': 'image/png',
     };
+
+    if (!fileName || typeof fileName !== 'string') {
+      logger.warn(`Invalid fileName for MIME type detection: ${fileName}`);
+      return null;
+    }
+
     const extension = fileName.toLowerCase().split('.').pop();
-    return mimeTypes[extension] || null;
+    const detected = mimeTypes[extension];
+
+    if (detected) {
+      logger.info(`Detected MIME type from filename "${fileName}": ${detected}`);
+    } else {
+      logger.warn(`Could not detect MIME type for extension: ${extension}`);
+    }
+
+    return detected || null;
   }
 
   /**
@@ -64,14 +78,31 @@ class GoogleDriveService {
         throw new Error(`File size exceeds 5MB limit. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
       }
 
-      // Validate file type - use fallback to filename check
+      // Validate file type - use multi-level fallback approach
       const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
+      const ALLOWED_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png'];
+
       let actualMimeType = file.type;
+      logger.info(`Initial file.type: "${actualMimeType}", filename: "${file.name}"`);
 
       // If file.type is unreliable or missing, try to detect from filename
       if (!actualMimeType || actualMimeType === 'application/octet-stream') {
+        logger.info(`File.type unreliable, attempting detection from filename...`);
         actualMimeType = this.getMimeTypeFromFileName(file.name);
+        logger.info(`Detection result: ${actualMimeType}`);
       }
+
+      // Last resort: check file extension directly
+      if (!actualMimeType) {
+        const ext = file.name.toLowerCase().split('.').pop();
+        if (ALLOWED_EXTENSIONS.includes(ext)) {
+          const extensionMap = { 'pdf': 'application/pdf', 'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png' };
+          actualMimeType = extensionMap[ext];
+          logger.info(`Using extension-based fallback: ${ext} -> ${actualMimeType}`);
+        }
+      }
+
+      logger.info(`Final actualMimeType: ${actualMimeType}`);
 
       if (!ALLOWED_TYPES.includes(actualMimeType)) {
         throw new Error(`File type not allowed. Allowed: PDF, JPEG, PNG. Provided: ${file.type || 'unknown'} (detected: ${actualMimeType || 'unknown'})`);
