@@ -324,6 +324,7 @@ class FileUploadWidget {
    * @param {File} file - File to upload
    */
   async uploadFile(file) {
+    let fileItem = null;
     try {
       if (this.uploadedFiles.length >= this.maxFiles) {
         throw new Error(`Maximum ${this.maxFiles} files allowed`);
@@ -333,7 +334,7 @@ class FileUploadWidget {
       fileCompression.validateFile(file);
 
       // Show uploading state
-      const fileItem = this.addFileToList(file, 'uploading');
+      fileItem = this.addFileToList(file, 'uploading');
 
       // Compress file
       this.showProgress(file.name, 0);

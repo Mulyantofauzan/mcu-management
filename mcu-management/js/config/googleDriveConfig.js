@@ -25,11 +25,11 @@
 export const googleDriveConfig = {
   // Root folder ID for MCU Documents (set from Google Drive URL)
   // Format: https://drive.google.com/drive/folders/1ABC123XYZ... → ID: 1ABC123XYZ...
-  rootFolderId: process.env.VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID || null,
+  rootFolderId: typeof window !== 'undefined' && window.ENV ? window.ENV.VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID : (typeof process !== 'undefined' ? process.env.VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID : null) || null,
 
-  // Firebase Cloud Function endpoint for file uploads
-  // Format: https://region-project.cloudfunctions.net/uploadToGoogleDrive
-  uploadEndpoint: process.env.VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT || null,
+  // Vercel Serverless Function endpoint for file uploads
+  // Format: https://vercel-project.vercel.app/api/uploadToGoogleDrive
+  uploadEndpoint: typeof window !== 'undefined' && window.ENV ? window.ENV.VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT : (typeof process !== 'undefined' ? process.env.VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT : null) || null,
 
   // File upload settings
   maxFileSize: 5 * 1024 * 1024, // 5MB
