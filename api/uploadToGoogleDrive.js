@@ -12,6 +12,20 @@ const { v4: uuidv4 } = require('uuid');
 const { createClient } = require('@supabase/supabase-js');
 const Busboy = require('busboy');
 
+// Validate environment variables
+if (!process.env.SUPABASE_URL) {
+  console.error('ERROR: SUPABASE_URL not set');
+}
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('ERROR: SUPABASE_SERVICE_ROLE_KEY not set');
+}
+if (!process.env.GOOGLE_CREDENTIALS) {
+  console.error('ERROR: GOOGLE_CREDENTIALS not set');
+}
+if (!process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID) {
+  console.error('ERROR: GOOGLE_DRIVE_ROOT_FOLDER_ID not set');
+}
+
 // Initialize Supabase client
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -19,16 +33,25 @@ const supabase = createClient(
 );
 
 // Load Google Cloud credentials from environment variable
-const SERVICE_ACCOUNT_KEY = JSON.parse(process.env.GOOGLE_CREDENTIALS || '{}');
+let SERVICE_ACCOUNT_KEY = {};
+try {
+  SERVICE_ACCOUNT_KEY = JSON.parse(process.env.GOOGLE_CREDENTIALS || '{}');
+} catch (e) {
+  console.error('ERROR: Failed to parse GOOGLE_CREDENTIALS:', e.message);
+}
 const GOOGLE_DRIVE_ROOT_FOLDER_ID = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
 
 // Initialize Google Auth
-const auth = new google.auth.GoogleAuth({
-  credentials: SERVICE_ACCOUNT_KEY,
-  scopes: ['https://www.googleapis.com/auth/drive'],
-});
-
-const drive = google.drive({ version: 'v3', auth });
+let auth, drive;
+try {
+  auth = new google.auth.GoogleAuth({
+    credentials: SERVICE_ACCOUNT_KEY,
+    scopes: ['https://www.googleapis.com/auth/drive'],
+  });
+  drive = google.drive({ version: 'v3', auth });
+} catch (e) {
+  console.error('ERROR: Failed to initialize Google Auth:', e.message);
+}
 
 /**
  * Main handler function for Vercel
@@ -183,7 +206,13 @@ async function handler(req, res) {
 
   } catch (error) {
     console.error('Upload error:', error);
-    return res.status(500).json({ error: error.message });
+    // Return detailed error for debugging
+    const errorMessage = error.message || 'Unknown error occurred';
+    const errorDetails = error.errors ? error.errors[0]?.message : errorMessage;
+    return res.status(500).json({
+      error: errorDetails,
+      details: errorMessage
+    });
   }
 }
 
