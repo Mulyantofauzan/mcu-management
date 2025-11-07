@@ -836,6 +836,20 @@ async function updateActivityList() {
       return;
     }
 
+    // ✅ Pre-fetch MCU data to avoid multiple async calls in loop
+    const mcuCache = {};
+    for (const activity of activities) {
+      if (activity?.target === 'MCU' && activity?.target_id && activity.target_id.startsWith('MCU-')) {
+        if (!mcuCache[activity.target_id]) {
+          try {
+            mcuCache[activity.target_id] = await database.get('mcus', activity.target_id);
+          } catch (e) {
+            mcuCache[activity.target_id] = null;
+          }
+        }
+      }
+    }
+
     let html = '';
     for (const activity of activities) {
       // Null safety checks for activity object
@@ -865,17 +879,25 @@ async function updateActivityList() {
         activityText = `<strong>${userName}</strong> ${actionText}: <strong>${employeeName}</strong>`;
       } else if (entityType === 'MCU') {
         let employeeName = '';
-        try {
-          // Validate entityId exists and looks like an MCU ID (MCU-xxxxx format)
-          if (entityId && entityId.length > 0 && entityId.startsWith('MCU-')) {
-            const mcu = await database.get('mcus', entityId);
-            if (mcu?.employeeId) {
-              const emp = Array.isArray(employees) ? employees.find(e => e?.employeeId === mcu.employeeId) : null;
-              if (emp?.name) employeeName = emp.name;
+        // Use cached MCU data instead of async call
+        if (entityId && entityId.length > 0 && entityId.startsWith('MCU-')) {
+          const mcu = mcuCache[entityId];
+          if (mcu?.employeeId) {
+            // Try to find employee by ID
+            const emp = Array.isArray(employees) ? employees.find(e => e?.employeeId === mcu.employeeId) : null;
+            if (emp?.name) {
+              employeeName = emp.name;
+            } else {
+              // Fallback: use employee ID if employee not found
+              employeeName = mcu.employeeId || 'Karyawan';
             }
+          } else {
+            // MCU has no employeeId - use MCU ID as fallback
+            employeeName = entityId;
           }
-        } catch (e) {
-          // Silent fail - invalid entityId
+        } else {
+          // entityId not a valid MCU ID
+          if (entityId) employeeName = entityId;
         }
 
         if (action === 'create') {
