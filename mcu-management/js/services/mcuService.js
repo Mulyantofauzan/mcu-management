@@ -66,9 +66,10 @@ class MCUService {
     const initialChange = createInitialChangeEntry('mcu', mcu.mcuId, currentUser);
     await database.add('mcuChanges', initialChange);
 
-    // Log activity
+    // Log activity with details
     if (currentUser) {
-      await database.logActivity('create', 'MCU', mcu.mcuId, currentUser.userId);
+      await database.logActivity('create', 'MCU', mcu.mcuId, currentUser.userId,
+        `Created MCU: ${mcu.mcuId}. Type: ${mcu.mcuType}, Date: ${mcu.mcuDate}, Employee: ${mcuData.employeeId}`);
     }
 
     return mcu;
@@ -156,9 +157,11 @@ class MCUService {
       await database.add('mcuChanges', change);
     }
 
-    // ✅ FIX: Log activity for MCU update
+    // ✅ FIX: Log activity for MCU update with details
     if (currentUser) {
-      await database.logActivity('update', 'MCU', mcuId, currentUser.userId);
+      const changedFields = Object.keys(updates).join(', ');
+      await database.logActivity('update', 'MCU', mcuId, currentUser.userId,
+        `Updated MCU: ${mcuId}. Fields: ${changedFields}`);
     }
 
     return newMCU;
@@ -215,22 +218,28 @@ class MCUService {
       await database.add('mcuChanges', change);
     }
 
-    // Log activity - use 'update' action for follow-up updates (CRUD standard)
+    // Log activity - use 'update' action for follow-up updates (CRUD standard) with details
     if (currentUser) {
-      await database.logActivity('update', 'MCU', mcuId, currentUser.userId);
+      const changedFields = Object.keys(updateData).filter(k => k !== 'updatedAt').join(', ');
+      await database.logActivity('update', 'MCU', mcuId, currentUser.userId,
+        `Updated MCU follow-up: ${mcuId}. Fields: ${changedFields || 'none'}`);
     }
 
     return newMCU;
   }
 
   async softDelete(mcuId, currentUser) {
+    // Get MCU info before soft delete for audit trail
+    const mcu = await this.getById(mcuId);
+
     await database.update('mcus', mcuId, {
       deletedAt: getCurrentTimestamp()
     });
 
-    // ✅ FIX: Log activity for MCU soft delete
+    // ✅ FIX: Log activity for MCU soft delete with details
     if (currentUser) {
-      await database.logActivity('delete', 'MCU', mcuId, currentUser.userId);
+      await database.logActivity('delete', 'MCU', mcuId, currentUser.userId,
+        `Moved MCU to trash: ${mcuId}. Date: ${mcu?.mcuDate}, Employee: ${mcu?.employeeId}`);
     }
 
     return true;
@@ -245,6 +254,9 @@ class MCUService {
   }
 
   async permanentDelete(mcuId, currentUser) {
+    // Get MCU info before permanent delete for audit trail
+    const mcu = await this.getById(mcuId);
+
     // Delete all change records
     const changes = await database.query('mcuChanges', change => change.mcuId === mcuId);
     for (const change of changes) {
@@ -254,9 +266,10 @@ class MCUService {
     // Delete MCU
     await database.delete('mcus', mcuId);
 
-    // ✅ FIX: Log activity for MCU permanent delete
+    // ✅ FIX: Log activity for MCU permanent delete with details
     if (currentUser) {
-      await database.logActivity('delete', 'MCU', mcuId, currentUser.userId);
+      await database.logActivity('delete', 'MCU', mcuId, currentUser.userId,
+        `Permanently deleted MCU: ${mcuId}. Date: ${mcu?.mcuDate}, Employee: ${mcu?.employeeId}`);
     }
 
     return true;

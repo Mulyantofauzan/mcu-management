@@ -27,9 +27,10 @@ class MasterDataService {
     await database.add('jobTitles', jobTitle);
     // Invalidate cache
     cacheManager.clear('jobTitles:all');
-    // ✅ FIX: Log activity
+    // ✅ FIX: Log activity with details
     if (currentUser?.userId) {
-      await database.logActivity('create', 'JobTitle', jobTitle.jobTitleId, currentUser.userId);
+      await database.logActivity('create', 'JobTitle', jobTitle.jobTitleId, currentUser.userId,
+        `Created job title: ${jobTitle.name} (${jobTitle.jobTitleId})`);
     }
     return jobTitle;
   }
@@ -71,14 +72,19 @@ class MasterDataService {
     // Invalidate cache
     cacheManager.clear('jobTitles:all');
     cacheManager.clear(`jobTitle:${id}`);
-    // ✅ FIX: Log activity
+    // ✅ FIX: Log activity with details
     if (currentUser?.userId) {
-      await database.logActivity('update', 'JobTitle', id, currentUser.userId);
+      await database.logActivity('update', 'JobTitle', id, currentUser.userId,
+        `Updated job title to: ${data.name}`);
     }
     return await this.getJobTitleById(id);
   }
 
   async deleteJobTitle(id, currentUser) {
+    // Get the job title name before deletion for audit trail
+    const jobTitle = await this.getJobTitleById(id);
+    const jobTitleName = jobTitle?.name || 'Unknown';
+
     // Check if in use
     const employees = await database.query('employees', emp => emp.jobTitleId === id && !emp.deletedAt);
     if (employees.length > 0) {
@@ -88,9 +94,10 @@ class MasterDataService {
     // Invalidate cache
     cacheManager.clear('jobTitles:all');
     cacheManager.clear(`jobTitle:${id}`);
-    // ✅ FIX: Log activity
+    // ✅ FIX: Log activity with details
     if (currentUser?.userId) {
-      await database.logActivity('delete', 'JobTitle', id, currentUser.userId);
+      await database.logActivity('delete', 'JobTitle', id, currentUser.userId,
+        `Deleted job title: ${jobTitleName} (${id})`);
     }
     return true;
   }
@@ -106,9 +113,10 @@ class MasterDataService {
     await database.add('departments', department);
     // Invalidate cache
     cacheManager.clear('departments:all');
-    // ✅ FIX: Log activity
+    // ✅ FIX: Log activity with details
     if (currentUser?.userId) {
-      await database.logActivity('create', 'Department', department.departmentId, currentUser.userId);
+      await database.logActivity('create', 'Department', department.departmentId, currentUser.userId,
+        `Created department: ${department.name} (${department.departmentId})`);
     }
     return department;
   }
@@ -150,14 +158,19 @@ class MasterDataService {
     // Invalidate cache
     cacheManager.clear('departments:all');
     cacheManager.clear(`department:${id}`);
-    // ✅ FIX: Log activity
+    // ✅ FIX: Log activity with details
     if (currentUser?.userId) {
-      await database.logActivity('update', 'Department', id, currentUser.userId);
+      await database.logActivity('update', 'Department', id, currentUser.userId,
+        `Updated department to: ${data.name}`);
     }
     return await this.getDepartmentById(id);
   }
 
   async deleteDepartment(id, currentUser) {
+    // Get the department name before deletion for audit trail
+    const department = await this.getDepartmentById(id);
+    const departmentName = department?.name || 'Unknown';
+
     // Check if in use
     const employees = await database.query('employees', emp => emp.departmentId === id && !emp.deletedAt);
     if (employees.length > 0) {
@@ -167,9 +180,10 @@ class MasterDataService {
     // Invalidate cache
     cacheManager.clear('departments:all');
     cacheManager.clear(`department:${id}`);
-    // ✅ FIX: Log activity
+    // ✅ FIX: Log activity with details
     if (currentUser?.userId) {
-      await database.logActivity('delete', 'Department', id, currentUser.userId);
+      await database.logActivity('delete', 'Department', id, currentUser.userId,
+        `Deleted department: ${departmentName} (${id})`);
     }
     return true;
   }
@@ -183,9 +197,10 @@ class MasterDataService {
       updatedAt: getCurrentTimestamp()
     };
     await database.add('statusMCU', status);
-    // ✅ FIX: Log activity
+    // ✅ FIX: Log activity with details
     if (currentUser?.userId) {
-      await database.logActivity('create', 'Status', status.statusId, currentUser.userId);
+      await database.logActivity('create', 'Status', status.statusId, currentUser.userId,
+        `Created status: ${status.name} (${status.statusId})`);
     }
     return status;
   }
@@ -203,18 +218,24 @@ class MasterDataService {
       name: data.name,
       updatedAt: getCurrentTimestamp()
     });
-    // ✅ FIX: Log activity
+    // ✅ FIX: Log activity with details
     if (currentUser?.userId) {
-      await database.logActivity('update', 'Status', id, currentUser.userId);
+      await database.logActivity('update', 'Status', id, currentUser.userId,
+        `Updated status to: ${data.name}`);
     }
     return await this.getStatusById(id);
   }
 
   async deleteStatus(id, currentUser) {
+    // Get the status name before deletion for audit trail
+    const status = await this.getStatusById(id);
+    const statusName = status?.name || 'Unknown';
+
     await database.delete('statusMCU', id);
-    // ✅ FIX: Log activity
+    // ✅ FIX: Log activity with details
     if (currentUser?.userId) {
-      await database.logActivity('delete', 'Status', id, currentUser.userId);
+      await database.logActivity('delete', 'Status', id, currentUser.userId,
+        `Deleted status: ${statusName} (${id})`);
     }
     return true;
   }
@@ -230,9 +251,10 @@ class MasterDataService {
     await database.add('vendors', vendor);
     // Invalidate cache
     cacheManager.clear('vendors:all');
-    // ✅ FIX: Log activity
+    // ✅ FIX: Log activity with details
     if (currentUser?.userId) {
-      await database.logActivity('create', 'Vendor', vendor.vendorId, currentUser.userId);
+      await database.logActivity('create', 'Vendor', vendor.vendorId, currentUser.userId,
+        `Created vendor: ${vendor.name} (${vendor.vendorId})`);
     }
     return vendor;
   }
@@ -274,14 +296,19 @@ class MasterDataService {
     // Invalidate cache
     cacheManager.clear('vendors:all');
     cacheManager.clear(`vendor:${id}`);
-    // ✅ FIX: Log activity
+    // ✅ FIX: Log activity with details
     if (currentUser?.userId) {
-      await database.logActivity('update', 'Vendor', id, currentUser.userId);
+      await database.logActivity('update', 'Vendor', id, currentUser.userId,
+        `Updated vendor to: ${data.name}`);
     }
     return await this.getVendorById(id);
   }
 
   async deleteVendor(id, currentUser) {
+    // Get the vendor name before deletion for audit trail
+    const vendor = await this.getVendorById(id);
+    const vendorName = vendor?.name || 'Unknown';
+
     // Check if in use
     const employees = await database.query('employees', emp =>
       emp.employmentStatus === 'Vendor' && emp.vendorName === id && !emp.deletedAt
@@ -293,9 +320,10 @@ class MasterDataService {
     // Invalidate cache
     cacheManager.clear('vendors:all');
     cacheManager.clear(`vendor:${id}`);
-    // ✅ FIX: Log activity
+    // ✅ FIX: Log activity with details
     if (currentUser?.userId) {
-      await database.logActivity('delete', 'Vendor', id, currentUser.userId);
+      await database.logActivity('delete', 'Vendor', id, currentUser.userId,
+        `Deleted vendor: ${vendorName} (${id})`);
     }
     return true;
   }
@@ -310,10 +338,11 @@ class MasterDataService {
     // Invalidate cache
     cacheManager.clear('doctors:all');
 
-    // ✅ FIX: Log activity
+    // ✅ FIX: Log activity with details
     const doctorId = result?.id || `doctor-${Date.now()}`;
     if (currentUser?.userId) {
-      await database.logActivity('create', 'Doctor', doctorId, currentUser.userId);
+      await database.logActivity('create', 'Doctor', doctorId, currentUser.userId,
+        `Created doctor: ${data.name} (${doctorId})`);
     }
 
     // Return fresh object with only name
@@ -360,14 +389,19 @@ class MasterDataService {
     // Invalidate cache
     cacheManager.clear('doctors:all');
     cacheManager.clear(`doctor:${id}`);
-    // ✅ FIX: Log activity
+    // ✅ FIX: Log activity with details
     if (currentUser?.userId) {
-      await database.logActivity('update', 'Doctor', id, currentUser.userId);
+      await database.logActivity('update', 'Doctor', id, currentUser.userId,
+        `Updated doctor to: ${data.name}`);
     }
     return await this.getDoctorById(id);
   }
 
   async deleteDoctor(id, currentUser) {
+    // Get the doctor name before deletion for audit trail
+    const doctor = await this.getDoctorById(id);
+    const doctorName = doctor?.name || 'Unknown';
+
     // Check if in use
     const mcuRecords = await database.query('mcus', mcu => mcu.doctor === id && !mcu.deletedAt);
     if (mcuRecords.length > 0) {
@@ -377,9 +411,10 @@ class MasterDataService {
     // Invalidate cache
     cacheManager.clear('doctors:all');
     cacheManager.clear(`doctor:${id}`);
-    // ✅ FIX: Log activity
+    // ✅ FIX: Log activity with details
     if (currentUser?.userId) {
-      await database.logActivity('delete', 'Doctor', id, currentUser.userId);
+      await database.logActivity('delete', 'Doctor', id, currentUser.userId,
+        `Deleted doctor: ${doctorName} (${id})`);
     }
     return true;
   }

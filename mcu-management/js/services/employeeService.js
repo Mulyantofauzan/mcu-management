@@ -28,9 +28,10 @@ class EmployeeService {
 
     await database.add('employees', employee);
 
-    // Log activity
+    // Log activity with details
     if (currentUser) {
-      await database.logActivity('create', 'Employee', employee.employeeId, currentUser.userId);
+      await database.logActivity('create', 'Employee', employee.employeeId, currentUser.userId,
+        `Created employee: ${employee.name} (${employee.employeeId}). Department: ${employee.departmentId}, Job Title: ${employee.jobTitleId}`);
     }
 
     return employee;
@@ -62,16 +63,23 @@ class EmployeeService {
 
     await database.update('employees', employeeId, updateData);
 
-    // Log activity
+    // Log activity with details
     const currentUser = window.authService?.getCurrentUser();
     if (currentUser?.userId) {
-      await database.logActivity('update', 'Employee', employeeId, currentUser.userId);
+      const employee = await this.getById(employeeId);
+      const updatedFields = Object.keys(updates).join(', ');
+      await database.logActivity('update', 'Employee', employeeId, currentUser.userId,
+        `Updated employee ${employee?.name} (${employeeId}). Fields: ${updatedFields}`);
     }
 
     return await this.getById(employeeId);
   }
 
   async softDelete(employeeId) {
+    // Get employee name before deletion for audit trail
+    const employee = await this.getById(employeeId);
+    const employeeName = employee?.name || 'Unknown';
+
     await database.update('employees', employeeId, {
       deletedAt: getCurrentTimestamp()
     });
@@ -84,16 +92,21 @@ class EmployeeService {
       });
     }
 
-    // Log activity
+    // Log activity with details
     const currentUser = window.authService?.getCurrentUser();
     if (currentUser?.userId) {
-      await database.logActivity('delete', 'Employee', employeeId, currentUser.userId);
+      await database.logActivity('delete', 'Employee', employeeId, currentUser.userId,
+        `Moved to trash: ${employeeName} (${employeeId}). Associated ${mcus.length} MCU records also moved.`);
     }
 
     return true;
   }
 
   async restore(employeeId) {
+    // Get employee name for audit trail
+    const employee = await this.getById(employeeId);
+    const employeeName = employee?.name || 'Unknown';
+
     // Restore employee
     await database.update('employees', employeeId, {
       deletedAt: null,
@@ -112,10 +125,11 @@ class EmployeeService {
       });
     }
 
-    // Log activity
+    // Log activity with details
     const currentUser = window.authService?.getCurrentUser();
     if (currentUser?.userId) {
-      await database.logActivity('update', 'Employee', employeeId, currentUser.userId);
+      await database.logActivity('update', 'Employee', employeeId, currentUser.userId,
+        `Restored from trash: ${employeeName} (${employeeId}). Associated ${deletedMCUs.length} MCU records also restored.`);
     }
 
     return true;
