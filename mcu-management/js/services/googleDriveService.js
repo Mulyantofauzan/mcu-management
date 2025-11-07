@@ -55,50 +55,32 @@ class GoogleDriveService {
   }
 
   /**
-   * Ensure file has reliable MIME type - override file.type if necessary
+   * Get validated MIME type from multiple sources
    * @param {File} file - File object
-   * @returns {File} - File with corrected MIME type property
+   * @returns {string|null} - Validated MIME type or null
    */
-  ensureMimeType(file) {
-    // Try all methods to get the correct MIME type
-    let mimeType = null;
-
-    // Method 1: Check if file already has correct type
+  getValidatedMimeType(file) {
+    // Method 1: Check if file.type is reliable (not the generic octet-stream)
     if (file.type && file.type !== 'application/octet-stream') {
-      mimeType = file.type;
+      logger.info(`Using file.type: ${file.type}`);
+      return file.type;
     }
 
-    // Method 2: Try to detect from filename
-    if (!mimeType) {
-      mimeType = this.getMimeTypeFromFileName(file.name);
+    // Method 2: Try to detect from filename (most reliable method)
+    const detectedType = this.getMimeTypeFromFileName(file.name);
+    if (detectedType) {
+      logger.info(`Detected from filename: ${file.name} -> ${detectedType}`);
+      return detectedType;
     }
 
-    // Method 3: Check custom property if it exists
-    if (!mimeType && file.__detectedMimeType) {
-      mimeType = file.__detectedMimeType;
+    // Method 3: Check custom property if it exists (from fileCompression.detectMimeType)
+    if (file.__detectedMimeType) {
+      logger.info(`Using custom property: ${file.__detectedMimeType}`);
+      return file.__detectedMimeType;
     }
 
-    // If we found a MIME type, create a new File with it properly set
-    if (mimeType && file.type !== mimeType) {
-      logger.info(`Overriding file MIME type from "${file.type}" to "${mimeType}"`);
-      try {
-        // Create a new File with the correct type
-        const newFile = new File([file], file.name, {
-          type: mimeType,
-          lastModified: file.lastModified,
-        });
-        // Also set it as a property for extra safety
-        Object.defineProperty(newFile, 'type', {
-          value: mimeType,
-          writable: false
-        });
-        return newFile;
-      } catch (e) {
-        logger.warn(`Failed to create new File object: ${e.message}`);
-      }
-    }
-
-    return file;
+    logger.warn(`Could not determine MIME type for: ${file.name}`);
+    return null;
   }
 
   /**
@@ -119,22 +101,19 @@ class GoogleDriveService {
         throw new Error('File and employeeId are required');
       }
 
-      // Ensure file has correct MIME type
-      file = this.ensureMimeType(file);
-
       // Validate file size before compression (should be pre-compressed by frontend)
       const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
       if (file.size > MAX_FILE_SIZE) {
         throw new Error(`File size exceeds 5MB limit. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
       }
 
-      // Validate file type - should now have correct MIME type after ensureMimeType()
+      // Get validated MIME type from multiple sources (most reliable method)
       const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
-      let actualMimeType = file.type;
-      logger.info(`File after ensureMimeType: type="${actualMimeType}", filename="${file.name}"`);
+      const actualMimeType = this.getValidatedMimeType(file);
+      logger.info(`Validated MIME type for "${file.name}": ${actualMimeType}`);
 
       if (!ALLOWED_TYPES.includes(actualMimeType)) {
-        throw new Error(`File type not allowed. Allowed: PDF, JPEG, PNG. Provided: ${file.type || 'unknown'}`);
+        throw new Error(`File type not allowed. Allowed: PDF, JPEG, PNG. File: ${file.name}, Detected: ${actualMimeType || 'unknown'}`);
       }
 
       // Prepare form data for upload
