@@ -107,6 +107,9 @@ async function loadData() {
         employees = employees.map(emp => enrichEmployeeWithIds(emp));
         filteredEmployees = [...employees];
 
+        // ✅ FIX: Populate filter dropdowns
+        populateFilterDropdowns();
+
         updateStats();
         renderTable();
         logger.info('Employee data loaded successfully');
@@ -114,6 +117,20 @@ async function loadData() {
         logger.error('Error loading employee data:', error);
         showToast('Gagal memuat data: ' + error.message, 'error');
     }
+}
+
+// ✅ FIX: Populate department filter dropdown
+function populateFilterDropdowns() {
+    const deptSelect = document.getElementById('filter-department');
+    const uniqueDepts = [...new Set(employees.map(e => e.department).filter(Boolean))];
+
+    // Get department names from master data
+    uniqueDepts.forEach(deptName => {
+        const option = document.createElement('option');
+        option.value = deptName;
+        option.textContent = deptName;
+        deptSelect.appendChild(option);
+    });
 }
 
 // Helper: Add jobTitleId and departmentId based on names (for Supabase)
@@ -270,19 +287,64 @@ window.changePage = function(page) {
     }
 };
 
-// Create debounced search function to prevent excessive filtering
+// ✅ FIX: Create debounced filter function to prevent excessive filtering
 const debouncedSearch = debounce(() => {
-    const search = document.getElementById('search').value.toLowerCase();
-    filteredEmployees = employees.filter(emp => {
-        const empName = safeGet(emp, 'name', '').toLowerCase();
-        const empId = safeGet(emp, 'employeeId', '').toLowerCase();
-        return empName.includes(search) || empId.includes(search);
-    });
-    currentPage = 1; // Reset to first page
-    renderTable();
+    window.applyFilters();
 }, UI.SEARCH_DEBOUNCE_DELAY);
 
+// ✅ FIX: Apply filters
+window.applyFilters = function() {
+    const deptFilter = document.getElementById('filter-department').value;
+    const statusFilter = document.getElementById('filter-active-status').value;
+    const employmentFilter = document.getElementById('filter-employment-type').value;
+    const searchFilter = document.getElementById('search').value.toLowerCase();
+
+    filteredEmployees = employees.filter(emp => {
+        // Apply department filter
+        if (deptFilter && emp.department !== deptFilter) {
+            return false;
+        }
+
+        // Apply active status filter
+        if (statusFilter && emp.activeStatus !== statusFilter) {
+            return false;
+        }
+
+        // Apply employment type filter
+        if (employmentFilter && emp.employmentStatus !== employmentFilter) {
+            return false;
+        }
+
+        // Apply search filter
+        if (searchFilter) {
+            const name = (emp.name || '').toLowerCase();
+            const employeeId = (emp.employeeId || '').toLowerCase();
+            if (!name.includes(searchFilter) && !employeeId.includes(searchFilter)) {
+                return false;
+            }
+        }
+
+        return true;
+    });
+
+    currentPage = 1; // Reset to first page
+    renderTable();
+};
+
+// ✅ FIX: Clear all filters
+window.clearFilters = function() {
+    document.getElementById('filter-department').value = '';
+    document.getElementById('filter-active-status').value = '';
+    document.getElementById('filter-employment-type').value = '';
+    document.getElementById('search').value = '';
+
+    filteredEmployees = [...employees];
+    currentPage = 1;
+    renderTable();
+};
+
 window.handleSearch = function() {
+    // Use debounced applyFilters for search + other filters combined
     debouncedSearch();
 };
 
