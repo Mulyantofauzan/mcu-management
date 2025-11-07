@@ -35,7 +35,7 @@ const drive = google.drive({ version: 'v3', auth });
  * @param {Object} req - Node.js HTTP request
  * @param {Object} res - Node.js HTTP response
  */
-export default async function handler(req, res) {
+async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -253,3 +253,6 @@ async function uploadFileToGoogleDrive(fileBuffer, fileName, mimeType, parentFol
     throw new Error(`Failed to upload file to Google Drive: ${error.message}`);
   }
 }
+
+// Export for Vercel
+module.exports = handler;
