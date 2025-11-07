@@ -25,13 +25,13 @@ class SuperSearch {
    */
   async init() {
     try {
-      // Load all employees (including deleted)
-      const employees = await database.query('employees');
-      this.allEmployees = employees || [];
+      // Load all employees (including deleted) - use getAll instead of query
+      const employees = await database.getAll('employees');
+      this.allEmployees = Array.isArray(employees) ? employees : [];
 
-      // Load all MCU records
-      const mcuRecords = await database.query('mcuRecords');
-      this.allMCURecords = mcuRecords || [];
+      // Load all MCU records - use getAll instead of query
+      const mcuRecords = await database.getAll('mcuRecords');
+      this.allMCURecords = Array.isArray(mcuRecords) ? mcuRecords : [];
 
       this.createModal();
       this.attachKeyboardShortcut();
@@ -324,11 +324,11 @@ class SuperSearch {
    */
   async refresh() {
     try {
-      const employees = await database.query('employees');
-      this.allEmployees = employees || [];
+      const employees = await database.getAll('employees');
+      this.allEmployees = Array.isArray(employees) ? employees : [];
 
-      const mcuRecords = await database.query('mcuRecords');
-      this.allMCURecords = mcuRecords || [];
+      const mcuRecords = await database.getAll('mcuRecords');
+      this.allMCURecords = Array.isArray(mcuRecords) ? mcuRecords : [];
 
       logger.info('Super Search data refreshed');
     } catch (error) {
