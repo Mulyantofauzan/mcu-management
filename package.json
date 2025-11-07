@@ -4,11 +4,7 @@
   "description": "MCU Management System - Medical Check-Up Records",
   "scripts": {
     "dev": "cd mcu-management && npm run dev",
-    "build": "cd mcu-management && npm run build",
-    "install:all": "npm install && cd mcu-management && npm install && cd ../functions && npm install"
-  },
-  "devDependencies": {
-    "firebase-tools": "^14.24.0"
+    "build": "cd mcu-management && npm run build"
   },
   "private": true
 }
