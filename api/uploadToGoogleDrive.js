@@ -33,22 +33,39 @@ const supabase = createClient(
 );
 
 // Load Google Cloud credentials from environment variable
-let SERVICE_ACCOUNT_KEY = {};
+let SERVICE_ACCOUNT_KEY = null;
+let googleAuthError = null;
+
 try {
-  SERVICE_ACCOUNT_KEY = JSON.parse(process.env.GOOGLE_CREDENTIALS || '{}');
+  const credString = process.env.GOOGLE_CREDENTIALS;
+  if (!credString) {
+    throw new Error('GOOGLE_CREDENTIALS environment variable not set');
+  }
+  SERVICE_ACCOUNT_KEY = JSON.parse(credString);
+  console.log('✓ Google credentials loaded successfully');
 } catch (e) {
+  googleAuthError = e.message;
   console.error('ERROR: Failed to parse GOOGLE_CREDENTIALS:', e.message);
 }
+
 const GOOGLE_DRIVE_ROOT_FOLDER_ID = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
 
 // Initialize Google Auth
 let auth, drive;
 try {
+  if (!SERVICE_ACCOUNT_KEY) {
+    throw new Error('Service account key is invalid: ' + googleAuthError);
+  }
+  if (!GOOGLE_DRIVE_ROOT_FOLDER_ID) {
+    throw new Error('GOOGLE_DRIVE_ROOT_FOLDER_ID environment variable not set');
+  }
+
   auth = new google.auth.GoogleAuth({
     credentials: SERVICE_ACCOUNT_KEY,
     scopes: ['https://www.googleapis.com/auth/drive'],
   });
   drive = google.drive({ version: 'v3', auth });
+  console.log('✓ Google Drive API initialized successfully');
 } catch (e) {
   console.error('ERROR: Failed to initialize Google Auth:', e.message);
 }
@@ -74,6 +91,14 @@ async function handler(req, res) {
   }
 
   try {
+    // Check if Google Drive API is initialized
+    if (!drive || !auth) {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      return res.status(503).json({
+        error: 'Google Drive API not initialized. Check server logs.'
+      });
+    }
+
     // Only accept POST requests
     if (req.method !== 'POST') {
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
