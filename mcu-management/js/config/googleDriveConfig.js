@@ -4,25 +4,22 @@
  * SETUP INSTRUCTIONS:
  *
  * 1. Create credentials at: https://console.cloud.google.com/
- *    - Create Service Account "mcu-file-upload"
- *    - Download JSON key to /credentials/
+ *    - Create OAuth2 Client ID (Web app type)
+ *    - Add origins: http://localhost:5173 and https://mcu-management.vercel.app
  *
  * 2. Create "MCU Documents" folder in Google Drive
  *    - Note the folder ID from URL
  *
- * 3. Share folder with Service Account email (from JSON file)
+ * 3. Share folder with your Google account
  *    - Give "Editor" permission
  *
  * 4. Set environment variables:
- *    GOOGLE_DRIVE_ROOT_FOLDER_ID=<folder-id>
- *    GOOGLE_CREDENTIALS=<json-content>  (in Cloud Functions)
+ *    VITE_GOOGLE_CLIENT_ID=<client-id>
+ *    VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID=<folder-id>
  *
- * 5. Deploy Cloud Function:
- *    firebase deploy --only functions:uploadToGoogleDrive
+ * 5. For local dev: add to .env.local
+ *    For production: add to Vercel dashboard settings
  */
-
-// Import envConfig to ensure credentials are loaded
-import { ENV, initializeEnv } from './envConfig.js';
 
 // Flag to track if env has been initialized
 let envInitialized = false;
@@ -30,7 +27,6 @@ let envInitialized = false;
 // Async initialization function (called from fileUploadWidget before use)
 export async function initializeGoogleDriveConfig() {
   if (!envInitialized) {
-    await initializeEnv();
     envInitialized = true;
   }
 }
@@ -140,29 +136,4 @@ export const googleDriveConfig = {
     return `https://drive.google.com/file/d/${googleDriveFileId}/preview`;
   },
 
-  /**
-   * Validate configuration
-   * @throws {Error} If required config is missing
-   */
-  validate() {
-    if (!this.rootFolderId) {
-      throw new Error(
-        'Google Drive root folder ID not configured. ' +
-        'Set VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID environment variable.'
-      );
-    }
-    if (!this.uploadEndpoint) {
-      throw new Error(
-        'Google Drive upload endpoint not configured. ' +
-        'Set VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT environment variable.'
-      );
-    }
-  },
 };
-
-// Example .env.local file:
-/*
-# Google Drive Configuration
-VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID=1ABC123XYZ...
-VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT=https://region-project.cloudfunctions.net/uploadToGoogleDrive
-*/
