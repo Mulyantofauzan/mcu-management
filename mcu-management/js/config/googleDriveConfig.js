@@ -40,9 +40,9 @@ function getEnvVar(varName) {
     ? 'VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT'
     : `VITE_${varName}`;
 
-  // Try ENV from envConfig (runtime loaded from Vercel env vars or .env files)
-  if (ENV && ENV[viteKey]) {
-    return ENV[viteKey];
+  // Try window.ENV first (loaded from env-config.js in browser)
+  if (typeof window !== 'undefined' && window.ENV && window.ENV[viteKey]) {
+    return window.ENV[viteKey];
   }
 
   // Try import.meta.env (Vite build-time variables - embedded at build)
@@ -52,11 +52,6 @@ function getEnvVar(varName) {
     }
   } catch (e) {
     // import.meta might not be available in all contexts
-  }
-
-  // Try window.ENV (fallback from env-config.js)
-  if (typeof window !== 'undefined' && window.ENV && window.ENV[viteKey]) {
-    return window.ENV[viteKey];
   }
 
   // Fallback to process.env (for Node.js/build time)
