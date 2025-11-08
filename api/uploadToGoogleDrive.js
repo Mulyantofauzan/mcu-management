@@ -41,8 +41,29 @@ try {
   if (!credString) {
     throw new Error('GOOGLE_CREDENTIALS environment variable not set');
   }
-  SERVICE_ACCOUNT_KEY = JSON.parse(credString);
+
+  let parsed;
+
+  // Try direct JSON parse first
+  try {
+    parsed = JSON.parse(credString);
+  } catch (directError) {
+    // Try base64 decode if direct parse fails
+    try {
+      const decoded = Buffer.from(credString, 'base64').toString('utf-8');
+      parsed = JSON.parse(decoded);
+      console.log('✓ Decoded base64-encoded credentials');
+    } catch (base64Error) {
+      throw new Error(
+        `Failed to parse credentials as JSON: ${directError.message}`
+      );
+    }
+  }
+
+  SERVICE_ACCOUNT_KEY = parsed;
   console.log('✓ Google credentials loaded successfully');
+  console.log('  - Type:', parsed.type);
+  console.log('  - Project ID:', parsed.project_id);
 } catch (e) {
   googleAuthError = e.message;
   console.error('ERROR: Failed to parse GOOGLE_CREDENTIALS:', e.message);
