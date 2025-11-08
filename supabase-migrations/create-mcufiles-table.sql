@@ -6,20 +6,17 @@
 
 CREATE TABLE IF NOT EXISTS public.mcufiles (
     fileid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    employee_id VARCHAR(50) NOT NULL,  -- Reference to employees.employee_id
-    mcu_id VARCHAR(50),  -- Reference to mcus.mcu_id (nullable for orphaned files)
+    employee_id TEXT,  -- Store employee_id as plain text (reference to employees table)
+    mcu_id TEXT,  -- Store mcu_id as plain text (reference to mcus table)
     filename TEXT NOT NULL,
     filetype TEXT NOT NULL,
     filesize INTEGER NOT NULL,
     supabase_storage_path TEXT NOT NULL UNIQUE,  -- e.g., "mcu-documents/EMP-20250101-0001/MCU-20250101-0001/2025-11-08-12-34-56-document.pdf"
-    uploaded_by VARCHAR(50) NOT NULL,  -- user_id who uploaded
+    uploaded_by TEXT,  -- user_id who uploaded
     uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     deleted_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    -- Foreign key constraints (using DEFERRABLE for flexibility)
-    CONSTRAINT fk_mcufiles_employee FOREIGN KEY (employee_id) REFERENCES public.employees(employee_id) ON DELETE CASCADE,
-    CONSTRAINT fk_mcufiles_mcu FOREIGN KEY (mcu_id) REFERENCES public.mcus(mcu_id) ON DELETE CASCADE
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Indexes for faster queries
