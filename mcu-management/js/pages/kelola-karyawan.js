@@ -54,24 +54,23 @@ async function init() {
 
 // ✅ NEW: Setup toggle button for showing/hiding inactive employees
 function setupInactiveToggle() {
-    // Create toggle button if it doesn't exist
-    const filterSection = document.querySelector('[data-filter-section]');
-    if (!filterSection) return;
+    // Find all cards (filter card is first, employee table card is second)
+    const cards = document.querySelectorAll('.card');
+    if (cards.length < 2) return;
+
+    const filterCard = cards[0];  // Filter section card
+    const tableCard = cards[1];   // Employee table card
 
     let toggleBtn = document.getElementById('toggle-inactive-btn');
     if (!toggleBtn) {
         toggleBtn = document.createElement('button');
         toggleBtn.id = 'toggle-inactive-btn';
-        toggleBtn.className = 'px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors';
+        toggleBtn.type = 'button';
+        toggleBtn.className = 'px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium mb-4';
         toggleBtn.textContent = 'Tampilkan Inactive';
 
-        // Insert before table or at end of filter section
-        const tableContainer = document.querySelector('[data-table-container]');
-        if (tableContainer) {
-            tableContainer.parentNode.insertBefore(toggleBtn, tableContainer);
-        } else {
-            filterSection.appendChild(toggleBtn);
-        }
+        // Insert between filter section and table
+        filterCard.parentNode.insertBefore(toggleBtn, tableCard);
     }
 
     // Update button text and listen for clicks
