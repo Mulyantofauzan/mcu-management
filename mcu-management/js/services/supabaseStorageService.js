@@ -15,23 +15,17 @@ import pako from 'pako';
 
 const BUCKET_NAME = 'mcu-documents';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per file
-const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+// Only PDF and images allowed
+const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
 
 /**
  * Check if file type benefits from compression
- * PDFs and Office docs compress very well (50-70% reduction)
+ * Only PDFs compress well (50-70% reduction)
+ * Images are already compressed
  */
 function isCompressible(mimeType) {
-    const compressible = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument',
-        'text/plain',
-        'text/html',
-        'application/json',
-        'application/xml'
-    ];
-    return compressible.some(type => mimeType.includes(type));
+    // Only compress PDFs
+    return mimeType === 'application/pdf';
 }
 
 /**
@@ -91,7 +85,7 @@ function validateFile(file) {
     }
 
     if (!ALLOWED_TYPES.includes(file.type)) {
-        throw new Error(`File type ${file.type} not allowed. Allowed: PDF, JPG, PNG, DOC, DOCX`);
+        throw new Error(`File type ${file.type} not allowed. Allowed: PDF, JPG, PNG`);
     }
 
     return true;
