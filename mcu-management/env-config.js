@@ -11,6 +11,7 @@
 window.ENV = {
   SUPABASE_URL: null,
   SUPABASE_ANON_KEY: null,
+  VITE_GOOGLE_CLIENT_ID: null,
   VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID: null,
   VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT: null,
   ENABLE_AUTO_SEED: false
@@ -46,20 +47,47 @@ async function loadConfig() {
   if (window.__VITE_SUPABASE_URL__) {
     window.ENV.SUPABASE_URL = window.__VITE_SUPABASE_URL__;
     window.ENV.SUPABASE_ANON_KEY = window.__VITE_SUPABASE_ANON_KEY__;
+    window.ENV.VITE_GOOGLE_CLIENT_ID = window.__VITE_GOOGLE_CLIENT_ID__;
     window.ENV.VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID = window.__VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID__;
     window.ENV.VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT = window.__VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT__;
     console.log('✅ Configuration loaded from build-time globals');
     return true;
   }
 
-  // Priority 3: Development fallback - localStorage
+  // Priority 3: Development - try to load from injected runtime env variables
+  // For static file serving, we load from script variables if available
+  if (window.__ENV_LOADED__) {
+    // Already loaded from external config, use what's in window.ENV
+    if (window.ENV.SUPABASE_URL || window.ENV.VITE_GOOGLE_CLIENT_ID) {
+      console.log('✅ Configuration loaded from runtime injection');
+      return true;
+    }
+  }
+
+  // Priority 4: Development fallback - localStorage
   // Useful for local development when Vite dev server is running
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     const devUrl = localStorage.getItem('DEV_SUPABASE_URL');
     const devKey = localStorage.getItem('DEV_SUPABASE_ANON_KEY');
+    const devClientId = localStorage.getItem('DEV_GOOGLE_CLIENT_ID');
+    const devRootFolderId = localStorage.getItem('DEV_GOOGLE_DRIVE_ROOT_FOLDER_ID');
+    const devUploadEndpoint = localStorage.getItem('DEV_GOOGLE_DRIVE_UPLOAD_ENDPOINT');
+
     if (devUrl && devKey) {
       window.ENV.SUPABASE_URL = devUrl;
       window.ENV.SUPABASE_ANON_KEY = devKey;
+    }
+    if (devClientId) {
+      window.ENV.VITE_GOOGLE_CLIENT_ID = devClientId;
+    }
+    if (devRootFolderId) {
+      window.ENV.VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID = devRootFolderId;
+    }
+    if (devUploadEndpoint) {
+      window.ENV.VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT = devUploadEndpoint;
+    }
+
+    if (devUrl && devKey) {
       console.log('🔧 Using development credentials from localStorage');
       return true;
     }
