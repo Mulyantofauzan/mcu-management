@@ -28,9 +28,10 @@ CREATE INDEX IF NOT EXISTS idx_mcufiles_mcu_id ON public.mcufiles(mcu_id);
 CREATE INDEX IF NOT EXISTS idx_mcufiles_uploaded_at ON public.mcufiles(uploaded_at DESC);
 CREATE INDEX IF NOT EXISTS idx_mcufiles_deleted_at ON public.mcufiles(deleted_at);
 
--- Trigger for updated_at
-CREATE TRIGGER update_mcufiles_updated_at BEFORE UPDATE ON public.mcufiles
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Trigger for updated_at (create trigger only if function exists)
+-- Uncomment after verifying update_updated_at_column() function exists:
+-- CREATE TRIGGER update_mcufiles_updated_at BEFORE UPDATE ON public.mcufiles
+--     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================
 -- NOTES
@@ -40,3 +41,4 @@ CREATE TRIGGER update_mcufiles_updated_at BEFORE UPDATE ON public.mcufiles
 -- 3. Only metadata is stored in this table, not actual file content
 -- 4. File compression is applied before upload to maximize storage quota
 -- 5. Soft delete is used (deleted_at column) for audit trail
+-- 6. Trigger for updated_at will be added after verifying function exists
