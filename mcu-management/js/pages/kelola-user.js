@@ -9,6 +9,7 @@ import { database } from '../services/database.js';
 import { generateUserId } from '../utils/idGenerator.js';
 import { getCurrentTimestamp } from '../utils/dateHelpers.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
+import { initSuperSearch } from '../components/superSearch.js';  // ✅ NEW: Global search
 
 let users = [];
 
@@ -58,6 +59,13 @@ async function init() {
 
         updateUserInfo();
         await loadUsers();
+
+        // ✅ NEW: Initialize Super Search (Cmd+K global search)
+        try {
+            await initSuperSearch();
+        } catch (error) {
+            console.warn('Failed to initialize Super Search:', error);
+        }
 
         // Show page content after initialization complete
         document.body.classList.add('initialized');

@@ -11,6 +11,7 @@ import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 import { FileUploadWidget } from '../components/fileUploadWidget.js';  // ✅ NEW: File upload widget
+import { initSuperSearch } from '../components/superSearch.js';  // ✅ NEW: Global search
 
 let searchResults = [];
 let jobTitles = [];
@@ -45,6 +46,13 @@ async function init() {
         updateUserInfo();
         await loadMasterData();
         populateDropdowns();
+
+        // ✅ NEW: Initialize Super Search (Cmd+K global search)
+        try {
+            await initSuperSearch();
+        } catch (error) {
+            console.warn('Failed to initialize Super Search:', error);
+        }
 
         // Show page content after initialization complete
         document.body.classList.add('initialized');

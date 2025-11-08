@@ -11,6 +11,7 @@ import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
 import { generateRujukanPDF, generateRujukanBalikPDF } from '../utils/rujukanPDFGenerator.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
+import { initSuperSearch } from '../components/superSearch.js';  // ✅ NEW: Global search
 
 let followUpList = [];
 let filteredList = [];
@@ -101,6 +102,13 @@ async function init() {
     updateUserInfo();
     await loadMasterData();
     await loadFollowUpList();
+
+    // ✅ NEW: Initialize Super Search (Cmd+K global search)
+    try {
+      await initSuperSearch();
+    } catch (error) {
+      console.warn('Failed to initialize Super Search:', error);
+    }
 
     // Show page content after initialization complete
     document.body.classList.add('initialized');

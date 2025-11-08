@@ -16,6 +16,7 @@ import { UI } from '../config/constants.js';
 import { safeGet, safeArray, isEmpty } from '../utils/nullSafety.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 import { FileUploadWidget } from '../components/fileUploadWidget.js';  // ✅ NEW: File upload widget
+import { initSuperSearch } from '../components/superSearch.js';  // ✅ NEW: Global search
 
 let employees = [];
 let filteredEmployees = [];
@@ -41,6 +42,13 @@ async function init() {
 
         // ✅ NEW: Setup toggle for inactive employees (if button exists)
         setupInactiveToggle();
+
+        // ✅ NEW: Initialize Super Search (Cmd+K global search)
+        try {
+            await initSuperSearch();
+        } catch (error) {
+            console.warn('Failed to initialize Super Search:', error);
+        }
 
         // Show page content after initialization complete
         document.body.classList.add('initialized');

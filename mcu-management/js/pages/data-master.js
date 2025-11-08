@@ -6,6 +6,7 @@ import { authService } from '../services/authService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { showToast, openModal, closeModal, confirmDialog } from '../utils/uiHelpers.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
+import { initSuperSearch } from '../components/superSearch.js';  // ✅ NEW: Global search
 
 let currentTab = 'jobTitles';
 let currentData = [];
@@ -29,6 +30,13 @@ async function init() {
 
         updateUserInfo();
         await loadData();
+
+        // ✅ NEW: Initialize Super Search (Cmd+K global search)
+        try {
+            await initSuperSearch();
+        } catch (error) {
+            console.warn('Failed to initialize Super Search:', error);
+        }
 
         // Show page content after initialization complete
         document.body.classList.add('initialized');
