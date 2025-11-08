@@ -64,12 +64,13 @@ async function compressFile(file) {
 
 /**
  * Generate storage path for file
- * Format: mcu-documents/{employeeId}/{mcuId}/{timestamp}-{filename}
+ * Format: {employeeId}/{mcuId}/{timestamp}-{filename}
+ * (BUCKET_NAME is 'mcu-documents', so path is relative to bucket)
  */
 function generateStoragePath(employeeId, mcuId, fileName) {
     const timestamp = new Date().toISOString().replace(/[-:.Z]/g, '').slice(0, 14); // YYYYMMDDHHmmss
     const sanitizedName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
-    return `${BUCKET_NAME}/${employeeId}/${mcuId || 'orphaned'}/${timestamp}-${sanitizedName}`;
+    return `${employeeId}/${mcuId || 'orphaned'}/${timestamp}-${sanitizedName}`;
 }
 
 /**
