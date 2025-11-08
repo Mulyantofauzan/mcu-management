@@ -161,8 +161,29 @@ function enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap) {
     return emp;
 }
 
+// ✅ Simple wrapper for detail views (uses global jobTitles & departments)
+function enrichEmployeeWithIds(emp) {
+    // Match job title by name to get ID
+    if (emp.jobTitle && !emp.jobTitleId) {
+        const job = jobTitles.find(j => j.name === emp.jobTitle);
+        if (job) {
+            emp.jobTitleId = job.id;
+        }
+    }
+
+    // Match department by name to get ID
+    if (emp.department && !emp.departmentId) {
+        const dept = departments.find(d => d.name === emp.department);
+        if (dept) {
+            emp.departmentId = dept.id;
+        }
+    }
+
+    return emp;
+}
+
 // ✅ DEPRECATED: Old O(n²) function kept for reference only
-// function enrichEmployeeWithIds(emp) {
+// function enrichEmployeeWithIds_OLD(emp) {
 //     // Match job title by name to get ID
 //     if (emp.jobTitle && !emp.jobTitleId) {
 //         const job = jobTitles.find(j => j.name === emp.jobTitle);
