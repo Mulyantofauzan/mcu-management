@@ -1056,14 +1056,22 @@ window.editMCU = async function() {
                 const editFileContainer = document.getElementById('edit-file-upload-container');
                 if (editFileContainer) {
                     editFileContainer.innerHTML = '';  // Clear previous widget
-                    editFileUploadWidget = new FileUploadWidget('edit-file-upload-container', {
-                        employeeId: mcu.employeeId,
-                        mcuId: mcu.mcuId,
-                        maxFiles: 5,
-                        onUploadComplete: (files) => {
-                            console.log('Additional MCU files uploaded:', files);
-                        }
-                    });
+                    try {
+                        editFileUploadWidget = new FileUploadWidget('edit-file-upload-container', {
+                            employeeId: mcu.employeeId,
+                            mcuId: mcu.mcuId,
+                            maxFiles: 5,
+                            onUploadComplete: (files) => {
+                                logger.info('Additional MCU files uploaded:', files);
+                            }
+                        });
+                        logger.info('✓ File upload widget initialized successfully');
+                    } catch (widgetError) {
+                        logger.error('✗ Failed to initialize file upload widget:', widgetError?.message || widgetError);
+                        console.error('Widget initialization error details:', widgetError);
+                    }
+                } else {
+                    logger.warn('⚠️ File upload container not found in DOM');
                 }
 
             } catch (error) {

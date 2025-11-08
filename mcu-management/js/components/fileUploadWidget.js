@@ -12,6 +12,8 @@ import { logger } from '../utils/logger.js';
 
 class FileUploadWidget {
   constructor(containerId, options = {}) {
+    logger.info(`FileUploadWidget: Creating widget for container: ${containerId}`);
+
     this.containerId = containerId;
     this.container = document.getElementById(containerId);
     this.employeeId = options.employeeId || null;
@@ -22,11 +24,16 @@ class FileUploadWidget {
     this.isUploading = false;
 
     if (!this.container) {
-      throw new Error(`Container with ID "${containerId}" not found`);
+      const errorMsg = `Container with ID "${containerId}" not found`;
+      logger.error(`✗ FileUploadWidget: ${errorMsg}`);
+      throw new Error(errorMsg);
     }
 
+    logger.info(`✓ FileUploadWidget: Container found, rendering widget...`);
     this.render();
+    logger.info(`✓ FileUploadWidget: Rendering complete, attaching event listeners...`);
     this.attachEventListeners();
+    logger.info(`✓ FileUploadWidget: Fully initialized`);
   }
 
   /**
