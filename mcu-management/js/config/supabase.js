@@ -118,3 +118,8 @@ export async function testConnection() {
 }
 
 export { supabase };
+
+// Also expose globally for debugging
+if (typeof window !== 'undefined') {
+    window._supabaseClient = supabase;
+}
