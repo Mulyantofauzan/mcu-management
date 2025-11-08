@@ -38,17 +38,22 @@ async function initSupabase() {
             attempts++;
         }
 
-        if (typeof window.supabase !== 'undefined') {
+        if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') {
             try {
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 useSupabase = true;
                 console.log('✅ Supabase client initialized successfully');
+                console.log('   Client available as: supabase object (imported)');
             } catch (error) {
                 console.error('❌ Failed to initialize Supabase:', error);
                 console.log('📦 Falling back to IndexedDB');
             }
         } else {
             console.warn('⚠️ Supabase library failed to load from CDN');
+            console.log('   typeof window.supabase:', typeof window.supabase);
+            if (typeof window.supabase !== 'undefined') {
+                console.log('   window.supabase keys:', Object.keys(window.supabase || {}).slice(0, 5));
+            }
             console.log('📦 Falling back to IndexedDB');
         }
     }
