@@ -154,7 +154,13 @@ class GapiDriveService {
         parents: [folderId]
       };
 
-      const multipartRequestBody =
+      // Convert file to ArrayBuffer for proper binary handling
+      const fileBuffer = await file.arrayBuffer();
+
+      // Build multipart body as Uint8Array for proper binary concatenation
+      const encoder = new TextEncoder();
+
+      const metadataStr =
         delimiter +
         'Content-Type: application/json\r\n\r\n' +
         JSON.stringify(metadata) +
@@ -163,7 +169,16 @@ class GapiDriveService {
         file.type +
         '\r\n\r\n';
 
-      const token = window.gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().id_token;
+      const metadataBytes = encoder.encode(metadataStr);
+      const fileBytesArray = new Uint8Array(fileBuffer);
+      const closeDelimBytes = encoder.encode(closeDelim);
+
+      // Concatenate all parts as Uint8Array
+      const totalLength = metadataBytes.length + fileBytesArray.length + closeDelimBytes.length;
+      const body = new Uint8Array(totalLength);
+      body.set(metadataBytes, 0);
+      body.set(fileBytesArray, metadataBytes.length);
+      body.set(closeDelimBytes, metadataBytes.length + fileBytesArray.length);
 
       const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
         method: 'POST',
@@ -171,10 +186,12 @@ class GapiDriveService {
           Authorization: `Bearer ${window.gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token}`,
           'Content-Type': `multipart/related; boundary="${boundary}"`
         },
-        body: multipartRequestBody + (await file.arrayBuffer()) + closeDelim
+        body: body
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        logger.error('Upload response error:', errorText);
         throw new Error(`Upload failed: ${response.statusText}`);
       }
 

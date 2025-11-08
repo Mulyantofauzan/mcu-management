@@ -365,11 +365,19 @@ class FileUploadWidget {
 
       // Get current user for folder naming
       const currentUser = authService.getCurrentUser();
-      const result = await gapiDriveService.uploadFile(
-        compressedFile,
-        this.employeeId,
-        currentUser?.displayName || 'Employee'
-      );
+
+      let result;
+      try {
+        result = await gapiDriveService.uploadFile(
+          compressedFile,
+          this.employeeId,
+          currentUser?.displayName || 'Employee'
+        );
+      } catch (uploadError) {
+        // More detailed error logging for debugging
+        logger.error('Detailed upload error:', uploadError);
+        throw uploadError;
+      }
 
       this.showProgress(file.name, 100);
 
@@ -380,7 +388,7 @@ class FileUploadWidget {
 
       showToast(`File uploaded: ${file.name}`, 'success');
     } catch (error) {
-      logger.error('File upload error:', error);
+      logger.error('File upload error:', error?.message || error);
       // Get safe error message without stringifying the whole error object
       const errorMsg = error?.message || String(error) || 'Upload failed';
       this.showError(errorMsg);
