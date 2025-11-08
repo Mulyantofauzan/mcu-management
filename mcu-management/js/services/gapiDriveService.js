@@ -196,17 +196,32 @@ class GapiDriveService {
    */
   async uploadFile(file, employeeId, employeeName = '') {
     try {
+      logger.info('========== FILE UPLOAD STARTED ==========');
+      logger.info(`File: ${file.name}, Size: ${file.size} bytes, Type: ${file.type}`);
+
       // Ensure user is signed in
-      logger.info('Ensuring user is signed in...');
-      await this.ensureSignedIn();
+      logger.info('Step 1: Ensuring user is signed in...');
+      try {
+        await this.ensureSignedIn();
+        logger.info('✓ User signed in successfully');
+      } catch (signInError) {
+        logger.error('✗ Sign-in failed:', signInError?.message || signInError);
+        throw signInError;
+      }
 
       // Get or create employee folder
-      logger.info(`Getting/creating folder for employee: ${employeeId}`);
-      const folderId = await this.getOrCreateEmployeeFolder(employeeId, employeeName);
-      logger.info(`Using folder: ${folderId}`);
+      logger.info(`Step 2: Getting/creating folder for employee: ${employeeId}`);
+      let folderId;
+      try {
+        folderId = await this.getOrCreateEmployeeFolder(employeeId, employeeName);
+        logger.info(`✓ Folder ID: ${folderId}`);
+      } catch (folderError) {
+        logger.error('✗ Folder creation failed:', folderError?.message || folderError);
+        throw folderError;
+      }
 
       // Use gapi.client.drive.files.create() for upload
-      logger.info(`Uploading file to Google Drive: ${file.name}`);
+      logger.info(`Step 3: Preparing file upload for: ${file.name}`);
 
       // Create file metadata
       const fileMetadata = {
@@ -214,35 +229,66 @@ class GapiDriveService {
         mimeType: file.type,
         parents: [folderId]
       };
+      logger.info('File metadata:', JSON.stringify(fileMetadata));
 
       // Create media object from File
       const media = {
         mimeType: file.type,
         body: file
       };
+      logger.info(`Media type: ${media.mimeType}, Body type: ${typeof media.body}`);
 
-      logger.info('Calling gapi.client.drive.files.create()');
-      const response = await window.gapi.client.drive.files.create({
-        resource: fileMetadata,
-        media: media,
-        fields: 'id, name, mimeType, createdTime, webViewLink'
-      });
+      logger.info('Step 4: Calling gapi.client.drive.files.create()...');
 
-      logger.info(`Upload response:`, response);
+      let response;
+      try {
+        response = await window.gapi.client.drive.files.create({
+          resource: fileMetadata,
+          media: media,
+          fields: 'id, name, mimeType, createdTime, webViewLink'
+        });
+        logger.info('✓ API call completed');
+      } catch (apiError) {
+        logger.error('✗ gapi API call failed');
+        logger.error('Error type:', apiError?.constructor?.name);
+        logger.error('Error message:', apiError?.message);
+        logger.error('Error status:', apiError?.status);
+        logger.error('Error details:', JSON.stringify(apiError, null, 2));
+        throw new Error(`gapi.client.drive.files.create() failed: ${apiError?.message}`);
+      }
 
-      if (!response || !response.result) {
-        logger.error('No response from Google Drive API');
-        throw new Error('Google Drive API did not return a response');
+      logger.info('Step 5: Validating response...');
+      logger.info('Response object:', typeof response);
+      logger.info('Response keys:', Object.keys(response || {}));
+
+      if (!response) {
+        logger.error('✗ Response is null/undefined');
+        throw new Error('Google Drive API returned null response');
+      }
+
+      logger.info('Response.result:', response.result);
+      logger.info('Response.error:', response.error);
+
+      if (response.error) {
+        logger.error('✗ API returned error:', response.error);
+        throw new Error(`Google Drive API error: ${response.error}`);
+      }
+
+      if (!response.result) {
+        logger.error('✗ No result in response');
+        throw new Error('Google Drive API did not return a result object');
       }
 
       const result = response.result;
+      logger.info('File result:', JSON.stringify(result));
 
       if (!result.id) {
-        logger.error('No file ID in response');
+        logger.error('✗ No file ID in result');
         throw new Error('Google Drive API did not return a file ID');
       }
 
-      logger.info(`File uploaded successfully: ${result.id}`);
+      logger.info(`✓ File uploaded successfully: ${result.id}`);
+      logger.info('========== FILE UPLOAD COMPLETE ==========');
 
       return {
         fileId: result.id,
@@ -253,7 +299,11 @@ class GapiDriveService {
         uploadedAt: new Date().toISOString()
       };
     } catch (error) {
-      logger.error('File upload error:', error?.message || error);
+      logger.error('========== FILE UPLOAD FAILED ==========');
+      logger.error('Error type:', error?.constructor?.name);
+      logger.error('Error message:', error?.message);
+      logger.error('Error stack:', error?.stack);
+      logger.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
       throw error;
     }
   }
