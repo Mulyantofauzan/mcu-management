@@ -4,7 +4,7 @@
  * Can be integrated into any MCU form or detail page
  */
 
-import { googleDriveService } from '../services/googleDriveService.js';
+import { gapiDriveService } from '../services/gapiDriveService.js';
 import { fileCompression } from '../utils/fileCompression.js';
 import { authService } from '../services/authService.js';
 import { showToast } from '../utils/uiHelpers.js';
@@ -343,30 +343,35 @@ class FileUploadWidget {
       this.showProgress(file.name, 0);
       const compressedFile = await fileCompression.compressFile(file);
 
-      // Initialize service if needed
-      if (!googleDriveService.uploadEndpoint) {
+      // Initialize service if needed (gapi)
+      if (!gapiDriveService.isInitialized) {
         const { googleDriveConfig, initializeGoogleDriveConfig } = await import('../config/googleDriveConfig.js');
-        // Ensure env vars are loaded before validating
         await initializeGoogleDriveConfig();
-        googleDriveConfig.validate();
-        await googleDriveService.init(
-          googleDriveConfig.rootFolderId,
-          googleDriveConfig.uploadEndpoint
-        );
+
+        // Get Google Client ID from config (need to add to env vars)
+        const googleClientId = googleDriveConfig.clientId || window.ENV?.VITE_GOOGLE_CLIENT_ID;
+        if (!googleClientId) {
+          throw new Error('Google Client ID not configured. Please set VITE_GOOGLE_CLIENT_ID environment variable.');
+        }
+
+        await gapiDriveService.init({
+          clientId: googleClientId,
+          rootFolderId: googleDriveConfig.rootFolderId
+        });
       }
 
-      // Upload file - TEMPORARILY DISABLED
-      throw new Error('File upload is temporarily disabled. MCU records can still be saved without file attachments.');
+      // Upload file via gapi
+      this.showProgress(file.name, 50);
 
-      // TODO: Fix Google Drive configuration and re-enable
-      // this.showProgress(file.name, 50);
-      // const currentUser = authService.getCurrentUser();
-      // const result = await googleDriveService.uploadFile(
-      //   compressedFile,
-      //   this.employeeId,
-      //   currentUser
-      // );
-      // this.showProgress(file.name, 100);
+      // Get current user for folder naming
+      const currentUser = authService.getCurrentUser();
+      const result = await gapiDriveService.uploadFile(
+        compressedFile,
+        this.employeeId,
+        currentUser?.displayName || 'Employee'
+      );
+
+      this.showProgress(file.name, 100);
 
       // Update file list
       this.updateFileItem(fileItem, result, 'success');

@@ -77,13 +77,19 @@ function getEnvVar(varName) {
 
 // Google Drive configuration with lazy getters
 export const googleDriveConfig = {
+  // Google OAuth2 Client ID for gapi
+  // Create at: https://console.cloud.google.com/apis/credentials
+  get clientId() {
+    return getEnvVar('VITE_GOOGLE_CLIENT_ID');
+  },
+
   // Root folder ID for MCU Documents (set from Google Drive URL)
   // Format: https://drive.google.com/drive/folders/1ABC123XYZ... → ID: 1ABC123XYZ...
   get rootFolderId() {
     return getEnvVar('VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID');
   },
 
-  // Vercel Serverless Function endpoint for file uploads
+  // Vercel Serverless Function endpoint for file uploads (DEPRECATED - using gapi instead)
   // Format: https://vercel-project.vercel.app/api/uploadToGoogleDrive
   get uploadEndpoint() {
     return getEnvVar('VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT');

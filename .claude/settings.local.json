@@ -12,7 +12,18 @@
       "Bash(awk:*)",
       "Bash(npx firebase:*)",
       "Bash(cat:*)",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(for file in /Users/mulyanto/Desktop/MCU-APP/mcu-management/js/pages/tambah-karyawan.js )",
+      "Bash(/Users/mulyanto/Desktop/MCU-APP/mcu-management/js/pages/follow-up.js )",
+      "Bash(/Users/mulyanto/Desktop/MCU-APP/mcu-management/js/pages/data-master.js )",
+      "Bash(/Users/mulyanto/Desktop/MCU-APP/mcu-management/js/pages/kelola-user.js )",
+      "Bash(/Users/mulyanto/Desktop/MCU-APP/mcu-management/js/pages/data-terhapus.js)",
+      "Bash(do)",
+      "Bash(if ! grep -q \"initSuperSearch\" \"$file\")",
+      "Bash(then)",
+      "Bash(else)",
+      "Bash(fi)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []
