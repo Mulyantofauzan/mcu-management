@@ -53,11 +53,21 @@ export class FileListViewer {
      */
     async loadFiles() {
         try {
-            console.log(`📂 Loading files for MCU: ${this.options.mcuId}`);
-            this.files = await getFilesByMCU(this.options.mcuId);
-            console.log(`📂 Files found: ${this.files.length}`, this.files);
+            const mcuId = this.options.mcuId;
+            console.log(`📂 FileListViewer: Loading files for MCU ID: "${mcuId}"`);
+            console.log(`📂 FileListViewer: Container ID: "${this.container.id}"`);
+
+            this.files = await getFilesByMCU(mcuId);
+
+            console.log(`📂 FileListViewer: Query returned ${this.files.length} file(s)`);
+            if (this.files.length > 0) {
+                console.log(`📂 FileListViewer: Files list:`, this.files);
+                this.files.forEach((f, idx) => {
+                    console.log(`   [${idx}] MCU: "${f.mcuid}" | File: "${f.filename}" | Path: "${f.supabase_storage_path}"`);
+                });
+            }
         } catch (error) {
-            console.error('Error loading files:', error);
+            console.error('❌ FileListViewer: Error loading files:', error.message);
             this.files = [];
         }
     }

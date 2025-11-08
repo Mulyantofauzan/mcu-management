@@ -17,6 +17,52 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per file
 // Only PDF and images allowed
 const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
 
+// Pako initialization promise - ensure pako loads only once
+let pakoInitPromise = null;
+
+/**
+ * Ensure pako is loaded and available
+ * Returns promise that resolves when pako is ready
+ * Waits up to 5 seconds for pako CDN to load
+ */
+function getPakoReady() {
+    if (pakoInitPromise) {
+        return pakoInitPromise;
+    }
+
+    pakoInitPromise = new Promise((resolve, reject) => {
+        // If pako already loaded, resolve immediately
+        if (typeof window.pako !== 'undefined' && window.pako.gzip) {
+            console.log('✅ Pako already loaded');
+            resolve(window.pako);
+            return;
+        }
+
+        // Otherwise wait for it to load (CDN script in index.html loads it)
+        let attempts = 0;
+        const maxAttempts = 50; // 5 seconds total (50 * 100ms)
+
+        const checkPako = setInterval(() => {
+            attempts++;
+            if (typeof window.pako !== 'undefined' && window.pako.gzip) {
+                clearInterval(checkPako);
+                console.log(`✅ Pako loaded after ${attempts * 100}ms`);
+                resolve(window.pako);
+                return;
+            }
+
+            if (attempts >= maxAttempts) {
+                clearInterval(checkPako);
+                const error = new Error('Pako compression library failed to load after 5 seconds. Check CDN availability.');
+                console.error('❌ Pako initialization timeout:', error);
+                reject(error);
+            }
+        }, 100);
+    });
+
+    return pakoInitPromise;
+}
+
 /**
  * Check if file type benefits from compression
  * Only PDFs compress well (50-70% reduction)
@@ -29,57 +75,50 @@ function isCompressible(mimeType) {
 
 /**
  * Compress file using pako gzip compression
- * PDF and Office docs typically compress 50-70%
- * Images already compressed, minimal benefit
+ * PDF files typically compress 50-70%
+ * Images already compressed, not worth compressing
  *
- * NOTE: Compression is optional - fails gracefully to uncompressed upload
+ * IMPORTANT: Compression is REQUIRED for PDFs - throws error if pako unavailable
+ * Non-compressible files (images) are returned as-is
  */
 async function compressFile(file) {
+    // Only compress PDF files
+    if (!isCompressible(file.type)) {
+        console.log(`⏭️ Not compressed: ${file.name} (already optimized format)`);
+        return file;
+    }
+
+    // For PDFs: ensure pako is available, wait if needed, throw if fails
+    console.log(`🔄 Compressing ${file.name}...`);
+
     try {
-        // Only compress PDF files
-        if (!isCompressible(file.type)) {
-            console.log(`⏭️ Not compressed: ${file.name} (already optimized format)`);
-            return file;
-        }
-
-        // Check if pako is available (loaded via CDN in index.html)
-        if (typeof window.pako === 'undefined') {
-            console.log(`⏭️ pako not available, uploading uncompressed`);
-            return file;
-        }
-
-        // PDF compression with gzip
-        console.log(`🔄 Compressing ${file.name}...`);
+        // Wait for pako to be ready (max 5 seconds)
+        const pako = await getPakoReady();
 
         const arrayBuffer = await file.arrayBuffer();
         const data = new Uint8Array(arrayBuffer);
 
-        try {
-            const compressed = window.pako.gzip(data);
-            const originalSize = file.size;
-            const compressedSize = compressed.length;
-            const ratio = ((1 - compressedSize / originalSize) * 100).toFixed(1);
+        // Perform compression
+        const compressed = pako.gzip(data);
+        const originalSize = file.size;
+        const compressedSize = compressed.length;
+        const ratio = ((1 - compressedSize / originalSize) * 100).toFixed(1);
 
-            console.log(`✅ Compressed: ${(originalSize / 1024).toFixed(1)}KB → ${(compressedSize / 1024).toFixed(1)}KB (${ratio}% reduction)`);
+        console.log(`✅ Compressed: ${(originalSize / 1024).toFixed(1)}KB → ${(compressedSize / 1024).toFixed(1)}KB (${ratio}% reduction)`);
 
-            // Create new File object with compressed data
-            const compressedFile = new File(
-                [compressed],
-                file.name + '.gz',
-                { type: 'application/gzip' }
-            );
+        // Create new File object with compressed data
+        const compressedFile = new File(
+            [compressed],
+            file.name + '.gz',
+            { type: 'application/gzip' }
+        );
 
-            return compressedFile;
-        } catch (pakoError) {
-            console.warn('⚠️ Gzip compression failed:', pakoError.message);
-            console.log('📄 Uploading original uncompressed file');
-            return file;
-        }
+        return compressedFile;
 
     } catch (error) {
-        console.error('❌ Compression error:', error);
-        console.log('📄 Uploading original uncompressed file');
-        return file;
+        // For PDFs, compression is NOT optional - throw error
+        console.error('❌ PDF compression failed:', error.message);
+        throw new Error(`Compression required for PDF files: ${error.message}`);
     }
 }
 
@@ -297,26 +336,33 @@ export async function deleteFile(fileid) {
 export async function getFilesByMCU(mcuId) {
     try {
         if (!isSupabaseEnabled()) {
+            console.warn('⚠️ getFilesByMCU: Supabase not enabled');
             return [];
         }
 
         const supabase = getSupabaseClient();
 
-        console.log(`🔍 Querying files for MCU ID: "${mcuId}"`);
+        console.log(`🔍 getFilesByMCU: Querying files for MCU ID: "${mcuId}"`);
 
         const { data, error } = await supabase
             .from('mcufiles')
-            .select('fileid, filename, filetype, filesize, uploadedat, uploadedby')
+            .select('fileid, filename, filetype, filesize, uploadedat, uploadedby, mcuid, supabase_storage_path')
             .eq('mcuid', mcuId)
             .is('deletedat', null)
             .order('uploadedat', { ascending: false });
 
         if (error) {
-            console.error('❌ Query error:', error);
+            console.error('❌ getFilesByMCU: Query error:', error.message);
+            console.error('   Error details:', error);
             return [];
         }
 
-        console.log(`✅ Found ${data?.length || 0} file(s)`);
+        console.log(`✅ getFilesByMCU: Found ${data?.length || 0} file(s) for MCU "${mcuId}"`);
+        if (data && data.length > 0) {
+            data.forEach((file, idx) => {
+                console.log(`   [${idx}] ${file.filename} (${file.filesize} bytes, uploaded: ${file.uploadedat})`);
+            });
+        }
         return data || [];
     } catch (error) {
         console.error('❌ Get files error:', error);
@@ -616,7 +662,7 @@ export async function uploadBatchFiles(files, employeeId, mcuId, userId) {
         // Upload each file
         for (const file of files) {
             try {
-                // Compress if applicable
+                // Compress if applicable (throws error for PDFs if compression fails)
                 const processedFile = await compressFile(file);
 
                 // Generate storage path with mcuId
@@ -651,7 +697,8 @@ export async function uploadBatchFiles(files, employeeId, mcuId, userId) {
 
                 console.log(`   ✅ Uploaded: ${file.name}`);
             } catch (error) {
-                console.error(`   ❌ Error uploading ${file.name}:`, error);
+                // Compression errors for PDFs will have clear error message
+                console.error(`   ❌ Error with ${file.name}:`, error.message);
                 failedCount++;
             }
         }
