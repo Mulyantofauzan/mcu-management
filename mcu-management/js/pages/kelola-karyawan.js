@@ -17,6 +17,7 @@ import { safeGet, safeArray, isEmpty } from '../utils/nullSafety.js';
 import { supabaseReady } from '../config/supabase.js';
 import { initSuperSearch } from '../components/superSearch.js';
 import FileUploadWidget from '../components/fileUploadWidget.js';
+import FileListViewer from '../components/fileListViewer.js';
 
 let employees = [];
 let filteredEmployees = [];
@@ -28,6 +29,7 @@ const itemsPerPage = UI.ITEMS_PER_PAGE;
 let showInactiveEmployees = false;
 let fileUploadWidget = null;
 let editFileUploadWidget = null;
+let addFileUploadWidget = null;
 
 async function init() {
     try {
@@ -719,6 +721,21 @@ window.addMCUForEmployee = async function(employeeId) {
         // Populate doctor dropdown
         populateDoctorDropdown('mcu-doctor');
 
+        // Initialize file upload widget for add MCU modal
+        const addFileContainer = document.getElementById('add-file-upload-container');
+        if (addFileContainer) {
+            addFileContainer.innerHTML = '';
+            const currentUser = authService.getCurrentUser();
+            addFileUploadWidget = new FileUploadWidget('add-file-upload-container', {
+                employeeId: employeeId,
+                mcuId: null, // MCU doesn't exist yet
+                userId: currentUser.userId || currentUser.user_id,
+                onUploadComplete: (result) => {
+                    showToast('File berhasil diunggah', 'success');
+                }
+            });
+        }
+
         openModal('add-mcu-modal');
     } catch (error) {
 
@@ -946,6 +963,17 @@ window.viewMCUDetail = async function(mcuId) {
 
         // Store current MCU ID for edit
         window.currentMCUId = mcuId;
+
+        // Initialize file list viewer for MCU documents
+        const filesContainer = document.getElementById('mcu-detail-files-container');
+        if (filesContainer) {
+            new FileListViewer('mcu-detail-files-container', {
+                mcuId: mcuId,
+                employeeId: mcu.employeeId,
+                readOnly: true, // View only in detail modal
+                compact: false  // Standard detailed layout
+            });
+        }
 
         openModal('mcu-detail-modal');
     } catch (error) {

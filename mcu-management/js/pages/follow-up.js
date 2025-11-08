@@ -12,12 +12,14 @@ import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
 import { generateRujukanPDF, generateRujukanBalikPDF } from '../utils/rujukanPDFGenerator.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 import { initSuperSearch } from '../components/superSearch.js';  // ✅ NEW: Global search
+import FileUploadWidget from '../components/fileUploadWidget.js';
 
 let followUpList = [];
 let filteredList = [];
 let employees = [];
 let departments = [];
 let jobTitles = [];
+let followupFileUploadWidget = null;
 let doctors = [];
 let currentMCU = null;
 
@@ -334,6 +336,21 @@ window.openFollowUpModal = async function(mcuId) {
     // Clear form inputs (don't pre-fill, let user enter new values)
     document.getElementById('fu-result').value = '';
     document.getElementById('fu-notes').value = '';
+
+    // Initialize file upload widget for follow-up modal
+    const followupFileContainer = document.getElementById('followup-file-upload-container');
+    if (followupFileContainer) {
+        followupFileContainer.innerHTML = '';
+        const currentUser = authService.getCurrentUser();
+        followupFileUploadWidget = new FileUploadWidget('followup-file-upload-container', {
+            employeeId: currentMCU.employeeId,
+            mcuId: mcuId,
+            userId: currentUser.userId || currentUser.user_id,
+            onUploadComplete: (result) => {
+                showToast('File berhasil diunggah', 'success');
+            }
+        });
+    }
 
     openModal('followup-modal');
   } catch (error) {
