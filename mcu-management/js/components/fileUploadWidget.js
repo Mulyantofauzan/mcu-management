@@ -373,9 +373,11 @@ class FileUploadWidget {
       showToast(`File uploaded: ${file.name}`, 'success');
     } catch (error) {
       logger.error('File upload error:', error);
-      this.showError(error.message);
+      // Get safe error message without stringifying the whole error object
+      const errorMsg = error?.message || String(error) || 'Upload failed';
+      this.showError(errorMsg);
       if (fileItem) {
-        this.updateFileItem(fileItem, null, 'error', error.message);
+        this.updateFileItem(fileItem, null, 'error', errorMsg);
       }
     } finally {
       this.hideProgress();

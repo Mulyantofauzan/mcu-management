@@ -855,13 +855,24 @@ async function updateFollowUpList() {
   for (const mcu of displayMCUs) {
     const employee = employees.find(e => e.employeeId === mcu.employeeId);
     if (employee) {
-      const dept = departments.find(d => d.departmentId === employee.departmentId);
+      // Try to find department by id first, then by name
+      let deptName = '-';
+      if (employee.departmentId) {
+        const dept = departments.find(d => d.id === employee.departmentId);
+        if (dept?.name) {
+          deptName = dept.name;
+        }
+      }
+      // Fallback: use department name directly from employee if available
+      if (deptName === '-' && employee.department) {
+        deptName = employee.department;
+      }
 
       html += `
         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
           <div class="flex-1">
             <p class="text-sm font-medium text-gray-900">${employee.name}</p>
-            <p class="text-xs text-gray-500">${dept?.name || '-'} • ${formatDateDisplay(mcu.mcuDate)}</p>
+            <p class="text-xs text-gray-500">${deptName} • ${formatDateDisplay(mcu.mcuDate)}</p>
           </div>
           <a href="pages/follow-up.html" class="btn btn-sm btn-primary">Update</a>
         </div>

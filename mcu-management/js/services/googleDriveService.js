@@ -134,8 +134,16 @@ class GoogleDriveService {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || `Upload failed with status ${response.status}`);
+        let errorMsg = `Upload failed with status ${response.status}`;
+        try {
+          const error = await response.json();
+          errorMsg = error.error || error.message || error.details || errorMsg;
+        } catch (e) {
+          // Response is not JSON, use status message
+          const statusText = response.statusText || 'Unknown error';
+          errorMsg = `Upload failed: ${statusText} (${response.status})`;
+        }
+        throw new Error(errorMsg);
       }
 
       const result = await response.json();
