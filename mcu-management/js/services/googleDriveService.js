@@ -146,7 +146,15 @@ class GoogleDriveService {
         throw new Error(errorMsg);
       }
 
-      const result = await response.json();
+      let result;
+      try {
+        result = await response.json();
+      } catch (jsonError) {
+        logger.error('Failed to parse response as JSON:', jsonError.message);
+        logger.error('Response status:', response.status);
+        logger.error('Response statusText:', response.statusText);
+        throw new Error(`Invalid response from server: ${response.statusText}`);
+      }
 
       // Log the upload activity
       if (currentUser) {
