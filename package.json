@@ -6,5 +6,8 @@
     "dev": "cd mcu-management && npm run dev",
     "build": "cd mcu-management && npm run build"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "supabase": "^2.54.11"
+  }
 }

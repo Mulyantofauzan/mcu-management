@@ -31,7 +31,6 @@ let currentPage = 1;
 const itemsPerPage = UI.ITEMS_PER_PAGE;
 let showInactiveEmployees = false;
 let fileUploadWidget = null;
-let editFileUploadWidget = null;
 let addFileUploadWidget = null;
 let generatedMCUIdForAdd = null;  // Store generated MCU ID for the add modal
 
@@ -1136,29 +1135,6 @@ window.editMCU = async function() {
                     document.getElementById('edit-final-result-section').classList.add('hidden');
                 }
 
-                // ✅ NEW: Initialize file upload widget for adding more documents
-                const editFileContainer = document.getElementById('edit-file-upload-container');
-                if (editFileContainer) {
-                    editFileContainer.innerHTML = '';  // Clear previous widget
-                    try {
-                        const currentUser = authService.getCurrentUser();
-                        editFileUploadWidget = new FileUploadWidget('edit-file-upload-container', {
-                            employeeId: mcu.employeeId,
-                            mcuId: mcu.mcuId,
-                            userId: currentUser.userId || currentUser.user_id,
-                            onUploadComplete: (result) => {
-                                logger.info('✅ Additional MCU file uploaded:', result);
-                                showToast('File berhasil diunggah', 'success');
-                            }
-                        });
-                        logger.info('✓ File upload widget initialized successfully');
-                    } catch (widgetError) {
-                        logger.error('✗ Failed to initialize file upload widget:', widgetError?.message || widgetError);
-                        console.error('Widget initialization error details:', widgetError);
-                    }
-                } else {
-                    logger.warn('⚠️ File upload container not found in DOM');
-                }
 
             } catch (error) {
                 console.error('Error filling form fields:', error);
