@@ -1,0 +1,3 @@
+[functions.compress-pdf]
+# Node.js compatibility for edge function
+node_compat = true
