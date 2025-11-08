@@ -19,7 +19,7 @@ import { supabaseReady } from '../config/supabase.js';
 import { initSuperSearch } from '../components/superSearch.js';
 import FileUploadWidget from '../components/fileUploadWidget.js';
 import FileListViewer from '../components/fileListViewer.js';
-import { saveUploadedFilesMetadata } from '../services/supabaseStorageService.js';
+import { saveUploadedFilesMetadata, deleteOrphanedFiles } from '../services/supabaseStorageService.js';
 
 let employees = [];
 let filteredEmployees = [];
@@ -828,6 +828,12 @@ window.handleAddMCU = async function(event) {
         await loadData();
 
     } catch (error) {
+        // If MCU creation fails, clean up any uploaded files to prevent orphaned files
+        console.warn('MCU creation failed, cleaning up uploaded files...');
+        const cleanupResult = await deleteOrphanedFiles(
+            mcuData.mcuId,
+            mcuData.employeeId
+        );
 
         showToast('Gagal menambah MCU: ' + error.message, 'error');
     }

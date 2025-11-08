@@ -77,12 +77,17 @@ async function compressFile(file) {
 
 /**
  * Generate storage path for file
- * Simple format: {timestamp}-{filename}
+ * Format: {timestamp}-{mcuId}-{filename}
+ * This includes mcuId so files can be found later when saving metadata
  * (BUCKET_NAME is 'mcu-documents', so path is relative to bucket)
  */
 function generateStoragePath(employeeId, mcuId, fileName) {
     const timestamp = Date.now(); // Simple timestamp
     const sanitizedName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+    // Include mcuId if available, so we can find files later when saving metadata
+    if (mcuId) {
+        return `${timestamp}-${mcuId}-${sanitizedName}`;
+    }
     return `${timestamp}-${sanitizedName}`;
 }
 
@@ -461,15 +466,22 @@ export async function saveUploadedFilesMetadata(mcuId, employeeId, userId) {
         }
 
         // Prepare batch insert data
-        const fileRecords = mcuFiles.map(file => ({
-            employeeid: employeeId,
-            mcuid: mcuId,
-            filename: file.name.split('-').slice(1).join('-'), // Remove timestamp prefix
-            filetype: getFileTypeFromPath(file.name),
-            filesize: file.metadata?.size || 0,
-            supabase_storage_path: `${employeeId}/${file.name}`,
-            uploadedby: userId
-        }));
+        const fileRecords = mcuFiles.map(file => {
+            // Parse filename: {timestamp}-{mcuId}-{filename}
+            // Remove timestamp and mcuId prefix to get original filename
+            const parts = file.name.split('-');
+            const originalFilename = parts.slice(2).join('-'); // Skip timestamp and mcuId parts
+
+            return {
+                employeeid: employeeId,
+                mcuid: mcuId,
+                filename: originalFilename || file.name, // Fallback to full name if parsing fails
+                filetype: getFileTypeFromPath(file.name),
+                filesize: file.metadata?.size || 0,
+                supabase_storage_path: `${employeeId}/${file.name}`,
+                uploadedby: userId
+            };
+        });
 
         // Insert all file metadata at once
         const { error: insertError } = await supabase
@@ -501,4 +513,65 @@ function getFileTypeFromPath(filename) {
     if (filename.toLowerCase().endsWith('.jpg') || filename.toLowerCase().endsWith('.jpeg')) return 'image/jpeg';
     if (filename.toLowerCase().endsWith('.png')) return 'image/png';
     return 'application/octet-stream';
+}
+
+/**
+ * Delete orphaned files (files uploaded but MCU was not created)
+ * Called when MCU creation fails to clean up uploaded files
+ * @param {string} mcuId - MCU ID that was generated
+ * @param {string} employeeId - Employee ID
+ * @returns {Promise<{success: boolean, deletedCount?: number, error?: string}>}
+ */
+export async function deleteOrphanedFiles(mcuId, employeeId) {
+    try {
+        if (!isSupabaseEnabled()) {
+            return { success: true, deletedCount: 0 };
+        }
+
+        if (!mcuId || !employeeId) {
+            return { success: true, deletedCount: 0 };
+        }
+
+        const supabase = getSupabaseClient();
+
+        // List all files for this employee
+        const { data: files, error: listError } = await supabase.storage
+            .from(BUCKET_NAME)
+            .list(`${employeeId}`);
+
+        if (listError) {
+            console.warn('⚠️ Could not list files for cleanup:', listError.message);
+            return { success: true, deletedCount: 0 }; // Don't fail, just log warning
+        }
+
+        if (!files || files.length === 0) {
+            return { success: true, deletedCount: 0 };
+        }
+
+        // Find files with this MCU ID in their path
+        const orphanedFiles = files.filter(file => file.name.includes(mcuId));
+
+        if (orphanedFiles.length === 0) {
+            return { success: true, deletedCount: 0 };
+        }
+
+        // Delete orphaned files
+        const pathsToDelete = orphanedFiles.map(f => `${employeeId}/${f.name}`);
+
+        const { error: deleteError } = await supabase.storage
+            .from(BUCKET_NAME)
+            .remove(pathsToDelete);
+
+        if (deleteError) {
+            console.warn(`⚠️ Failed to delete ${orphanedFiles.length} orphaned file(s):`, deleteError.message);
+            return { success: true, deletedCount: 0 }; // Don't fail, just log warning
+        }
+
+        console.log(`🗑️ Deleted ${orphanedFiles.length} orphaned file(s) for MCU ${mcuId}`);
+        return { success: true, deletedCount: orphanedFiles.length };
+
+    } catch (error) {
+        console.warn('⚠️ Error deleting orphaned files:', error.message);
+        return { success: true, deletedCount: 0 }; // Don't fail cleanup
+    }
 }
