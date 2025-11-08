@@ -21,8 +21,39 @@
     <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 
-    <!-- Pako - Gzip compression library for PDF files -->
-    <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+    <!-- Pako - Gzip compression library for PDF files (multiple CDN fallbacks) -->
+    <script>
+        // Try to load pako from multiple CDN sources for reliability
+        window.pakoLoadAttempts = 0;
+        window.loadPako = function() {
+            const cdnUrls = [
+                'https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js',
+                'https://unpkg.com/pako@2.1.0/dist/pako.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js'
+            ];
+
+            if (window.pakoLoadAttempts < cdnUrls.length) {
+                const script = document.createElement('script');
+                script.src = cdnUrls[window.pakoLoadAttempts];
+                script.onload = () => {
+                    console.log(`✅ Pako loaded from CDN ${window.pakoLoadAttempts + 1}`);
+                    window.pakoReady = true;
+                };
+                script.onerror = () => {
+                    console.warn(`⚠️ CDN ${window.pakoLoadAttempts + 1} failed, trying next...`);
+                    window.pakoLoadAttempts++;
+                    window.loadPako();
+                };
+                document.head.appendChild(script);
+            } else {
+                console.warn('⚠️ All pako CDN sources failed, compression will be disabled');
+                window.pakoReady = false;
+            }
+        };
+
+        // Start loading pako immediately
+        window.loadPako();
+    </script>
 
     <!-- Dexie (IndexedDB) - Fallback (defer) -->
     <script defer src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>

@@ -23,7 +23,7 @@ let pakoInitPromise = null;
 /**
  * Ensure pako is loaded and available
  * Returns promise that resolves when pako is ready
- * Waits up to 5 seconds for pako CDN to load
+ * Waits up to 10 seconds for pako CDN to load from multiple sources
  */
 function getPakoReady() {
     if (pakoInitPromise) {
@@ -38,9 +38,17 @@ function getPakoReady() {
             return;
         }
 
-        // Otherwise wait for it to load (CDN script in index.html loads it)
+        // If pakoReady flag is false, all CDN sources failed
+        if (window.pakoReady === false) {
+            const error = new Error('Pako compression library failed from all CDN sources.');
+            console.error('❌ Pako load failed:', error);
+            reject(error);
+            return;
+        }
+
+        // Otherwise wait for it to load (dynamic loader in index.html tries multiple CDNs)
         let attempts = 0;
-        const maxAttempts = 50; // 5 seconds total (50 * 100ms)
+        const maxAttempts = 100; // 10 seconds total (100 * 100ms)
 
         const checkPako = setInterval(() => {
             attempts++;
@@ -51,9 +59,17 @@ function getPakoReady() {
                 return;
             }
 
+            if (window.pakoReady === false) {
+                clearInterval(checkPako);
+                const error = new Error('Pako compression library failed from all CDN sources.');
+                console.error('❌ Pako load failed:', error);
+                reject(error);
+                return;
+            }
+
             if (attempts >= maxAttempts) {
                 clearInterval(checkPako);
-                const error = new Error('Pako compression library failed to load after 5 seconds. Check CDN availability.');
+                const error = new Error('Pako compression library failed to load after 10 seconds from all CDN sources.');
                 console.error('❌ Pako initialization timeout:', error);
                 reject(error);
             }
@@ -78,7 +94,7 @@ function isCompressible(mimeType) {
  * PDF files typically compress 50-70%
  * Images already compressed, not worth compressing
  *
- * IMPORTANT: Compression is REQUIRED for PDFs - throws error if pako unavailable
+ * Tries to compress if pako available, falls back to uncompressed upload
  * Non-compressible files (images) are returned as-is
  */
 async function compressFile(file) {
@@ -88,11 +104,11 @@ async function compressFile(file) {
         return file;
     }
 
-    // For PDFs: ensure pako is available, wait if needed, throw if fails
-    console.log(`🔄 Compressing ${file.name}...`);
+    // For PDFs: try to compress, but don't block upload if pako unavailable
+    console.log(`🔄 Attempting to compress ${file.name}...`);
 
     try {
-        // Wait for pako to be ready (max 5 seconds)
+        // Wait for pako to be ready (max 10 seconds)
         const pako = await getPakoReady();
 
         const arrayBuffer = await file.arrayBuffer();
@@ -116,9 +132,11 @@ async function compressFile(file) {
         return compressedFile;
 
     } catch (error) {
-        // For PDFs, compression is NOT optional - throw error
-        console.error('❌ PDF compression failed:', error.message);
-        throw new Error(`Compression required for PDF files: ${error.message}`);
+        // Compression failed - but upload can still proceed without compression
+        console.warn(`⚠️ Compression failed: ${error.message}`);
+        console.log(`📤 Uploading ${file.name} without compression (CDN unavailable)`);
+        // Return original uncompressed file - upload will still work
+        return file;
     }
 }
 
