@@ -137,17 +137,17 @@ export async function uploadFile(file, employeeId, mcuId, userId) {
             throw new Error(`Upload failed: ${uploadError.message}`);
         }
 
-        // Save metadata to mcufiles table
+        // Save metadata to mcufiles table (using camelCase column names)
         const { data: fileRecord, error: dbError } = await supabase
             .from('mcufiles')
             .insert({
-                employee_id: employeeId,
-                mcu_id: mcuId || null,
+                employeeid: employeeId,
+                mcuid: mcuId || null,
                 filename: file.name,
                 filetype: file.type,
                 filesize: file.size,
                 supabase_storage_path: storagePath,
-                uploaded_by: userId
+                uploadedby: userId
             })
             .select('fileid')
             .single();
@@ -201,10 +201,10 @@ export async function deleteFile(fileid) {
             throw new Error('File not found in database');
         }
 
-        // Soft delete in database (mark as deleted)
+        // Soft delete in database (mark as deleted using camelCase column name)
         const { error: deleteError } = await supabase
             .from('mcufiles')
-            .update({ deleted_at: new Date().toISOString() })
+            .update({ deletedat: new Date().toISOString() })
             .eq('fileid', fileid);
 
         if (deleteError) {
@@ -249,10 +249,10 @@ export async function getFilesByMCU(mcuId) {
 
         const { data, error } = await supabase
             .from('mcufiles')
-            .select('fileid, filename, filetype, filesize, uploaded_at, uploaded_by')
-            .eq('mcu_id', mcuId)
-            .is('deleted_at', null)
-            .order('uploaded_at', { ascending: false });
+            .select('fileid, filename, filetype, filesize, uploadedat, uploadedby')
+            .eq('mcuid', mcuId)
+            .is('deletedat', null)
+            .order('uploadedat', { ascending: false });
 
         if (error) {
             console.error('❌ Query error:', error);
@@ -282,10 +282,10 @@ export async function getFilesByEmployee(employeeId) {
 
         const { data, error } = await supabase
             .from('mcufiles')
-            .select('fileid, mcu_id, filename, filetype, filesize, uploaded_at')
-            .eq('employee_id', employeeId)
-            .is('deleted_at', null)
-            .order('uploaded_at', { ascending: false });
+            .select('fileid, mcuid, filename, filetype, filesize, uploadedat')
+            .eq('employeeid', employeeId)
+            .is('deletedat', null)
+            .order('uploadedat', { ascending: false });
 
         if (error) {
             console.error('❌ Query error:', error);

@@ -1,34 +1,48 @@
 -- ============================================
 -- MCU FILES TABLE - File Storage Metadata
 -- ============================================
--- This table stores metadata for files uploaded to Supabase Storage
--- Files are physically stored in the 'mcu-documents' bucket
+-- NOTE: This table already exists in your database
+-- This migration is for reference/documentation only
+-- The table schema matches the camelCase naming convention used in your database
 
-CREATE TABLE IF NOT EXISTS public.mcufiles (
-    fileid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    employee_id TEXT,  -- Store employee_id as plain text (reference to employees table)
-    mcu_id TEXT,  -- Store mcu_id as plain text (reference to mcus table)
-    filename TEXT NOT NULL,
-    filetype TEXT NOT NULL,
-    filesize INTEGER NOT NULL,
-    supabase_storage_path TEXT NOT NULL UNIQUE,  -- e.g., "mcu-documents/EMP-20250101-0001/MCU-20250101-0001/2025-11-08-12-34-56-document.pdf"
-    uploaded_by TEXT,  -- user_id who uploaded
-    uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    deleted_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- Table already exists with this structure:
+-- CREATE TABLE public.mcufiles (
+--   fileid text NOT NULL DEFAULT gen_random_uuid(),
+--   employeeid text NOT NULL,
+--   mcuid text,
+--   filename text NOT NULL,
+--   filetype text NOT NULL,
+--   filesize integer NOT NULL,
+--   supabase_storage_path text NOT NULL,
+--   uploadedby text NOT NULL,
+--   uploadedat timestamp with time zone DEFAULT now(),
+--   deletedat timestamp with time zone,
+--   createdat timestamp with time zone DEFAULT now(),
+--   updatedat timestamp with time zone DEFAULT now(),
+--   CONSTRAINT mcufiles_pkey PRIMARY KEY (fileid)
+-- );
 
--- Indexes for faster queries
-CREATE INDEX IF NOT EXISTS idx_mcufiles_employee_id ON public.mcufiles(employee_id);
-CREATE INDEX IF NOT EXISTS idx_mcufiles_mcu_id ON public.mcufiles(mcu_id);
-CREATE INDEX IF NOT EXISTS idx_mcufiles_uploaded_at ON public.mcufiles(uploaded_at DESC);
-CREATE INDEX IF NOT EXISTS idx_mcufiles_deleted_at ON public.mcufiles(deleted_at);
+-- If you need to recreate the table, uncomment the CREATE TABLE statement below:
+-- CREATE TABLE IF NOT EXISTS public.mcufiles (
+--     fileid TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
+--     employeeid TEXT NOT NULL,
+--     mcuid TEXT,
+--     filename TEXT NOT NULL,
+--     filetype TEXT NOT NULL,
+--     filesize INTEGER NOT NULL,
+--     supabase_storage_path TEXT NOT NULL UNIQUE,
+--     uploadedby TEXT NOT NULL,
+--     uploadedat TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+--     deletedat TIMESTAMP WITH TIME ZONE,
+--     createdat TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+--     updatedat TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- );
 
--- Trigger for updated_at (create trigger only if function exists)
--- Uncomment after verifying update_updated_at_column() function exists:
--- CREATE TRIGGER update_mcufiles_updated_at BEFORE UPDATE ON public.mcufiles
---     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Ensure indexes exist
+CREATE INDEX IF NOT EXISTS idx_mcufiles_employeeid ON public.mcufiles(employeeid);
+CREATE INDEX IF NOT EXISTS idx_mcufiles_mcuid ON public.mcufiles(mcuid);
+CREATE INDEX IF NOT EXISTS idx_mcufiles_uploadedat ON public.mcufiles(uploadedat DESC);
+CREATE INDEX IF NOT EXISTS idx_mcufiles_deletedat ON public.mcufiles(deletedat);
 
 -- ============================================
 -- NOTES
