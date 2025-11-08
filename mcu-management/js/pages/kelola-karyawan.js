@@ -721,19 +721,17 @@ window.addMCUForEmployee = async function(employeeId) {
         // Populate doctor dropdown
         populateDoctorDropdown('mcu-doctor');
 
-        // Initialize file upload widget for add MCU modal
+        // Show message that files can be uploaded after MCU is created
         const addFileContainer = document.getElementById('add-file-upload-container');
         if (addFileContainer) {
-            addFileContainer.innerHTML = '';
-            const currentUser = authService.getCurrentUser();
-            addFileUploadWidget = new FileUploadWidget('add-file-upload-container', {
-                employeeId: employeeId,
-                mcuId: null, // MCU doesn't exist yet
-                userId: currentUser.userId || currentUser.user_id,
-                onUploadComplete: (result) => {
-                    showToast('File berhasil diunggah', 'success');
-                }
-            });
+            addFileContainer.innerHTML = `
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p class="text-sm text-blue-700">
+                        <strong>ℹ️ Catatan:</strong> File akan dapat diupload setelah MCU berhasil disimpan.
+                        Simpan MCU terlebih dahulu, kemudian buka kembali untuk mengupload dokumen.
+                    </p>
+                </div>
+            `;
         }
 
         openModal('add-mcu-modal');
