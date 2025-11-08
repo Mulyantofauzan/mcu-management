@@ -232,11 +232,18 @@ class GapiDriveService {
       logger.info('File metadata:', JSON.stringify(fileMetadata));
 
       // Create media object from File
+      // Important: gapi needs Blob or ArrayBuffer, convert File to Blob if needed
+      let fileBlob = file;
+      if (file instanceof File) {
+        // File is already a Blob subclass, but let's be explicit
+        fileBlob = new Blob([file], { type: file.type });
+      }
+
       const media = {
         mimeType: file.type,
-        body: file
+        body: fileBlob
       };
-      logger.info(`Media type: ${media.mimeType}, Body type: ${typeof media.body}`);
+      logger.info(`Media type: ${media.mimeType}, Body type: ${typeof media.body}, Body instanceof Blob: ${fileBlob instanceof Blob}`);
 
       logger.info('Step 4: Calling gapi.client.drive.files.create()...');
 
