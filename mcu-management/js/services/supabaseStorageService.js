@@ -31,6 +31,8 @@ function isCompressible(mimeType) {
  * Compress file using pako gzip compression
  * PDF and Office docs typically compress 50-70%
  * Images already compressed, minimal benefit
+ *
+ * NOTE: Compression is optional - fails gracefully to uncompressed upload
  */
 async function compressFile(file) {
     try {
@@ -40,39 +42,39 @@ async function compressFile(file) {
             return file;
         }
 
+        // Check if pako is available (loaded via CDN in index.html)
+        if (typeof window.pako === 'undefined') {
+            console.log(`⏭️ pako not available, uploading uncompressed`);
+            return file;
+        }
+
         // PDF compression with gzip
         console.log(`🔄 Compressing ${file.name}...`);
 
         const arrayBuffer = await file.arrayBuffer();
         const data = new Uint8Array(arrayBuffer);
 
-        // Wait for pako to be available (loaded via CDN in index.html)
-        let attempts = 0;
-        while (typeof window.pako === 'undefined' && attempts < 50) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            attempts++;
-        }
+        try {
+            const compressed = window.pako.gzip(data);
+            const originalSize = file.size;
+            const compressedSize = compressed.length;
+            const ratio = ((1 - compressedSize / originalSize) * 100).toFixed(1);
 
-        if (typeof window.pako === 'undefined') {
-            console.warn('⚠️ pako not available, uploading uncompressed');
+            console.log(`✅ Compressed: ${(originalSize / 1024).toFixed(1)}KB → ${(compressedSize / 1024).toFixed(1)}KB (${ratio}% reduction)`);
+
+            // Create new File object with compressed data
+            const compressedFile = new File(
+                [compressed],
+                file.name + '.gz',
+                { type: 'application/gzip' }
+            );
+
+            return compressedFile;
+        } catch (pakoError) {
+            console.warn('⚠️ Gzip compression failed:', pakoError.message);
+            console.log('📄 Uploading original uncompressed file');
             return file;
         }
-
-        const compressed = window.pako.gzip(data);
-        const originalSize = file.size;
-        const compressedSize = compressed.length;
-        const ratio = ((1 - compressedSize / originalSize) * 100).toFixed(1);
-
-        console.log(`✅ Compressed: ${(originalSize / 1024).toFixed(1)}KB → ${(compressedSize / 1024).toFixed(1)}KB (${ratio}% reduction)`);
-
-        // Create new File object with compressed data
-        const compressedFile = new File(
-            [compressed],
-            file.name + '.gz',
-            { type: 'application/gzip' }
-        );
-
-        return compressedFile;
 
     } catch (error) {
         console.error('❌ Compression error:', error);
@@ -300,6 +302,8 @@ export async function getFilesByMCU(mcuId) {
 
         const supabase = getSupabaseClient();
 
+        console.log(`🔍 Querying files for MCU ID: "${mcuId}"`);
+
         const { data, error } = await supabase
             .from('mcufiles')
             .select('fileid, filename, filetype, filesize, uploadedat, uploadedby')
@@ -312,6 +316,7 @@ export async function getFilesByMCU(mcuId) {
             return [];
         }
 
+        console.log(`✅ Found ${data?.length || 0} file(s)`);
         return data || [];
     } catch (error) {
         console.error('❌ Get files error:', error);
