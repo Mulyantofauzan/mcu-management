@@ -35,14 +35,15 @@ module.exports = (req, res) => {
     ENABLE_AUTO_SEED: process.env.VITE_ENABLE_AUTO_SEED === 'true' || false
   };
 
-  // Validate that required config is set
-  if (!config.SUPABASE_URL || !config.SUPABASE_ANON_KEY) {
-    console.error('⚠️ Missing required environment variables in Vercel');
-    res.status(500).json({
-      error: 'Server configuration incomplete. Check Vercel Environment Variables.'
-    });
-    return;
-  }
+  // Log what's being returned for debugging
+  console.log('Config endpoint returning:', {
+    hasSUPABASE_URL: !!config.SUPABASE_URL,
+    hasSUPABASE_ANON_KEY: !!config.SUPABASE_ANON_KEY,
+    hasGOOGLE_DRIVE_ROOT_FOLDER_ID: !!config.VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID,
+    hasGOOGLE_DRIVE_UPLOAD_ENDPOINT: !!config.VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT
+  });
 
+  // Return whatever config is available (may be partial)
+  // Frontend will fall back to IndexedDB if Supabase not configured
   res.status(200).json(config);
 };
