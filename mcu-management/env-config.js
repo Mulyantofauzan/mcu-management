@@ -99,9 +99,11 @@ async function loadConfig() {
 // Load configuration immediately
 loadConfig();
 
-console.log();
-if (window.ENV.SUPABASE_URL && window.ENV.SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
-  console.log();
-} else {
-  console.warn();
-}
+// Debug: Log loaded configuration
+console.log('═══════════════════════════════════════');
+console.log('📋 Environment Configuration Loaded');
+console.log('═══════════════════════════════════════');
+console.log('SUPABASE_URL:', window.ENV.SUPABASE_URL ? '✓ Loaded' : '✗ Missing');
+console.log('VITE_GOOGLE_CLIENT_ID:', window.ENV.VITE_GOOGLE_CLIENT_ID ? '✓ Loaded' : '✗ Missing');
+console.log('VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID:', window.ENV.VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID ? '✓ Loaded' : '✗ Missing');
+console.log('═══════════════════════════════════════');
