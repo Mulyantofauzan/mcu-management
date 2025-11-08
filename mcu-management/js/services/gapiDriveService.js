@@ -197,86 +197,55 @@ class GapiDriveService {
   async uploadFile(file, employeeId, employeeName = '') {
     try {
       // Ensure user is signed in
+      logger.info('Ensuring user is signed in...');
       await this.ensureSignedIn();
 
       // Get or create employee folder
+      logger.info(`Getting/creating folder for employee: ${employeeId}`);
       const folderId = await this.getOrCreateEmployeeFolder(employeeId, employeeName);
+      logger.info(`Using folder: ${folderId}`);
 
-      // Upload file
-      logger.info(`Uploading file: ${file.name}`);
-      const boundary = '-------314159265358979323846';
-      const delimiter = `\r\n--${boundary}\r\n`;
-      const closeDelim = `\r\n--${boundary}--`;
+      // Use gapi to upload file directly
+      logger.info(`Uploading file to Google Drive: ${file.name}`);
 
-      const metadata = {
+      // Create FormData for upload
+      const formData = new FormData();
+      formData.append('metadata', new Blob([JSON.stringify({
         name: file.name,
         mimeType: file.type,
         parents: [folderId]
-      };
+      })], { type: 'application/json' }));
+      formData.append('file', file);
 
-      // Convert file to ArrayBuffer for proper binary handling
-      const fileBuffer = await file.arrayBuffer();
+      // Get access token
+      const auth = window.gapi.auth2.getAuthInstance();
+      const accessToken = auth.currentUser.get().getAuthResponse().access_token;
 
-      // Build multipart body as Uint8Array for proper binary concatenation
-      const encoder = new TextEncoder();
-
-      const metadataStr =
-        delimiter +
-        'Content-Type: application/json\r\n\r\n' +
-        JSON.stringify(metadata) +
-        delimiter +
-        'Content-Type: ' +
-        file.type +
-        '\r\n\r\n';
-
-      const metadataBytes = encoder.encode(metadataStr);
-      const fileBytesArray = new Uint8Array(fileBuffer);
-      const closeDelimBytes = encoder.encode(closeDelim);
-
-      // Concatenate all parts as Uint8Array
-      const totalLength = metadataBytes.length + fileBytesArray.length + closeDelimBytes.length;
-      const body = new Uint8Array(totalLength);
-      body.set(metadataBytes, 0);
-      body.set(fileBytesArray, metadataBytes.length);
-      body.set(closeDelimBytes, metadataBytes.length + fileBytesArray.length);
-
-      logger.info('Sending multipart upload request to Google Drive API');
+      logger.info('Sending upload request to Google Drive API');
       const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${window.gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token}`,
-          'Content-Type': `multipart/related; boundary="${boundary}"`
+          'Authorization': `Bearer ${accessToken}`
         },
-        body: body
+        body: formData
       });
 
-      logger.info(`Upload response status: ${response.status} ${response.statusText}`);
+      logger.info(`Upload response status: ${response.status}`);
 
       if (!response.ok) {
         const errorText = await response.text();
-        logger.error('Upload response error:', errorText);
-        throw new Error(`Upload failed with status ${response.status}: ${response.statusText}`);
+        logger.error('Upload response error:', errorText.substring(0, 500));
+        throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
       }
 
-      // Parse response safely
-      const responseText = await response.text();
-      logger.info('Upload response text length:', responseText.length);
-
-      let result;
-      try {
-        result = JSON.parse(responseText);
-      } catch (parseError) {
-        logger.error('Failed to parse upload response as JSON:', parseError);
-        logger.error('Response text (first 200 chars):', responseText.substring(0, 200));
-        throw new Error(`Invalid JSON response from Google Drive: ${parseError.message}`);
-      }
+      const result = await response.json();
 
       if (!result.id) {
-        logger.error('No file ID in response:', result);
+        logger.error('No file ID in response');
         throw new Error('Google Drive API did not return a file ID');
       }
 
-      logger.info(`File uploaded successfully with ID: ${result.id}`);
+      logger.info(`File uploaded successfully: ${result.id}`);
 
       return {
         fileId: result.id,
