@@ -11,11 +11,7 @@
  */
 
 import { getSupabaseClient, isSupabaseEnabled } from '../config/supabase.js';
-
-// pako is loaded from CDN in index.html as window.pako
-// ESLint ignore next line
-// eslint-disable-next-line no-undef
-const pako = window.pako;
+import pako from 'https://cdn.jsdelivr.net/npm/pako@2.1.0/+esm';
 
 const BUCKET_NAME = 'mcu-documents';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per file
@@ -41,12 +37,6 @@ async function compressFile(file) {
     try {
         if (!isCompressible(file.type)) {
             console.log(`⏭️ Skipping compression for ${file.type} (already compressed)`);
-            return file;
-        }
-
-        // Check if pako is available
-        if (!pako || !pako.gzip) {
-            console.warn('⚠️ pako library not available, using original file');
             return file;
         }
 
