@@ -90,13 +90,20 @@ export async function uploadFile(file, employeeId, mcuId, userId) {
 
         const supabase = getSupabaseClient();
 
+        // Verify user is authenticated
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+            throw new Error('User not authenticated. Please log in first.');
+        }
+        console.log(`👤 Authenticated as: ${user.email}`);
+
         // Compress file if applicable
         const processedFile = await compressFile(file);
 
         // Generate storage path
         const storagePath = generateStoragePath(employeeId, mcuId, file.name);
 
-        console.log(`📤 Uploading: ${file.name} (${(file.size / 1024).toFixed(1)}KB)`);
+        console.log(`📤 Uploading: ${file.name} (${(file.size / 1024).toFixed(1)}KB) to path: ${storagePath}`);
 
         // Upload to Supabase Storage
         const { data, error: uploadError } = await supabase.storage
@@ -107,8 +114,26 @@ export async function uploadFile(file, employeeId, mcuId, userId) {
             });
 
         if (uploadError) {
-            throw new Error(`Upload failed: ${uploadError.message}`);
+            // Detailed error logging for diagnostics
+            console.error('📋 Upload error details:');
+            console.error('   Status:', uploadError.status);
+            console.error('   Message:', uploadError.message);
+            console.error('   Code:', uploadError.statusCode);
+
+            // Provide helpful diagnostic message
+            let diagnosticHint = '';
+            if (uploadError.message.includes('violates row-level security')) {
+                diagnosticHint = '\n\n💡 This is an RLS policy issue. Check: RLS-DIAGNOSIS-AND-FIX.md';
+            } else if (uploadError.message.includes('mime type')) {
+                diagnosticHint = '\n\n💡 This is a MIME type restriction. Check bucket settings in Supabase Dashboard.';
+            } else if (uploadError.message.includes('does not exist')) {
+                diagnosticHint = '\n\n💡 Bucket does not exist or is inaccessible.';
+            }
+
+            throw new Error(`Upload failed: ${uploadError.message}${diagnosticHint}`);
         }
+
+        console.log(`✅ File stored: ${data?.path || storagePath}`);
 
         // Save metadata to mcufiles table (using camelCase column names)
         const { data: fileRecord, error: dbError } = await supabase
@@ -126,6 +151,7 @@ export async function uploadFile(file, employeeId, mcuId, userId) {
             .single();
 
         if (dbError) {
+            console.error('📋 Database error details:', dbError);
             // Clean up uploaded file if database insert fails
             await supabase.storage
                 .from(BUCKET_NAME)

@@ -18,6 +18,7 @@ import { sessionManager } from '../utils/sessionManager.js';
 import { checkAndSeedIfEmpty } from '../seedData.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 import { initSuperSearch } from '../components/superSearch.js';
+import storageDiagnostic from '../utils/storageDiagnostic.js';  // ✅ Diagnostic tools for file upload troubleshooting
 
 // Initialize environment variables immediately (before other module code runs)
 initializeEnv().then(() => {
