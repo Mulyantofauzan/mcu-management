@@ -16,6 +16,7 @@ import { UI } from '../config/constants.js';
 import { safeGet, safeArray, isEmpty } from '../utils/nullSafety.js';
 import { supabaseReady } from '../config/supabase.js';
 import { initSuperSearch } from '../components/superSearch.js';
+import FileUploadWidget from '../components/fileUploadWidget.js';
 
 let employees = [];
 let filteredEmployees = [];
@@ -25,6 +26,8 @@ let doctors = [];
 let currentPage = 1;
 const itemsPerPage = UI.ITEMS_PER_PAGE;
 let showInactiveEmployees = false;
+let fileUploadWidget = null;
+let editFileUploadWidget = null;
 
 async function init() {
     try {
@@ -1055,12 +1058,14 @@ window.editMCU = async function() {
                 if (editFileContainer) {
                     editFileContainer.innerHTML = '';  // Clear previous widget
                     try {
+                        const currentUser = authService.getCurrentUser();
                         editFileUploadWidget = new FileUploadWidget('edit-file-upload-container', {
                             employeeId: mcu.employeeId,
                             mcuId: mcu.mcuId,
-                            maxFiles: 5,
-                            onUploadComplete: (files) => {
-                                logger.info('Additional MCU files uploaded:', files);
+                            userId: currentUser.userId || currentUser.user_id,
+                            onUploadComplete: (result) => {
+                                logger.info('✅ Additional MCU file uploaded:', result);
+                                showToast('File berhasil diunggah', 'success');
                             }
                         });
                         logger.info('✓ File upload widget initialized successfully');

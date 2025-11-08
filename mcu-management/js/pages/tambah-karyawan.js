@@ -11,12 +11,14 @@ import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
 import { supabaseReady } from '../config/supabase.js';
 import { initSuperSearch } from '../components/superSearch.js';
+import FileUploadWidget from '../components/fileUploadWidget.js';
 
 let searchResults = [];
 let jobTitles = [];
 let departments = [];
 let doctors = [];
 let currentEmployee = null;
+let fileUploadWidget = null;
 
 /**
  * Sanitize string input to prevent XSS
@@ -351,6 +353,22 @@ window.openAddMCUForEmployee = async function(employeeId) {
         document.getElementById('mcu-date').value = today;
 
         openModal('add-mcu-modal');
+
+        // Initialize file upload widget for this MCU
+        // Note: MCU ID will be assigned after save, so we'll update it then
+        const currentUser = authService.getCurrentUser();
+        fileUploadWidget = new FileUploadWidget('mcu-file-upload-container', {
+            employeeId: currentEmployee.employeeId,
+            mcuId: null, // Will be set after MCU is created
+            userId: currentUser.userId || currentUser.user_id,
+            onUploadComplete: () => {
+                // Refresh file list if needed
+                console.log('✅ File uploaded successfully');
+            },
+            onError: (error) => {
+                showToast('Upload gagal: ' + error, 'error');
+            }
+        });
     } catch (error) {
 
         showToast('Gagal membuka form MCU: ' + error.message, 'error');
@@ -401,6 +419,13 @@ window.handleAddMCU = async function(event) {
         const createdMCU = await mcuService.create(mcuData, currentUser);
 
         showToast('MCU berhasil ditambahkan!', 'success');
+
+        // Update file upload widget with MCU ID so files can be attached
+        if (fileUploadWidget && createdMCU && createdMCU.mcuId) {
+            fileUploadWidget.setOptions({
+                mcuId: createdMCU.mcuId
+            });
+        }
 
         // Make form read-only after successful save
         disableMCUForm();
