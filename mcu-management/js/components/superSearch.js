@@ -26,11 +26,11 @@ class SuperSearch {
   async init() {
     try {
       // Load all employees (including deleted) - use getAll instead of query
-      const employees = await database.getAll('employees');
+      const employees = await database.getAll('employees', true); // true = include deleted
       this.allEmployees = Array.isArray(employees) ? employees : [];
 
-      // Load all MCU records - use getAll instead of query
-      const mcuRecords = await database.getAll('mcuRecords');
+      // Load all MCU records - use getAll instead of query (correct table name: 'mcus')
+      const mcuRecords = await database.getAll('mcus');
       this.allMCURecords = Array.isArray(mcuRecords) ? mcuRecords : [];
 
       this.createModal();
@@ -324,10 +324,10 @@ class SuperSearch {
    */
   async refresh() {
     try {
-      const employees = await database.getAll('employees');
+      const employees = await database.getAll('employees', true); // true = include deleted
       this.allEmployees = Array.isArray(employees) ? employees : [];
 
-      const mcuRecords = await database.getAll('mcuRecords');
+      const mcuRecords = await database.getAll('mcus');
       this.allMCURecords = Array.isArray(mcuRecords) ? mcuRecords : [];
 
       logger.info('Super Search data refreshed');
