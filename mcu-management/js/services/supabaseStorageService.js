@@ -90,12 +90,9 @@ export async function uploadFile(file, employeeId, mcuId, userId) {
 
         const supabase = getSupabaseClient();
 
-        // Verify user is authenticated
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError || !user) {
-            throw new Error('User not authenticated. Please log in first.');
-        }
-        console.log(`👤 Authenticated as: ${user.email}`);
+        // Note: Using custom authentication from database, not Supabase Auth
+        // RLS is disabled on mcufiles table, so no auth check needed
+        console.log(`👤 Upload initiated by userId: ${userId}`);
 
         // Compress file if applicable
         const processedFile = await compressFile(file);
