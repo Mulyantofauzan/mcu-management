@@ -935,7 +935,17 @@ window.viewMCUDetail = async function(mcuId) {
             return String(d.id) === String(mcu.doctor) || d.id === mcu.doctor || d.doctorId === mcu.doctor;
         });
 
-        document.getElementById('mcu-detail-doctor').textContent = doctor?.name || '-';
+        if (doctor) {
+            document.getElementById('mcu-detail-doctor').textContent = doctor.name;
+            console.log(`✅ Found doctor: ${doctor.name} (ID: ${mcu.doctor})`);
+        } else if (mcu.doctor) {
+            // Doctor ID is set but not found in list - show ID as fallback
+            console.warn(`⚠️ Doctor ID ${mcu.doctor} not found in doctors list`);
+            document.getElementById('mcu-detail-doctor').textContent = `ID: ${mcu.doctor} (tidak ditemukan)`;
+        } else {
+            // No doctor assigned
+            document.getElementById('mcu-detail-doctor').textContent = '-';
+        }
 
         // Fill referral data
         document.getElementById('mcu-detail-recipient').textContent = mcu.recipient || '-';
