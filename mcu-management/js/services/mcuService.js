@@ -85,7 +85,7 @@ class MCUService {
     return mcus.filter(mcu => !mcu.deletedAt);
   }
 
-  // ✅ FIX: Load only MCUs for active employees (performance optimization)
+  // ✅ FIX: Load only LATEST MCU per active employee (for dashboard KPIs)
   async getActive() {
     const mcus = await this.getAll();
     const activeEmployees = await database.query('employees',
@@ -93,7 +93,19 @@ class MCUService {
     );
     const activeIds = new Set(activeEmployees.map(e => e.employeeId));
 
-    return mcus.filter(mcu => activeIds.has(mcu.employeeId));
+    // Filter MCUs for active employees
+    const activeMCUs = mcus.filter(mcu => activeIds.has(mcu.employeeId));
+
+    // Get only the LATEST MCU per employee
+    const latestMCUMap = new Map();
+    activeMCUs.forEach(mcu => {
+      const existing = latestMCUMap.get(mcu.employeeId);
+      if (!existing || new Date(mcu.mcuDate) > new Date(existing.mcuDate)) {
+        latestMCUMap.set(mcu.employeeId, mcu);
+      }
+    });
+
+    return Array.from(latestMCUMap.values());
   }
 
   // ✅ FIX: Load only deleted MCUs (for trash/deleted page)

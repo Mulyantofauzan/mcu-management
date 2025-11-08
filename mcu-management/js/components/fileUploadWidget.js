@@ -345,7 +345,9 @@ class FileUploadWidget {
 
       // Initialize service if needed
       if (!googleDriveService.uploadEndpoint) {
-        const { googleDriveConfig } = await import('../config/googleDriveConfig.js');
+        const { googleDriveConfig, initializeGoogleDriveConfig } = await import('../config/googleDriveConfig.js');
+        // Ensure env vars are loaded before validating
+        await initializeGoogleDriveConfig();
         googleDriveConfig.validate();
         await googleDriveService.init(
           googleDriveConfig.rootFolderId,

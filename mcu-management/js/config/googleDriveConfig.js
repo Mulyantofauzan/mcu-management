@@ -21,16 +21,57 @@
  *    firebase deploy --only functions:uploadToGoogleDrive
  */
 
+// Import envConfig to ensure credentials are loaded
+import { ENV, initializeEnv } from './envConfig.js';
+
+// Flag to track if env has been initialized
+let envInitialized = false;
+
+// Async initialization function (called from fileUploadWidget before use)
+export async function initializeGoogleDriveConfig() {
+  if (!envInitialized) {
+    await initializeEnv();
+    envInitialized = true;
+  }
+}
+
 // Get environment variables safely - lazy evaluation
 function getEnvVar(varName) {
-  // Try window.ENV first (from env-config.js)
-  if (typeof window !== 'undefined' && window.ENV && window.ENV[varName]) {
-    return window.ENV[varName];
+  // Special handling for Google Drive config keys
+  const viteKey = varName === 'GOOGLE_DRIVE_ROOT_FOLDER_ID'
+    ? 'VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID'
+    : varName === 'GOOGLE_DRIVE_UPLOAD_ENDPOINT'
+    ? 'VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT'
+    : `VITE_${varName}`;
+
+  // Try ENV from envConfig (runtime loaded from Vercel env vars or .env files)
+  if (ENV && ENV[viteKey]) {
+    return ENV[viteKey];
   }
+
+  // Try import.meta.env (Vite build-time variables - embedded at build)
+  try {
+    if (typeof import !== 'undefined' && import.meta?.env?.[viteKey]) {
+      return import.meta.env[viteKey];
+    }
+  } catch (e) {
+    // import.meta might not be available in all contexts
+  }
+
+  // Try window.ENV (fallback from env-config.js)
+  if (typeof window !== 'undefined' && window.ENV && window.ENV[viteKey]) {
+    return window.ENV[viteKey];
+  }
+
   // Fallback to process.env (for Node.js/build time)
-  if (typeof process !== 'undefined' && process.env && process.env[varName]) {
-    return process.env[varName];
+  try {
+    if (typeof process !== 'undefined' && process.env && process.env[viteKey]) {
+      return process.env[viteKey];
+    }
+  } catch (e) {
+    // process might not be available in browser context
   }
+
   return null;
 }
 

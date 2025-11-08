@@ -25,6 +25,7 @@ let doctors = [];
 let currentPage = 1;
 const itemsPerPage = UI.ITEMS_PER_PAGE;
 let editFileUploadWidget = null;  // ✅ NEW: Global widget instance for edit MCU form
+let showInactiveEmployees = false;  // ✅ NEW: Toggle for showing inactive employees
 
 async function init() {
     try {
@@ -38,6 +39,9 @@ async function init() {
         updateUserInfo();
         await loadData();
 
+        // ✅ NEW: Setup toggle for inactive employees (if button exists)
+        setupInactiveToggle();
+
         // Show page content after initialization complete
         document.body.classList.add('initialized');
     } catch (error) {
@@ -45,6 +49,52 @@ async function init() {
         showToast('Error initializing page: ' + error.message, 'error');
         // Still show page even on error
         document.body.classList.add('initialized');
+    }
+}
+
+// ✅ NEW: Setup toggle button for showing/hiding inactive employees
+function setupInactiveToggle() {
+    // Create toggle button if it doesn't exist
+    const filterSection = document.querySelector('[data-filter-section]');
+    if (!filterSection) return;
+
+    let toggleBtn = document.getElementById('toggle-inactive-btn');
+    if (!toggleBtn) {
+        toggleBtn = document.createElement('button');
+        toggleBtn.id = 'toggle-inactive-btn';
+        toggleBtn.className = 'px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors';
+        toggleBtn.textContent = 'Tampilkan Inactive';
+
+        // Insert before table or at end of filter section
+        const tableContainer = document.querySelector('[data-table-container]');
+        if (tableContainer) {
+            tableContainer.parentNode.insertBefore(toggleBtn, tableContainer);
+        } else {
+            filterSection.appendChild(toggleBtn);
+        }
+    }
+
+    // Update button text and listen for clicks
+    updateInactiveToggleButton();
+    toggleBtn.addEventListener('click', async () => {
+        showInactiveEmployees = !showInactiveEmployees;
+        updateInactiveToggleButton();
+        currentPage = 1;  // Reset pagination
+        await loadData();
+    });
+}
+
+// ✅ NEW: Update toggle button appearance
+function updateInactiveToggleButton() {
+    const toggleBtn = document.getElementById('toggle-inactive-btn');
+    if (!toggleBtn) return;
+
+    if (showInactiveEmployees) {
+        toggleBtn.textContent = '✓ Tampilkan Inactive';
+        toggleBtn.className = 'px-3 py-2 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors font-medium';
+    } else {
+        toggleBtn.textContent = 'Tampilkan Inactive';
+        toggleBtn.className = 'px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors';
     }
 }
 
@@ -102,9 +152,16 @@ async function loadData() {
         doctors = await masterDataService.getAllDoctors();
         logger.database('select', 'doctors', doctors.length);
 
-        // ✅ FIX: Load ONLY active employees (performance optimization)
-        employees = await employeeService.getActive();
-        logger.database('select', 'employees (active only)', employees.length);
+        // ✅ FIX: Load employees (active by default, but can show inactive)
+        if (showInactiveEmployees) {
+            // Load ALL employees including inactive
+            employees = await employeeService.getAll();
+            logger.database('select', 'employees (active + inactive)', employees.length);
+        } else {
+            // Load ONLY active employees (default view)
+            employees = await employeeService.getActive();
+            logger.database('select', 'employees (active only)', employees.length);
+        }
 
         // ✅ FIX: Build lookup Maps once for O(1) enrichment (performance optimization)
         const jobMap = new Map(jobTitles.map(j => [j.name, j]));
