@@ -348,23 +348,38 @@ class FileUploadWidget {
 
       // Compress file
       this.showProgress(file.name, 0);
-      const compressedFile = await fileCompression.compressFile(file);
+      let compressedFile;
+      try {
+        compressedFile = await fileCompression.compressFile(file);
+        logger.info(`File compressed successfully: ${compressedFile.name}`);
+      } catch (compressError) {
+        logger.error('File compression failed:', compressError?.message || compressError);
+        throw new Error(`Compression error: ${compressError?.message || 'Unknown'}`);
+      }
 
       // Initialize service if needed (gapi)
       if (!gapiDriveService.isInitialized) {
-        const { googleDriveConfig, initializeGoogleDriveConfig } = await import('../config/googleDriveConfig.js');
-        await initializeGoogleDriveConfig();
+        logger.info('Initializing Google Drive service...');
+        try {
+          const { googleDriveConfig, initializeGoogleDriveConfig } = await import('../config/googleDriveConfig.js');
+          await initializeGoogleDriveConfig();
 
-        // Get Google Client ID from config (need to add to env vars)
-        const googleClientId = googleDriveConfig.clientId || window.ENV?.VITE_GOOGLE_CLIENT_ID;
-        if (!googleClientId) {
-          throw new Error('Google Client ID not configured. Please set VITE_GOOGLE_CLIENT_ID environment variable.');
+          // Get Google Client ID from config (need to add to env vars)
+          const googleClientId = googleDriveConfig.clientId || window.ENV?.VITE_GOOGLE_CLIENT_ID;
+          if (!googleClientId) {
+            throw new Error('Google Client ID not configured. Please set VITE_GOOGLE_CLIENT_ID environment variable.');
+          }
+
+          logger.info(`Using Google Client ID: ${googleClientId.substring(0, 20)}...`);
+          await gapiDriveService.init({
+            clientId: googleClientId,
+            rootFolderId: googleDriveConfig.rootFolderId
+          });
+          logger.info('Google Drive service initialized successfully');
+        } catch (initError) {
+          logger.error('Google Drive initialization failed:', initError?.message || initError);
+          throw initError;
         }
-
-        await gapiDriveService.init({
-          clientId: googleClientId,
-          rootFolderId: googleDriveConfig.rootFolderId
-        });
       }
 
       // Upload file via gapi
