@@ -188,7 +188,7 @@ class GapiDriveService {
   }
 
   /**
-   * Upload file to Google Drive
+   * Upload file to Google Drive using gapi.client.drive.files.create()
    * @param {File} file - File object
    * @param {string} employeeId - Employee ID
    * @param {string} employeeName - Employee name
@@ -205,52 +205,37 @@ class GapiDriveService {
       const folderId = await this.getOrCreateEmployeeFolder(employeeId, employeeName);
       logger.info(`Using folder: ${folderId}`);
 
-      // Use gapi to upload file directly
+      // Use gapi.client.drive.files.create() for upload
       logger.info(`Uploading file to Google Drive: ${file.name}`);
 
-      // Create FormData for upload
-      const formData = new FormData();
-      formData.append('metadata', new Blob([JSON.stringify({
+      // Create file metadata
+      const fileMetadata = {
         name: file.name,
         mimeType: file.type,
         parents: [folderId]
-      })], { type: 'application/json' }));
-      formData.append('file', file);
+      };
 
-      // Get access token
-      const auth = window.gapi.auth2.getAuthInstance();
-      const accessToken = auth.currentUser.get().getAuthResponse().access_token;
+      // Create media object from File
+      const media = {
+        mimeType: file.type,
+        body: file
+      };
 
-      logger.info('Sending upload request to Google Drive API');
-      const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`
-        },
-        body: formData
+      logger.info('Calling gapi.client.drive.files.create()');
+      const response = await window.gapi.client.drive.files.create({
+        resource: fileMetadata,
+        media: media,
+        fields: 'id, name, mimeType, createdTime, webViewLink'
       });
 
-      logger.info(`Upload response status: ${response.status}`);
-      logger.info(`Upload response headers:`, response.headers.get('content-type'));
+      logger.info(`Upload response:`, response);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        logger.error('Upload response error:', errorText.substring(0, 500));
-        throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+      if (!response || !response.result) {
+        logger.error('No response from Google Drive API');
+        throw new Error('Google Drive API did not return a response');
       }
 
-      // Debug: Log raw response text before parsing
-      const responseText = await response.text();
-      logger.info(`Raw response text (first 500 chars):`, responseText.substring(0, 500));
-
-      let result;
-      try {
-        result = JSON.parse(responseText);
-      } catch (parseError) {
-        logger.error('Failed to parse JSON response:', parseError.message);
-        logger.error('Response text:', responseText.substring(0, 1000));
-        throw new Error(`Invalid JSON response from Google Drive: ${parseError.message}`);
-      }
+      const result = response.result;
 
       if (!result.id) {
         logger.error('No file ID in response');
