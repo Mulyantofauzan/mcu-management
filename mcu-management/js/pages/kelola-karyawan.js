@@ -6,6 +6,7 @@ import { authService } from '../services/authService.js';
 import { employeeService } from '../services/employeeService.js';
 import { mcuService } from '../services/mcuService.js';
 import { masterDataService } from '../services/masterDataService.js';
+import { generateMCUId } from '../utils/idGenerator.js';
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal, confirmDialog, getStatusBadge } from '../utils/uiHelpers.js';
 import { exportEmployeeData } from '../utils/exportHelpers.js';
@@ -30,6 +31,7 @@ let showInactiveEmployees = false;
 let fileUploadWidget = null;
 let editFileUploadWidget = null;
 let addFileUploadWidget = null;
+let generatedMCUIdForAdd = null;  // Store generated MCU ID for the add modal
 
 async function init() {
     try {
@@ -721,17 +723,23 @@ window.addMCUForEmployee = async function(employeeId) {
         // Populate doctor dropdown
         populateDoctorDropdown('mcu-doctor');
 
-        // Show message that files can be uploaded after MCU is created
+        // Generate MCU ID at the start (but don't save to DB yet)
+        generatedMCUIdForAdd = generateMCUId();
+        console.log(`✅ Generated MCU ID for uploads: ${generatedMCUIdForAdd}`);
+
+        // Initialize file upload widget with the generated MCU ID
         const addFileContainer = document.getElementById('add-file-upload-container');
         if (addFileContainer) {
-            addFileContainer.innerHTML = `
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p class="text-sm text-blue-700">
-                        <strong>ℹ️ Catatan:</strong> File akan dapat diupload setelah MCU berhasil disimpan.
-                        Simpan MCU terlebih dahulu, kemudian buka kembali untuk mengupload dokumen.
-                    </p>
-                </div>
-            `;
+            addFileContainer.innerHTML = '';
+            const currentUser = authService.getCurrentUser();
+            addFileUploadWidget = new FileUploadWidget('add-file-upload-container', {
+                employeeId: employeeId,
+                mcuId: generatedMCUIdForAdd, // Use generated ID (not yet saved to DB)
+                userId: currentUser.userId || currentUser.user_id,
+                onUploadComplete: (result) => {
+                    showToast('File berhasil diunggah', 'success');
+                }
+            });
         }
 
         openModal('add-mcu-modal');
@@ -752,6 +760,7 @@ window.handleAddMCU = async function(event) {
         const currentUser = authService.getCurrentUser();
 
         const mcuData = {
+            mcuId: generatedMCUIdForAdd, // Use the ID generated when modal opened
             employeeId: document.getElementById('mcu-employee-id').value,
             mcuType: document.getElementById('mcu-type').value,
             mcuDate: document.getElementById('mcu-date').value,
