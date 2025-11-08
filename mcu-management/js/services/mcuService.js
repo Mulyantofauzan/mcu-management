@@ -209,9 +209,6 @@ class MCUService {
    * IMPORTANT: Does NOT create new MCU, updates existing one
    */
   async updateFollowUp(mcuId, followUpData, currentUser) {
-    // ✅ NEW: Import uploadBatchFiles at top of file if not already imported
-    const { uploadBatchFiles } = await import('./supabaseStorageService.js');
-
     const oldMCU = await this.getById(mcuId);
 
     // Prepare update data - only update final fields, preserve initial fields
@@ -248,31 +245,6 @@ class MCUService {
     });
 
     await database.update('mcus', mcuId, updateData);
-
-    // ✅ NEW: Handle file uploads if newlyUploadedFiles provided
-    if (followUpData.newlyUploadedFiles && followUpData.newlyUploadedFiles.length > 0) {
-      try {
-        const employeeId = oldMCU.employeeId;
-        const userId = currentUser?.userId || currentUser?.user_id;
-
-        console.log(`📤 Uploading ${followUpData.newlyUploadedFiles.length} file(s) for MCU edit...`);
-
-        await uploadBatchFiles(
-          followUpData.newlyUploadedFiles,
-          employeeId,
-          mcuId,
-          userId,
-          (current, total, message) => {
-            console.log(`⏳ Upload progress: ${current}/${total} - ${message}`);
-          }
-        );
-
-        console.log(`✅ Files uploaded successfully during MCU edit`);
-      } catch (error) {
-        console.error('❌ Error uploading files during MCU edit:', error);
-        throw new Error(`File upload failed: ${error.message}`);
-      }
-    }
 
     // Get updated MCU
     const newMCU = await this.getById(mcuId);

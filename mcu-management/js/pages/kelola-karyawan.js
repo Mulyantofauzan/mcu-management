@@ -1183,9 +1183,6 @@ window.handleEditMCU = async function(event) {
     try {
         const currentUser = authService.getCurrentUser();
 
-        // ✅ NEW: Get newly uploaded files from widget
-        const newlyUploadedFiles = editFileUploadWidget ? editFileUploadWidget.getUploadedFiles() : [];
-
         const updateData = {
             mcuType: document.getElementById('edit-mcu-type').value,
             mcuDate: document.getElementById('edit-mcu-date').value,
@@ -1216,8 +1213,7 @@ window.handleEditMCU = async function(event) {
             diagnosisKerja: document.getElementById('edit-mcu-diagnosis').value || null,
             alasanRujuk: document.getElementById('edit-mcu-alasan').value || null,
             initialResult: document.getElementById('edit-mcu-initial-result').value,
-            initialNotes: document.getElementById('edit-mcu-initial-notes').value,
-            newlyUploadedFiles: newlyUploadedFiles  // ✅ NEW: Include newly uploaded files
+            initialNotes: document.getElementById('edit-mcu-initial-notes').value
         };
 
         // Add final result if filled
@@ -1228,11 +1224,6 @@ window.handleEditMCU = async function(event) {
         }
 
         await mcuService.updateFollowUp(mcuId, updateData, currentUser);
-
-        // ✅ NEW: Clear file upload widget after successful save
-        if (editFileUploadWidget) {
-            editFileUploadWidget.clear();
-        }
 
         showToast('Data MCU berhasil diupdate', 'success');
         closeEditMCUModal();
