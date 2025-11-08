@@ -12,6 +12,9 @@ import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
 import { supabaseReady } from '../config/supabase.js';
 import { initSuperSearch } from '../components/superSearch.js';
 import FileUploadWidget from '../components/fileUploadWidget.js';
+import { generateMCUId } from '../utils/idGenerator.js';
+import { uploadBatchFiles } from '../services/supabaseStorageService.js';
+import { tempFileStorage } from '../services/tempFileStorage.js';
 
 let searchResults = [];
 let jobTitles = [];
@@ -19,6 +22,7 @@ let departments = [];
 let doctors = [];
 let currentEmployee = null;
 let fileUploadWidget = null;
+let generatedMCUIdForAdd = null;  // Store generated MCU ID for file uploads
 
 /**
  * Sanitize string input to prevent XSS
@@ -352,18 +356,21 @@ window.openAddMCUForEmployee = async function(employeeId) {
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('mcu-date').value = today;
 
+        // Generate MCU ID upfront for file uploads
+        generatedMCUIdForAdd = generateMCUId();
+        console.log(`✅ Generated MCU ID for uploads: ${generatedMCUIdForAdd}`);
+
         openModal('add-mcu-modal');
 
         // Initialize file upload widget for this MCU
-        // Note: MCU ID will be assigned after save, so we'll update it then
         const currentUser = authService.getCurrentUser();
         fileUploadWidget = new FileUploadWidget('mcu-file-upload-container', {
             employeeId: currentEmployee.employeeId,
-            mcuId: null, // Will be set after MCU is created
+            mcuId: generatedMCUIdForAdd,  // Use generated ID for temp file storage
             userId: currentUser.userId || currentUser.user_id,
             onUploadComplete: () => {
                 // Refresh file list if needed
-                console.log('✅ File uploaded successfully');
+                console.log('✅ File added to upload queue');
             },
             onError: (error) => {
                 showToast('Upload gagal: ' + error, 'error');
@@ -387,6 +394,7 @@ window.handleAddMCU = async function(event) {
         const currentUser = authService.getCurrentUser();
 
         const mcuData = {
+            mcuId: generatedMCUIdForAdd,  // Use pre-generated ID
             employeeId: document.getElementById('mcu-employee-id').value,
             mcuType: document.getElementById('mcu-type').value,
             mcuDate: document.getElementById('mcu-date').value,
@@ -420,11 +428,28 @@ window.handleAddMCU = async function(event) {
 
         showToast('MCU berhasil ditambahkan!', 'success');
 
-        // Update file upload widget with MCU ID so files can be attached
-        if (fileUploadWidget && createdMCU && createdMCU.mcuId) {
-            fileUploadWidget.setOptions({
-                mcuId: createdMCU.mcuId
-            });
+        // Upload all pending files to storage and database
+        const pendingFiles = tempFileStorage.getFiles(mcuData.mcuId);
+
+        if (pendingFiles && pendingFiles.length > 0) {
+            console.log(`📦 Uploading ${pendingFiles.length} file(s) for MCU ${mcuData.mcuId}...`);
+
+            const uploadResult = await uploadBatchFiles(
+                pendingFiles,
+                mcuData.employeeId,
+                mcuData.mcuId,
+                currentUser.userId || currentUser.user_id
+            );
+
+            if (uploadResult.success) {
+                if (uploadResult.uploadedCount > 0) {
+                    showToast(`${uploadResult.uploadedCount} file(s) uploaded successfully`, 'success');
+                }
+                // Clear temporary files after successful upload
+                tempFileStorage.clearFiles(mcuData.mcuId);
+            } else {
+                showToast(`File upload error: ${uploadResult.error}`, 'error');
+            }
         }
 
         // Make form read-only after successful save
