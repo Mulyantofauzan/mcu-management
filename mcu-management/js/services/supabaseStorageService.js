@@ -581,3 +581,102 @@ export async function deleteOrphanedFiles(mcuId, employeeId) {
         return { success: true, deletedCount: 0 }; // Don't fail cleanup
     }
 }
+
+/**
+ * Upload batch of files to storage and save metadata to database
+ * Used when MCU is saved to upload all pending files
+ * @param {File[]} files - Array of File objects
+ * @param {string} employeeId - Employee ID
+ * @param {string} mcuId - MCU ID
+ * @param {string} userId - User ID
+ * @returns {Promise<{success: boolean, uploadedCount?: number, failedCount?: number, error?: string}>}
+ */
+export async function uploadBatchFiles(files, employeeId, mcuId, userId) {
+    try {
+        if (!isSupabaseEnabled()) {
+            throw new Error('Supabase is not configured');
+        }
+
+        if (!files || files.length === 0) {
+            return { success: true, uploadedCount: 0, failedCount: 0 };
+        }
+
+        console.log(`📦 Uploading ${files.length} file(s) in batch for MCU ${mcuId}...`);
+
+        const supabase = getSupabaseClient();
+        let uploadedCount = 0;
+        let failedCount = 0;
+        const uploadedFilesData = [];
+
+        // Upload each file
+        for (const file of files) {
+            try {
+                // Compress if applicable
+                const processedFile = await compressFile(file);
+
+                // Generate storage path with mcuId
+                const storagePath = generateStoragePath(employeeId, mcuId, file.name);
+
+                console.log(`   📤 Uploading: ${file.name}`);
+
+                // Upload to storage
+                const { data, error: uploadError } = await supabase.storage
+                    .from(BUCKET_NAME)
+                    .upload(storagePath, processedFile, {
+                        cacheControl: '3600',
+                        upsert: false
+                    });
+
+                if (uploadError) {
+                    console.error(`   ❌ Upload failed: ${file.name}`, uploadError);
+                    failedCount++;
+                    continue;
+                }
+
+                uploadedCount++;
+                uploadedFilesData.push({
+                    employeeid: employeeId,
+                    mcuid: mcuId,
+                    filename: file.name,
+                    filetype: file.type,
+                    filesize: file.size,
+                    supabase_storage_path: storagePath,
+                    uploadedby: userId
+                });
+
+                console.log(`   ✅ Uploaded: ${file.name}`);
+            } catch (error) {
+                console.error(`   ❌ Error uploading ${file.name}:`, error);
+                failedCount++;
+            }
+        }
+
+        // Save all file metadata to database at once
+        if (uploadedFilesData.length > 0) {
+            const { error: insertError } = await supabase
+                .from('mcufiles')
+                .insert(uploadedFilesData);
+
+            if (insertError) {
+                console.error('❌ Database insert failed:', insertError);
+                throw new Error(`Database error: ${insertError.message}`);
+            }
+
+            console.log(`✅ Saved ${uploadedFilesData.length} file(s) to database`);
+        }
+
+        return {
+            success: true,
+            uploadedCount,
+            failedCount,
+            message: `Uploaded ${uploadedCount} file(s)${failedCount > 0 ? `, ${failedCount} failed` : ''}`
+        };
+
+    } catch (error) {
+        console.error('❌ Batch upload error:', error);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+}

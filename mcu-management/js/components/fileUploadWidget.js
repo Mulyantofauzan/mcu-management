@@ -12,6 +12,7 @@
 
 import { uploadFile, deleteFile, getFilesByMCU } from '../services/supabaseStorageService.js';
 import { isSupabaseEnabled } from '../config/supabase.js';
+import { tempFileStorage } from '../services/tempFileStorage.js';
 
 export class FileUploadWidget {
     constructor(containerId, options = {}) {
@@ -316,49 +317,43 @@ export class FileUploadWidget {
     }
 
     /**
-     * Upload file to Supabase Storage
+     * Store file in temporary storage (memory)
+     * File will be uploaded to Supabase when MCU is saved, not immediately
+     * This prevents orphaned files if user cancels MCU creation
      */
     async uploadFileToStorage(file) {
         this.isUploading = true;
-        this.showProgress(`Uploading ${file.name}...`);
+        this.showProgress(`Adding ${file.name}...`);
 
         if (this.options.onUploadStart) {
             this.options.onUploadStart();
         }
 
-        const result = await uploadFile(
-            file,
-            this.options.employeeId,
-            this.options.mcuId || null,
-            this.options.userId,
-            this.options.skipDBInsert
-        );
+        try {
+            // Add file to temporary storage (in memory, not to Supabase yet)
+            tempFileStorage.addFile(this.options.mcuId, file);
 
-        this.isUploading = false;
+            this.isUploading = false;
+            this.showSuccess(`File ready to upload: ${file.name}`);
 
-        if (result.success) {
-            this.showSuccess(`File uploaded: ${file.name}`);
-
-            // Only add to list if DB insert happened (fileid is present)
-            // When skipDBInsert=true, fileid is undefined and file will be saved later
-            if (result.fileid) {
-                this.addFileToList({
-                    fileid: result.fileid,
-                    filename: file.name,
-                    filetype: file.type,
-                    filesize: file.size,
-                    uploaded_at: new Date().toISOString()
-                });
-            }
+            // Add to local list for UI display
+            this.addFileToList({
+                filename: file.name,
+                filetype: file.type,
+                filesize: file.size,
+                uploaded_at: new Date().toISOString(),
+                isTemp: true // Mark as temporary (not yet in database)
+            });
 
             if (this.options.onUploadComplete) {
-                this.options.onUploadComplete(result);
+                this.options.onUploadComplete({ success: true, message: 'File added to upload queue' });
             }
-        } else {
-            this.showError(`Upload failed: ${result.error}`);
+        } catch (error) {
+            this.isUploading = false;
+            this.showError(`Failed to add file: ${error.message}`);
 
             if (this.options.onError) {
-                this.options.onError(result.error);
+                this.options.onError(error.message);
             }
         }
     }

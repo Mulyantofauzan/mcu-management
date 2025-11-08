@@ -19,7 +19,8 @@ import { supabaseReady } from '../config/supabase.js';
 import { initSuperSearch } from '../components/superSearch.js';
 import FileUploadWidget from '../components/fileUploadWidget.js';
 import FileListViewer from '../components/fileListViewer.js';
-import { saveUploadedFilesMetadata, deleteOrphanedFiles } from '../services/supabaseStorageService.js';
+import { saveUploadedFilesMetadata, deleteOrphanedFiles, uploadBatchFiles } from '../services/supabaseStorageService.js';
+import { tempFileStorage } from '../services/tempFileStorage.js';
 
 let employees = [];
 let filteredEmployees = [];
@@ -808,19 +809,28 @@ window.handleAddMCU = async function(event) {
 
         showToast('MCU berhasil ditambahkan!', 'success');
 
-        // Save uploaded files' metadata to database for this MCU
-        const filesSaveResult = await saveUploadedFilesMetadata(
-            mcuData.mcuId,
-            mcuData.employeeId,
-            currentUser.userId || currentUser.user_id
-        );
+        // Upload all pending files to storage and database
+        const pendingFiles = tempFileStorage.getFiles(mcuData.mcuId);
 
-        if (filesSaveResult.success) {
-            if (filesSaveResult.count > 0) {
-                console.log(`✅ Linked ${filesSaveResult.count} file(s) to MCU`);
+        if (pendingFiles && pendingFiles.length > 0) {
+            console.log(`📦 Uploading ${pendingFiles.length} file(s) for MCU ${mcuData.mcuId}...`);
+
+            const uploadResult = await uploadBatchFiles(
+                pendingFiles,
+                mcuData.employeeId,
+                mcuData.mcuId,
+                currentUser.userId || currentUser.user_id
+            );
+
+            if (uploadResult.success) {
+                if (uploadResult.uploadedCount > 0) {
+                    showToast(`${uploadResult.uploadedCount} file(s) uploaded successfully`, 'success');
+                }
+                // Clear temporary files after successful upload
+                tempFileStorage.clearFiles(mcuData.mcuId);
+            } else {
+                showToast(`File upload error: ${uploadResult.error}`, 'error');
             }
-        } else {
-            console.error('⚠️ Failed to save files metadata:', filesSaveResult.error);
         }
 
         // Close modal and reload data
@@ -828,14 +838,8 @@ window.handleAddMCU = async function(event) {
         await loadData();
 
     } catch (error) {
-        // If MCU creation fails, clean up any uploaded files to prevent orphaned files
-        console.warn('MCU creation failed, cleaning up uploaded files...');
-        const cleanupResult = await deleteOrphanedFiles(
-            mcuData.mcuId,
-            mcuData.employeeId
-        );
-
         showToast('Gagal menambah MCU: ' + error.message, 'error');
+        // Note: Temporary files are kept in memory and will be cleared when user reopens the modal or reloads page
     }
 };
 
