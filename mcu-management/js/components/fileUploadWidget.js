@@ -25,6 +25,7 @@ export class FileUploadWidget {
             employeeId: null,
             mcuId: null,
             userId: null,
+            skipDBInsert: false, // If true, upload to storage only, don't insert metadata to DB yet
             onUploadStart: null,
             onUploadComplete: null,
             onError: null,
@@ -329,7 +330,8 @@ export class FileUploadWidget {
             file,
             this.options.employeeId,
             this.options.mcuId || null,
-            this.options.userId
+            this.options.userId,
+            this.options.skipDBInsert
         );
 
         this.isUploading = false;

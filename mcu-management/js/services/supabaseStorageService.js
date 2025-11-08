@@ -77,9 +77,10 @@ function validateFile(file) {
  * @param {string} employeeId - Employee ID
  * @param {string} mcuId - MCU ID (optional for orphaned files)
  * @param {string} userId - User ID uploading file
+ * @param {boolean} skipDBInsert - If true, upload to storage only without saving metadata to DB (default: false)
  * @returns {Promise<{success: boolean, fileid?: string, storagePath?: string, error?: string}>}
  */
-export async function uploadFile(file, employeeId, mcuId, userId) {
+export async function uploadFile(file, employeeId, mcuId, userId, skipDBInsert = false) {
     try {
         if (!isSupabaseEnabled()) {
             throw new Error('Supabase is not configured');
@@ -131,6 +132,16 @@ export async function uploadFile(file, employeeId, mcuId, userId) {
         }
 
         console.log(`✅ File stored: ${data?.path || storagePath}`);
+
+        // If skipDBInsert is true, only upload to storage, don't save metadata yet
+        if (skipDBInsert) {
+            console.log(`⏳ File uploaded to storage. DB insert skipped (will be saved on MCU creation)`);
+            return {
+                success: true,
+                storagePath: storagePath,
+                message: 'File uploaded to storage. Will be linked to MCU on save.'
+            };
+        }
 
         // Save metadata to mcufiles table (using camelCase column names)
         const { data: fileRecord, error: dbError } = await supabase
@@ -372,4 +383,87 @@ export async function getDownloadUrl(storagePath) {
             error: error.message
         };
     }
+}
+
+/**
+ * Save uploaded files' metadata to database for a specific MCU
+ * This is called after MCU is created, to link temporarily uploaded files to the MCU
+ * @param {string} mcuId - MCU ID
+ * @param {string} employeeId - Employee ID
+ * @param {string} userId - User ID uploading files
+ * @returns {Promise<{success: boolean, count?: number, error?: string}>}
+ */
+export async function saveUploadedFilesMetadata(mcuId, employeeId, userId) {
+    try {
+        if (!isSupabaseEnabled()) {
+            throw new Error('Supabase is not configured');
+        }
+
+        const supabase = getSupabaseClient();
+
+        // List all files in storage with this MCU ID (formatted as part of path)
+        // Path format: {timestamp}-{mcuId}-{filename}
+        const { data: files, error: listError } = await supabase.storage
+            .from(BUCKET_NAME)
+            .list(`${employeeId}`);
+
+        if (listError) {
+            console.error('Error listing files:', listError);
+            return { success: false, error: listError.message };
+        }
+
+        if (!files || files.length === 0) {
+            console.log(`ℹ️ No files to save for MCU ${mcuId}`);
+            return { success: true, count: 0 };
+        }
+
+        // Filter files that belong to this MCU (path contains mcuId)
+        const mcuFiles = files.filter(file => file.name.includes(mcuId));
+
+        if (mcuFiles.length === 0) {
+            console.log(`ℹ️ No files found for MCU ${mcuId}`);
+            return { success: true, count: 0 };
+        }
+
+        // Prepare batch insert data
+        const fileRecords = mcuFiles.map(file => ({
+            employeeid: employeeId,
+            mcuid: mcuId,
+            filename: file.name.split('-').slice(1).join('-'), // Remove timestamp prefix
+            filetype: getFileTypeFromPath(file.name),
+            filesize: file.metadata?.size || 0,
+            supabase_storage_path: `${employeeId}/${file.name}`,
+            uploadedby: userId
+        }));
+
+        // Insert all file metadata at once
+        const { error: insertError } = await supabase
+            .from('mcufiles')
+            .insert(fileRecords);
+
+        if (insertError) {
+            console.error('Error saving file metadata:', insertError);
+            return { success: false, error: insertError.message };
+        }
+
+        console.log(`✅ Saved ${fileRecords.length} file(s) metadata for MCU ${mcuId}`);
+        return { success: true, count: fileRecords.length };
+
+    } catch (error) {
+        console.error('❌ Error saving file metadata:', error);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+}
+
+/**
+ * Extract file type from file path/name
+ */
+function getFileTypeFromPath(filename) {
+    if (filename.toLowerCase().endsWith('.pdf')) return 'application/pdf';
+    if (filename.toLowerCase().endsWith('.jpg') || filename.toLowerCase().endsWith('.jpeg')) return 'image/jpeg';
+    if (filename.toLowerCase().endsWith('.png')) return 'image/png';
+    return 'application/octet-stream';
 }

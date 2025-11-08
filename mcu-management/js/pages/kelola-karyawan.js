@@ -19,6 +19,7 @@ import { supabaseReady } from '../config/supabase.js';
 import { initSuperSearch } from '../components/superSearch.js';
 import FileUploadWidget from '../components/fileUploadWidget.js';
 import FileListViewer from '../components/fileListViewer.js';
+import { saveUploadedFilesMetadata } from '../services/supabaseStorageService.js';
 
 let employees = [];
 let filteredEmployees = [];
@@ -728,6 +729,7 @@ window.addMCUForEmployee = async function(employeeId) {
         console.log(`✅ Generated MCU ID for uploads: ${generatedMCUIdForAdd}`);
 
         // Initialize file upload widget with the generated MCU ID
+        // skipDBInsert=true: File only saved to storage, metadata saved when MCU is created
         const addFileContainer = document.getElementById('add-file-upload-container');
         if (addFileContainer) {
             addFileContainer.innerHTML = '';
@@ -736,6 +738,7 @@ window.addMCUForEmployee = async function(employeeId) {
                 employeeId: employeeId,
                 mcuId: generatedMCUIdForAdd, // Use generated ID (not yet saved to DB)
                 userId: currentUser.userId || currentUser.user_id,
+                skipDBInsert: true, // File uploaded to storage only, DB insert happens on MCU save
                 onUploadComplete: (result) => {
                     showToast('File berhasil diunggah', 'success');
                 }
@@ -804,6 +807,21 @@ window.handleAddMCU = async function(event) {
         await mcuService.create(mcuData, currentUser);
 
         showToast('MCU berhasil ditambahkan!', 'success');
+
+        // Save uploaded files' metadata to database for this MCU
+        const filesSaveResult = await saveUploadedFilesMetadata(
+            mcuData.mcuId,
+            mcuData.employeeId,
+            currentUser.userId || currentUser.user_id
+        );
+
+        if (filesSaveResult.success) {
+            if (filesSaveResult.count > 0) {
+                console.log(`✅ Linked ${filesSaveResult.count} file(s) to MCU`);
+            }
+        } else {
+            console.error('⚠️ Failed to save files metadata:', filesSaveResult.error);
+        }
 
         // Close modal and reload data
         closeAddMCUModal();
