@@ -355,15 +355,18 @@ class FileUploadWidget {
         );
       }
 
-      // Upload file
-      this.showProgress(file.name, 50);
-      const currentUser = authService.getCurrentUser();
-      const result = await googleDriveService.uploadFile(
-        compressedFile,
-        this.employeeId,
-        currentUser
-      );
-      this.showProgress(file.name, 100);
+      // Upload file - TEMPORARILY DISABLED
+      throw new Error('File upload is temporarily disabled. MCU records can still be saved without file attachments.');
+
+      // TODO: Fix Google Drive configuration and re-enable
+      // this.showProgress(file.name, 50);
+      // const currentUser = authService.getCurrentUser();
+      // const result = await googleDriveService.uploadFile(
+      //   compressedFile,
+      //   this.employeeId,
+      //   currentUser
+      // );
+      // this.showProgress(file.name, 100);
 
       // Update file list
       this.updateFileItem(fileItem, result, 'success');
