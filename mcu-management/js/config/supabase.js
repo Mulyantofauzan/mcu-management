@@ -5,13 +5,19 @@
  * Replace IndexedDB (Dexie) with Supabase for multi-user support.
  */
 
+// Import environment config to ensure credentials are loaded
+import { ENV, initializeEnv } from './envConfig.js';
+
+// Initialize env config synchronously (it may already be initialized)
+await initializeEnv();
+
 // Load Supabase client from CDN (added in HTML)
 // <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 // Supabase credentials - SECURE: Load from environment variables
-// Set in Netlify: Settings → Environment variables → SUPABASE_URL and SUPABASE_ANON_KEY
-const SUPABASE_URL = window.ENV?.SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = window.ENV?.SUPABASE_ANON_KEY || '';
+// Set in Vercel: Settings → Environment Variables or via /api/config endpoint
+const SUPABASE_URL = ENV.SUPABASE_URL || window.ENV?.SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = ENV.SUPABASE_ANON_KEY || window.ENV?.SUPABASE_ANON_KEY || '';
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     console.warn('⚠️ Supabase credentials not found. Using IndexedDB fallback.');

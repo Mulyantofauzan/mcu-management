@@ -1,23 +1,14 @@
 /**
- * Environment Configuration - SECURE VERSION
+ * Environment Configuration
  *
- * Credentials are NOT hardcoded here.
- * They are injected by Vercel at deploy time and accessible via API endpoint.
- *
- * SETUP IN VERCEL:
- * 1. Go to Vercel Project Settings → Environment Variables
- * 2. Add these variables (they're visible only in Vercel dashboard):
- *    - VITE_SUPABASE_URL
- *    - VITE_SUPABASE_ANON_KEY
- *    - VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID
- *    - VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT
+ * Loads credentials from multiple sources with priority:
+ * 1. Production: /api/config endpoint (Vercel env vars injected at runtime)
+ * 2. Build-time: Vite embeds VITE_* vars from .env.production
+ * 3. Dev fallback: localStorage or .env.local (via Vite dev server)
  */
 
-// Placeholder configuration
-// In production, these are injected by a server-side API endpoint
-// They are NOT exposed in client-side code or DevTools
+// Initialize window.ENV object
 window.ENV = {
-  // These will be fetched from the secure API endpoint
   SUPABASE_URL: null,
   SUPABASE_ANON_KEY: null,
   VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID: null,
@@ -25,21 +16,44 @@ window.ENV = {
   ENABLE_AUTO_SEED: false
 };
 
-// Fetch configuration from secure API endpoint
-async function loadSecureConfig() {
+/**
+ * Load configuration from multiple sources
+ */
+async function loadConfig() {
+  // Priority 1: Try API endpoint first (production)
+  // This loads env vars from Vercel at runtime
   try {
-    const response = await fetch('/api/config');
+    const response = await fetch('/api/config', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
     if (response.ok) {
       const config = await response.json();
-      window.ENV = { ...window.ENV, ...config };
-      console.log('✅ Configuration loaded from secure endpoint');
-      return true;
+      if (config.SUPABASE_URL) {
+        window.ENV = { ...window.ENV, ...config };
+        console.log('✅ Configuration loaded from /api/config endpoint');
+        return true;
+      }
     }
   } catch (error) {
-    console.warn('⚠️ Could not load config from endpoint:', error.message);
+    // API endpoint not available (expected in dev without backend)
+    console.debug('API endpoint not available, trying alternatives...');
   }
 
-  // Fallback for development only (localhost)
+  // Priority 2: Check for Vite-injected globals (from .env.production build)
+  // Vite replaces import.meta.env.VITE_* with actual values during build
+  // Check if values were injected into window during build
+  if (window.__VITE_SUPABASE_URL__) {
+    window.ENV.SUPABASE_URL = window.__VITE_SUPABASE_URL__;
+    window.ENV.SUPABASE_ANON_KEY = window.__VITE_SUPABASE_ANON_KEY__;
+    window.ENV.VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID = window.__VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID__;
+    window.ENV.VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT = window.__VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT__;
+    console.log('✅ Configuration loaded from build-time globals');
+    return true;
+  }
+
+  // Priority 3: Development fallback - localStorage
+  // Useful for local development when Vite dev server is running
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     const devUrl = localStorage.getItem('DEV_SUPABASE_URL');
     const devKey = localStorage.getItem('DEV_SUPABASE_ANON_KEY');
@@ -54,20 +68,8 @@ async function loadSecureConfig() {
   return false;
 }
 
-// Load config immediately
-loadSecureConfig();
-
-// Development fallback: Check localStorage for testing (localhost only)
-if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-  const devUrl = localStorage.getItem('DEV_SUPABASE_URL');
-  const devKey = localStorage.getItem('DEV_SUPABASE_ANON_KEY');
-
-  if (devUrl && devKey) {
-    console.log('🔧 Using development credentials from localStorage');
-    window.ENV.SUPABASE_URL = devUrl;
-    window.ENV.SUPABASE_ANON_KEY = devKey;
-  }
-}
+// Load configuration immediately
+loadConfig();
 
 console.log();
 if (window.ENV.SUPABASE_URL && window.ENV.SUPABASE_URL !== 'YOUR_SUPABASE_URL') {

@@ -3,6 +3,10 @@
  * Main dashboard with KPIs and charts
  */
 
+// ✅ CRITICAL: Load environment config BEFORE importing Supabase
+// This ensures window.ENV is set before supabase.js tries to use it
+import { initializeEnv, logEnvStatus } from '../config/envConfig.js';
+
 import { authService } from '../services/authService.js';
 import { employeeService } from '../services/employeeService.js';
 import { mcuService } from '../services/mcuService.js';
@@ -14,6 +18,13 @@ import { sessionManager } from '../utils/sessionManager.js';
 import { checkAndSeedIfEmpty } from '../seedData.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 import { initSuperSearch } from '../components/superSearch.js';
+
+// Initialize environment variables immediately (before other module code runs)
+initializeEnv().then(() => {
+  logEnvStatus();
+}).catch(err => {
+  console.error('Failed to initialize environment:', err);
+});
 
 // State
 let currentDateRange = { startDate: '', endDate: '' }; // Default: empty filter (show all)
