@@ -91,11 +91,10 @@ function isCompressible(mimeType) {
 
 /**
  * Compress file using pako gzip compression
- * PDF files typically compress 50-70%
- * Images already compressed, not worth compressing
- *
- * Tries to compress if pako available, falls back to uncompressed upload
- * Non-compressible files (images) are returned as-is
+ * SMART COMPRESSION: Only compress files < 5MB to avoid browser overhead
+ * - PDF files < 5MB: Compress (50-70% reduction)
+ * - PDF files >= 5MB: Upload as-is (too heavy to compress in browser)
+ * - Images: Never compress (already optimized)
  */
 async function compressFile(file) {
     // Only compress PDF files
@@ -104,8 +103,16 @@ async function compressFile(file) {
         return file;
     }
 
-    // For PDFs: try to compress, but don't block upload if pako unavailable
-    console.log(`🔄 Attempting to compress ${file.name}...`);
+    const COMPRESSION_SIZE_LIMIT = 5 * 1024 * 1024; // 5MB limit for browser compression
+
+    // Skip compression for large files (too heavy for browser)
+    if (file.size >= COMPRESSION_SIZE_LIMIT) {
+        console.log(`⏭️ Not compressed: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB > 5MB limit, upload as-is)`);
+        return file;
+    }
+
+    // For small PDFs: try to compress
+    console.log(`🔄 Attempting to compress ${file.name} (${(file.size / 1024).toFixed(1)}KB)...`);
 
     try {
         // Wait for pako to be ready (max 10 seconds)
@@ -658,9 +665,10 @@ export async function deleteOrphanedFiles(mcuId, employeeId) {
  * @param {string} employeeId - Employee ID
  * @param {string} mcuId - MCU ID
  * @param {string} userId - User ID
+ * @param {Function} onProgress - Optional callback: (current, total) => { ... }
  * @returns {Promise<{success: boolean, uploadedCount?: number, failedCount?: number, error?: string}>}
  */
-export async function uploadBatchFiles(files, employeeId, mcuId, userId) {
+export async function uploadBatchFiles(files, employeeId, mcuId, userId, onProgress = null) {
     try {
         if (!isSupabaseEnabled()) {
             throw new Error('Supabase is not configured');
@@ -676,17 +684,29 @@ export async function uploadBatchFiles(files, employeeId, mcuId, userId) {
         let uploadedCount = 0;
         let failedCount = 0;
         const uploadedFilesData = [];
+        const totalFiles = files.length;
 
-        // Upload each file
-        for (const file of files) {
+        // Upload each file (sequential for better control, but could be optimized to parallel)
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
             try {
-                // Compress if applicable (throws error for PDFs if compression fails)
+                // Report progress: starting
+                if (onProgress) {
+                    onProgress(i, totalFiles, `Preparing ${file.name}...`);
+                }
+
+                // Compress if applicable
                 const processedFile = await compressFile(file);
+
+                // Report progress: compression done
+                if (onProgress) {
+                    onProgress(i, totalFiles, `Uploading ${file.name}...`);
+                }
 
                 // Generate storage path with mcuId
                 const storagePath = generateStoragePath(employeeId, mcuId, file.name);
 
-                console.log(`   📤 Uploading: ${file.name}`);
+                console.log(`   📤 Uploading: ${file.name} (${i + 1}/${totalFiles})`);
 
                 // Upload to storage
                 const { data, error: uploadError } = await supabase.storage
@@ -699,6 +719,9 @@ export async function uploadBatchFiles(files, employeeId, mcuId, userId) {
                 if (uploadError) {
                     console.error(`   ❌ Upload failed: ${file.name}`, uploadError);
                     failedCount++;
+                    if (onProgress) {
+                        onProgress(i + 1, totalFiles, `Upload failed: ${file.name}`);
+                    }
                     continue;
                 }
 
@@ -713,11 +736,18 @@ export async function uploadBatchFiles(files, employeeId, mcuId, userId) {
                     uploadedby: userId
                 });
 
-                console.log(`   ✅ Uploaded: ${file.name}`);
+                console.log(`   ✅ Uploaded: ${file.name} (${uploadedCount}/${totalFiles})`);
+
+                // Report progress: file uploaded
+                if (onProgress) {
+                    onProgress(i + 1, totalFiles, `Uploaded ${file.name}`);
+                }
             } catch (error) {
-                // Compression errors for PDFs will have clear error message
                 console.error(`   ❌ Error with ${file.name}:`, error.message);
                 failedCount++;
+                if (onProgress) {
+                    onProgress(i + 1, totalFiles, `Error: ${file.name}`);
+                }
             }
         }
 

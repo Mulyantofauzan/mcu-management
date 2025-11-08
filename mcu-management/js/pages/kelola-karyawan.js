@@ -815,21 +815,31 @@ window.handleAddMCU = async function(event) {
         if (pendingFiles && pendingFiles.length > 0) {
             console.log(`📦 Uploading ${pendingFiles.length} file(s) for MCU ${mcuData.mcuId}...`);
 
+            let lastProgressShown = 0;
             const uploadResult = await uploadBatchFiles(
                 pendingFiles,
                 mcuData.employeeId,
                 mcuData.mcuId,
-                currentUser.userId || currentUser.user_id
+                currentUser.userId || currentUser.user_id,
+                // Progress callback
+                (current, total, message) => {
+                    const percentage = Math.round((current / total) * 100);
+                    // Only show toast every 25% or at end
+                    if (percentage >= lastProgressShown + 25 || percentage === 100) {
+                        console.log(`⏳ Upload progress: ${current}/${total} - ${message}`);
+                        lastProgressShown = percentage;
+                    }
+                }
             );
 
             if (uploadResult.success) {
                 if (uploadResult.uploadedCount > 0) {
-                    showToast(`${uploadResult.uploadedCount} file(s) uploaded successfully`, 'success');
+                    showToast(`✅ ${uploadResult.uploadedCount} file(s) uploaded successfully`, 'success');
                 }
                 // Clear temporary files after successful upload
                 tempFileStorage.clearFiles(mcuData.mcuId);
             } else {
-                showToast(`File upload error: ${uploadResult.error}`, 'error');
+                showToast(`❌ File upload error: ${uploadResult.error}`, 'error');
             }
         }
 
