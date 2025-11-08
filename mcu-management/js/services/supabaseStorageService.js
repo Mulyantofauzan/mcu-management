@@ -21,6 +21,48 @@ const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'
 let pakoInitPromise = null;
 
 /**
+ * Call the compress-pdf Edge Function to compress PDFs server-side
+ * This ensures all PDFs are compressed regardless of browser pako availability
+ * @param {string} filePath - Path to file in storage (e.g., 'employee-123/mcu-456/file.pdf')
+ * @param {string} mimeType - File MIME type (e.g., 'application/pdf')
+ */
+async function triggerEdgeFunctionCompression(filePath, mimeType) {
+    try {
+        // Only trigger for PDFs
+        if (mimeType !== 'application/pdf') {
+            console.log(`⏭️ Skipping Edge Function: ${mimeType} is not a PDF`);
+            return { skipped: true };
+        }
+
+        const supabase = getSupabaseClient();
+
+        console.log(`🔄 Calling compress-pdf Edge Function for: ${filePath}`);
+
+        // Call the Edge Function
+        const { data, error } = await supabase.functions.invoke('compress-pdf', {
+            body: {
+                record: {
+                    name: filePath,
+                    metadata: { mimetype: mimeType }
+                }
+            }
+        });
+
+        if (error) {
+            console.warn(`⚠️ Edge Function error (compression skipped): ${error.message}`);
+            return { success: false, error: error.message };
+        }
+
+        console.log(`✅ Edge Function response:`, data);
+        return { success: true, data };
+    } catch (error) {
+        console.warn(`⚠️ Failed to call Edge Function (compression skipped): ${error.message}`);
+        // Don't throw - compression is optional, upload already succeeded
+        return { success: false, error: error.message };
+    }
+}
+
+/**
  * Ensure pako is loaded and available
  * Returns promise that resolves when pako is ready
  * Waits up to 10 seconds for pako CDN to load from multiple sources
@@ -244,6 +286,12 @@ export async function uploadFile(file, employeeId, mcuId, userId, skipDBInsert =
         }
 
         console.log(`✅ File stored: ${data?.path || storagePath}`);
+
+        // Trigger server-side compression for PDFs (non-blocking)
+        // This ensures all PDFs are compressed regardless of browser pako availability
+        triggerEdgeFunctionCompression(storagePath, file.type).catch(err => {
+            console.warn('⚠️ Edge Function compression failed (non-critical):', err);
+        });
 
         // If skipDBInsert is true, only upload to storage, don't save metadata yet
         if (skipDBInsert) {
