@@ -13,6 +13,8 @@ import { generateRujukanPDF, generateRujukanBalikPDF } from '../utils/rujukanPDF
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 import { initSuperSearch } from '../components/superSearch.js';  // ✅ NEW: Global search
 import FileUploadWidget from '../components/fileUploadWidget.js';
+import { uploadBatchFiles } from '../services/supabaseStorageService.js';  // ✅ NEW: File upload to Supabase
+import { tempFileStorage } from '../services/tempFileStorage.js';  // ✅ NEW: Temp file management
 
 let followUpList = [];
 let filteredList = [];
@@ -389,6 +391,40 @@ window.handleFollowUpSubmit = async function(event) {
     await mcuService.updateFollowUp(mcuId, updateData, currentUser);
 
     showToast('Hasil akhir berhasil disimpan', 'success');
+
+    // ✅ NEW: Upload files if any are pending
+    const pendingFiles = tempFileStorage.getFiles(mcuId);
+    if (pendingFiles && pendingFiles.length > 0) {
+      console.log(`📦 Uploading ${pendingFiles.length} file(s) for follow-up MCU ${mcuId}...`);
+
+      let lastProgressShown = 0;
+      const uploadResult = await uploadBatchFiles(
+        pendingFiles,
+        currentMCU.employeeId,
+        mcuId,
+        currentUser.userId || currentUser.user_id,
+        // Progress callback
+        (current, total, message) => {
+          const percentage = Math.round((current / total) * 100);
+          // Only show toast every 25% or at end
+          if (percentage >= lastProgressShown + 25 || percentage === 100) {
+            console.log(`⏳ Upload progress: ${current}/${total} - ${message}`);
+            lastProgressShown = percentage;
+          }
+        }
+      );
+
+      if (uploadResult.success) {
+        if (uploadResult.uploadedCount > 0) {
+          showToast(`✅ ${uploadResult.uploadedCount} file(s) uploaded successfully`, 'success');
+        }
+        // Clear temporary files after successful upload
+        tempFileStorage.clearFiles(mcuId);
+      } else {
+        showToast(`❌ File upload error: ${uploadResult.error}`, 'error');
+        return; // Don't proceed if file upload failed
+      }
+    }
 
     // Close first modal
     closeFollowUpModal();
