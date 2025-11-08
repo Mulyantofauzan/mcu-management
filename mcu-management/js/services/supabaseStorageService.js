@@ -31,13 +31,48 @@ function isCompressible(mimeType) {
  * Compress file using pako gzip compression
  * PDF and Office docs typically compress 50-70%
  * Images already compressed, minimal benefit
- *
- * TEMPORARILY DISABLED: Upload first, compression later
  */
 async function compressFile(file) {
-    // Compression disabled for now - focus on getting upload working first
-    console.log(`⏭️ Compression disabled (file: ${file.name})`);
-    return file;
+    try {
+        // Only compress PDF files
+        if (!isCompressible(file.type)) {
+            console.log(`⏭️ Not compressed: ${file.name} (already optimized format)`);
+            return file;
+        }
+
+        // PDF compression with gzip
+        console.log(`🔄 Compressing ${file.name}...`);
+
+        const arrayBuffer = await file.arrayBuffer();
+        const data = new Uint8Array(arrayBuffer);
+
+        // Use pako for gzip compression (must be loaded via CDN in index.html)
+        if (typeof window.pako === 'undefined') {
+            console.warn('⚠️ pako not available, uploading uncompressed');
+            return file;
+        }
+
+        const compressed = window.pako.gzip(data);
+        const originalSize = file.size;
+        const compressedSize = compressed.length;
+        const ratio = ((1 - compressedSize / originalSize) * 100).toFixed(1);
+
+        console.log(`✅ Compressed: ${(originalSize / 1024).toFixed(1)}KB → ${(compressedSize / 1024).toFixed(1)}KB (${ratio}% reduction)`);
+
+        // Create new File object with compressed data
+        const compressedFile = new File(
+            [compressed],
+            file.name + '.gz',
+            { type: 'application/gzip' }
+        );
+
+        return compressedFile;
+
+    } catch (error) {
+        console.error('❌ Compression error:', error);
+        console.log('📄 Uploading original uncompressed file');
+        return file;
+    }
 }
 
 /**
