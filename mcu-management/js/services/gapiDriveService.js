@@ -11,6 +11,7 @@ class GapiDriveService {
     this.rootFolderId = null;
     this.isInitialized = false;
     this.gapiLoaded = false;
+    this.initPromise = null;
   }
 
   /**
@@ -18,17 +19,41 @@ class GapiDriveService {
    */
   async loadGapiScript() {
     return new Promise((resolve, reject) => {
-      if (window.gapi) {
+      // Check if gapi is already loaded
+      if (window.gapi && window.gapi.client) {
+        logger.info('gapi already loaded in window');
         resolve();
         return;
       }
 
+      logger.info('Loading Google API script...');
       const script = document.createElement('script');
       script.src = 'https://apis.google.com/js/api.js';
       script.async = true;
       script.defer = true;
-      script.onload = resolve;
-      script.onerror = () => reject(new Error('Failed to load Google API script'));
+
+      let timeoutId = setTimeout(() => {
+        logger.error('Google API script timeout after 10s');
+        reject(new Error('Google API script load timeout'));
+      }, 10000);
+
+      script.onload = () => {
+        clearTimeout(timeoutId);
+        logger.info('Google API script loaded successfully');
+        // Wait for gapi to be ready
+        if (window.gapi) {
+          resolve();
+        } else {
+          reject(new Error('window.gapi not available after script load'));
+        }
+      };
+
+      script.onerror = () => {
+        clearTimeout(timeoutId);
+        logger.error('Failed to load Google API script');
+        reject(new Error('Failed to load Google API script'));
+      };
+
       document.head.appendChild(script);
     });
   }
@@ -38,12 +63,20 @@ class GapiDriveService {
    * @param {Object} config - Configuration with clientId and rootFolderId
    */
   async init(config) {
-    try {
-      // Load gapi script
-      await this.loadGapiScript();
-      this.gapiLoaded = true;
+    // Prevent multiple concurrent initializations
+    if (this.initPromise) {
+      logger.info('Init already in progress, waiting...');
+      return this.initPromise;
+    }
 
+    this.initPromise = this._doInit(config);
+    return this.initPromise;
+  }
+
+  async _doInit(config) {
+    try {
       const { clientId, rootFolderId } = config;
+
       if (!clientId) {
         throw new Error('Google Client ID not configured');
       }
@@ -51,27 +84,54 @@ class GapiDriveService {
         throw new Error('Google Drive root folder ID not configured');
       }
 
+      logger.info('Starting Google Drive service initialization');
+
+      // Load gapi script
+      await this.loadGapiScript();
+      this.gapiLoaded = true;
+
       this.clientId = clientId;
       this.rootFolderId = rootFolderId;
 
-      // Initialize gapi
+      // Initialize gapi with timeout
+      logger.info('Initializing gapi client with timeout...');
       await new Promise((resolve, reject) => {
-        window.gapi.load('client:auth2', () => {
-          window.gapi.client
-            .init({
-              clientId: clientId,
-              scope: 'https://www.googleapis.com/auth/drive.file',
-              discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
-            })
-            .then(resolve)
-            .catch(reject);
-        });
+        let timeoutId = setTimeout(() => {
+          logger.error('gapi initialization timeout after 10s');
+          reject(new Error('gapi initialization timeout'));
+        }, 10000);
+
+        try {
+          window.gapi.load('client:auth2', async () => {
+            try {
+              logger.info('gapi modules loaded, initializing client...');
+              await window.gapi.client.init({
+                clientId: clientId,
+                scope: 'https://www.googleapis.com/auth/drive.file',
+                discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
+              });
+              clearTimeout(timeoutId);
+              logger.info('gapi client initialized successfully');
+              resolve();
+            } catch (e) {
+              clearTimeout(timeoutId);
+              logger.error('Error during gapi.client.init:', e);
+              reject(e);
+            }
+          });
+        } catch (e) {
+          clearTimeout(timeoutId);
+          logger.error('Error in gapi.load:', e);
+          reject(e);
+        }
       });
 
       this.isInitialized = true;
-      logger.info('Google Drive service initialized via gapi');
+      logger.info('Google Drive service fully initialized');
     } catch (error) {
-      logger.error('Failed to initialize Google Drive service:', error);
+      logger.error('Failed to initialize Google Drive service:', error?.message || error);
+      this.isInitialized = false;
+      this.initPromise = null;
       throw error;
     }
   }
@@ -180,6 +240,7 @@ class GapiDriveService {
       body.set(fileBytesArray, metadataBytes.length);
       body.set(closeDelimBytes, metadataBytes.length + fileBytesArray.length);
 
+      logger.info('Sending multipart upload request to Google Drive API');
       const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
         method: 'POST',
         headers: {
@@ -189,25 +250,44 @@ class GapiDriveService {
         body: body
       });
 
+      logger.info(`Upload response status: ${response.status} ${response.statusText}`);
+
       if (!response.ok) {
         const errorText = await response.text();
         logger.error('Upload response error:', errorText);
-        throw new Error(`Upload failed: ${response.statusText}`);
+        throw new Error(`Upload failed with status ${response.status}: ${response.statusText}`);
       }
 
-      const result = await response.json();
-      logger.info(`File uploaded successfully: ${result.id}`);
+      // Parse response safely
+      const responseText = await response.text();
+      logger.info('Upload response text length:', responseText.length);
+
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        logger.error('Failed to parse upload response as JSON:', parseError);
+        logger.error('Response text (first 200 chars):', responseText.substring(0, 200));
+        throw new Error(`Invalid JSON response from Google Drive: ${parseError.message}`);
+      }
+
+      if (!result.id) {
+        logger.error('No file ID in response:', result);
+        throw new Error('Google Drive API did not return a file ID');
+      }
+
+      logger.info(`File uploaded successfully with ID: ${result.id}`);
 
       return {
         fileId: result.id,
-        fileName: result.name,
-        mimeType: result.mimeType,
+        fileName: result.name || file.name,
+        mimeType: result.mimeType || file.type,
         size: file.size,
         googleDriveFileId: result.id,
         uploadedAt: new Date().toISOString()
       };
     } catch (error) {
-      logger.error('File upload error:', error);
+      logger.error('File upload error:', error?.message || error);
       throw error;
     }
   }
