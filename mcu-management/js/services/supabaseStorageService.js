@@ -46,7 +46,13 @@ async function compressFile(file) {
         const arrayBuffer = await file.arrayBuffer();
         const data = new Uint8Array(arrayBuffer);
 
-        // Use pako for gzip compression (must be loaded via CDN in index.html)
+        // Wait for pako to be available (loaded via CDN in index.html)
+        let attempts = 0;
+        while (typeof window.pako === 'undefined' && attempts < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+
         if (typeof window.pako === 'undefined') {
             console.warn('⚠️ pako not available, uploading uncompressed');
             return file;

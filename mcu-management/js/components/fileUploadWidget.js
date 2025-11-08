@@ -338,13 +338,18 @@ export class FileUploadWidget {
 
         if (result.success) {
             this.showSuccess(`File uploaded: ${file.name}`);
-            this.addFileToList({
-                fileid: result.fileid,
-                filename: file.name,
-                filetype: file.type,
-                filesize: file.size,
-                uploaded_at: new Date().toISOString()
-            });
+
+            // Only add to list if DB insert happened (fileid is present)
+            // When skipDBInsert=true, fileid is undefined and file will be saved later
+            if (result.fileid) {
+                this.addFileToList({
+                    fileid: result.fileid,
+                    filename: file.name,
+                    filetype: file.type,
+                    filesize: file.size,
+                    uploaded_at: new Date().toISOString()
+                });
+            }
 
             if (this.options.onUploadComplete) {
                 this.options.onUploadComplete(result);
