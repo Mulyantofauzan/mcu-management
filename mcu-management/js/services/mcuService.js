@@ -15,7 +15,8 @@ class MCUService {
     const ageAtMCU = calculateAge(employee.birthDate, mcuData.mcuDate);
 
     const mcu = {
-      mcuId: generateMCUId(),
+      // Use pre-generated ID if provided (for file uploads), otherwise generate new one
+      mcuId: mcuData.mcuId || generateMCUId(),
       employeeId: mcuData.employeeId,
       mcuType: mcuData.mcuType,
       mcuDate: mcuData.mcuDate,
