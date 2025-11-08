@@ -11,7 +11,6 @@
  */
 
 import { getSupabaseClient, isSupabaseEnabled } from '../config/supabase.js';
-import pako from 'https://cdn.jsdelivr.net/npm/pako@2.1.0/+esm';
 
 const BUCKET_NAME = 'mcu-documents';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per file
@@ -32,45 +31,24 @@ function isCompressible(mimeType) {
  * Compress file using pako gzip compression
  * PDF and Office docs typically compress 50-70%
  * Images already compressed, minimal benefit
+ *
+ * TEMPORARILY DISABLED: Upload first, compression later
  */
 async function compressFile(file) {
-    try {
-        if (!isCompressible(file.type)) {
-            console.log(`⏭️ Skipping compression for ${file.type} (already compressed)`);
-            return file;
-        }
-
-        const arrayBuffer = await file.arrayBuffer();
-        const compressed = pako.gzip(new Uint8Array(arrayBuffer));
-        const compressedBlob = new Blob([compressed], { type: 'application/gzip' });
-
-        const originalSize = file.size;
-        const compressedSize = compressedBlob.size;
-        const ratio = ((1 - compressedSize / originalSize) * 100).toFixed(1);
-
-        console.log(`✅ Compressed: ${(originalSize / 1024).toFixed(1)}KB → ${(compressedSize / 1024).toFixed(1)}KB (${ratio}% reduction)`);
-
-        // Return compressed file with .gz extension
-        return new File([compressedBlob], file.name + '.gz', {
-            type: 'application/gzip',
-            lastModified: file.lastModified
-        });
-    } catch (error) {
-        console.error('❌ Compression error:', error);
-        console.warn('⚠️ Using original uncompressed file');
-        return file;
-    }
+    // Compression disabled for now - focus on getting upload working first
+    console.log(`⏭️ Compression disabled (file: ${file.name})`);
+    return file;
 }
 
 /**
  * Generate storage path for file
- * Format: {employeeId}/{mcuId}/{timestamp}-{filename}
+ * Simple format: {timestamp}-{filename}
  * (BUCKET_NAME is 'mcu-documents', so path is relative to bucket)
  */
 function generateStoragePath(employeeId, mcuId, fileName) {
-    const timestamp = new Date().toISOString().replace(/[-:.Z]/g, '').slice(0, 14); // YYYYMMDDHHmmss
+    const timestamp = Date.now(); // Simple timestamp
     const sanitizedName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
-    return `${employeeId}/${mcuId || 'orphaned'}/${timestamp}-${sanitizedName}`;
+    return `${timestamp}-${sanitizedName}`;
 }
 
 /**
