@@ -59,11 +59,13 @@ try {
  * @param {Object} res - Node.js HTTP response
  */
 async function handler(req, res) {
-  // Enable CORS
+  // Enable CORS with explicit origin handling
+  const origin = req.headers.origin || '*';
   res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
   // Handle preflight
   if (req.method === 'OPTIONS') {
@@ -74,6 +76,7 @@ async function handler(req, res) {
   try {
     // Only accept POST requests
     if (req.method !== 'POST') {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return res.status(405).json({ error: 'Method not allowed' });
     }
 
@@ -116,18 +119,21 @@ async function handler(req, res) {
 
     // Validate inputs
     if (!file) {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
     const { employeeId, userId, userName } = fields;
 
     if (!employeeId) {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return res.status(400).json({ error: 'employeeId is required' });
     }
 
     // Validate file type
     const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
     if (!ALLOWED_TYPES.includes(file.mimetype)) {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return res.status(400).json({
         error: `File type not allowed. Allowed: PDF, JPEG, PNG. Provided: ${file.mimetype}`
       });
@@ -136,6 +142,7 @@ async function handler(req, res) {
     // Validate file size (should already be compressed from frontend, but double-check)
     const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
     if (file.size > MAX_FILE_SIZE) {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return res.status(400).json({
         error: `File size exceeds 5MB limit. Current: ${(file.size / 1024 / 1024).toFixed(2)}MB`
       });
@@ -189,6 +196,7 @@ async function handler(req, res) {
       }]);
 
     // Return success response
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.status(200).json({
       success: true,
       fileId: fileId,
@@ -214,6 +222,7 @@ async function handler(req, res) {
     }
 
     // Return safe error response (avoid exposing code snippets)
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.status(500).json({
       error: errorMessage.substring(0, 500) // Limit length to prevent XSS
     });
