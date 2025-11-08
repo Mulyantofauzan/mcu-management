@@ -14,9 +14,8 @@ import { logger } from '../utils/logger.js';
 import { debounce } from '../utils/debounce.js';
 import { UI } from '../config/constants.js';
 import { safeGet, safeArray, isEmpty } from '../utils/nullSafety.js';
-import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
-import { FileUploadWidget } from '../components/fileUploadWidget.js';  // ✅ NEW: File upload widget
-import { initSuperSearch } from '../components/superSearch.js';  // ✅ NEW: Global search
+import { supabaseReady } from '../config/supabase.js';
+import { initSuperSearch } from '../components/superSearch.js';
 
 let employees = [];
 let filteredEmployees = [];
@@ -25,8 +24,7 @@ let departments = [];
 let doctors = [];
 let currentPage = 1;
 const itemsPerPage = UI.ITEMS_PER_PAGE;
-let editFileUploadWidget = null;  // ✅ NEW: Global widget instance for edit MCU form
-let showInactiveEmployees = false;  // ✅ NEW: Toggle for showing inactive employees
+let showInactiveEmployees = false;
 
 async function init() {
     try {

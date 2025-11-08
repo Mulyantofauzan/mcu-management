@@ -9,16 +9,14 @@ import { mcuService } from '../services/mcuService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
-import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
-import { FileUploadWidget } from '../components/fileUploadWidget.js';  // ✅ NEW: File upload widget
-import { initSuperSearch } from '../components/superSearch.js';  // ✅ NEW: Global search
+import { supabaseReady } from '../config/supabase.js';
+import { initSuperSearch } from '../components/superSearch.js';
 
 let searchResults = [];
 let jobTitles = [];
 let departments = [];
 let doctors = [];
 let currentEmployee = null;
-let fileUploadWidget = null;  // ✅ NEW: Global widget instance
 
 /**
  * Sanitize string input to prevent XSS
@@ -352,27 +350,6 @@ window.openAddMCUForEmployee = async function(employeeId) {
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('mcu-date').value = today;
 
-        // ✅ NEW: Initialize file upload widget
-        const fileContainer = document.getElementById('file-upload-container');
-        if (fileContainer) {
-            fileContainer.innerHTML = '';  // Clear previous widget
-            try {
-                fileUploadWidget = new FileUploadWidget('file-upload-container', {
-                    employeeId: employeeId,
-                    maxFiles: 5,
-                    onUploadComplete: (files) => {
-                        console.log('MCU files uploaded:', files);
-                    }
-                });
-                console.log('✓ FileUploadWidget initialized successfully');
-            } catch (widgetError) {
-                console.error('✗ Failed to initialize FileUploadWidget:', widgetError?.message || widgetError);
-                fileUploadWidget = null;  // Set to null so handleAddMCU knows to skip it
-            }
-        } else {
-            console.warn('⚠️ File upload container not found in DOM');
-        }
-
         openModal('add-mcu-modal');
     } catch (error) {
 
@@ -390,9 +367,6 @@ window.handleAddMCU = async function(event) {
 
     try {
         const currentUser = authService.getCurrentUser();
-
-        // ✅ NEW: Get uploaded files from widget
-        const uploadedFiles = fileUploadWidget ? fileUploadWidget.getUploadedFiles() : [];
 
         const mcuData = {
             employeeId: document.getElementById('mcu-employee-id').value,
@@ -421,18 +395,12 @@ window.handleAddMCU = async function(event) {
             diagnosisKerja: document.getElementById('mcu-diagnosis').value || null,
             alasanRujuk: document.getElementById('mcu-alasan').value || null,
             initialResult: document.getElementById('mcu-result').value,
-            initialNotes: document.getElementById('mcu-notes').value,
-            attachedFiles: uploadedFiles  // ✅ NEW: Include uploaded files with MCU record
+            initialNotes: document.getElementById('mcu-notes').value
         };
 
         const createdMCU = await mcuService.create(mcuData, currentUser);
 
         showToast('MCU berhasil ditambahkan!', 'success');
-
-        // ✅ NEW: Clear file upload widget after successful save
-        if (fileUploadWidget) {
-            fileUploadWidget.clear();
-        }
 
         // Make form read-only after successful save
         disableMCUForm();
