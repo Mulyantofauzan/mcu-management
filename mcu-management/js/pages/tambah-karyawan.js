@@ -356,13 +356,21 @@ window.openAddMCUForEmployee = async function(employeeId) {
         const fileContainer = document.getElementById('file-upload-container');
         if (fileContainer) {
             fileContainer.innerHTML = '';  // Clear previous widget
-            fileUploadWidget = new FileUploadWidget('file-upload-container', {
-                employeeId: employeeId,
-                maxFiles: 5,
-                onUploadComplete: (files) => {
-                    console.log('MCU files uploaded:', files);
-                }
-            });
+            try {
+                fileUploadWidget = new FileUploadWidget('file-upload-container', {
+                    employeeId: employeeId,
+                    maxFiles: 5,
+                    onUploadComplete: (files) => {
+                        console.log('MCU files uploaded:', files);
+                    }
+                });
+                console.log('✓ FileUploadWidget initialized successfully');
+            } catch (widgetError) {
+                console.error('✗ Failed to initialize FileUploadWidget:', widgetError?.message || widgetError);
+                fileUploadWidget = null;  // Set to null so handleAddMCU knows to skip it
+            }
+        } else {
+            console.warn('⚠️ File upload container not found in DOM');
         }
 
         openModal('add-mcu-modal');
