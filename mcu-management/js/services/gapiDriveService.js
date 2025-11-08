@@ -231,6 +231,7 @@ class GapiDriveService {
       });
 
       logger.info(`Upload response status: ${response.status}`);
+      logger.info(`Upload response headers:`, response.headers.get('content-type'));
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -238,7 +239,18 @@ class GapiDriveService {
         throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
       }
 
-      const result = await response.json();
+      // Debug: Log raw response text before parsing
+      const responseText = await response.text();
+      logger.info(`Raw response text (first 500 chars):`, responseText.substring(0, 500));
+
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        logger.error('Failed to parse JSON response:', parseError.message);
+        logger.error('Response text:', responseText.substring(0, 1000));
+        throw new Error(`Invalid JSON response from Google Drive: ${parseError.message}`);
+      }
 
       if (!result.id) {
         logger.error('No file ID in response');
