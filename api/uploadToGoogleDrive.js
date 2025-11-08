@@ -199,13 +199,23 @@ async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('Upload error:', error);
+    console.error('Upload error:', error?.message || String(error));
+
     // Return detailed error for debugging
-    const errorMessage = error.message || 'Unknown error occurred';
-    const errorDetails = error.errors ? error.errors[0]?.message : errorMessage;
+    let errorMessage = 'Unknown error occurred';
+
+    // Extract error message safely
+    if (error?.message) {
+      errorMessage = error.message;
+    } else if (error?.errors?.[0]?.message) {
+      errorMessage = error.errors[0].message;
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    }
+
+    // Return safe error response (avoid exposing code snippets)
     return res.status(500).json({
-      error: errorDetails,
-      details: errorMessage
+      error: errorMessage.substring(0, 500) // Limit length to prevent XSS
     });
   }
 }
@@ -218,6 +228,15 @@ async function handler(req, res) {
  */
 async function createOrGetEmployeeFolder(employeeId, employeeName = '') {
   try {
+    // Validate inputs
+    if (!employeeId) {
+      throw new Error('Employee ID is required');
+    }
+
+    if (!GOOGLE_DRIVE_ROOT_FOLDER_ID) {
+      throw new Error('Google Drive root folder ID not configured');
+    }
+
     const folderName = `${employeeId}${employeeName ? ' - ' + employeeName : ''}`;
 
     // Search for existing folder
@@ -228,11 +247,14 @@ async function createOrGetEmployeeFolder(employeeId, employeeName = '') {
       pageSize: 1,
     });
 
-    if (response.data.files.length > 0) {
+    // Check if folder exists
+    if (response?.data?.files && response.data.files.length > 0) {
+      console.log(`Found existing folder for ${employeeId}: ${response.data.files[0].id}`);
       return response.data.files[0].id;
     }
 
     // Create new folder
+    console.log(`Creating new folder for ${employeeId}: ${folderName}`);
     const createResponse = await drive.files.create({
       resource: {
         name: folderName,
@@ -242,9 +264,15 @@ async function createOrGetEmployeeFolder(employeeId, employeeName = '') {
       fields: 'id',
     });
 
+    if (!createResponse?.data?.id) {
+      throw new Error('Failed to get folder ID from Google Drive response');
+    }
+
     return createResponse.data.id;
   } catch (error) {
-    throw new Error(`Failed to create/get employee folder: ${error.message}`);
+    const errorMsg = `Failed to create/get employee folder: ${error?.message || String(error)}`;
+    console.error(errorMsg);
+    throw new Error(errorMsg);
   }
 }
 
@@ -258,6 +286,22 @@ async function createOrGetEmployeeFolder(employeeId, employeeName = '') {
  */
 async function uploadFileToGoogleDrive(fileBuffer, fileName, mimeType, parentFolderId) {
   try {
+    // Validate inputs
+    if (!fileBuffer) {
+      throw new Error('File buffer is required');
+    }
+    if (!fileName) {
+      throw new Error('File name is required');
+    }
+    if (!mimeType) {
+      throw new Error('MIME type is required');
+    }
+    if (!parentFolderId) {
+      throw new Error('Parent folder ID is required');
+    }
+
+    console.log(`Uploading file to Google Drive: ${fileName} (${mimeType}, ${fileBuffer.length} bytes)`);
+
     const response = await drive.files.create({
       resource: {
         name: fileName,
@@ -271,9 +315,16 @@ async function uploadFileToGoogleDrive(fileBuffer, fileName, mimeType, parentFol
       fields: 'id',
     });
 
+    if (!response?.data?.id) {
+      throw new Error('Failed to get file ID from Google Drive response');
+    }
+
+    console.log(`File uploaded successfully: ${response.data.id}`);
     return response.data.id;
   } catch (error) {
-    throw new Error(`Failed to upload file to Google Drive: ${error.message}`);
+    const errorMsg = `Failed to upload file to Google Drive: ${error?.message || String(error)}`;
+    console.error(errorMsg);
+    throw new Error(errorMsg);
   }
 }
 
