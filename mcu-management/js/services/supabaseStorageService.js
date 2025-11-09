@@ -102,7 +102,7 @@ export async function uploadFileToSupabase(file, employeeId, mcuId, onProgress =
       });
 
       // Send request to API
-      const apiUrl = 'https://api-ohnav4uq4-adels-projects-5899a1ad.vercel.app/api/compress-upload';
+      const apiUrl = 'https://api-g5a9es3r5-adels-projects-5899a1ad.vercel.app/api/compress-upload';
       console.log(`🔗 Uploading to: ${apiUrl}`);
 
       xhr.open('POST', apiUrl);
@@ -279,7 +279,7 @@ export async function getFilesByMCU(mcuId) {
       return { success: true, files: [] };
     }
 
-    const apiUrl = 'https://api-ohnav4uq4-adels-projects-5899a1ad.vercel.app/api/get-mcu-files';
+    const apiUrl = 'https://api-g5a9es3r5-adels-projects-5899a1ad.vercel.app/api/get-mcu-files';
     console.log(`📂 Fetching files for MCU: ${mcuId}`);
 
     const response = await fetch(`${apiUrl}?mcuId=${encodeURIComponent(mcuId)}`);
