@@ -12,7 +12,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const busboy = require('busboy');
 const { v4: uuid } = require('uuid');
-const { uploadToGoogleDrive } = require('../googleDriveService');
+const { uploadToGoogleDrive } = require('../../googleDriveService');
 
 // Initialize Supabase client
 const supabase = createClient(
