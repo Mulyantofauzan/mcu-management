@@ -30,7 +30,8 @@
       "Bash(~/.vercel/auth.json)",
       "Bash(npx vercel deploy:*)",
       "Bash(vercel logs:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []

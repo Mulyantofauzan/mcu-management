@@ -102,9 +102,9 @@ export async function uploadFileWithServerCompression(file, employeeId, mcuId, o
         reject(new Error('Upload cancelled'));
       });
 
-      // Send request to compression API
+      // Send request to Google Drive upload API
       // Frontend and API are on different Vercel projects, use absolute URL
-      const apiUrl = 'https://api-pjodrfpvg-adels-projects-5899a1ad.vercel.app/api/compress-upload';
+      const apiUrl = 'https://api-f84xpaiw3-adels-projects-5899a1ad.vercel.app/api/compress-upload';
       console.log(`🔗 Uploading to: ${apiUrl}`);
 
       xhr.open('POST', apiUrl);
