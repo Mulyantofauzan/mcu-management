@@ -1,7 +1,7 @@
 {
-  "name": "MCU Management",
+  "name": "SABDAMU",
   "short_name": "MCU Mgmt",
-  "description": "Medical Check Up Management System",
+  "description": "Sistem Analisis dan Basis Data MCU",
   "icons": [
     {
       "src": "/assets/images/android-chrome-192x192.png",
