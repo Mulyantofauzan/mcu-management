@@ -277,6 +277,15 @@ export async function getFilesByMCU(mcuId) {
   return { success: true, files: [] };
 }
 
+/**
+ * Download file (stub for compatibility)
+ * Files already have public URLs available from upload response
+ */
+export async function downloadFile(fileId, fileName) {
+  console.log('downloadFile: Use publicUrl from upload response to download');
+  return { success: true };
+}
+
 export default {
   uploadFileToSupabase,
   uploadFilesToSupabase,
@@ -285,5 +294,6 @@ export default {
   deleteOrphanedFiles,
   deleteFile,
   uploadFile,
-  getFilesByMCU
+  getFilesByMCU,
+  downloadFile
 };
