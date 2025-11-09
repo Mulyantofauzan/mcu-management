@@ -42,13 +42,13 @@ function initializeDriveClient() {
 
 /**
  * Get or create employee folder in Google Drive
- * Folder structure: MCU Files / Employee Name (ID)
+ * Folder structure: MCU Documents / Employee ID
  */
 async function getOrCreateEmployeeFolder(employeeId, employeeName) {
   const drive = initializeDriveClient();
 
-  const rootFolderName = 'MCU Files';
-  const employeeFolderName = `${employeeName} (${employeeId})`;
+  const rootFolderName = 'MCU Documents';
+  const employeeFolderName = employeeId; // Use just the ID as folder name
 
   try {
     // Find or create root folder
