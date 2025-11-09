@@ -710,99 +710,48 @@ export async function uploadBatchFiles(files, employeeId, mcuId, userId, onProgr
             return { success: true, uploadedCount: 0, failedCount: 0 };
         }
 
-        console.log(`📦 Uploading ${files.length} file(s) in batch for MCU ${mcuId}...`);
+        // Use server-side compression for all file uploads
+        const { uploadFilesWithServerCompression } = await import('./serverCompressionService.js');
 
-        const supabase = getSupabaseClient();
-        let uploadedCount = 0;
-        let failedCount = 0;
-        const uploadedFilesData = [];
-        const totalFiles = files.length;
+        console.log(`📦 Uploading ${files.length} file(s) with server-side compression for MCU ${mcuId}...`);
 
-        // Upload each file (sequential for better control, but could be optimized to parallel)
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            try {
-                // Report progress: starting
-                if (onProgress) {
-                    onProgress(i, totalFiles, `Preparing ${file.name}...`);
-                }
+        try {
+            const results = await uploadFilesWithServerCompression(
+                files,
+                employeeId,
+                mcuId,
+                onProgress
+            );
 
-                // Compress if applicable
-                const processedFile = await compressFile(file);
+            // Count successful and failed uploads
+            const uploadedCount = results.filter(r => r.success).length;
+            const failedCount = results.filter(r => !r.success).length;
 
-                // Report progress: compression done
-                if (onProgress) {
-                    onProgress(i, totalFiles, `Uploading ${file.name}...`);
-                }
-
-                // Generate storage path with mcuId
-                const storagePath = generateStoragePath(employeeId, mcuId, file.name);
-
-                console.log(`   📤 Uploading: ${file.name} (${i + 1}/${totalFiles})`);
-
-                // Upload to storage
-                const { data, error: uploadError } = await supabase.storage
-                    .from(BUCKET_NAME)
-                    .upload(storagePath, processedFile, {
-                        cacheControl: '3600',
-                        upsert: false
-                    });
-
-                if (uploadError) {
-                    console.error(`   ❌ Upload failed: ${file.name}`, uploadError);
-                    failedCount++;
-                    if (onProgress) {
-                        onProgress(i + 1, totalFiles, `Upload failed: ${file.name}`);
-                    }
-                    continue;
-                }
-
-                uploadedCount++;
-                uploadedFilesData.push({
-                    employeeid: employeeId,
-                    mcuid: mcuId,
-                    filename: file.name,
-                    filetype: file.type,
-                    filesize: file.size,
-                    supabase_storage_path: storagePath,
-                    uploadedby: userId
-                });
-
-                console.log(`   ✅ Uploaded: ${file.name} (${uploadedCount}/${totalFiles})`);
-
-                // Report progress: file uploaded
-                if (onProgress) {
-                    onProgress(i + 1, totalFiles, `Uploaded ${file.name}`);
-                }
-            } catch (error) {
-                console.error(`   ❌ Error with ${file.name}:`, error.message);
-                failedCount++;
-                if (onProgress) {
-                    onProgress(i + 1, totalFiles, `Error: ${file.name}`);
+            // Log compression stats for successful uploads
+            for (const result of results) {
+                if (result.success) {
+                    console.log(
+                        `✅ ${result.fileName}: ${result.originalSize} → ${result.compressedSize} bytes (${result.compressionRatio}% reduction)`
+                    );
+                } else {
+                    console.error(`❌ ${result.fileName}: ${result.error}`);
                 }
             }
+
+            return {
+                success: uploadedCount > 0,
+                uploadedCount,
+                failedCount,
+                message: `Uploaded ${uploadedCount} file(s)${failedCount > 0 ? `, ${failedCount} failed` : ''}`,
+                results
+            };
+        } catch (error) {
+            console.error('❌ Server compression error:', error.message);
+            return {
+                success: false,
+                error: error.message
+            };
         }
-
-        // Save all file metadata to database at once
-        if (uploadedFilesData.length > 0) {
-            const { error: insertError } = await supabase
-                .from('mcufiles')
-                .insert(uploadedFilesData);
-
-            if (insertError) {
-                console.error('❌ Database insert failed:', insertError);
-                throw new Error(`Database error: ${insertError.message}`);
-            }
-
-            console.log(`✅ Saved ${uploadedFilesData.length} file(s) to database`);
-        }
-
-        return {
-            success: true,
-            uploadedCount,
-            failedCount,
-            message: `Uploaded ${uploadedCount} file(s)${failedCount > 0 ? `, ${failedCount} failed` : ''}`
-        };
 
     } catch (error) {
         console.error('❌ Batch upload error:', error);

@@ -24,7 +24,11 @@
       "Bash(else)",
       "Bash(fi)",
       "Bash(done)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(sudo npm install:*)",
+      "Bash(VERCEL_TOKEN=tkGCL9AD5gr2qoJTZaCyoPMe npx vercel deploy:*)",
+      "Bash(~/.vercel/auth.json)",
+      "Bash(npx vercel deploy:*)"
     ],
     "deny": [],
     "ask": []
