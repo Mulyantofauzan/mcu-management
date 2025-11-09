@@ -144,13 +144,15 @@ async function uploadToGoogleDrive(fileBuffer, fileName, employeeId, employeeNam
 
     console.log(`📝 Creating file in Google Drive...`);
 
-    // Use direct buffer instead of stream to ensure proper handling
+    // Convert buffer to stream (googleapis requires stream, not buffer)
+    const fileStream = Readable.from(fileBuffer);
+
     const uploadResult = await drive.files.create(
       {
         resource: fileMetadata,
         media: {
           mimeType: mimeType,
-          body: fileBuffer
+          body: fileStream
         },
         fields: 'id, webViewLink, name, size, parents'
       },
