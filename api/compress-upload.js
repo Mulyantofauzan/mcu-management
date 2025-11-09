@@ -204,7 +204,7 @@ async function uploadToSupabase(compressedBuffer, fileName, employeeId, mcuId, f
     // After successful Supabase upload, upload original file to Google Drive
     let googleDriveInfo = null;
     try {
-      console.log(`📁 Uploading original to Google Drive...`);
+      console.log(`\n📁 Starting Google Drive upload...`);
       googleDriveInfo = await uploadToGoogleDrive(
         originalBuffer,
         fileName,
@@ -212,10 +212,18 @@ async function uploadToSupabase(compressedBuffer, fileName, employeeId, mcuId, f
         employeeId, // Use employeeId as name
         mimeType
       );
-      console.log(`✅ Uploaded to Google Drive: ${googleDriveInfo.link}`);
+      console.log(`\n✅ Google Drive upload successful: ${googleDriveInfo.link}`);
     } catch (gdError) {
-      console.error('⚠️ Warning: Supabase OK but Google Drive upload failed:', gdError.message);
+      console.error('\n⚠️ Warning: Supabase OK but Google Drive upload failed');
+      console.error(`   Error: ${gdError.message}`);
+      console.error(`   Continuing without Google Drive backup...`);
       // Don't fail - Supabase upload is already done
+      // Return partial info so client knows what succeeded
+      googleDriveInfo = {
+        fileId: null,
+        link: null,
+        error: gdError.message
+      };
     }
 
     // Save metadata to mcufiles table with both links

@@ -28,7 +28,8 @@
       "Bash(sudo npm install:*)",
       "Bash(VERCEL_TOKEN=tkGCL9AD5gr2qoJTZaCyoPMe npx vercel deploy:*)",
       "Bash(~/.vercel/auth.json)",
-      "Bash(npx vercel deploy:*)"
+      "Bash(npx vercel deploy:*)",
+      "Bash(vercel logs:*)"
     ],
     "deny": [],
     "ask": []

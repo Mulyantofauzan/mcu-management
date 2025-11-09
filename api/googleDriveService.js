@@ -121,43 +121,60 @@ async function uploadToGoogleDrive(fileBuffer, fileName, employeeId, employeeNam
   const drive = initializeDriveClient();
 
   try {
+    // Validate input
+    if (!fileBuffer || fileBuffer.length === 0) {
+      throw new Error('File buffer is empty');
+    }
+
+    console.log(`\n🔄 Starting Google Drive upload...`);
+    console.log(`   File: ${fileName}`);
+    console.log(`   Size: ${fileBuffer.length} bytes`);
+    console.log(`   MIME: ${mimeType}`);
+    console.log(`   Employee: ${employeeId}`);
+
     // Get or create employee folder
     const folderId = await getOrCreateEmployeeFolder(employeeId, employeeName);
-    console.log(`📁 Target folder ID: ${folderId}`);
+    console.log(`✅ Target folder ID: ${folderId}`);
 
-    // Upload file
+    // Upload file with proper metadata
     const fileMetadata = {
       name: fileName,
-      parents: [folderId],
-      properties: {
-        employee_id: employeeId,
-        employee_name: employeeName,
-        uploaded_at: new Date().toISOString()
+      parents: [folderId]
+    };
+
+    console.log(`📝 Creating file in Google Drive...`);
+
+    // Use direct buffer instead of stream to ensure proper handling
+    const uploadResult = await drive.files.create(
+      {
+        resource: fileMetadata,
+        media: {
+          mimeType: mimeType,
+          body: fileBuffer
+        },
+        fields: 'id, webViewLink, name, size, parents'
+      },
+      {
+        // Add retry logic for transient failures
+        maxRetries: 3,
+        retryDelay: 100
       }
-    };
+    );
 
-    console.log(`📝 File metadata: ${JSON.stringify(fileMetadata)}`);
-    console.log(`📦 File size: ${fileBuffer.length} bytes, MIME: ${mimeType}`);
-
-    const media = {
-      mimeType: mimeType,
-      body: Readable.from([fileBuffer])
-    };
-
-    console.log(`🚀 Starting Google Drive file upload...`);
-    const uploadResult = await drive.files.create({
-      resource: fileMetadata,
-      media: media,
-      fields: 'id, webViewLink, name, size'
-    });
+    if (!uploadResult.data || !uploadResult.data.id) {
+      throw new Error('Google Drive API returned no file ID');
+    }
 
     const googleDriveFileId = uploadResult.data.id;
     const googleDriveLink = uploadResult.data.webViewLink;
 
-    console.log(`✅ File uploaded to Google Drive!`);
-    console.log(`   ID: ${googleDriveFileId}`);
+    console.log(`\n✅ Successfully uploaded to Google Drive!`);
+    console.log(`   File ID: ${googleDriveFileId}`);
     console.log(`   Link: ${googleDriveLink}`);
-    console.log(`   Size: ${uploadResult.data.size} bytes`);
+    console.log(`   Name: ${uploadResult.data.name}`);
+    if (uploadResult.data.size) {
+      console.log(`   Size: ${uploadResult.data.size} bytes`);
+    }
 
     return {
       success: true,
@@ -167,9 +184,15 @@ async function uploadToGoogleDrive(fileBuffer, fileName, employeeId, employeeNam
       folderId: folderId
     };
   } catch (error) {
-    console.error('❌ Failed to upload to Google Drive:');
-    console.error('   Error message:', error.message);
-    console.error('   Error code:', error.code);
+    console.error('\n❌ Failed to upload to Google Drive:');
+    console.error(`   Error message: ${error.message}`);
+    if (error.code) {
+      console.error(`   Error code: ${error.code}`);
+    }
+    if (error.status) {
+      console.error(`   Status: ${error.status}`);
+    }
+    // Log full error for debugging
     console.error('   Full error:', JSON.stringify(error, null, 2));
     throw error;
   }
