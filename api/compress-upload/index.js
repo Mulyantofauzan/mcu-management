@@ -27,7 +27,7 @@ const ALLOWED_TYPES = {
   'image/png': 'image'
 };
 
-const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB - Google Drive has unlimited storage
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB max file size
 
 /**
  * Upload file directly to Google Drive (no compression)

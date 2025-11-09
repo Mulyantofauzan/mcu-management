@@ -36,11 +36,11 @@ export async function uploadFileWithServerCompression(file, employeeId, mcuId, o
       );
     }
 
-    // Validate file size (100MB max - Google Drive limit)
-    const maxSize = 100 * 1024 * 1024;
+    // Validate file size (5MB max)
+    const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
       throw new Error(
-        `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max size is 100MB per file`
+        `File terlalu besar (${(file.size / 1024 / 1024).toFixed(1)}MB). Maksimal file 5MB per file`
       );
     }
 
