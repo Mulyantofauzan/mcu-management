@@ -102,7 +102,7 @@ export async function uploadFileToSupabase(file, employeeId, mcuId, onProgress =
       });
 
       // Send request to API
-      const apiUrl = 'https://api-9r36y39a5-adels-projects-5899a1ad.vercel.app/api/compress-upload';
+      const apiUrl = 'https://api-ohnav4uq4-adels-projects-5899a1ad.vercel.app/api/compress-upload';
       console.log(`🔗 Uploading to: ${apiUrl}`);
 
       xhr.open('POST', apiUrl);
