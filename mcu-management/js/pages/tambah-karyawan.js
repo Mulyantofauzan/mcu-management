@@ -424,13 +424,10 @@ window.handleAddMCU = async function(event) {
             initialNotes: document.getElementById('mcu-notes').value
         };
 
-        const createdMCU = await mcuService.create(mcuData, currentUser);
-
-        showToast('MCU berhasil ditambahkan!', 'success');
-
-        // Upload all pending files to storage and database
+        // Check if there are files to upload
         const pendingFiles = tempFileStorage.getFiles(mcuData.mcuId);
 
+        // If there are files, upload them FIRST before saving MCU
         if (pendingFiles && pendingFiles.length > 0) {
             console.log(`📦 Uploading ${pendingFiles.length} file(s) for MCU ${mcuData.mcuId}...`);
 
@@ -451,16 +448,24 @@ window.handleAddMCU = async function(event) {
                 }
             );
 
-            if (uploadResult.success) {
-                if (uploadResult.uploadedCount > 0) {
-                    showToast(`✅ ${uploadResult.uploadedCount} file(s) uploaded successfully`, 'success');
-                }
-                // Clear temporary files after successful upload
-                tempFileStorage.clearFiles(mcuData.mcuId);
-            } else {
-                showToast(`❌ File upload error: ${uploadResult.error}`, 'error');
+            // Check if upload was completely successful
+            if (!uploadResult.success || uploadResult.uploadedCount === 0) {
+                showToast(`❌ File upload failed: ${uploadResult.error}. MCU data tidak disimpan.`, 'error');
+                return; // Don't save MCU if files failed to upload
             }
+
+            if (uploadResult.uploadedCount > 0) {
+                showToast(`✅ ${uploadResult.uploadedCount} file(s) uploaded successfully`, 'success');
+            }
+
+            // Clear temporary files after successful upload
+            tempFileStorage.clearFiles(mcuData.mcuId);
         }
+
+        // NOW save MCU data after files are successfully uploaded (or if no files)
+        const createdMCU = await mcuService.create(mcuData, currentUser);
+
+        showToast('MCU berhasil ditambahkan!', 'success');
 
         // Make form read-only after successful save
         disableMCUForm();
