@@ -9,7 +9,7 @@
 ## 📊 What Was Deployed
 
 ### 1. **API Endpoint** (Vercel)
-- **URL**: `https://api-ptueayq0c-adels-projects-5899a1ad.vercel.app/api/compress-upload`
+- **URL**: `/api/compress-upload` (relative path, same Vercel deployment)
 - **Function**: Receives files, compresses them (PDF + images), uploads to Supabase
 - **Framework**: Node.js 20.x on Vercel Serverless Functions
 - **Dependencies**: sharp, pako, busboy, @supabase/supabase-js
@@ -39,7 +39,7 @@ Clicks "Simpan MCU" (Save)
     ↓
 uploadBatchFiles() is called
     ↓
-Files sent to Vercel API endpoint (https://api-ptueayq0c...)
+Files sent to Vercel API endpoint (/api/compress-upload)
     ↓
 API Compresses:
   - PDFs via gzip (50-70% reduction)
@@ -210,7 +210,9 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ### API Configuration:
 ```javascript
 // In serverCompressionService.js, line 110:
-const apiUrl = 'https://api-ptueayq0c-adels-projects-5899a1ad.vercel.app/api/compress-upload';
+// Uses relative path - no need for absolute URL
+// Automatically routes to /api/compress-upload on same Vercel deployment
+const apiUrl = '/api/compress-upload';
 ```
 
 ---
