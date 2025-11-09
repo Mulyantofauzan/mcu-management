@@ -252,10 +252,38 @@ export async function deleteOrphanedFiles(mcuId, employeeId) {
   return { success: true, deletedCount: 0 };
 }
 
+/**
+ * Delete file from storage (stub for compatibility)
+ * Placeholder for potential future deletion functionality
+ */
+export async function deleteFile(fileId, mcuId) {
+  console.log('deleteFile: File deletion not yet implemented in Supabase Storage');
+  return { success: true };
+}
+
+/**
+ * Upload single file (alias for uploadFileToSupabase for compatibility)
+ */
+export async function uploadFile(file, employeeId, mcuId, onProgress) {
+  return uploadFileToSupabase(file, employeeId, mcuId, onProgress);
+}
+
+/**
+ * Get files by MCU (stub for compatibility)
+ * Files are retrieved from database with MCU metadata
+ */
+export async function getFilesByMCU(mcuId) {
+  console.log('getFilesByMCU: Files can be retrieved from mcufiles table with mcuId filter');
+  return { success: true, files: [] };
+}
+
 export default {
   uploadFileToSupabase,
   uploadFilesToSupabase,
   uploadBatchFiles,
   saveUploadedFilesMetadata,
-  deleteOrphanedFiles
+  deleteOrphanedFiles,
+  deleteFile,
+  uploadFile,
+  getFilesByMCU
 };
