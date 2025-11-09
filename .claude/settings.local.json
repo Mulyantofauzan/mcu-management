@@ -32,7 +32,8 @@
       "Bash(vercel logs:*)",
       "Bash(git push:*)",
       "Bash(npm install:*)",
-      "Bash(npx vercel logs:*)"
+      "Bash(npx vercel logs:*)",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []
