@@ -30,13 +30,24 @@ npm install
 
 ## Deployment to Vercel (5 minutes)
 
-```bash
-vercel deploy
-```
+**Option 1: Web Dashboard (Recommended)**
+1. Go to https://vercel.com and sign in
+2. Click "Add New Project"
+3. Select your GitHub repository (MCU-APP)
+4. Click "Deploy"
+5. Vercel will auto-deploy on every push
 
+**Option 2: CLI with Token**
+```bash
+VERCEL_TOKEN=your_token npx vercel deploy --prod
+```
+(Get token from https://vercel.com/account/tokens)
+
+**Checklist**:
 - [ ] Vercel deployment successful
 - [ ] No build errors
-- [ ] Environment variables set
+- [ ] Environment variables set (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+- [ ] API endpoint accessible at https://your-domain.vercel.app/api/compress-upload
 
 ## Frontend Integration (15 minutes)
 
