@@ -1,0 +1,66 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Testing
+coverage
+
+# Build outputs
+dist
+build
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Misc
+.DS_Store
+*.pem
+
+# Documentation & Config
+*.md
+.firebaserc
+wrangler.toml
+firebase.json
+.claude
+*.sql
+APPLY_MIGRATION_INSTRUCTIONS.md
+ACTIVITY_LOG*.md
+BUILD_*.md
+CLEANUP*.md
+CLOUDFLARE*.md
+COMPLIANCE_ANALYSIS.md
+DATABASE_MIGRATION_GUIDE.md
+DEPLOYMENT*.md
+DOCTORS_FEATURE_SETUP.md
+FEATURE_*.md
+FILE-UPLOAD*.md
+FIREBASE_*.md
+FIX_*.md
+GOOGLE_DRIVE_SETUP.md
+IMPLEMENTATION_STATUS.md
+INTEGRATION_GUIDE.md
+MASALAH_*.md
+MCU_COMPREHENSIVE_ANALYSIS.md
+MIGRATION_*.md
+NEXT_STEPS*.md
+PERBAIKAN*.md
+PHASE_*.md
+PRODUCTION_IMPROVEMENTS.md
+PROJECT_STATUS*.md
+QUICK*.md
+README*.md
+RLS-*.md
+SECURITY_IMPLEMENTATION_PLAN.md
+SESSION*.md
+START_HERE*.md
+SUPABASE*.md
+SYSTEM_ANALYSIS*.md
+UNBLOCK*.md
+VERCEL*.md
+WEEK1*.md
+_headers
