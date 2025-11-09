@@ -123,6 +123,7 @@ async function uploadToGoogleDrive(fileBuffer, fileName, employeeId, employeeNam
   try {
     // Get or create employee folder
     const folderId = await getOrCreateEmployeeFolder(employeeId, employeeName);
+    console.log(`📁 Target folder ID: ${folderId}`);
 
     // Upload file
     const fileMetadata = {
@@ -135,11 +136,15 @@ async function uploadToGoogleDrive(fileBuffer, fileName, employeeId, employeeNam
       }
     };
 
+    console.log(`📝 File metadata: ${JSON.stringify(fileMetadata)}`);
+    console.log(`📦 File size: ${fileBuffer.length} bytes, MIME: ${mimeType}`);
+
     const media = {
       mimeType: mimeType,
       body: Readable.from([fileBuffer])
     };
 
+    console.log(`🚀 Starting Google Drive file upload...`);
     const uploadResult = await drive.files.create({
       resource: fileMetadata,
       media: media,
@@ -149,7 +154,10 @@ async function uploadToGoogleDrive(fileBuffer, fileName, employeeId, employeeNam
     const googleDriveFileId = uploadResult.data.id;
     const googleDriveLink = uploadResult.data.webViewLink;
 
-    console.log(`✅ File uploaded to Google Drive: ${googleDriveLink}`);
+    console.log(`✅ File uploaded to Google Drive!`);
+    console.log(`   ID: ${googleDriveFileId}`);
+    console.log(`   Link: ${googleDriveLink}`);
+    console.log(`   Size: ${uploadResult.data.size} bytes`);
 
     return {
       success: true,
@@ -159,7 +167,10 @@ async function uploadToGoogleDrive(fileBuffer, fileName, employeeId, employeeNam
       folderId: folderId
     };
   } catch (error) {
-    console.error('❌ Failed to upload to Google Drive:', error.message);
+    console.error('❌ Failed to upload to Google Drive:');
+    console.error('   Error message:', error.message);
+    console.error('   Error code:', error.code);
+    console.error('   Full error:', JSON.stringify(error, null, 2));
     throw error;
   }
 }
