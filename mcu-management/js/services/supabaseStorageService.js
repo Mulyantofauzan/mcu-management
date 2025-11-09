@@ -710,10 +710,10 @@ export async function uploadBatchFiles(files, employeeId, mcuId, userId, onProgr
             return { success: true, uploadedCount: 0, failedCount: 0 };
         }
 
-        // Use server-side compression for all file uploads
+        // Upload files to Google Drive
         const { uploadFilesWithServerCompression } = await import('./serverCompressionService.js');
 
-        console.log(`📦 Uploading ${files.length} file(s) with server-side compression for MCU ${mcuId}...`);
+        console.log(`📤 Uploading ${files.length} file(s) to Google Drive for MCU ${mcuId}...`);
 
         try {
             const results = await uploadFilesWithServerCompression(
@@ -727,12 +727,13 @@ export async function uploadBatchFiles(files, employeeId, mcuId, userId, onProgr
             const uploadedCount = results.filter(r => r.success).length;
             const failedCount = results.filter(r => !r.success).length;
 
-            // Log compression stats for successful uploads
+            // Log upload results
             for (const result of results) {
                 if (result.success) {
                     console.log(
-                        `✅ ${result.fileName}: ${result.originalSize} → ${result.compressedSize} bytes (${result.compressionRatio}% reduction)`
+                        `✅ ${result.fileName} (${(result.originalSize / 1024 / 1024).toFixed(1)}MB) → Google Drive`
                     );
+                    console.log(`   Link: ${result.googleDriveLink}`);
                 } else {
                     console.error(`❌ ${result.fileName}: ${result.error}`);
                 }
@@ -746,7 +747,7 @@ export async function uploadBatchFiles(files, employeeId, mcuId, userId, onProgr
                 results
             };
         } catch (error) {
-            console.error('❌ Server compression error:', error.message);
+            console.error('❌ Google Drive upload error:', error.message);
             return {
                 success: false,
                 error: error.message

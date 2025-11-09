@@ -29,7 +29,8 @@
       "Bash(VERCEL_TOKEN=tkGCL9AD5gr2qoJTZaCyoPMe npx vercel deploy:*)",
       "Bash(~/.vercel/auth.json)",
       "Bash(npx vercel deploy:*)",
-      "Bash(vercel logs:*)"
+      "Bash(vercel logs:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
