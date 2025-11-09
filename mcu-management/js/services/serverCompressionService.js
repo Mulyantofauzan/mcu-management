@@ -106,11 +106,13 @@ export async function uploadFileWithServerCompression(file, employeeId, mcuId, o
       });
 
       // Send request to compression API
-      // Use Vercel API endpoint for server-side compression
-      const apiUrl = 'https://api-ptueayq0c-adels-projects-5899a1ad.vercel.app/api/compress-upload';
+      // Use relative path (same Vercel deployment, no CORS issues)
+      const apiUrl = '/api/compress-upload';
       console.log(`🔗 Uploading to: ${apiUrl}`);
 
       xhr.open('POST', apiUrl);
+      // Note: Don't set Content-Type header when using FormData
+      // Browser will automatically set it with boundary
       xhr.send(formData);
     });
   } catch (error) {
