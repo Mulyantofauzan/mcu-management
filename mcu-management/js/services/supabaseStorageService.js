@@ -270,15 +270,38 @@ export async function uploadFile(file, employeeId, mcuId, onProgress) {
 
 /**
  * Get files by MCU
- * Retrieves files from mcufiles table filtered by mcuId
+ * Retrieves files from mcufiles table via API endpoint
  */
 export async function getFilesByMCU(mcuId) {
   try {
-    // Note: This is a stub because frontend doesn't have direct database access
-    // Backend should provide this via API endpoint, or we need Supabase client initialization
-    // For now, return empty array - actual implementation requires backend API
-    console.log(`getFilesByMCU: Query files for MCU ${mcuId} from mcufiles table`);
-    return { success: true, files: [] };
+    if (!mcuId) {
+      console.warn('⚠️ getFilesByMCU: Missing mcuId');
+      return { success: true, files: [] };
+    }
+
+    const apiUrl = 'https://api-ohnav4uq4-adels-projects-5899a1ad.vercel.app/api/get-mcu-files';
+    console.log(`📂 Fetching files for MCU: ${mcuId}`);
+
+    const response = await fetch(`${apiUrl}?mcuId=${encodeURIComponent(mcuId)}`);
+
+    if (!response.ok) {
+      console.error(`⚠️ API error: ${response.status}`);
+      return { success: false, files: [], error: `HTTP ${response.status}` };
+    }
+
+    const result = await response.json();
+
+    if (!result.success) {
+      console.error(`⚠️ API returned error: ${result.error}`);
+      return { success: false, files: [], error: result.error };
+    }
+
+    console.log(`✅ Retrieved ${result.files?.length || 0} file(s) for MCU ${mcuId}`);
+    return {
+      success: true,
+      files: result.files || [],
+      count: result.count || 0
+    };
   } catch (error) {
     console.error('❌ Error getting files:', error.message);
     return { success: false, files: [], error: error.message };
