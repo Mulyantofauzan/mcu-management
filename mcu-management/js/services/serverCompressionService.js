@@ -37,11 +37,11 @@ export async function uploadFileWithServerCompression(file, employeeId, mcuId, o
       );
     }
 
-    // Validate file size (10MB max)
-    const maxSize = 10 * 1024 * 1024;
+    // Validate file size (2MB max - Vercel serverless limit)
+    const maxSize = 2 * 1024 * 1024;
     if (file.size > maxSize) {
       throw new Error(
-        `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max size is ${maxSize / 1024 / 1024}MB`
+        `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max size is 2MB per file`
       );
     }
 

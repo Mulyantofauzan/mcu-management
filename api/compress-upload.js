@@ -44,7 +44,7 @@ const ALLOWED_TYPES = {
   'image/png': 'image'
 };
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB max
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB max per file (Vercel serverless limit)
 
 /**
  * Compress PDF file using pdf-lib
