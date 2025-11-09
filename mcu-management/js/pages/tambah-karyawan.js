@@ -393,6 +393,12 @@ window.handleAddMCU = async function(event) {
     try {
         const currentUser = authService.getCurrentUser();
 
+        // Get doctor name from selected doctor ID
+        const doctorSelect = document.getElementById('mcu-doctor');
+        const selectedDoctorId = doctorSelect.value;
+        const selectedDoctor = doctors.find(d => d.id == selectedDoctorId);
+        const doctorName = selectedDoctor ? selectedDoctor.name : null;
+
         const mcuData = {
             mcuId: generatedMCUIdForAdd,  // Use pre-generated ID
             employeeId: document.getElementById('mcu-employee-id').value,
@@ -415,7 +421,7 @@ window.handleAddMCU = async function(event) {
             sgpt: document.getElementById('mcu-sgpt').value || null,
             cbc: document.getElementById('mcu-cbc').value || null,
             napza: document.getElementById('mcu-napza').value || null,
-            doctor: document.getElementById('mcu-doctor').value || null,
+            doctor: doctorName,
             recipient: document.getElementById('mcu-recipient').value || null,
             keluhanUtama: document.getElementById('mcu-keluhan').value || null,
             diagnosisKerja: document.getElementById('mcu-diagnosis').value || null,
