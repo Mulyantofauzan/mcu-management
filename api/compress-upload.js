@@ -147,14 +147,17 @@ async function uploadToSupabase(compressedBuffer, fileName, employeeId, mcuId, f
     console.log(`📤 Uploading to Supabase: ${storagePath}`);
 
     // Upload to Supabase Storage
+    // Keep original MIME type even though file is compressed
+    // (Supabase doesn't support application/gzip)
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('mcu-documents')
       .upload(storagePath, compressedBuffer, {
-        contentType: fileType === 'pdf' ? 'application/gzip' : mimeType,
+        contentType: mimeType, // Use original MIME type
         upsert: false,
         metadata: {
           original_filename: fileName,
-          compressed: true
+          compressed: true,
+          compression_method: fileType === 'pdf' ? 'gzip' : 'sharp'
         }
       });
 
@@ -177,7 +180,7 @@ async function uploadToSupabase(compressedBuffer, fileName, employeeId, mcuId, f
         mcuid: mcuId,
         employeeid: employeeId,
         filename: fileName,
-        filetype: fileType === 'pdf' ? 'application/gzip' : mimeType,
+        filetype: mimeType, // Use original MIME type
         filesize: compressedBuffer.byteLength,
         uploadedat: new Date().toISOString(),
         uploadedby: 'system',
