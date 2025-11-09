@@ -51,8 +51,9 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB max
  */
 async function compressPDF(buffer) {
   try {
-    // Use pako for gzip compression
-    const compressed = pako.gzip(buffer);
+    // Use pako for gzip compression with maximum compression level (9)
+    // This provides better compression ratio for already-compressed PDFs
+    const compressed = pako.gzip(buffer, { level: 9 });
     const originalSize = buffer.byteLength;
     const compressedSize = compressed.length;
     const ratio = Math.round((1 - compressedSize / originalSize) * 100);
