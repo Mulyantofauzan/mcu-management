@@ -245,7 +245,7 @@ export class FileUploadWidget {
                     <div class="upload-zone-icon">📁</div>
                     <p class="upload-zone-text">
                         Click to select file or drag & drop
-                        <small>PDF, JPG, PNG, DOC, DOCX (Max 10MB)</small>
+                        <small>PDF, JPG, PNG (Max 2MB per file)</small>
                     </p>
                 </div>
 

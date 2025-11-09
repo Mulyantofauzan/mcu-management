@@ -13,7 +13,7 @@
 import { getSupabaseClient, isSupabaseEnabled } from '../config/supabase.js';
 
 const BUCKET_NAME = 'mcu-documents';
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per file
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB per file (Vercel serverless limit)
 // Only PDF and images allowed
 const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
 
