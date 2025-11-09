@@ -53,7 +53,9 @@ export class FileListViewer {
      */
     async loadFiles() {
         try {
-            this.files = await getFilesByMCU(this.options.mcuId);
+            const result = await getFilesByMCU(this.options.mcuId);
+            // Handle both array and object response formats
+            this.files = Array.isArray(result) ? result : (result?.files || []);
         } catch (error) {
             console.error('❌ FileListViewer: Error loading files:', error.message);
             this.files = [];
