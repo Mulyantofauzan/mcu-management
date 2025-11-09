@@ -106,8 +106,8 @@ export async function uploadFileWithServerCompression(file, employeeId, mcuId, o
       });
 
       // Send request to compression API
-      // Use relative path (same Vercel deployment, no CORS issues)
-      const apiUrl = '/api/compress-upload';
+      // Use absolute URL since frontend is on Cloudflare and API is on Vercel
+      const apiUrl = 'https://api-nugi5xtoz-adels-projects-5899a1ad.vercel.app/api/compress-upload';
       console.log(`🔗 Uploading to: ${apiUrl}`);
 
       xhr.open('POST', apiUrl);
