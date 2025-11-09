@@ -95,14 +95,21 @@ module.exports = async (req, res) => {
     let file = null;
     let fields = {};
     let completed = false;
+    let error_occurred = false;
 
     return new Promise((resolve) => {
       bb.on('file', (fieldname, fileStream, info) => {
+        if (error_occurred) {
+          fileStream.resume();
+          return;
+        }
+
         const { filename, encoding, mimeType } = info;
 
         // Check file type
         if (!ALLOWED_TYPES[mimeType]) {
           fileStream.resume();
+          error_occurred = true;
           return res.status(400).json({
             error: 'File type not allowed. Only PDF and images (JPG/PNG) allowed.'
           });
@@ -115,6 +122,7 @@ module.exports = async (req, res) => {
           size += data.length;
           if (size > MAX_FILE_SIZE) {
             fileStream.destroy();
+            error_occurred = true;
             return res.status(413).json({
               error: `File too large. Max size: ${MAX_FILE_SIZE / 1024 / 1024}MB`
             });
@@ -132,6 +140,8 @@ module.exports = async (req, res) => {
         });
 
         fileStream.on('error', (error) => {
+          error_occurred = true;
+          console.error('❌ File stream error:', error.message);
           return res.status(400).json({
             error: `File stream error: ${error.message}`
           });
@@ -143,7 +153,7 @@ module.exports = async (req, res) => {
       });
 
       bb.on('close', async () => {
-        if (completed) return;
+        if (completed || error_occurred) return;
         completed = true;
 
         try {
@@ -209,6 +219,7 @@ module.exports = async (req, res) => {
           });
         } catch (error) {
           console.error('❌ Error:', error.message);
+          console.error('❌ Stack:', error.stack);
           return res.status(500).json({
             error: error.message || 'Internal server error'
           });
@@ -216,6 +227,8 @@ module.exports = async (req, res) => {
       });
 
       bb.on('error', (error) => {
+        console.error('❌ Busboy error:', error.message);
+        error_occurred = true;
         return res.status(400).json({
           error: `Form parsing error: ${error.message}`
         });
@@ -225,6 +238,7 @@ module.exports = async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Unhandled error:', error.message);
+    console.error('❌ Stack:', error.stack);
     return res.status(500).json({
       error: 'Internal server error'
     });
