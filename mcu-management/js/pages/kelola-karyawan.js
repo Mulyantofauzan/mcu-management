@@ -854,9 +854,9 @@ window.handleAddMCU = async function(event) {
 
 window.viewMCUDetail = async function(mcuId) {
     try {
-        // Pastikan master data sudah loaded (termasuk doctors)
+        // ✅ FIX: Ensure master data is loaded (including doctors) before displaying
         if (!doctors || doctors.length === 0) {
-            await loadMasterData();
+            doctors = await masterDataService.getAllDoctors();
         }
 
         const mcu = await mcuService.getById(mcuId);
@@ -936,11 +936,9 @@ window.viewMCUDetail = async function(mcuId) {
 
         if (doctor) {
             document.getElementById('mcu-detail-doctor').textContent = doctor.name;
-            console.log(`✅ Found doctor: ${doctor.name} (ID: ${mcu.doctor})`);
         } else if (mcu.doctor) {
             // Doctor ID is set but not found in list - show ID as fallback
-            console.warn(`⚠️ Doctor ID ${mcu.doctor} not found in doctors list`);
-            document.getElementById('mcu-detail-doctor').textContent = `ID: ${mcu.doctor} (tidak ditemukan)`;
+            document.getElementById('mcu-detail-doctor').textContent = `ID: ${mcu.doctor}`;
         } else {
             // No doctor assigned
             document.getElementById('mcu-detail-doctor').textContent = '-';

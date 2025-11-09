@@ -30,13 +30,10 @@ async function triggerEdgeFunctionCompression(filePath, mimeType) {
     try {
         // Only trigger for PDFs
         if (mimeType !== 'application/pdf') {
-            console.log(`⏭️ Skipping Edge Function: ${mimeType} is not a PDF`);
             return { skipped: true };
         }
 
         const supabase = getSupabaseClient();
-
-        console.log(`🔄 Calling compress-pdf Edge Function for: ${filePath}`);
 
         // Call the Edge Function
         const { data, error } = await supabase.functions.invoke('compress-pdf', {
@@ -49,14 +46,13 @@ async function triggerEdgeFunctionCompression(filePath, mimeType) {
         });
 
         if (error) {
-            console.warn(`⚠️ Edge Function error (compression skipped): ${error.message}`);
+            console.warn(`⚠️ Compression error: ${error.message}`);
             return { success: false, error: error.message };
         }
 
-        console.log(`✅ Edge Function response:`, data);
         return { success: true, data };
     } catch (error) {
-        console.warn(`⚠️ Failed to call Edge Function (compression skipped): ${error.message}`);
+        console.warn(`⚠️ Compression failed: ${error.message}`);
         // Don't throw - compression is optional, upload already succeeded
         return { success: false, error: error.message };
     }
@@ -75,7 +71,6 @@ function getPakoReady() {
     pakoInitPromise = new Promise((resolve, reject) => {
         // If pako already loaded, resolve immediately
         if (typeof window.pako !== 'undefined' && window.pako.gzip) {
-            console.log('✅ Pako already loaded');
             resolve(window.pako);
             return;
         }
@@ -96,7 +91,6 @@ function getPakoReady() {
             attempts++;
             if (typeof window.pako !== 'undefined' && window.pako.gzip) {
                 clearInterval(checkPako);
-                console.log(`✅ Pako loaded after ${attempts * 100}ms`);
                 resolve(window.pako);
                 return;
             }
@@ -409,13 +403,10 @@ export async function deleteFile(fileid) {
 export async function getFilesByMCU(mcuId) {
     try {
         if (!isSupabaseEnabled()) {
-            console.warn('⚠️ getFilesByMCU: Supabase not enabled');
             return [];
         }
 
         const supabase = getSupabaseClient();
-
-        console.log(`🔍 getFilesByMCU: Querying files for MCU ID: "${mcuId}"`);
 
         const { data, error } = await supabase
             .from('mcufiles')
@@ -425,20 +416,13 @@ export async function getFilesByMCU(mcuId) {
             .order('uploadedat', { ascending: false });
 
         if (error) {
-            console.error('❌ getFilesByMCU: Query error:', error.message);
-            console.error('   Error details:', error);
+            console.error('❌ Error loading files for MCU:', error.message);
             return [];
         }
 
-        console.log(`✅ getFilesByMCU: Found ${data?.length || 0} file(s) for MCU "${mcuId}"`);
-        if (data && data.length > 0) {
-            data.forEach((file, idx) => {
-                console.log(`   [${idx}] ${file.filename} (${file.filesize} bytes, uploaded: ${file.uploadedat})`);
-            });
-        }
         return data || [];
     } catch (error) {
-        console.error('❌ Get files error:', error);
+        console.error('❌ Error loading files:', error.message);
         return [];
     }
 }
