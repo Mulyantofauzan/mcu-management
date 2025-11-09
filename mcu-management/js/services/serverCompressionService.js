@@ -1,23 +1,22 @@
 /**
- * Server-Side Compression Service
+ * Google Drive Upload Service
  *
- * Uploads files to /api/compress-upload which handles:
- * - PDF compression (gzip, 50-70% reduction)
- * - Image compression (sharp quality 70%, 60-80% reduction)
- * - Automatic Supabase storage upload
- * - Metadata persistence
+ * Uploads files directly to Google Drive (via /api/compress-upload endpoint):
+ * - No compression (Google Drive has unlimited storage)
+ * - Files stored per-employee folder structure
+ * - Metadata saved in Supabase for easy reference
  *
  * Usage:
- * const result = await serverCompressionService.uploadFile(file, employeeId, mcuId, progressCallback);
+ * const result = await uploadFileWithServerCompression(file, employeeId, mcuId, progressCallback);
  */
 
 /**
- * Upload file to server for compression and storage
+ * Upload file directly to Google Drive
  * @param {File} file - File object from input
  * @param {string} employeeId - Employee ID
  * @param {string} mcuId - MCU ID
  * @param {Function} onProgress - Optional progress callback (current, total)
- * @returns {Promise<Object>} Upload result with compression stats
+ * @returns {Promise<Object>} Upload result with Google Drive link
  */
 export async function uploadFileWithServerCompression(file, employeeId, mcuId, onProgress = null) {
   try {
@@ -37,11 +36,11 @@ export async function uploadFileWithServerCompression(file, employeeId, mcuId, o
       );
     }
 
-    // Validate file size (2MB max - Vercel serverless limit)
-    const maxSize = 2 * 1024 * 1024;
+    // Validate file size (100MB max - Google Drive limit)
+    const maxSize = 100 * 1024 * 1024;
     if (file.size > maxSize) {
       throw new Error(
-        `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max size is 2MB per file`
+        `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max size is 100MB per file`
       );
     }
 
@@ -71,17 +70,15 @@ export async function uploadFileWithServerCompression(file, employeeId, mcuId, o
         if (xhr.status === 200) {
           try {
             const response = JSON.parse(xhr.responseText);
-            console.log(`✅ File compressed and uploaded successfully:`, response);
+            console.log(`✅ File uploaded to Google Drive successfully:`, response);
             resolve({
               success: true,
               fileName: file.name,
-              originalSize: response.file.originalSize,
-              compressedSize: response.file.compressedSize,
-              compressionRatio: response.file.compressionRatio,
+              originalSize: response.file.size,
               type: response.file.type,
-              uploadUrl: response.upload.originalUrl,
-              storagePath: response.upload.storagePath,
-              fileId: response.upload.fileId,
+              googleDriveLink: response.googleDrive.link,
+              googleDriveFileId: response.googleDrive.fileId,
+              googleDriveFolderId: response.googleDrive.folderId,
               message: response.message
             });
           } catch (error) {
@@ -187,45 +184,7 @@ export async function uploadFilesWithServerCompression(
   return results;
 }
 
-/**
- * Get compression stats for a file without uploading
- * (For previewing compression benefit)
- */
-export async function estimateCompressionRatio(file) {
-  try {
-    // This is a rough estimate based on file type
-    // PDF: 50-70% reduction
-    // JPG: 20-40% reduction (already compressed)
-    // PNG: 60-80% reduction
-
-    let estimatedRatio = 0;
-
-    if (file.type === 'application/pdf') {
-      // PDFs typically compress well with gzip (50-70%)
-      estimatedRatio = 55; // Conservative estimate
-    } else if (file.type === 'image/png') {
-      // PNG compresses well (60-80%)
-      estimatedRatio = 70;
-    } else if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
-      // JPG already compressed, less benefit (20-40%)
-      estimatedRatio = 30;
-    }
-
-    const estimatedSize = Math.round(file.size * (1 - estimatedRatio / 100));
-
-    return {
-      originalSize: file.size,
-      estimatedSize,
-      estimatedRatio
-    };
-  } catch (error) {
-    console.error('Error estimating compression:', error.message);
-    return null;
-  }
-}
-
 export default {
   uploadFileWithServerCompression,
-  uploadFilesWithServerCompression,
-  estimateCompressionRatio
+  uploadFilesWithServerCompression
 };

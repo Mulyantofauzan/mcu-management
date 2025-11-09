@@ -1,43 +1,24 @@
 /**
- * Server-Side File Compression & Dual Upload API
+ * File Upload API - Google Drive Primary Storage
  * Endpoint: POST /api/compress-upload
  *
- * Handles multipart/form-data file uploads with automatic compression:
- * - PDF files: Compress using pdf-lib (reduce stream, compress streams, remove redundancy)
- * - Images (JPG/PNG): Compress using sharp (quality 70%)
- * - Upload compressed file to Supabase Storage (as backup)
- * - Upload original file to Google Drive (per-employee folder)
- *
- * This ensures minimal storage usage while maintaining backup in Google Drive
+ * Simplified flow:
+ * - Accept file upload from client
+ * - Store file directly in Google Drive (per-employee folder)
+ * - Save Google Drive link + metadata in Supabase
+ * - No compression (unlimited Google Drive storage)
  */
 
 const { createClient } = require('@supabase/supabase-js');
-const sharp = require('sharp');
-const pako = require('pako');
-const { PDFDocument } = require('pdf-lib');
-const { Readable } = require('stream');
 const busboy = require('busboy');
 const { v4: uuid } = require('uuid');
-const { uploadToGoogleDrive } = require('./googleDriveService');
+const { uploadToGoogleDrive } = require('../googleDriveService');
 
 // Initialize Supabase client
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
-
-// Compression settings
-const COMPRESSION_CONFIG = {
-  pdf: {
-    quality: 'high', // Using pako for gzip compression
-    type: 'gzip'
-  },
-  image: {
-    quality: 70,      // Sharp quality 70%
-    progressive: true, // Progressive encoding
-    mozjpeg: true      // Better compression
-  }
-};
 
 const ALLOWED_TYPES = {
   'application/pdf': 'pdf',
@@ -46,223 +27,47 @@ const ALLOWED_TYPES = {
   'image/png': 'image'
 };
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB max per file (Vercel serverless limit)
+const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB - Google Drive has unlimited storage
 
 /**
- * Compress PDF file using pdf-lib
- * Reduces size by 50-70% by removing redundancy and compressing streams
+ * Upload file directly to Google Drive (no compression)
+ * Save metadata to Supabase for reference
  */
-async function compressPDF(buffer) {
+async function saveFileMetadata(fileName, employeeId, mcuId, fileSize, mimeType, googleDriveInfo) {
   try {
-    const originalSize = buffer.byteLength;
-
-    // Load PDF with pdf-lib
-    const pdfDoc = await PDFDocument.load(buffer, { ignoreEncryption: true });
-
-    // Enable compression for all streams
-    pdfDoc.setCompression(true);
-
-    // Compress the document
-    const compressedBuffer = await pdfDoc.save({ useObjectStreams: true });
-
-    const compressedSize = compressedBuffer.length;
-    const ratio = Math.round((1 - compressedSize / originalSize) * 100);
-
-    console.log(`📦 PDF Compressed: ${(originalSize / 1024).toFixed(1)}KB → ${(compressedSize / 1024).toFixed(1)}KB (${ratio}% reduction)`);
-
-    return {
-      buffer: compressedBuffer,
-      originalSize,
-      compressedSize,
-      ratio,
-      format: 'pdf-compressed'
+    const fileRecord = {
+      fileid: uuid(),
+      mcuid: mcuId,
+      employeeid: employeeId,
+      filename: fileName,
+      filetype: mimeType,
+      filesize: fileSize,
+      google_drive_file_id: googleDriveInfo.fileId,
+      google_drive_link: googleDriveInfo.link,
+      google_drive_folder_id: googleDriveInfo.folderId,
+      uploadedat: new Date().toISOString(),
+      uploadedby: 'system',
+      createdat: new Date().toISOString(),
+      updatedat: new Date().toISOString()
     };
-  } catch (error) {
-    console.error('⚠️ PDF compression with pdf-lib failed, falling back to gzip:', error.message);
 
-    // Fallback to gzip if pdf-lib compression fails
-    try {
-      const originalSize = buffer.byteLength;
-      const compressed = pako.gzip(buffer, { level: 9 });
-      const compressedSize = compressed.length;
-      const ratio = Math.round((1 - compressedSize / originalSize) * 100);
-
-      return {
-        buffer: compressed,
-        originalSize,
-        compressedSize,
-        ratio,
-        format: 'gzip-fallback'
-      };
-    } catch (fallbackError) {
-      console.error('❌ All compression methods failed:', fallbackError.message);
-      // Return original buffer if all compression fails
-      return {
-        buffer,
-        originalSize: buffer.byteLength,
-        compressedSize: buffer.byteLength,
-        ratio: 0,
-        format: 'original'
-      };
-    }
-  }
-}
-
-/**
- * Compress image using sharp
- * Reduces size by 60-80% with quality 70%
- */
-async function compressImage(buffer, mimeType) {
-  try {
-    const originalSize = buffer.byteLength;
-
-    let sharpInstance = sharp(buffer);
-
-    // Detect format and apply compression
-    const metadata = await sharpInstance.metadata();
-
-    if (mimeType === 'image/png') {
-      sharpInstance = sharpInstance
-        .png({
-          quality: COMPRESSION_CONFIG.image.quality,
-          progressive: COMPRESSION_CONFIG.image.progressive
-        });
-    } else {
-      // JPG/JPEG
-      sharpInstance = sharpInstance
-        .jpeg({
-          quality: COMPRESSION_CONFIG.image.quality,
-          progressive: COMPRESSION_CONFIG.image.progressive,
-          mozjpeg: COMPRESSION_CONFIG.image.mozjpeg
-        });
-    }
-
-    const compressed = await sharpInstance.toBuffer();
-    const compressedSize = compressed.length;
-    const ratio = Math.round((1 - compressedSize / originalSize) * 100);
-
-    console.log(`🖼️ Image Compressed: ${(originalSize / 1024).toFixed(1)}KB → ${(compressedSize / 1024).toFixed(1)}KB (${ratio}% reduction) [${metadata.format}]`);
-
-    return {
-      buffer: compressed,
-      originalSize,
-      compressedSize,
-      ratio,
-      format: metadata.format
-    };
-  } catch (error) {
-    console.error('❌ Image compression failed:', error.message);
-    // Return original buffer if compression fails
-    return {
-      buffer,
-      originalSize: buffer.byteLength,
-      compressedSize: buffer.byteLength,
-      ratio: 0,
-      format: 'original'
-    };
-  }
-}
-
-/**
- * Upload compressed file to Supabase Storage and original file to Google Drive
- */
-async function uploadToSupabase(compressedBuffer, fileName, employeeId, mcuId, fileType, mimeType, originalBuffer) {
-  try {
-    // Generate unique file path
-    const fileExtension = fileName.split('.').pop();
-    const uniqueFileName = `${uuid()}.${fileExtension}`;
-    const storagePath = `mcu-documents/${employeeId}/${mcuId}/${uniqueFileName}`;
-
-    console.log(`📤 Uploading compressed to Supabase: ${storagePath}`);
-
-    // Upload compressed file to Supabase Storage
-    // Keep original MIME type even though file is compressed
-    // (Supabase doesn't support application/gzip)
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('mcu-documents')
-      .upload(storagePath, compressedBuffer, {
-        contentType: mimeType, // Use original MIME type
-        upsert: false,
-        metadata: {
-          original_filename: fileName,
-          compressed: true,
-          compression_method: fileType === 'pdf' ? 'pdf-lib' : 'sharp'
-        }
-      });
-
-    if (uploadError) {
-      throw new Error(`Supabase upload failed: ${uploadError.message}`);
-    }
-
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from('mcu-documents')
-      .getPublicUrl(storagePath);
-
-    const publicUrl = urlData?.publicUrl;
-
-    // After successful Supabase upload, upload original file to Google Drive
-    let googleDriveInfo = null;
-    try {
-      console.log(`\n📁 Starting Google Drive upload...`);
-      googleDriveInfo = await uploadToGoogleDrive(
-        originalBuffer,
-        fileName,
-        employeeId,
-        employeeId, // Use employeeId as name
-        mimeType
-      );
-      console.log(`\n✅ Google Drive upload successful: ${googleDriveInfo.link}`);
-    } catch (gdError) {
-      console.error('\n⚠️ Warning: Supabase OK but Google Drive upload failed');
-      console.error(`   Error: ${gdError.message}`);
-      console.error(`   Continuing without Google Drive backup...`);
-      // Don't fail - Supabase upload is already done
-      // Return partial info so client knows what succeeded
-      googleDriveInfo = {
-        fileId: null,
-        link: null,
-        error: gdError.message
-      };
-    }
-
-    // Save metadata to mcufiles table with both links
-    const { data: fileRecord, error: dbError } = await supabase
+    const { data, error: dbError } = await supabase
       .from('mcufiles')
-      .insert([{
-        fileid: uuid(),
-        mcuid: mcuId,
-        employeeid: employeeId,
-        filename: fileName,
-        filetype: mimeType, // Use original MIME type
-        filesize: compressedBuffer.byteLength,
-        uploadedat: new Date().toISOString(),
-        uploadedby: 'system',
-        supabase_storage_path: storagePath,
-        google_drive_file_id: googleDriveInfo?.fileId || null,
-        google_drive_link: googleDriveInfo?.link || null
-      }])
+      .insert([fileRecord])
       .select();
 
     if (dbError) {
-      console.error('⚠️ Warning: Files uploaded but metadata save failed:', dbError.message);
-      // Don't throw - files are already uploaded
+      console.error('⚠️ Warning: Google Drive OK but database insert failed:', dbError.message);
+      // File is safe in Google Drive, continue without DB record
+      return fileRecord;
     }
 
-    console.log(`✅ File uploaded successfully to both Supabase and Google Drive`);
-
-    return {
-      success: true,
-      fileName,
-      originalUrl: publicUrl,
-      storagePath,
-      googleDriveLink: googleDriveInfo?.link || null,
-      googleDriveFileId: googleDriveInfo?.fileId || null,
-      fileId: fileRecord?.[0]?.fileid
-    };
+    console.log(`✅ Database record created successfully`);
+    return data?.[0] || fileRecord;
   } catch (error) {
-    console.error('❌ Upload failed:', error.message);
-    throw error;
+    console.error('⚠️ Database operation failed:', error.message);
+    // Don't fail - file is safely in Google Drive
+    return null;
   }
 }
 
@@ -356,49 +161,51 @@ module.exports = async (req, res) => {
             });
           }
 
-          console.log(`\n📁 Processing file: ${file.filename} (${(file.size / 1024).toFixed(1)}KB, ${file.mimeType})`);
+          console.log(`\n📄 Processing file: ${file.filename}`);
+          console.log(`   Size: ${(file.size / 1024).toFixed(1)}KB`);
+          console.log(`   Type: ${file.mimeType}`);
+          console.log(`   Employee: ${employeeId}`);
+          console.log(`   MCU ID: ${mcuId}`);
 
-          // Determine file type and compress
           const fileType = ALLOWED_TYPES[file.mimeType];
-          let compressionResult;
 
-          if (fileType === 'pdf') {
-            compressionResult = await compressPDF(file.buffer);
-          } else if (fileType === 'image') {
-            compressionResult = await compressImage(file.buffer, file.mimeType);
-          }
+          // Upload directly to Google Drive (no compression)
+          console.log(`\n📤 Uploading to Google Drive...`);
+          const googleDriveInfo = await uploadToGoogleDrive(
+            file.buffer,
+            file.filename,
+            employeeId,
+            employeeId,
+            file.mimeType
+          );
 
-          // Upload to Supabase (compressed) and Google Drive (original)
-          const uploadResult = await uploadToSupabase(
-            compressionResult.buffer,
+          console.log(`✅ Google Drive upload successful!`);
+          console.log(`   File ID: ${googleDriveInfo.fileId}`);
+          console.log(`   Link: ${googleDriveInfo.link}`);
+
+          // Save metadata to Supabase
+          await saveFileMetadata(
             file.filename,
             employeeId,
             mcuId,
-            fileType,
+            file.size,
             file.mimeType,
-            file.buffer // Pass original buffer for Google Drive
+            googleDriveInfo
           );
 
           return res.status(200).json({
             success: true,
             file: {
               name: file.filename,
-              originalSize: compressionResult.originalSize,
-              compressedSize: compressionResult.compressedSize,
-              compressionRatio: compressionResult.ratio,
+              size: file.size,
               type: fileType
             },
-            upload: {
-              supabase: {
-                originalUrl: uploadResult.originalUrl,
-                storagePath: uploadResult.storagePath
-              },
-              googleDrive: {
-                link: uploadResult.googleDriveLink,
-                fileId: uploadResult.googleDriveFileId
-              }
+            googleDrive: {
+              fileId: googleDriveInfo.fileId,
+              link: googleDriveInfo.link,
+              folderId: googleDriveInfo.folderId
             },
-            message: `File compressed by ${compressionResult.ratio}% and uploaded to Supabase & Google Drive`
+            message: 'File uploaded successfully to Google Drive'
           });
         } catch (error) {
           console.error('❌ Error:', error.message);
