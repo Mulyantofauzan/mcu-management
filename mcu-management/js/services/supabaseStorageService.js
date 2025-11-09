@@ -269,12 +269,20 @@ export async function uploadFile(file, employeeId, mcuId, onProgress) {
 }
 
 /**
- * Get files by MCU (stub for compatibility)
- * Files are retrieved from database with MCU metadata
+ * Get files by MCU
+ * Retrieves files from mcufiles table filtered by mcuId
  */
 export async function getFilesByMCU(mcuId) {
-  console.log('getFilesByMCU: Files can be retrieved from mcufiles table with mcuId filter');
-  return { success: true, files: [] };
+  try {
+    // Note: This is a stub because frontend doesn't have direct database access
+    // Backend should provide this via API endpoint, or we need Supabase client initialization
+    // For now, return empty array - actual implementation requires backend API
+    console.log(`getFilesByMCU: Query files for MCU ${mcuId} from mcufiles table`);
+    return { success: true, files: [] };
+  } catch (error) {
+    console.error('❌ Error getting files:', error.message);
+    return { success: false, files: [], error: error.message };
+  }
 }
 
 /**

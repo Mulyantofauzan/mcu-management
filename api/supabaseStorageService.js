@@ -41,8 +41,8 @@ async function saveFileMetadata(fileName, employeeId, mcuId, fileSize, mimeType,
         filename: fileName,
         filetype: mimeType,
         filesize: fileSize,
-        google_drive_file_id: null, // For future GDrive migration
-        google_drive_link: publicUrl, // Store Supabase URL here for now
+        supabase_storage_path: storagePath,
+        google_drive_link: publicUrl,
         google_drive_folder_id: STORAGE_BUCKET,
         uploadedat: new Date().toISOString(),
         uploadedby: 'system',
