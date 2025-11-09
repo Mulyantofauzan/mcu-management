@@ -1,7 +1,7 @@
 /**
  * Google Drive Upload Service
  *
- * Uploads files directly to Google Drive (via /api/compress-upload endpoint):
+ * Uploads files directly to Google Drive (via backend API endpoint):
  * - No compression (Google Drive has unlimited storage)
  * - Files stored per-employee folder structure
  * - Metadata saved in Supabase for easy reference
@@ -50,7 +50,7 @@ export async function uploadFileWithServerCompression(file, employeeId, mcuId, o
     formData.append('employeeId', employeeId);
     formData.append('mcuId', mcuId);
 
-    console.log(`📤 Starting server-side compression upload: ${file.name}`);
+    console.log(`📤 Uploading to Google Drive: ${file.name}`);
 
     // Upload with progress tracking
     const xhr = new XMLHttpRequest();
@@ -119,7 +119,7 @@ export async function uploadFileWithServerCompression(file, employeeId, mcuId, o
 }
 
 /**
- * Upload multiple files sequentially with compression
+ * Upload multiple files sequentially to Google Drive
  * @param {File[]} files - Array of file objects
  * @param {string} employeeId - Employee ID
  * @param {string} mcuId - MCU ID
@@ -166,7 +166,7 @@ export async function uploadFilesWithServerCompression(
       results.push(result);
 
       console.log(
-        `✅ Compressed: ${result.originalSize} → ${result.compressedSize} bytes (${result.compressionRatio}% reduction)`
+        `✅ Uploaded: ${(result.originalSize / 1024).toFixed(1)}KB`
       );
     } catch (error) {
       console.error(`❌ Failed to upload ${file.name}:`, error.message);
