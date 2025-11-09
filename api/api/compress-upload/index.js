@@ -1,75 +1,16 @@
 /**
- * File Upload API - Google Drive Primary Storage
+ * File Upload API - Supabase Storage
  * Endpoint: POST /api/compress-upload
  *
- * Simplified flow:
+ * Flow:
  * - Accept file upload from client
- * - Store file directly in Google Drive (per-employee folder)
- * - Save Google Drive link + metadata in Supabase
- * - No compression (unlimited Google Drive storage)
+ * - Validate file type and size (max 2MB)
+ * - Store file in Supabase Storage bucket
+ * - Save metadata + public URL to Supabase database
  */
 
-const { createClient } = require('@supabase/supabase-js');
 const busboy = require('busboy');
-const { v4: uuid } = require('uuid');
-const { uploadToGoogleDrive } = require('../../googleDriveService');
-
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-const ALLOWED_TYPES = {
-  'application/pdf': 'pdf',
-  'image/jpeg': 'image',
-  'image/jpg': 'image',
-  'image/png': 'image'
-};
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB max file size
-
-/**
- * Upload file directly to Google Drive (no compression)
- * Save metadata to Supabase for reference
- */
-async function saveFileMetadata(fileName, employeeId, mcuId, fileSize, mimeType, googleDriveInfo) {
-  try {
-    const fileRecord = {
-      fileid: uuid(),
-      mcuid: mcuId,
-      employeeid: employeeId,
-      filename: fileName,
-      filetype: mimeType,
-      filesize: fileSize,
-      google_drive_file_id: googleDriveInfo.fileId,
-      google_drive_link: googleDriveInfo.link,
-      google_drive_folder_id: googleDriveInfo.folderId,
-      uploadedat: new Date().toISOString(),
-      uploadedby: 'system',
-      createdat: new Date().toISOString(),
-      updatedat: new Date().toISOString()
-    };
-
-    const { data, error: dbError } = await supabase
-      .from('mcufiles')
-      .insert([fileRecord])
-      .select();
-
-    if (dbError) {
-      console.error('⚠️ Warning: Google Drive OK but database insert failed:', dbError.message);
-      // File is safe in Google Drive, continue without DB record
-      return fileRecord;
-    }
-
-    console.log(`✅ Database record created successfully`);
-    return data?.[0] || fileRecord;
-  } catch (error) {
-    console.error('⚠️ Database operation failed:', error.message);
-    // Don't fail - file is safely in Google Drive
-    return null;
-  }
-}
+const { uploadFileToStorage, ALLOWED_TYPES, MAX_FILE_SIZE } = require('../../supabaseStorageService');
 
 /**
  * Main handler function
@@ -179,43 +120,33 @@ module.exports = async (req, res) => {
 
           const fileType = ALLOWED_TYPES[file.mimeType];
 
-          // Upload directly to Google Drive (no compression)
-          console.log(`\n📤 Uploading to Google Drive...`);
-          const googleDriveInfo = await uploadToGoogleDrive(
+          // Upload to Supabase Storage
+          console.log(`\n📤 Uploading to Supabase Storage...`);
+          const uploadResult = await uploadFileToStorage(
             file.buffer,
             file.filename,
             employeeId,
-            employeeId,
+            mcuId,
             file.mimeType
           );
 
-          console.log(`✅ Google Drive upload successful!`);
-          console.log(`   File ID: ${googleDriveInfo.fileId}`);
-          console.log(`   Link: ${googleDriveInfo.link}`);
-
-          // Save metadata to Supabase
-          await saveFileMetadata(
-            file.filename,
-            employeeId,
-            mcuId,
-            file.size,
-            file.mimeType,
-            googleDriveInfo
-          );
+          console.log(`✅ File upload successful!`);
+          console.log(`   Storage path: ${uploadResult.storagePath}`);
+          console.log(`   Public URL: ${uploadResult.publicUrl}`);
 
           return res.status(200).json({
             success: true,
             file: {
-              name: file.filename,
-              size: file.size,
-              type: fileType
+              name: uploadResult.fileName,
+              size: uploadResult.fileSize,
+              type: uploadResult.fileType
             },
-            googleDrive: {
-              fileId: googleDriveInfo.fileId,
-              link: googleDriveInfo.link,
-              folderId: googleDriveInfo.folderId
+            storage: {
+              bucket: 'mcu-files',
+              path: uploadResult.storagePath,
+              publicUrl: uploadResult.publicUrl
             },
-            message: 'File uploaded successfully to Google Drive'
+            message: 'File uploaded successfully to Supabase Storage'
           });
         } catch (error) {
           console.error('❌ Error:', error.message);
