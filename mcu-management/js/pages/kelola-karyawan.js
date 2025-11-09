@@ -804,11 +804,8 @@ window.handleAddMCU = async function(event) {
             return;
         }
 
-        await mcuService.create(mcuData, currentUser);
-
-        showToast('MCU berhasil ditambahkan!', 'success');
-
-        // Upload all pending files to storage and database
+        // ✅ FIX: Upload files FIRST before saving MCU to database
+        // This prevents orphaned MCU records if file upload fails
         const pendingFiles = tempFileStorage.getFiles(mcuData.mcuId);
 
         if (pendingFiles && pendingFiles.length > 0) {
@@ -831,16 +828,21 @@ window.handleAddMCU = async function(event) {
                 }
             );
 
-            if (uploadResult.success) {
-                if (uploadResult.uploadedCount > 0) {
-                    showToast(`✅ ${uploadResult.uploadedCount} file(s) uploaded successfully`, 'success');
-                }
-                // Clear temporary files after successful upload
-                tempFileStorage.clearFiles(mcuData.mcuId);
-            } else {
-                showToast(`❌ File upload error: ${uploadResult.error}`, 'error');
+            // ✅ FIX: Check if upload was completely successful
+            if (!uploadResult.success || uploadResult.uploadedCount === 0) {
+                showToast(`❌ File upload failed: ${uploadResult.error}. MCU data tidak disimpan.`, 'error');
+                return; // ← CRITICAL: Don't save MCU if files failed
             }
+
+            // Clear temporary files after successful upload
+            tempFileStorage.clearFiles(mcuData.mcuId);
+            showToast(`✅ ${uploadResult.uploadedCount} file(s) uploaded successfully`, 'success');
         }
+
+        // ✅ FIX: NOW save MCU data after files are successfully uploaded (or if no files)
+        await mcuService.create(mcuData, currentUser);
+
+        showToast('MCU berhasil ditambahkan!', 'success');
 
         // Close modal and reload data
         closeAddMCUModal();
