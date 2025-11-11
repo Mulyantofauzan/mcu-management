@@ -4,8 +4,6 @@
  * Stores metadata in Supabase mcufiles table
  */
 
-import { supabaseReady, supabase } from './database.js';
-import { showToast } from '../utils/toast.js';
 
 /**
  * Upload file to Google Drive via backend API
@@ -19,8 +17,6 @@ import { showToast } from '../utils/toast.js';
  */
 export async function uploadFileToGoogleDrive(file, employeeId, mcuId, userId, userName, onProgress = null) {
   try {
-    await supabaseReady;
-
     if (!file || !employeeId || !mcuId) {
       throw new Error('Missing required parameters: file, employeeId, mcuId');
     }
