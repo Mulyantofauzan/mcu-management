@@ -729,7 +729,6 @@ window.addMCUForEmployee = async function(employeeId) {
 
         // Generate MCU ID at the start (but don't save to DB yet)
         generatedMCUIdForAdd = generateMCUId();
-        console.log(`✅ Generated MCU ID for uploads: ${generatedMCUIdForAdd}`);
 
         // Initialize file upload widget with the generated MCU ID
         // skipDBInsert=true: File only saved to storage, metadata saved when MCU is created
@@ -826,8 +825,6 @@ window.handleAddMCU = async function(event) {
         const pendingFiles = tempFileStorage.getFiles(mcuData.mcuId);
 
         if (pendingFiles && pendingFiles.length > 0) {
-            console.log(`📦 Uploading ${pendingFiles.length} file(s) for MCU ${mcuData.mcuId}...`);
-
             let lastProgressShown = 0;
             const uploadResult = await uploadBatchFiles(
                 pendingFiles,
@@ -839,7 +836,6 @@ window.handleAddMCU = async function(event) {
                     const percentage = Math.round((current / total) * 100);
                     // Only show toast every 25% or at end
                     if (percentage >= lastProgressShown + 25 || percentage === 100) {
-                        console.log(`⏳ Upload progress: ${current}/${total} - ${message}`);
                         lastProgressShown = percentage;
                     }
                 }
@@ -1127,9 +1123,6 @@ window.editMCU = async function() {
         if (labResultWidget) {
             await labResultWidget.init();
 
-            // Load existing lab results for this MCU
-            await labResultWidget.loadExistingResults(window.currentMCUId);
-
             // Setup add button handler
             const addLabBtn = document.getElementById('add-lab-result-btn-edit');
             if (addLabBtn) {
@@ -1159,6 +1152,11 @@ window.editMCU = async function() {
                 // Reset form first
                 const form = document.getElementById('edit-mcu-form');
                 if (form) form.reset();
+
+                // Load existing lab results AFTER form reset
+                if (labResultWidget) {
+                    labResultWidget.loadExistingResults(window.currentMCUId);
+                }
 
                 // Fill edit MCU form with current values
                 document.getElementById('edit-mcu-id').value = mcu.mcuId || '';
@@ -1308,7 +1306,6 @@ window.handleEditMCU = async function(event) {
                     const percentage = Math.round((current / total) * 100);
                     // Only show toast every 25% or at end
                     if (percentage >= lastProgressShown + 25 || percentage === 100) {
-                        console.log(`Upload progress: ${current}/${total}`);
                         lastProgressShown = percentage;
                     }
                 }

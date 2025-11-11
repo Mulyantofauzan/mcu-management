@@ -207,7 +207,6 @@ class LabResultWidget {
             element.remove();
             // Remove from results array
             this.results = this.results.filter(r => r.id !== resultId);
-            console.log(`✅ Removed lab result: ${resultId}`);
         }
     }
 
@@ -263,10 +262,8 @@ class LabResultWidget {
                     notes: result.notes
                 });
             });
-
-            console.log(`✅ Loaded ${existing.length} existing lab results for MCU: ${mcuId}`);
         } catch (error) {
-            console.error('❌ Error loading existing results:', error);
+            console.error('Error loading existing results:', error);
         }
     }
 }

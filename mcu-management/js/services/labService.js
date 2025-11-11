@@ -44,7 +44,6 @@ class LabService {
       // Clear cache
       cacheManager.clear('labItems:all');
 
-      console.log('✅ Lab item created:', result[0]);
       return { success: true, data: result[0] };
     } catch (error) {
       console.error('❌ Error creating lab item:', error.message);
@@ -70,7 +69,6 @@ class LabService {
       const cached = cacheManager.get(cacheKey);
 
       if (cached) {
-        console.debug(`[Cache] getAllLabItems - HIT (${cached.length} items)`);
         return cached;
       }
 
@@ -85,7 +83,6 @@ class LabService {
       if (error) throw error;
 
       cacheManager.set(cacheKey, data);
-      console.log(`✅ Fetched ${data.length} lab items from database`);
 
       return data || [];
     } catch (error) {
@@ -139,7 +136,6 @@ class LabService {
       cacheManager.clear('labItems:all');
       cacheManager.clear('labItems:all:inactive');
 
-      console.log('✅ Lab item updated:', result[0]);
       return { success: true, data: result[0] };
     } catch (error) {
       console.error('❌ Error updating lab item:', error.message);
@@ -178,7 +174,6 @@ class LabService {
       cacheManager.clear('labItems:all');
       cacheManager.clear('labItems:all:inactive');
 
-      console.log('✅ Lab item deleted (soft):', id);
       return { success: true };
     } catch (error) {
       console.error('❌ Error deleting lab item:', error.message);
@@ -226,7 +221,6 @@ class LabService {
 
       if (error) throw error;
 
-      console.log('✅ Pemeriksaan lab created:', result[0]);
       return { success: true, data: result[0] };
     } catch (error) {
       console.error('❌ Error creating pemeriksaan lab:', error.message);
@@ -269,7 +263,6 @@ class LabService {
 
       if (error) throw error;
 
-      console.log(`✅ Fetched ${data?.length || 0} pemeriksaan lab for MCU ${mcuId}`);
       return data || [];
     } catch (error) {
       console.error('❌ Error fetching pemeriksaan lab:', error.message);
@@ -295,7 +288,6 @@ class LabService {
 
       if (error) throw error;
 
-      console.log('✅ Pemeriksaan lab updated:', result[0]);
       return { success: true, data: result[0] };
     } catch (error) {
       console.error('❌ Error updating pemeriksaan lab:', error.message);
@@ -315,7 +307,6 @@ class LabService {
 
       if (error) throw error;
 
-      console.log('✅ Pemeriksaan lab deleted (soft):', id);
       return { success: true };
     } catch (error) {
       console.error('❌ Error deleting pemeriksaan lab:', error.message);
@@ -336,7 +327,6 @@ class LabService {
 
       if (error) throw error;
 
-      console.log('✅ Semua pemeriksaan lab deleted for MCU:', mcuId);
       return { success: true };
     } catch (error) {
       console.error('❌ Error deleting pemeriksaan lab by MCU ID:', error.message);
