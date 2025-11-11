@@ -5,7 +5,7 @@
  * 2. Pemeriksaan Lab (hasil pemeriksaan untuk setiap MCU)
  */
 
-import { supabase } from '../config/supabase.js';
+import { supabase, supabaseReady, isSupabaseEnabled } from '../config/supabase.js';
 import { cacheManager } from '../utils/cacheManager.js';
 
 class LabService {
@@ -18,6 +18,13 @@ class LabService {
    */
   async createLabItem(data) {
     try {
+      // Wait for Supabase to be ready
+      await supabaseReady;
+
+      if (!isSupabaseEnabled()) {
+        throw new Error('Supabase not enabled');
+      }
+
       const { data: result, error } = await supabase
         .from('lab_items')
         .insert([
@@ -50,6 +57,15 @@ class LabService {
    */
   async getAllLabItems(includeInactive = false) {
     try {
+      // Wait for Supabase to be ready
+      await supabaseReady;
+
+      // Check if Supabase is enabled
+      if (!isSupabaseEnabled()) {
+        console.warn('⚠️ Supabase not enabled. Returning empty lab items.');
+        return [];
+      }
+
       const cacheKey = includeInactive ? 'labItems:all:inactive' : 'labItems:all';
       const cached = cacheManager.get(cacheKey);
 
@@ -179,6 +195,13 @@ class LabService {
    */
   async createPemeriksaanLab(data, currentUser) {
     try {
+      // Wait for Supabase to be ready
+      await supabaseReady;
+
+      if (!isSupabaseEnabled()) {
+        throw new Error('Supabase not enabled');
+      }
+
       const labItem = await this.getLabItemById(data.labItemId);
       if (!labItem) {
         throw new Error('Lab item tidak ditemukan');
@@ -216,6 +239,14 @@ class LabService {
    */
   async getPemeriksaanLabByMcuId(mcuId) {
     try {
+      // Wait for Supabase to be ready
+      await supabaseReady;
+
+      if (!isSupabaseEnabled()) {
+        console.warn('⚠️ Supabase not enabled. Returning empty results.');
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('pemeriksaan_lab')
         .select(`
