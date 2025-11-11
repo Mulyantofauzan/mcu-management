@@ -221,21 +221,19 @@ export class FileListViewer {
         if (!file) return;
 
         try {
-            event.currentTarget.disabled = true;
-            event.currentTarget.textContent = 'Downloading...';
+            // Use Google Drive link if available, otherwise fallback to Supabase
+            const downloadUrl = file.google_drive_link || file.supabase_storage_path;
 
-            const result = await downloadFile(file.supabase_storage_path, file.filename);
-
-            if (result.success) {
-                showToast('Download dimulai', 'success');
-            } else {
-                showToast('Gagal download: ' + result.error, 'error');
+            if (!downloadUrl) {
+                showToast('File download link not available', 'error');
+                return;
             }
+
+            // Open Google Drive link in new tab
+            window.open(downloadUrl, '_blank');
+            showToast('File dibuka di tab baru', 'success');
         } catch (error) {
             showToast('Error: ' + error.message, 'error');
-        } finally {
-            event.currentTarget.disabled = false;
-            event.currentTarget.textContent = 'Download';
         }
     }
 

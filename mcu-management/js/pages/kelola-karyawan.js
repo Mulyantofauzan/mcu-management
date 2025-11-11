@@ -1325,6 +1325,37 @@ window.handleEditMCU = async function(event) {
             tempFileStorage.clearFiles(mcuId);
         }
 
+        // Save/update lab results if widget exists
+        if (labResultWidget) {
+            // Get current lab results from form
+            const newLabResults = labResultWidget.getAllLabResults();
+
+            // Get existing lab results from database
+            const existingLabResults = await labService.getPemeriksaanLabByMcuId(mcuId);
+
+            // Delete old results and add new ones (simple approach: delete all, re-add)
+            await labService.deletePemeriksaanLabByMcuId(mcuId);
+
+            // Add new/updated lab results
+            if (newLabResults && newLabResults.length > 0) {
+                for (const result of newLabResults) {
+                    try {
+                        await labService.createPemeriksaanLab({
+                            mcuId: mcuId,
+                            employeeId: updateData.employeeId || (await mcuService.getById(mcuId)).employeeId,
+                            labItemId: result.labItemId,
+                            value: result.value,
+                            notes: result.notes
+                        }, currentUser);
+                    } catch (error) {
+                        console.error('Error saving lab result:', error);
+                        showToast(`Peringatan: Gagal menyimpan hasil lab: ${error.message}`, 'warning');
+                    }
+                }
+                showToast(`${newLabResults.length} hasil lab berhasil diupdate`, 'success');
+            }
+        }
+
         await mcuService.updateFollowUp(mcuId, updateData, currentUser);
 
         showToast('Data MCU berhasil diupdate', 'success');

@@ -182,18 +182,16 @@ class LabResultWidget {
             select.dispatchEvent(new Event('change'));
         }
 
-        // Set nilai as placeholder (for edit mode - shows previous value but allows editing)
+        // Set nilai with actual value
         const valueInput = container.querySelector('.lab-value-input');
         if (valueInput && resultData.value) {
-            valueInput.placeholder = resultData.value;
-            valueInput.value = ''; // Clear the actual value so user can see placeholder
+            valueInput.value = resultData.value;
         }
 
-        // Set catatan as placeholder
+        // Set catatan with actual value
         const notesInput = container.querySelector('.lab-notes-input');
         if (notesInput && resultData.notes) {
-            notesInput.placeholder = resultData.notes;
-            notesInput.value = resultData.notes; // Keep notes value as is (readonly field)
+            notesInput.value = resultData.notes;
         }
     }
 

@@ -309,12 +309,23 @@ export async function getFilesByMCU(mcuId) {
 }
 
 /**
- * Download file (stub for compatibility)
- * Files already have public URLs available from upload response
+ * Download file - Opens file in new tab via Google Drive link
+ * @param {string} downloadUrl - Google Drive link or Supabase storage path
+ * @param {string} fileName - File name (optional)
+ * @returns {Object} Download result
  */
-export async function downloadFile(fileId, fileName) {
-  console.log('downloadFile: Use publicUrl from upload response to download');
-  return { success: true };
+export async function downloadFile(downloadUrl, fileName) {
+  try {
+    if (!downloadUrl) {
+      return { success: false, error: 'No download URL provided' };
+    }
+
+    // Open in new tab - works for Google Drive links and Supabase URLs
+    window.open(downloadUrl, '_blank');
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
 }
 
 export default {
