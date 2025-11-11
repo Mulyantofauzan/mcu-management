@@ -36,10 +36,8 @@ class MCUService {
       treadmill: mcuData.treadmill || null,
       kidneyLiverFunction: mcuData.kidneyLiverFunction || null,
       hbsag: mcuData.hbsag || null,
-      sgot: mcuData.sgot || null,
-      sgpt: mcuData.sgpt || null,
-      cbc: mcuData.cbc || null,
       napza: mcuData.napza || null,
+      colorblind: mcuData.colorblind || null,
 
       // Rujukan fields
       doctor: mcuData.doctor || null,  // ✅ FIX: Add doctor field (was missing!)
