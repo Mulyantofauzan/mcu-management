@@ -320,10 +320,6 @@
                         <div class="bg-white px-4 py-3"><span class="text-xs text-gray-500">Spirometri</span><p class="font-medium text-sm" id="mcu-detail-spiro">-</p></div>
                         <div class="bg-gray-50 px-4 py-3"><span class="text-xs text-gray-500">HBsAg</span><p class="font-medium text-sm" id="mcu-detail-hbsag">-</p></div>
 
-                        <div class="bg-white px-4 py-3"><span class="text-xs text-gray-500">SGOT</span><p class="font-medium text-sm" id="mcu-detail-sgot">-</p></div>
-                        <div class="bg-gray-50 px-4 py-3"><span class="text-xs text-gray-500">SGPT</span><p class="font-medium text-sm" id="mcu-detail-sgpt">-</p></div>
-                        <div class="bg-white px-4 py-3"><span class="text-xs text-gray-500">CBC</span><p class="font-medium text-sm" id="mcu-detail-cbc">-</p></div>
-
                         <div class="col-span-3 bg-gray-50 px-4 py-3"><span class="text-xs text-gray-500">X-Ray</span><p class="font-medium text-sm" id="mcu-detail-xray">-</p></div>
                         <div class="col-span-3 bg-white px-4 py-3"><span class="text-xs text-gray-500">EKG</span><p class="font-medium text-sm" id="mcu-detail-ekg">-</p></div>
                         <div class="col-span-3 bg-gray-50 px-4 py-3"><span class="text-xs text-gray-500">Treadmill</span><p class="font-medium text-sm" id="mcu-detail-treadmill">-</p></div>
@@ -338,6 +334,24 @@
                     <div class="bg-white px-4 py-3"><span class="text-xs text-gray-500">RR</span><p class="font-medium text-sm" id="mcu-detail-rr">-</p></div>
                     <div class="bg-gray-50 px-4 py-3"><span class="text-xs text-gray-500">Nadi</span><p class="font-medium text-sm" id="mcu-detail-pulse">-</p></div>
                     <div class="bg-white px-4 py-3"><span class="text-xs text-gray-500">Suhu</span><p class="font-medium text-sm" id="mcu-detail-temp">-</p></div>
+                </div>
+
+                <h4 class="font-semibold text-gray-900 mb-3">Hasil Pemeriksaan Lab</h4>
+                <div id="mcu-detail-lab-results" class="bg-gray-50 rounded-lg p-4 mb-4">
+                    <table class="w-full text-sm">
+                        <thead class="border-b">
+                            <tr class="text-left text-xs text-gray-600">
+                                <th class="pb-2 font-medium">Pemeriksaan</th>
+                                <th class="pb-2 font-medium">Nilai</th>
+                                <th class="pb-2 font-medium">Satuan</th>
+                                <th class="pb-2 font-medium">Rentang Normal</th>
+                                <th class="pb-2 font-medium">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mcu-detail-lab-results-body">
+                            <tr><td colspan="5" class="text-center text-gray-500 py-3">Tidak ada hasil lab</td></tr>
+                        </tbody>
+                    </table>
                 </div>
 
                 <div id="referral-data-section" class="mb-4">
@@ -505,6 +519,10 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- File Upload Section -->
+                    <h4 class="font-semibold text-gray-900 mb-3">📄 Dokumen MCU</h4>
+                    <div id="file-upload-container-edit" class="bg-gray-50 rounded-lg p-4 mb-4"></div>
 
                     <div class="modal-footer">
                         <button type="button" onclick="window.closeEditMCUModal()" class="btn btn-secondary">Batal</button>

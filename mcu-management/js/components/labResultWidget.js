@@ -168,6 +168,7 @@ class LabResultWidget {
 
     /**
      * Populate form dengan existing data (untuk edit)
+     * Sets value as placeholder so user can see previous value but can edit it
      */
     populateLabResult(resultId, resultData) {
         const container = document.getElementById(resultId);
@@ -181,16 +182,18 @@ class LabResultWidget {
             select.dispatchEvent(new Event('change'));
         }
 
-        // Set nilai
+        // Set nilai as placeholder (for edit mode - shows previous value but allows editing)
         const valueInput = container.querySelector('.lab-value-input');
         if (valueInput && resultData.value) {
-            valueInput.value = resultData.value;
+            valueInput.placeholder = resultData.value;
+            valueInput.value = ''; // Clear the actual value so user can see placeholder
         }
 
-        // Set catatan
+        // Set catatan as placeholder
         const notesInput = container.querySelector('.lab-notes-input');
         if (notesInput && resultData.notes) {
-            notesInput.value = resultData.notes;
+            notesInput.placeholder = resultData.notes;
+            notesInput.value = resultData.notes; // Keep notes value as is (readonly field)
         }
     }
 

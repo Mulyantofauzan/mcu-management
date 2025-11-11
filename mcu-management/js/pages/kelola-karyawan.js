@@ -1033,6 +1033,57 @@ window.viewMCUDetail = async function(mcuId) {
         // Store current MCU ID for edit
         window.currentMCUId = mcuId;
 
+        // Load and display lab results
+        try {
+            const labResults = await labService.getPemeriksaanLabByMcuId(mcuId);
+            const labResultsBody = document.getElementById('mcu-detail-lab-results-body');
+
+            if (labResults && labResults.length > 0) {
+                let html = '';
+                labResults.forEach(result => {
+                    // Determine status based on value and range
+                    let status = '-';
+                    let statusClass = 'text-gray-500';
+                    if (result.min_range_reference !== null && result.max_range_reference !== null) {
+                        const value = parseFloat(result.value);
+                        const minRange = parseFloat(result.min_range_reference);
+                        const maxRange = parseFloat(result.max_range_reference);
+                        if (!isNaN(value)) {
+                            if (value < minRange) {
+                                status = 'Low';
+                                statusClass = 'text-blue-600 font-semibold';
+                            } else if (value > maxRange) {
+                                status = 'High';
+                                statusClass = 'text-red-600 font-semibold';
+                            } else {
+                                status = 'Normal';
+                                statusClass = 'text-green-600 font-semibold';
+                            }
+                        }
+                    }
+
+                    const rangeText = (result.min_range_reference !== null && result.max_range_reference !== null)
+                        ? `${result.min_range_reference} - ${result.max_range_reference}`
+                        : '-';
+
+                    html += `<tr class="border-b hover:bg-white">
+                        <td class="py-2 pr-3">${result.lab_items?.name || 'N/A'}</td>
+                        <td class="py-2 pr-3 font-medium">${result.value || '-'}</td>
+                        <td class="py-2 pr-3">${result.unit || '-'}</td>
+                        <td class="py-2 pr-3 text-xs">${rangeText}</td>
+                        <td class="py-2 pr-3"><span class="${statusClass}">${status}</span></td>
+                    </tr>`;
+                });
+
+                labResultsBody.innerHTML = html;
+            } else {
+                labResultsBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500 py-3">Tidak ada hasil lab</td></tr>';
+            }
+        } catch (error) {
+            console.error('Error loading lab results:', error);
+            document.getElementById('mcu-detail-lab-results-body').innerHTML = '<tr><td colspan="5" class="text-center text-red-500 py-3">Gagal memuat hasil lab</td></tr>';
+        }
+
         // Initialize file list viewer for MCU documents
         const filesContainer = document.getElementById('mcu-detail-files-container');
         if (filesContainer) {
@@ -1087,6 +1138,20 @@ window.editMCU = async function() {
                 };
             }
         }
+
+        // Initialize file upload widget for edit modal
+        const currentUser = authService.getCurrentUser();
+        fileUploadWidget = new FileUploadWidget('file-upload-container-edit', {
+            employeeId: mcu.employeeId,
+            mcuId: window.currentMCUId,
+            userId: currentUser?.userId || currentUser?.user_id,
+            onUploadComplete: () => {
+                showToast('File berhasil ditambahkan ke antrian upload', 'success');
+            },
+            onError: (error) => {
+                showToast('Upload gagal: ' + error, 'error');
+            }
+        });
 
         // Use setTimeout to ensure DOM is ready before setting values
         setTimeout(() => {
@@ -1225,6 +1290,42 @@ window.handleEditMCU = async function(event) {
         if (finalResult) {
             updateData.finalResult = finalResult;
             updateData.finalNotes = document.getElementById('edit-mcu-final-notes').value || null;
+        }
+
+        // Check if there are files to upload
+        const pendingFiles = tempFileStorage.getFiles(mcuId);
+
+        // If there are files, upload them FIRST before updating MCU
+        if (pendingFiles && pendingFiles.length > 0) {
+            let lastProgressShown = 0;
+            const uploadResult = await uploadBatchFiles(
+                pendingFiles,
+                updateData.employeeId || (await mcuService.getById(mcuId)).employeeId,
+                mcuId,
+                currentUser.userId || currentUser.user_id,
+                // Progress callback
+                (current, total, message) => {
+                    const percentage = Math.round((current / total) * 100);
+                    // Only show toast every 25% or at end
+                    if (percentage >= lastProgressShown + 25 || percentage === 100) {
+                        console.log(`Upload progress: ${current}/${total}`);
+                        lastProgressShown = percentage;
+                    }
+                }
+            );
+
+            // Check if upload was completely successful
+            if (!uploadResult.success || uploadResult.uploadedCount === 0) {
+                showToast(`File upload failed: ${uploadResult.error}. Data MCU tidak diupdate.`, 'error');
+                return; // Don't update MCU if files failed to upload
+            }
+
+            if (uploadResult.uploadedCount > 0) {
+                showToast(`${uploadResult.uploadedCount} file(s) uploaded successfully`, 'success');
+            }
+
+            // Clear temporary files after successful upload
+            tempFileStorage.clearFiles(mcuId);
         }
 
         await mcuService.updateFollowUp(mcuId, updateData, currentUser);
