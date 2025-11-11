@@ -35,6 +35,7 @@ let showInactiveEmployees = false;
 let fileUploadWidget = null;
 let addFileUploadWidget = null;
 let generatedMCUIdForAdd = null;  // Store generated MCU ID for the add modal
+let labResultWidget = null;  // Lab result widget instance
 
 async function init() {
     try {
@@ -748,6 +749,28 @@ window.addMCUForEmployee = async function(employeeId) {
         }
 
         openModal('add-mcu-modal');
+
+        // Initialize lab result widget
+        labResultWidget = createLabResultWidget('lab-results-container-add-karyawan');
+        if (labResultWidget) {
+            console.log('🔧 Lab widget created, calling init()...');
+            await labResultWidget.init();
+            console.log('🔧 Lab widget init() complete');
+
+            // Setup add button handler
+            const addLabBtn = document.getElementById('add-lab-result-btn-karyawan');
+            if (addLabBtn) {
+                console.log('🔧 Found add-lab-result-btn-karyawan, attaching onclick handler');
+                addLabBtn.onclick = () => {
+                    console.log('🔧 Button clicked! Calling addLabResultForm()');
+                    labResultWidget.addLabResultForm();
+                };
+            } else {
+                console.error('🔧 ERROR: add-lab-result-btn-karyawan not found!');
+            }
+        } else {
+            console.error('🔧 ERROR: Failed to create lab widget!');
+        }
     } catch (error) {
 
         showToast('Gagal membuka form MCU: ' + error.message, 'error');
