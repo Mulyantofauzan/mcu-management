@@ -70,9 +70,9 @@ class LabResultWidget {
 
         const formHTML = `
             <div id="${resultId}" class="border border-gray-200 rounded-lg p-3 bg-gray-50">
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
-                    <!-- Pemeriksaan Dropdown (3 cols) -->
-                    <div class="md:col-span-3">
+                <div class="grid grid-cols-1 md:grid-cols-6 gap-2 items-end">
+                    <!-- Pemeriksaan Dropdown (2 cols) -->
+                    <div class="md:col-span-2">
                         <label class="label text-xs">Pemeriksaan <span class="text-danger">*</span></label>
                         <select class="input lab-item-select text-sm" data-result-id="${resultId}" required>
                             <option value="">Pilih...</option>
@@ -80,33 +80,33 @@ class LabResultWidget {
                         </select>
                     </div>
 
-                    <!-- Nilai (2 cols) -->
-                    <div class="md:col-span-2">
+                    <!-- Nilai (1 col) -->
+                    <div class="md:col-span-1">
                         <label class="label text-xs">Nilai <span class="text-danger">*</span></label>
-                        <input type="number" step="0.01" class="input lab-value-input text-sm" data-result-id="${resultId}" placeholder="Nilai" required />
+                        <input type="number" step="0.01" class="input lab-value-input text-sm" data-result-id="${resultId}" placeholder="0.00" required />
                     </div>
 
-                    <!-- Satuan (1.5 cols, readonly) -->
-                    <div class="md:col-span-2">
+                    <!-- Satuan (1 col, readonly) -->
+                    <div class="md:col-span-1">
                         <label class="label text-xs">Satuan</label>
                         <input type="text" class="input lab-unit-display text-sm" data-result-id="${resultId}" readonly />
                     </div>
 
-                    <!-- Rentang Rujukan (2 cols, readonly) -->
-                    <div class="md:col-span-2">
+                    <!-- Rentang Rujukan (1 col, readonly) -->
+                    <div class="md:col-span-1">
                         <label class="label text-xs">Rentang</label>
                         <input type="text" class="input lab-range-display text-sm" data-result-id="${resultId}" readonly />
                     </div>
 
-                    <!-- Catatan (1.5 cols, readonly - auto) -->
-                    <div class="md:col-span-1.5">
+                    <!-- Catatan (1 col, readonly) -->
+                    <div class="md:col-span-1">
                         <label class="label text-xs">Catatan</label>
                         <input type="text" class="input lab-notes-input text-sm" data-result-id="${resultId}" readonly />
                     </div>
 
-                    <!-- Remove Button (0.5 cols) -->
+                    <!-- Remove Button (1 col) -->
                     <div class="md:col-span-1">
-                        <button type="button" class="btn btn-danger btn-sm remove-lab-result w-full h-10" data-result-id="${resultId}">-</button>
+                        <button type="button" class="btn btn-danger btn-sm remove-lab-result w-full" data-result-id="${resultId}">-</button>
                     </div>
                 </div>
             </div>
