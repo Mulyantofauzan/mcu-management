@@ -4,6 +4,7 @@
 
 import { authService } from '../services/authService.js';
 import { masterDataService } from '../services/masterDataService.js';
+import { labService } from '../services/labService.js';
 import { showToast, openModal, closeModal, confirmDialog } from '../utils/uiHelpers.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 import { initSuperSearch } from '../components/superSearch.js';  // ✅ NEW: Global search
@@ -16,7 +17,8 @@ const tabConfig = {
     jobTitles: { title: 'Jabatan', getAll: () => masterDataService.getAllJobTitles(), create: (d) => masterDataService.createJobTitle(d), update: (id, d) => masterDataService.updateJobTitle(id, d), delete: (id) => masterDataService.deleteJobTitle(id) },
     departments: { title: 'Departemen', getAll: () => masterDataService.getAllDepartments(), create: (d) => masterDataService.createDepartment(d), update: (id, d) => masterDataService.updateDepartment(id, d), delete: (id) => masterDataService.deleteDepartment(id) },
     vendors: { title: 'Vendor', getAll: () => masterDataService.getAllVendors(), create: (d) => masterDataService.createVendor(d), update: (id, d) => masterDataService.updateVendor(id, d), delete: (id) => masterDataService.deleteVendor(id) },
-    doctors: { title: 'Dokter', getAll: () => masterDataService.getAllDoctors(), create: (d) => masterDataService.createDoctor(d), update: (id, d) => masterDataService.updateDoctor(id, d), delete: (id) => masterDataService.deleteDoctor(id) }
+    doctors: { title: 'Dokter', getAll: () => masterDataService.getAllDoctors(), create: (d) => masterDataService.createDoctor(d), update: (id, d) => masterDataService.updateDoctor(id, d), delete: (id) => masterDataService.deleteDoctor(id) },
+    labItems: { title: 'Item Pemeriksaan Lab', getAll: () => labService.getAllLabItems(), create: (d) => labService.createLabItem(d), update: (id, d) => labService.updateLabItem(id, d), delete: (id) => labService.deleteLabItem(id) }
 };
 
 async function init() {
@@ -107,13 +109,32 @@ function renderTable() {
         return;
     }
 
-    let html = '<div class="table-container"><table class="table"><thead><tr><th>ID</th><th>Nama</th><th>Aksi</th></tr></thead><tbody>';
+    let html = '<div class="table-container"><table class="table"><thead><tr>';
+
+    // Dynamic columns berdasarkan tab
+    if (currentTab === 'labItems') {
+        html += '<th>Nama</th><th>Satuan</th><th>Rentang Min-Max</th><th>Status</th><th>Aksi</th>';
+    } else {
+        html += '<th>ID</th><th>Nama</th><th>Aksi</th>';
+    }
+
+    html += '</tr></thead><tbody>';
 
     currentData.forEach(item => {
-        // Supabase master data uses numeric id as primary key
         html += '<tr>';
-        html += `<td><span class="text-sm text-gray-600">${item.id}</span></td>`;
-        html += `<td><span class="font-medium text-gray-900">${item.name}</span></td>`;
+
+        if (currentTab === 'labItems') {
+            // labItems columns
+            html += `<td><span class="font-medium text-gray-900">${item.name}</span></td>`;
+            html += `<td><span class="text-sm text-gray-600">${item.unit || '-'}</span></td>`;
+            html += `<td><span class="text-sm text-gray-600">${item.min_range_reference || '-'} - ${item.max_range_reference || '-'}</span></td>`;
+            html += `<td><span class="text-sm ${item.is_active ? 'text-green-600' : 'text-red-600'}">${item.is_active ? 'Aktif' : 'Tidak Aktif'}</span></td>`;
+        } else {
+            // Standard columns untuk master data lainnya
+            html += `<td><span class="text-sm text-gray-600">${item.id}</span></td>`;
+            html += `<td><span class="font-medium text-gray-900">${item.name}</span></td>`;
+        }
+
         html += `<td><div class="flex gap-2">`;
         html += `<button onclick="window.editItem(${item.id})" class="btn btn-sm btn-secondary">Edit</button>`;
         html += `<button onclick="window.deleteItem(${item.id})" class="btn btn-sm btn-danger">Hapus</button>`;
@@ -129,12 +150,14 @@ window.switchTab = async function(tab) {
     currentTab = tab;
 
     // Update tab styling
-    ['jobTitles', 'departments', 'vendors', 'doctors'].forEach(t => {
+    ['jobTitles', 'departments', 'vendors', 'doctors', 'labItems'].forEach(t => {
         const tabEl = document.getElementById('tab-' + t);
-        if (t === tab) {
-            tabEl.className = 'px-4 py-2 font-medium text-primary-600 border-b-2 border-primary-600';
-        } else {
-            tabEl.className = 'px-4 py-2 font-medium text-gray-500 hover:text-gray-700';
+        if (tabEl) {
+            if (t === tab) {
+                tabEl.className = 'px-4 py-2 font-medium text-primary-600 border-b-2 border-primary-600';
+            } else {
+                tabEl.className = 'px-4 py-2 font-medium text-gray-500 hover:text-gray-700';
+            }
         }
     });
 
@@ -145,10 +168,49 @@ window.switchTab = async function(tab) {
 window.openAddModal = function() {
     editingId = null;
     document.getElementById('modal-title').textContent = `Tambah ${tabConfig[currentTab].title}`;
+    setupFormFields();
     document.getElementById('crud-form').reset();
     document.getElementById('item-id').value = '';
     openModal('crud-modal');
 };
+
+function setupFormFields() {
+    const formBody = document.querySelector('.modal-body form');
+
+    // Clear all field containers except item-name
+    const existingFields = formBody.querySelectorAll('div:not(:has(#item-name))');
+    existingFields.forEach(field => {
+        if (!field.classList.contains('modal-footer')) {
+            field.remove();
+        }
+    });
+
+    // Setup fields untuk labItems
+    if (currentTab === 'labItems') {
+        const nameDiv = document.querySelector('#item-name').parentElement;
+
+        // Insert fields setelah nama
+        const descDiv = document.createElement('div');
+        descDiv.innerHTML = `<label class="label">Deskripsi</label><textarea id="item-description" class="input" rows="2"></textarea>`;
+        nameDiv.parentElement.insertBefore(descDiv, nameDiv.nextElementSibling);
+
+        const unitDiv = document.createElement('div');
+        unitDiv.innerHTML = `<label class="label">Satuan <span class="text-danger">*</span></label><input type="text" id="item-unit" class="input" required />`;
+        descDiv.parentElement.insertBefore(unitDiv, descDiv.nextElementSibling);
+
+        const minDiv = document.createElement('div');
+        minDiv.innerHTML = `<label class="label">Rentang Rujukan Min</label><input type="number" id="item-min-range" class="input" step="0.01" />`;
+        unitDiv.parentElement.insertBefore(minDiv, unitDiv.nextElementSibling);
+
+        const maxDiv = document.createElement('div');
+        maxDiv.innerHTML = `<label class="label">Rentang Rujukan Max</label><input type="number" id="item-max-range" class="input" step="0.01" />`;
+        minDiv.parentElement.insertBefore(maxDiv, minDiv.nextElementSibling);
+
+        const statusDiv = document.createElement('div');
+        statusDiv.innerHTML = `<label class="label"><input type="checkbox" id="item-is-active" checked class="mr-2" /> Aktif</label>`;
+        maxDiv.parentElement.insertBefore(statusDiv, maxDiv.nextElementSibling);
+    }
+}
 
 window.closeCrudModal = function() {
     closeModal('crud-modal');
@@ -171,7 +233,28 @@ window.editItem = async function(id) {
     editingId = item.id;
     document.getElementById('modal-title').textContent = `Edit ${tabConfig[currentTab].title}`;
     document.getElementById('item-id').value = editingId;
+
+    setupFormFields();
+
     document.getElementById('item-name').value = item.name;
+
+    // Populate labItems fields jika ada
+    if (currentTab === 'labItems') {
+        const descEl = document.getElementById('item-description');
+        if (descEl) descEl.value = item.description || '';
+
+        const unitEl = document.getElementById('item-unit');
+        if (unitEl) unitEl.value = item.unit || '';
+
+        const minEl = document.getElementById('item-min-range');
+        if (minEl) minEl.value = item.min_range_reference || '';
+
+        const maxEl = document.getElementById('item-max-range');
+        if (maxEl) maxEl.value = item.max_range_reference || '';
+
+        const statusEl = document.getElementById('item-is-active');
+        if (statusEl) statusEl.checked = item.is_active !== false;
+    }
 
     openModal('crud-modal');
 };
@@ -179,21 +262,35 @@ window.editItem = async function(id) {
 window.handleSubmit = async function(event) {
     event.preventDefault();
 
-    const name = document.getElementById('item-name').value;
     const config = tabConfig[currentTab];
+    let formData = { name: document.getElementById('item-name').value };
+
+    // Special handling untuk labItems dengan fields tambahan
+    if (currentTab === 'labItems') {
+        formData = {
+            name: document.getElementById('item-name').value,
+            description: document.getElementById('item-description')?.value || null,
+            unit: document.getElementById('item-unit').value,
+            minRangeReference: document.getElementById('item-min-range')?.value || null,
+            maxRangeReference: document.getElementById('item-max-range')?.value || null,
+            isActive: document.getElementById('item-is-active')?.checked !== false
+        };
+    }
 
     try {
+        const currentUser = authService.getCurrentUser();
+
         if (editingId) {
             // Update
-            await config.update(editingId, { name });
+            await config.update(editingId, formData, currentUser);
             showToast('Data berhasil diupdate', 'success');
         } else {
             // Create
-            await config.create({ name });
+            await config.create(formData, currentUser);
             showToast('Data berhasil ditambahkan', 'success');
         }
 
-        closeCrudModal();
+        window.closeCrudModal();
         await loadData();
     } catch (error) {
 
