@@ -14,7 +14,7 @@ import { supabaseReady } from '../config/supabase.js';
 import { initSuperSearch } from '../components/superSearch.js';
 import FileUploadWidget from '../components/fileUploadWidget.js';
 import { generateMCUId } from '../utils/idGenerator.js';
-import { uploadBatchFiles } from '../services/supabaseStorageService.js';
+import { uploadBatchFilesToGoogleDrive } from '../services/googleDriveUploadService.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';
 import { createLabResultWidget } from '../components/labResultWidget.js';
 
@@ -448,10 +448,8 @@ window.handleAddMCU = async function(event) {
 
         // If there are files, upload them FIRST before saving MCU
         if (pendingFiles && pendingFiles.length > 0) {
-            console.log(`📦 Uploading ${pendingFiles.length} file(s) for MCU ${mcuData.mcuId}...`);
-
             let lastProgressShown = 0;
-            const uploadResult = await uploadBatchFiles(
+            const uploadResult = await uploadBatchFilesToGoogleDrive(
                 pendingFiles,
                 mcuData.employeeId,
                 mcuData.mcuId,
@@ -461,7 +459,6 @@ window.handleAddMCU = async function(event) {
                     const percentage = Math.round((current / total) * 100);
                     // Only show toast every 25% or at end
                     if (percentage >= lastProgressShown + 25 || percentage === 100) {
-                        console.log(`⏳ Upload progress: ${current}/${total} - ${message}`);
                         lastProgressShown = percentage;
                     }
                 }
@@ -474,7 +471,7 @@ window.handleAddMCU = async function(event) {
             }
 
             if (uploadResult.uploadedCount > 0) {
-                showToast(`✅ ${uploadResult.uploadedCount} file(s) uploaded successfully`, 'success');
+                showToast(`✅ ${uploadResult.uploadedCount} file(s) uploaded to Google Drive successfully`, 'success');
             }
 
             // Clear temporary files after successful upload

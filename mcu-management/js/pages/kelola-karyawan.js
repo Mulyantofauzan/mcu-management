@@ -20,7 +20,8 @@ import { supabaseReady } from '../config/supabase.js';
 import { initSuperSearch } from '../components/superSearch.js';
 import FileUploadWidget from '../components/fileUploadWidget.js';
 import FileListViewer from '../components/fileListViewer.js';
-import { saveUploadedFilesMetadata, deleteOrphanedFiles, uploadBatchFiles } from '../services/supabaseStorageService.js';
+import { deleteOrphanedFiles } from '../services/supabaseStorageService.js';
+import { uploadBatchFilesToGoogleDrive } from '../services/googleDriveUploadService.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';
 import { createLabResultWidget } from '../components/labResultWidget.js';
 
@@ -826,7 +827,7 @@ window.handleAddMCU = async function(event) {
 
         if (pendingFiles && pendingFiles.length > 0) {
             let lastProgressShown = 0;
-            const uploadResult = await uploadBatchFiles(
+            const uploadResult = await uploadBatchFilesToGoogleDrive(
                 pendingFiles,
                 mcuData.employeeId,
                 mcuData.mcuId,
@@ -849,7 +850,7 @@ window.handleAddMCU = async function(event) {
 
             // Clear temporary files after successful upload
             tempFileStorage.clearFiles(mcuData.mcuId);
-            showToast(`✅ ${uploadResult.uploadedCount} file(s) uploaded successfully`, 'success');
+            showToast(`✅ ${uploadResult.uploadedCount} file(s) uploaded to Google Drive successfully`, 'success');
         }
 
         // ✅ FIX: NOW save MCU data after files are successfully uploaded (or if no files)
@@ -1296,7 +1297,7 @@ window.handleEditMCU = async function(event) {
         // If there are files, upload them FIRST before updating MCU
         if (pendingFiles && pendingFiles.length > 0) {
             let lastProgressShown = 0;
-            const uploadResult = await uploadBatchFiles(
+            const uploadResult = await uploadBatchFilesToGoogleDrive(
                 pendingFiles,
                 updateData.employeeId || (await mcuService.getById(mcuId)).employeeId,
                 mcuId,
@@ -1318,7 +1319,7 @@ window.handleEditMCU = async function(event) {
             }
 
             if (uploadResult.uploadedCount > 0) {
-                showToast(`${uploadResult.uploadedCount} file(s) uploaded successfully`, 'success');
+                showToast(`${uploadResult.uploadedCount} file(s) uploaded to Google Drive successfully`, 'success');
             }
 
             // Clear temporary files after successful upload
