@@ -69,45 +69,43 @@ class LabResultWidget {
             .join('');
 
         const formHTML = `
-            <div id="${resultId}" class="border border-gray-200 rounded-lg p-3 bg-gray-50 mb-2">
-                <div class="grid grid-cols-1 md:grid-cols-6 gap-2 items-end">
-                    <!-- Pemeriksaan Dropdown (2 cols) -->
-                    <div class="md:col-span-2">
-                        <label class="label text-xs">Pemeriksaan <span class="text-danger">*</span></label>
-                        <select class="input lab-item-select text-sm" data-result-id="${resultId}" required style="width: 100%;">
-                            <option value="">Pilih...</option>
-                            ${labItemOptions}
-                        </select>
-                    </div>
+            <div id="${resultId}" class="flex flex-wrap items-end gap-2 mb-2 p-2 bg-gray-50 rounded border border-gray-200">
+                <!-- Pemeriksaan Dropdown -->
+                <div class="flex-1 min-w-48">
+                    <label class="label text-xs block mb-1">Pemeriksaan <span class="text-danger">*</span></label>
+                    <select class="input lab-item-select text-sm w-full" data-result-id="${resultId}" required>
+                        <option value="">Pilih...</option>
+                        ${labItemOptions}
+                    </select>
+                </div>
 
-                    <!-- Nilai (1 col) -->
-                    <div class="md:col-span-1">
-                        <label class="label text-xs">Nilai <span class="text-danger">*</span></label>
-                        <input type="number" step="0.01" class="input lab-value-input text-sm" data-result-id="${resultId}" placeholder="0.00" required style="width: 100%;" />
-                    </div>
+                <!-- Nilai -->
+                <div class="w-20">
+                    <label class="label text-xs block mb-1">Nilai <span class="text-danger">*</span></label>
+                    <input type="number" step="0.01" class="input lab-value-input text-sm w-full" data-result-id="${resultId}" placeholder="0.00" required />
+                </div>
 
-                    <!-- Satuan (1 col, readonly) -->
-                    <div class="md:col-span-1">
-                        <label class="label text-xs">Satuan</label>
-                        <input type="text" class="input lab-unit-display text-sm" data-result-id="${resultId}" readonly style="width: 100%;" />
-                    </div>
+                <!-- Satuan (readonly) -->
+                <div class="w-20">
+                    <label class="label text-xs block mb-1">Satuan</label>
+                    <input type="text" class="input lab-unit-display text-sm w-full" data-result-id="${resultId}" readonly />
+                </div>
 
-                    <!-- Rentang Rujukan (1 col, readonly) -->
-                    <div class="md:col-span-1">
-                        <label class="label text-xs">Rentang</label>
-                        <input type="text" class="input lab-range-display text-sm" data-result-id="${resultId}" readonly style="width: 100%;" />
-                    </div>
+                <!-- Rentang (readonly) -->
+                <div class="w-24">
+                    <label class="label text-xs block mb-1">Rentang</label>
+                    <input type="text" class="input lab-range-display text-sm w-full" data-result-id="${resultId}" readonly />
+                </div>
 
-                    <!-- Catatan (1 col, readonly) -->
-                    <div class="md:col-span-1">
-                        <label class="label text-xs">Catatan</label>
-                        <input type="text" class="input lab-notes-input text-sm" data-result-id="${resultId}" readonly style="width: 100%;" />
-                    </div>
+                <!-- Catatan (readonly) -->
+                <div class="w-20">
+                    <label class="label text-xs block mb-1">Catatan</label>
+                    <input type="text" class="input lab-notes-input text-sm w-full" data-result-id="${resultId}" readonly />
+                </div>
 
-                    <!-- Remove Button (1 col) -->
-                    <div class="md:col-span-1">
-                        <button type="button" class="btn btn-danger btn-sm remove-lab-result" data-result-id="${resultId}" style="width: 100%; height: auto;">-</button>
-                    </div>
+                <!-- Remove Button -->
+                <div class="w-10">
+                    <button type="button" class="btn btn-danger btn-sm remove-lab-result w-full" data-result-id="${resultId}">-</button>
                 </div>
             </div>
         `;
