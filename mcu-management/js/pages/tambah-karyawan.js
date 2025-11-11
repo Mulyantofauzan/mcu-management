@@ -6,6 +6,7 @@
 import { authService } from '../services/authService.js';
 import { employeeService } from '../services/employeeService.js';
 import { mcuService } from '../services/mcuService.js';
+import { labService } from '../services/labService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
@@ -15,6 +16,7 @@ import FileUploadWidget from '../components/fileUploadWidget.js';
 import { generateMCUId } from '../utils/idGenerator.js';
 import { uploadBatchFiles } from '../services/supabaseStorageService.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';
+import { createLabResultWidget } from '../components/labResultWidget.js';
 
 let searchResults = [];
 let jobTitles = [];
@@ -22,6 +24,7 @@ let departments = [];
 let doctors = [];
 let currentEmployee = null;
 let fileUploadWidget = null;
+let labResultWidget = null;  // Lab result widget instance
 let generatedMCUIdForAdd = null;  // Store generated MCU ID for file uploads
 
 /**
@@ -376,6 +379,17 @@ window.openAddMCUForEmployee = async function(employeeId) {
                 showToast('Upload gagal: ' + error, 'error');
             }
         });
+
+        // Initialize lab result widget
+        labResultWidget = createLabResultWidget('lab-results-container-add');
+        if (labResultWidget) {
+            await labResultWidget.init();
+            // Setup add button handler
+            const addLabBtn = document.getElementById('add-lab-result-btn');
+            if (addLabBtn) {
+                addLabBtn.onclick = () => labResultWidget.addLabResultForm();
+            }
+        }
     } catch (error) {
 
         showToast('Gagal membuka form MCU: ' + error.message, 'error');
@@ -417,9 +431,6 @@ window.handleAddMCU = async function(event) {
             treadmill: document.getElementById('mcu-treadmill').value || null,
             kidneyLiverFunction: document.getElementById('mcu-kidney').value || null,
             hbsag: document.getElementById('mcu-hbsag').value || null,
-            sgot: document.getElementById('mcu-sgot').value || null,
-            sgpt: document.getElementById('mcu-sgpt').value || null,
-            cbc: document.getElementById('mcu-cbc').value || null,
             napza: document.getElementById('mcu-napza').value || null,
             doctor: doctorName,
             recipient: document.getElementById('mcu-recipient').value || null,
@@ -470,6 +481,31 @@ window.handleAddMCU = async function(event) {
 
         // NOW save MCU data after files are successfully uploaded (or if no files)
         const createdMCU = await mcuService.create(mcuData, currentUser);
+
+        // Save lab results jika ada
+        if (labResultWidget) {
+            const labResults = labResultWidget.getAllLabResults();
+            if (labResults && labResults.length > 0) {
+                console.log(`📋 Saving ${labResults.length} lab result(s) untuk MCU ${createdMCU.mcuId}`);
+
+                for (const result of labResults) {
+                    try {
+                        await labService.createPemeriksaanLab({
+                            mcuId: createdMCU.mcuId,
+                            employeeId: mcuData.employeeId,
+                            labItemId: result.labItemId,
+                            value: result.value,
+                            notes: result.notes
+                        }, currentUser);
+                    } catch (error) {
+                        console.error(`❌ Error saving lab result:`, error);
+                        showToast(`Peringatan: Gagal menyimpan hasil lab: ${error.message}`, 'warning');
+                    }
+                }
+
+                showToast(`✅ ${labResults.length} hasil lab berhasil disimpan`, 'success');
+            }
+        }
 
         showToast('MCU berhasil ditambahkan!', 'success');
 
