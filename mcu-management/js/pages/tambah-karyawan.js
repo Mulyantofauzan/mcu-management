@@ -383,12 +383,23 @@ window.openAddMCUForEmployee = async function(employeeId) {
         // Initialize lab result widget
         labResultWidget = createLabResultWidget('lab-results-container-add');
         if (labResultWidget) {
+            console.log('🔧 Lab widget created, calling init()...');
             await labResultWidget.init();
+            console.log('🔧 Lab widget init() complete');
+
             // Setup add button handler
             const addLabBtn = document.getElementById('add-lab-result-btn');
             if (addLabBtn) {
-                addLabBtn.onclick = () => labResultWidget.addLabResultForm();
+                console.log('🔧 Found add-lab-result-btn, attaching onclick handler');
+                addLabBtn.onclick = () => {
+                    console.log('🔧 Button clicked! Calling addLabResultForm()');
+                    labResultWidget.addLabResultForm();
+                };
+            } else {
+                console.error('🔧 ERROR: add-lab-result-btn not found!');
             }
+        } else {
+            console.error('🔧 ERROR: Failed to create lab widget!');
         }
     } catch (error) {
 
