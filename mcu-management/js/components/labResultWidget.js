@@ -18,8 +18,26 @@ class LabResultWidget {
      */
     async init() {
         try {
+            console.log('🔄 LabResultWidget.init() starting...');
+            console.log('🔄 Calling labService.getAllLabItems()...');
+
             this.labItems = await labService.getAllLabItems();
+
             console.log(`✅ LabResultWidget initialized with ${this.labItems.length} lab items`);
+
+            if (this.labItems.length === 0) {
+                console.warn('⚠️ WARNING: No lab items found! The dropdown will be empty.');
+                console.warn('Make sure lab_items table is populated in Supabase.');
+            }
+
+            // Log the items for debugging
+            if (this.labItems.length > 0) {
+                console.log('📋 Lab items loaded:');
+                this.labItems.forEach(item => {
+                    console.log(`  - ${item.name} (${item.unit}): ${item.min_range_reference} - ${item.max_range_reference}`);
+                });
+            }
+
             return true;
         } catch (error) {
             console.error('❌ Error initializing LabResultWidget:', error);
@@ -31,6 +49,10 @@ class LabResultWidget {
      * Add new lab result form ke container
      */
     addLabResultForm(resultData = null) {
+        console.log('📝 addLabResultForm() called');
+        console.log('   this.container:', this.container);
+        console.log('   this.labItems.length:', this.labItems.length);
+
         if (!this.container) {
             console.error('❌ Container not found:', this.containerId);
             return;
@@ -38,6 +60,8 @@ class LabResultWidget {
 
         const resultId = `lab-result-${Date.now()}`;
         const isEdit = resultData ? true : false;
+
+        console.log(`   Creating form with ${this.labItems.length} lab item options...`);
 
         // Build dropdown options
         const labItemOptions = this.labItems
@@ -93,12 +117,26 @@ class LabResultWidget {
         resultElement.innerHTML = formHTML;
         this.container.appendChild(resultElement.firstElementChild);
 
+        console.log(`   ✅ Form HTML appended to container`);
+
         // Attach event listeners
         const labSelect = document.querySelector(`#${resultId} .lab-item-select`);
         const removeBtn = document.querySelector(`#${resultId} .remove-lab-result`);
 
-        labSelect.addEventListener('change', (e) => this.handleLabItemChange(e, resultId));
-        removeBtn.addEventListener('click', (e) => this.removeLabResult(e, resultId));
+        if (!labSelect) {
+            console.error(`   ❌ ERROR: lab-item-select not found for ${resultId}`);
+        } else {
+            console.log(`   ✅ Found lab-item-select, attaching change listener`);
+        }
+
+        if (!removeBtn) {
+            console.error(`   ❌ ERROR: remove-lab-result button not found for ${resultId}`);
+        } else {
+            console.log(`   ✅ Found remove button, attaching click listener`);
+        }
+
+        if (labSelect) labSelect.addEventListener('change', (e) => this.handleLabItemChange(e, resultId));
+        if (removeBtn) removeBtn.addEventListener('click', (e) => this.removeLabResult(e, resultId));
 
         // Populate jika edit
         if (isEdit && resultData) {
