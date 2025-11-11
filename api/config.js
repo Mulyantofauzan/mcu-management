@@ -43,6 +43,9 @@ module.exports = (req, res) => {
     hasGOOGLE_DRIVE_UPLOAD_ENDPOINT: !!config.VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT
   });
 
+  // Debug: Log all env vars that start with VITE_
+  console.log('Available env vars:', Object.keys(process.env).filter(k => k.startsWith('VITE_')));
+
   // Return whatever config is available (may be partial)
   // Frontend will fall back to IndexedDB if Supabase not configured
   res.status(200).json(config);
