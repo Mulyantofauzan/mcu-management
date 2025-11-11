@@ -5,7 +5,7 @@
  * 2. Pemeriksaan Lab (hasil pemeriksaan untuk setiap MCU)
  */
 
-import { supabase } from './supabase.js';
+import { supabase } from '../config/supabase.js';
 import { cacheManager } from '../utils/cacheManager.js';
 
 class LabService {
@@ -16,7 +16,7 @@ class LabService {
   /**
    * Buat item pemeriksaan lab baru
    */
-  async createLabItem(data, currentUser) {
+  async createLabItem(data) {
     try {
       const { data: result, error } = await supabase
         .from('lab_items')
@@ -101,7 +101,7 @@ class LabService {
   /**
    * Update lab item
    */
-  async updateLabItem(id, data, currentUser) {
+  async updateLabItem(id, data) {
     try {
       const { data: result, error } = await supabase
         .from('lab_items')
@@ -134,7 +134,7 @@ class LabService {
   /**
    * Delete lab item (soft delete)
    */
-  async deleteLabItem(id, currentUser) {
+  async deleteLabItem(id) {
     try {
       // Check jika lab item ini digunakan di pemeriksaan_lab
       const { data: pemeriksaan, error: checkError } = await supabase
@@ -275,7 +275,7 @@ class LabService {
   /**
    * Delete pemeriksaan lab (soft delete)
    */
-  async deletePemeriksaanLab(id, currentUser) {
+  async deletePemeriksaanLab(id) {
     try {
       const { error } = await supabase
         .from('pemeriksaan_lab')
