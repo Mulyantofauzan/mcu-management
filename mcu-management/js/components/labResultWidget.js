@@ -4,7 +4,6 @@
  */
 
 import { labService } from '../services/labService.js';
-import { showToast } from '../utils/uiHelpers.js';
 
 class LabResultWidget {
     constructor(containerId) {
@@ -46,44 +45,44 @@ class LabResultWidget {
             .join('');
 
         const formHTML = `
-            <div id="${resultId}" class="border border-gray-200 rounded-lg p-4 space-y-3 bg-gray-50">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <!-- Pemeriksaan Dropdown -->
-                    <div>
-                        <label class="label text-sm">Pemeriksaan <span class="text-danger">*</span></label>
-                        <select class="input lab-item-select" data-result-id="${resultId}" required>
-                            <option value="">Pilih Pemeriksaan...</option>
+            <div id="${resultId}" class="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
+                    <!-- Pemeriksaan Dropdown (3 cols) -->
+                    <div class="md:col-span-3">
+                        <label class="label text-xs">Pemeriksaan <span class="text-danger">*</span></label>
+                        <select class="input lab-item-select text-sm" data-result-id="${resultId}" required>
+                            <option value="">Pilih...</option>
                             ${labItemOptions}
                         </select>
                     </div>
 
-                    <!-- Nilai -->
-                    <div>
-                        <label class="label text-sm">Nilai <span class="text-danger">*</span></label>
-                        <input type="number" step="0.01" class="input lab-value-input" data-result-id="${resultId}" placeholder="Nilai hasil" required />
-                    </div>
-
-                    <!-- Satuan (auto-filled, readonly) -->
-                    <div>
-                        <label class="label text-sm">Satuan</label>
-                        <input type="text" class="input lab-unit-display" data-result-id="${resultId}" readonly placeholder="Auto" />
-                    </div>
-
-                    <!-- Rentang Rujukan (auto-filled, readonly) -->
-                    <div>
-                        <label class="label text-sm">Rentang Rujukan</label>
-                        <input type="text" class="input lab-range-display" data-result-id="${resultId}" readonly placeholder="Auto" />
-                    </div>
-                </div>
-
-                <!-- Notes & Remove Button -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <!-- Nilai (2 cols) -->
                     <div class="md:col-span-2">
-                        <label class="label text-sm">Catatan (Normal/High/Low)</label>
-                        <input type="text" class="input lab-notes-input" data-result-id="${resultId}" placeholder="Misal: Normal, High, Low" />
+                        <label class="label text-xs">Nilai <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" class="input lab-value-input text-sm" data-result-id="${resultId}" placeholder="Nilai" required />
                     </div>
-                    <div class="flex items-end">
-                        <button type="button" class="btn btn-danger btn-sm remove-lab-result" data-result-id="${resultId}" style="width: 100%;">Hapus</button>
+
+                    <!-- Satuan (1.5 cols, readonly) -->
+                    <div class="md:col-span-2">
+                        <label class="label text-xs">Satuan</label>
+                        <input type="text" class="input lab-unit-display text-sm" data-result-id="${resultId}" readonly />
+                    </div>
+
+                    <!-- Rentang Rujukan (2 cols, readonly) -->
+                    <div class="md:col-span-2">
+                        <label class="label text-xs">Rentang</label>
+                        <input type="text" class="input lab-range-display text-sm" data-result-id="${resultId}" readonly />
+                    </div>
+
+                    <!-- Catatan (1.5 cols, readonly - auto) -->
+                    <div class="md:col-span-1.5">
+                        <label class="label text-xs">Catatan</label>
+                        <input type="text" class="input lab-notes-input text-sm" data-result-id="${resultId}" readonly />
+                    </div>
+
+                    <!-- Remove Button (0.5 cols) -->
+                    <div class="md:col-span-1">
+                        <button type="button" class="btn btn-danger btn-sm remove-lab-result w-full h-10" data-result-id="${resultId}">Hapus</button>
                     </div>
                 </div>
             </div>
@@ -117,20 +116,59 @@ class LabResultWidget {
     }
 
     /**
-     * Handle lab item selection - auto-fill unit dan range
+     * Handle lab item selection - auto-fill unit, range, dan update catatan
      */
     handleLabItemChange(event, resultId) {
         const selectedOption = event.target.selectedOptions[0];
         const unit = selectedOption.dataset.unit || '';
-        const minRange = selectedOption.dataset.min || '';
-        const maxRange = selectedOption.dataset.max || '';
+        const minRange = parseFloat(selectedOption.dataset.min) || null;
+        const maxRange = parseFloat(selectedOption.dataset.max) || null;
 
         // Update display fields
         const unitDisplay = document.querySelector(`#${resultId} .lab-unit-display`);
         const rangeDisplay = document.querySelector(`#${resultId} .lab-range-display`);
 
         if (unitDisplay) unitDisplay.value = unit;
-        if (rangeDisplay) rangeDisplay.value = minRange && maxRange ? `${minRange} - ${maxRange}` : '';
+        if (rangeDisplay) rangeDisplay.value = minRange !== null && maxRange !== null ? `${minRange} - ${maxRange}` : '';
+
+        // Add value input listener untuk auto-update catatan
+        const valueInput = document.querySelector(`#${resultId} .lab-value-input`);
+        if (valueInput) {
+            valueInput.removeEventListener('change', this.autoFillNotes);
+            valueInput.addEventListener('change', () => this.autoFillNotes(resultId, minRange, maxRange));
+            // Also trigger on input event untuk real-time update
+            valueInput.addEventListener('input', () => this.autoFillNotes(resultId, minRange, maxRange));
+        }
+
+        // Trigger initial notes update jika ada nilai
+        this.autoFillNotes(resultId, minRange, maxRange);
+    }
+
+    /**
+     * Auto-fill notes berdasarkan nilai dan rentang rujukan
+     * Normal = dalam rentang, High = > max, Low = < min
+     */
+    autoFillNotes(resultId, minRange, maxRange) {
+        const valueInput = document.querySelector(`#${resultId} .lab-value-input`);
+        const notesInput = document.querySelector(`#${resultId} .lab-notes-input`);
+
+        if (!valueInput || !notesInput) return;
+
+        const value = parseFloat(valueInput.value);
+        let status = '';
+
+        // Tentukan status berdasarkan nilai
+        if (!isNaN(value) && minRange !== null && maxRange !== null) {
+            if (value < minRange) {
+                status = 'Low';
+            } else if (value > maxRange) {
+                status = 'High';
+            } else {
+                status = 'Normal';
+            }
+        }
+
+        notesInput.value = status;
     }
 
     /**
