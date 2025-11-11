@@ -4,6 +4,8 @@
  * Stores metadata in Supabase mcufiles table
  */
 
+// Get environment variables - will be replaced by Vite at build time
+const GOOGLE_DRIVE_UPLOAD_ENDPOINT = window.__GOOGLE_DRIVE_UPLOAD_ENDPOINT__ || '/api/uploadToGoogleDrive';
 
 /**
  * Upload file to Google Drive via backend API
@@ -21,9 +23,7 @@ export async function uploadFileToGoogleDrive(file, employeeId, mcuId, userId, u
       throw new Error('Missing required parameters: file, employeeId, mcuId');
     }
 
-    // Get upload endpoint from environment
-    const uploadEndpoint = import.meta.env.VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT;
-    if (!uploadEndpoint) {
+    if (!GOOGLE_DRIVE_UPLOAD_ENDPOINT) {
       throw new Error('Google Drive upload endpoint not configured');
     }
 
@@ -40,7 +40,7 @@ export async function uploadFileToGoogleDrive(file, employeeId, mcuId, userId, u
     }
 
     // Call backend API to upload to Google Drive
-    const response = await fetch(uploadEndpoint, {
+    const response = await fetch(GOOGLE_DRIVE_UPLOAD_ENDPOINT, {
       method: 'POST',
       body: formData,
       // Don't set Content-Type header - browser will set it with boundary
