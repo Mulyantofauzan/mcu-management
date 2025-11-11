@@ -436,11 +436,16 @@
                                 <option value="Reaktif">Reaktif</option>
                             </select>
                         </div>
-                        <div><label class="label">SGOT</label><input type="text" id="edit-mcu-sgot" class="input" /></div>
-                        <div><label class="label">SGPT</label><input type="text" id="edit-mcu-sgpt" class="input" /></div>
-                        <div><label class="label">CBC</label><input type="text" id="edit-mcu-cbc" class="input" /></div>
                     </div>
 
+                    <!-- Pemeriksaan Lab Section -->
+                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Lab (Opsional)</h4>
+                    <div id="lab-results-container-edit" class="space-y-4 mb-4">
+                        <!-- Lab result items akan di-generate secara dinamis dengan JavaScript -->
+                    </div>
+                    <button type="button" id="add-lab-result-btn-edit" class="btn btn-secondary btn-sm" style="margin-bottom: 20px;">+ Tambah Pemeriksaan Lab</button>
+
+                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Penunjang</h4>
                     <div class="grid grid-cols-1 gap-4 mb-4">
                         <div><label class="label">X-Ray</label><textarea id="edit-mcu-xray" class="input" rows="2"></textarea></div>
                         <div><label class="label">EKG</label><textarea id="edit-mcu-ekg" class="input" rows="2"></textarea></div>
@@ -567,11 +572,16 @@
                                 <option value="Reaktif">Reaktif</option>
                             </select>
                         </div>
-                        <div><label class="label">SGOT</label><input type="text" id="mcu-sgot" class="input" /></div>
-                        <div><label class="label">SGPT</label><input type="text" id="mcu-sgpt" class="input" /></div>
-                        <div><label class="label">CBC</label><input type="text" id="mcu-cbc" class="input" /></div>
                     </div>
 
+                    <!-- Pemeriksaan Lab Section -->
+                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Lab (Opsional)</h4>
+                    <div id="lab-results-container-add-karyawan" class="space-y-4 mb-4">
+                        <!-- Lab result items akan di-generate secara dinamis dengan JavaScript -->
+                    </div>
+                    <button type="button" id="add-lab-result-btn-karyawan" class="btn btn-secondary btn-sm" style="margin-bottom: 20px;">+ Tambah Pemeriksaan Lab</button>
+
+                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Penunjang</h4>
                     <div class="grid grid-cols-1 gap-4 mb-4">
                         <div><label class="label">X-Ray</label><textarea id="mcu-xray" class="input" rows="2"></textarea></div>
                         <div><label class="label">EKG</label><textarea id="mcu-ekg" class="input" rows="2"></textarea></div>

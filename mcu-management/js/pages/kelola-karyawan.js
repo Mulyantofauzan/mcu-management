@@ -5,6 +5,7 @@
 import { authService } from '../services/authService.js';
 import { employeeService } from '../services/employeeService.js';
 import { mcuService } from '../services/mcuService.js';
+import { labService } from '../services/labService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { generateMCUId } from '../utils/idGenerator.js';
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
@@ -21,6 +22,7 @@ import FileUploadWidget from '../components/fileUploadWidget.js';
 import FileListViewer from '../components/fileListViewer.js';
 import { saveUploadedFilesMetadata, deleteOrphanedFiles, uploadBatchFiles } from '../services/supabaseStorageService.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';
+import { createLabResultWidget } from '../components/labResultWidget.js';
 
 let employees = [];
 let filteredEmployees = [];
