@@ -432,6 +432,7 @@ window.handleAddMCU = async function(event) {
             kidneyLiverFunction: document.getElementById('mcu-kidney').value || null,
             hbsag: document.getElementById('mcu-hbsag').value || null,
             napza: document.getElementById('mcu-napza').value || null,
+            colorblind: document.getElementById('mcu-colorblind').value || null,
             doctor: doctorName,
             recipient: document.getElementById('mcu-recipient').value || null,
             keluhanUtama: document.getElementById('mcu-keluhan').value || null,

@@ -82,7 +82,7 @@ class LabResultWidget {
 
                     <!-- Remove Button (0.5 cols) -->
                     <div class="md:col-span-1">
-                        <button type="button" class="btn btn-danger btn-sm remove-lab-result w-full h-10" data-result-id="${resultId}">Hapus</button>
+                        <button type="button" class="btn btn-danger btn-sm remove-lab-result w-full h-10" data-result-id="${resultId}">-</button>
                     </div>
                 </div>
             </div>

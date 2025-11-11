@@ -789,6 +789,7 @@ window.handleAddMCU = async function(event) {
             kidneyLiverFunction: document.getElementById('mcu-kidney').value || null,
             hbsag: document.getElementById('mcu-hbsag').value || null,
             napza: document.getElementById('mcu-napza').value || null,
+            colorblind: document.getElementById('mcu-colorblind').value || null,
             doctor: doctorName,
             recipient: document.getElementById('mcu-recipient').value || null,
             keluhanUtama: document.getElementById('mcu-keluhan').value || null,
@@ -922,6 +923,7 @@ window.viewMCUDetail = async function(mcuId) {
         document.getElementById('mcu-detail-treadmill').textContent = mcu.treadmill || '-';
         document.getElementById('mcu-detail-kidney').textContent = mcu.kidneyLiverFunction || '-';
         document.getElementById('mcu-detail-napza').textContent = mcu.napza || '-';
+        document.getElementById('mcu-detail-colorblind').textContent = mcu.colorblind || '-';
 
         // Fill additional data
         document.getElementById('mcu-detail-rr').textContent = mcu.respiratoryRate || '-';
@@ -1081,6 +1083,7 @@ window.editMCU = async function() {
                     'edit-mcu-treadmill': mcu.treadmill,
                     'edit-mcu-kidney': mcu.kidneyLiverFunction,
                     'edit-mcu-napza': mcu.napza,
+                    'edit-mcu-colorblind': mcu.colorblind,
                     'edit-mcu-recipient': mcu.recipient,
                     'edit-mcu-keluhan': mcu.keluhanUtama,
                     'edit-mcu-diagnosis': mcu.diagnosisKerja,
@@ -1171,6 +1174,7 @@ window.handleEditMCU = async function(event) {
             treadmill: document.getElementById('edit-mcu-treadmill').value || null,
             kidneyLiverFunction: document.getElementById('edit-mcu-kidney').value || null,
             napza: document.getElementById('edit-mcu-napza').value || null,
+            colorblind: document.getElementById('edit-mcu-colorblind').value || null,
             // ✅ FIX: Convert doctor ID to number (doctors.id is INTEGER)
             doctor: (() => {
                 const val = document.getElementById('edit-mcu-doctor').value;
