@@ -1,6 +1,18 @@
 {
   "buildCommand": "cd mcu-management && npm run build",
   "outputDirectory": "mcu-management/dist",
+  "env": {
+    "GOOGLE_CREDENTIALS": "@google_credentials",
+    "GOOGLE_DRIVE_ROOT_FOLDER_ID": "@google_drive_root_folder_id",
+    "SUPABASE_URL": "@supabase_url",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key"
+  },
+  "functions": {
+    "api/api/uploadToGoogleDrive/index.js": {
+      "maxDuration": 60,
+      "memory": 3008
+    }
+  },
   "routes": [
     {
       "src": "/api/(.*)",
