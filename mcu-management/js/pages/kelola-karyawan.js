@@ -788,9 +788,6 @@ window.handleAddMCU = async function(event) {
             treadmill: document.getElementById('mcu-treadmill').value || null,
             kidneyLiverFunction: document.getElementById('mcu-kidney').value || null,
             hbsag: document.getElementById('mcu-hbsag').value || null,
-            sgot: document.getElementById('mcu-sgot').value || null,
-            sgpt: document.getElementById('mcu-sgpt').value || null,
-            cbc: document.getElementById('mcu-cbc').value || null,
             napza: document.getElementById('mcu-napza').value || null,
             doctor: doctorName,
             recipient: document.getElementById('mcu-recipient').value || null,
@@ -920,9 +917,6 @@ window.viewMCUDetail = async function(mcuId) {
         document.getElementById('mcu-detail-audio').textContent = mcu.audiometry || '-';
         document.getElementById('mcu-detail-spiro').textContent = mcu.spirometry || '-';
         document.getElementById('mcu-detail-hbsag').textContent = mcu.hbsag || '-';
-        document.getElementById('mcu-detail-sgot').textContent = mcu.sgot || '-';
-        document.getElementById('mcu-detail-sgpt').textContent = mcu.sgpt || '-';
-        document.getElementById('mcu-detail-cbc').textContent = mcu.cbc || '-';
         document.getElementById('mcu-detail-xray').textContent = mcu.xray || '-';
         document.getElementById('mcu-detail-ekg').textContent = mcu.ekg || '-';
         document.getElementById('mcu-detail-treadmill').textContent = mcu.treadmill || '-';
@@ -1082,9 +1076,6 @@ window.editMCU = async function() {
                     'edit-mcu-vision': mcu.vision,
                     'edit-mcu-audio': mcu.audiometry,
                     'edit-mcu-spiro': mcu.spirometry,
-                    'edit-mcu-sgot': mcu.sgot,
-                    'edit-mcu-sgpt': mcu.sgpt,
-                    'edit-mcu-cbc': mcu.cbc,
                     'edit-mcu-xray': mcu.xray,
                     'edit-mcu-ekg': mcu.ekg,
                     'edit-mcu-treadmill': mcu.treadmill,
@@ -1175,9 +1166,6 @@ window.handleEditMCU = async function(event) {
             audiometry: document.getElementById('edit-mcu-audio').value || null,
             spirometry: document.getElementById('edit-mcu-spiro').value || null,
             hbsag: document.getElementById('edit-mcu-hbsag').value || null,
-            sgot: document.getElementById('edit-mcu-sgot').value || null,
-            sgpt: document.getElementById('edit-mcu-sgpt').value || null,
-            cbc: document.getElementById('edit-mcu-cbc').value || null,
             xray: document.getElementById('edit-mcu-xray').value || null,
             ekg: document.getElementById('edit-mcu-ekg').value || null,
             treadmill: document.getElementById('edit-mcu-treadmill').value || null,
