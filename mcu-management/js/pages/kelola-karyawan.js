@@ -1079,6 +1079,32 @@ window.editMCU = async function() {
         // Open the modal FIRST so DOM elements are visible
         openModal('edit-mcu-modal');
 
+        // Initialize lab result widget for edit modal
+        labResultWidget = createLabResultWidget('lab-results-container-edit');
+        if (labResultWidget) {
+            console.log('🔧 Lab widget created for edit modal, calling init()...');
+            await labResultWidget.init();
+            console.log('🔧 Lab widget init() complete for edit modal');
+
+            // Load existing lab results for this MCU
+            await labResultWidget.loadExistingResults(window.currentMCUId);
+            console.log('🔧 Loaded existing lab results');
+
+            // Setup add button handler
+            const addLabBtn = document.getElementById('add-lab-result-btn-edit');
+            if (addLabBtn) {
+                console.log('🔧 Found add-lab-result-btn-edit, attaching onclick handler');
+                addLabBtn.onclick = () => {
+                    console.log('🔧 Button clicked! Calling addLabResultForm()');
+                    labResultWidget.addLabResultForm();
+                };
+            } else {
+                console.error('🔧 ERROR: add-lab-result-btn-edit not found!');
+            }
+        } else {
+            console.error('🔧 ERROR: Failed to create lab widget for edit modal!');
+        }
+
         // Use setTimeout to ensure DOM is ready before setting values
         setTimeout(() => {
             try {
