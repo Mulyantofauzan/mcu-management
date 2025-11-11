@@ -753,23 +753,15 @@ window.addMCUForEmployee = async function(employeeId) {
         // Initialize lab result widget
         labResultWidget = createLabResultWidget('lab-results-container-add-karyawan');
         if (labResultWidget) {
-            console.log('🔧 Lab widget created, calling init()...');
             await labResultWidget.init();
-            console.log('🔧 Lab widget init() complete');
 
             // Setup add button handler
             const addLabBtn = document.getElementById('add-lab-result-btn-karyawan');
             if (addLabBtn) {
-                console.log('🔧 Found add-lab-result-btn-karyawan, attaching onclick handler');
                 addLabBtn.onclick = () => {
-                    console.log('🔧 Button clicked! Calling addLabResultForm()');
                     labResultWidget.addLabResultForm();
                 };
-            } else {
-                console.error('🔧 ERROR: add-lab-result-btn-karyawan not found!');
             }
-        } else {
-            console.error('🔧 ERROR: Failed to create lab widget!');
         }
     } catch (error) {
 
@@ -1082,27 +1074,18 @@ window.editMCU = async function() {
         // Initialize lab result widget for edit modal
         labResultWidget = createLabResultWidget('lab-results-container-edit');
         if (labResultWidget) {
-            console.log('🔧 Lab widget created for edit modal, calling init()...');
             await labResultWidget.init();
-            console.log('🔧 Lab widget init() complete for edit modal');
 
             // Load existing lab results for this MCU
             await labResultWidget.loadExistingResults(window.currentMCUId);
-            console.log('🔧 Loaded existing lab results');
 
             // Setup add button handler
             const addLabBtn = document.getElementById('add-lab-result-btn-edit');
             if (addLabBtn) {
-                console.log('🔧 Found add-lab-result-btn-edit, attaching onclick handler');
                 addLabBtn.onclick = () => {
-                    console.log('🔧 Button clicked! Calling addLabResultForm()');
                     labResultWidget.addLabResultForm();
                 };
-            } else {
-                console.error('🔧 ERROR: add-lab-result-btn-edit not found!');
             }
-        } else {
-            console.error('🔧 ERROR: Failed to create lab widget for edit modal!');
         }
 
         // Use setTimeout to ensure DOM is ready before setting values
