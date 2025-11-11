@@ -1,4 +1,4 @@
-# SABDAMU System
+# MADIS System
 
 Aplikasi Web Manajemen Medical Check Up (MCU) - Sistem manajemen pemeriksaan kesehatan karyawan yang modern, professional, dan responsive.
 
