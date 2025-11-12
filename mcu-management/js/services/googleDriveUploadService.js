@@ -1,11 +1,12 @@
 /**
  * Google Drive Upload Service
- * Handles file uploads to Google Drive via Vercel backend API
+ * Handles file uploads to Google Drive via Supabase Edge Functions
  * Stores metadata in Supabase mcufiles table
  */
 
-// Get environment variables - will be replaced by Vite at build time
-const GOOGLE_DRIVE_UPLOAD_ENDPOINT = window.__GOOGLE_DRIVE_UPLOAD_ENDPOINT__ || '/api/uploadToGoogleDrive';
+// Get Supabase URL from environment
+const SUPABASE_URL = window.__SUPABASE_URL__ || 'https://ygvhixktmnmgqmqfmtlr.supabase.co';
+const GOOGLE_DRIVE_UPLOAD_ENDPOINT = `${SUPABASE_URL}/functions/v1/upload-to-google-drive`;
 
 /**
  * Upload file to Google Drive via backend API
