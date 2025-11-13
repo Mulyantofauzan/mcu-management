@@ -1120,6 +1120,11 @@ window.editMCU = async function() {
     if (!window.currentMCUId) return;
 
     try {
+        // ✅ CRITICAL: Ensure master data is loaded before opening edit modal
+        if (!doctors || doctors.length === 0) {
+            doctors = await masterDataService.getAllDoctors();
+        }
+
         const mcu = await mcuService.getById(window.currentMCUId);
         if (!mcu) {
             showToast('MCU tidak ditemukan', 'error');
