@@ -155,7 +155,7 @@ export class FileListViewer {
                 </div>
 
                 <div class="flex gap-2 flex-shrink-0">
-                    <button class="file-download-btn px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                    <button class="file-download-btn px-3 py-1 text-sm bg-gray-700 text-white rounded hover:bg-gray-800 transition"
                             data-fileid="${file.fileid}">
                         Download
                     </button>

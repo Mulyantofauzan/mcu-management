@@ -483,9 +483,6 @@ window.openMCUUpdateModal = async function(mcuId) {
       // Lab Results
       'update-kidney': { value: currentMCU.kidneyLiverFunction, prevId: 'update-kidney-prev' },
       'update-hbsag': { value: currentMCU.hbsag, prevId: 'update-hbsag-prev' },
-      'update-sgot': { value: currentMCU.sgot, prevId: 'update-sgot-prev' },
-      'update-sgpt': { value: currentMCU.sgpt, prevId: 'update-sgpt-prev' },
-      'update-cbc': { value: currentMCU.cbc, prevId: 'update-cbc-prev' },
       'update-napza': { value: currentMCU.napza, prevId: 'update-napza-prev' },
       // Referral data
       'update-recipient': { value: currentMCU.recipient, prevId: 'update-recipient-prev' },
@@ -548,9 +545,6 @@ window.handleMCUUpdate = async function(event) {
       'update-treadmill': 'treadmill',
       'update-kidney': 'kidneyLiverFunction',
       'update-hbsag': 'hbsag',
-      'update-sgot': 'sgot',
-      'update-sgpt': 'sgpt',
-      'update-cbc': 'cbc',
       'update-napza': 'napza',
       'update-recipient': 'recipient',
       'update-keluhan': 'keluhanUtama',

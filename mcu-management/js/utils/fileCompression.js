@@ -8,7 +8,7 @@ import { logger } from './logger.js';
 
 class FileCompression {
   constructor() {
-    this.MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB target
+    this.MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB target
     this.MAX_DIMENSION = 2048; // Max width/height for images
     // MIME type mapping for common file extensions
     this.MIME_TYPES = {
@@ -173,7 +173,7 @@ class FileCompression {
     if (file.size > this.MAX_FILE_SIZE) {
       throw new Error(
         `PDF file is too large (${(file.size / 1024 / 1024).toFixed(2)}MB). ` +
-        `Maximum allowed size is 5MB. Please reduce file size using a PDF compression tool.`
+        `Maximum allowed size is 3MB. Please reduce file size using a PDF compression tool.`
       );
     }
     return file;

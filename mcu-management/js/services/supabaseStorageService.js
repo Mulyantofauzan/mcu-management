@@ -10,6 +10,8 @@
  * const result = await uploadFileToSupabase(file, employeeId, mcuId, progressCallback);
  */
 
+import { showToast } from '../utils/uiHelpers.js';
+
 /**
  * Upload file ke Cloudflare R2
  * @param {File} file - File object dari input
@@ -38,10 +40,19 @@ export async function uploadFileToSupabase(file, employeeId, mcuId, onProgress =
 
     // Validate file size (3MB max)
     const maxSize = 3 * 1024 * 1024;
+    const warningSize = 2 * 1024 * 1024; // 2MB warning threshold
+
     if (file.size > maxSize) {
       throw new Error(
         `File terlalu besar (${(file.size / 1024 / 1024).toFixed(1)}MB). Maksimal file 3MB per file`
       );
+    }
+
+    // Show warning if file > 2MB
+    if (file.size > warningSize) {
+      const fileSizeMB = (file.size / 1024 / 1024).toFixed(1);
+      console.warn(`⚠️ Large file detected: ${file.name} (${fileSizeMB}MB). Upload may take longer.`);
+      showToast(`Perhatian: File ${file.name} berukuran ${fileSizeMB}MB. Proses upload mungkin memakan waktu lebih lama.`, 'warning');
     }
 
     // Create FormData

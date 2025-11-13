@@ -961,20 +961,37 @@ window.viewMCUDetail = async function(mcuId) {
         if (mcu.doctor) {
             // Handle different ID formats: numeric, string, doctorId field
             const doctorId = String(mcu.doctor).trim();
+            const mcuDoctorInt = parseInt(mcu.doctor);
+
+            console.log(`🔍 Looking for doctor with ID: ${doctorId} (numeric: ${mcuDoctorInt})`);
+            console.log(`📋 Available doctors: ${doctors.length}`);
+            if (doctors.length > 0) {
+                console.log(`🏥 Sample doctor structure:`, JSON.stringify(doctors[0], null, 2));
+            }
+
             doctor = doctors.find(d => {
-                return String(d.id).trim() === doctorId ||
+                const match = String(d.id).trim() === doctorId ||
                        String(d.doctorId).trim() === doctorId ||
-                       parseInt(d.id) === parseInt(mcu.doctor) ||
-                       parseInt(d.doctorId) === parseInt(mcu.doctor);
+                       parseInt(d.id) === mcuDoctorInt ||
+                       parseInt(d.doctorId) === mcuDoctorInt;
+
+                if (match && d.name) {
+                    console.log(`✅ Doctor matched: ${d.name} (id: ${d.id}, doctorId: ${d.doctorId})`);
+                }
+                return match;
             });
         }
 
         if (doctor && doctor.name) {
             document.getElementById('mcu-detail-doctor').textContent = doctor.name;
-            console.log(`✅ Doctor found: ${doctor.name} (ID: ${mcu.doctor})`);
+            console.log(`✅ Doctor FOUND and displayed: ${doctor.name} (ID: ${mcu.doctor})`);
         } else if (mcu.doctor) {
             // Doctor ID is set but not found in list - show ID as fallback
-            console.warn(`⚠️ Doctor ID ${mcu.doctor} not found in doctors list. Doctors available: ${doctors.length}`);
+            console.error(`❌ Doctor ID ${mcu.doctor} NOT found in doctors list. Doctors available: ${doctors.length}`);
+            if (doctors.length > 0) {
+                const doctorIds = doctors.map(d => `${d.name}(id:${d.id},docId:${d.doctorId})`).join(', ');
+                console.error(`📋 Available doctors: ${doctorIds}`);
+            }
             document.getElementById('mcu-detail-doctor').textContent = `ID: ${mcu.doctor}`;
         } else {
             // No doctor assigned

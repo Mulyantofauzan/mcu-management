@@ -262,7 +262,7 @@
                 <form id="mcu-update-form" onsubmit="window.handleMCUUpdate(event)">
                     <input type="hidden" id="update-mcu-id" />
 
-                    <h4 class="font-semibold text-gray-900 mb-3">📋 Pemeriksaan Fisik</h4>
+                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Fisik</h4>
                     <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
                         <div>
                             <label class="label">BMI <span class="text-gray-500" id="update-bmi-prev"></span></label>
@@ -286,7 +286,7 @@
                         </div>
                     </div>
 
-                    <h4 class="font-semibold text-gray-900 mb-3">👁️ Pemeriksaan Khusus</h4>
+                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Khusus</h4>
                     <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
                         <div>
                             <label class="label">Penglihatan <span class="text-gray-500" id="update-vision-prev"></span></label>
@@ -306,7 +306,7 @@
                         </div>
                     </div>
 
-                    <h4 class="font-semibold text-gray-900 mb-3">💓 Pemeriksaan Jantung & Paru</h4>
+                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Jantung & Paru</h4>
                     <div class="grid grid-cols-1 gap-4 mb-6 text-sm">
                         <div>
                             <label class="label">X-Ray <span class="text-gray-500" id="update-xray-prev"></span></label>
@@ -322,7 +322,7 @@
                         </div>
                     </div>
 
-                    <h4 class="font-semibold text-gray-900 mb-3">🧪 Hasil Laboratorium</h4>
+                    <h4 class="font-semibold text-gray-900 mb-3">Hasil Laboratorium</h4>
                     <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
                         <div>
                             <label class="label">HBsAg <span class="text-gray-500" id="update-hbsag-prev"></span></label>
@@ -331,23 +331,12 @@
                                 <option value="Negatif">Negatif</option>
                                 <option value="Positif">Positif</option>
                                 <option value="Reaktif">Reaktif</option>
+                                <option value="Non-Reaktif">Non-Reaktif</option>
                             </select>
                         </div>
                         <div>
                             <label class="label">Fungsi Ginjal & Hati <span class="text-gray-500" id="update-kidney-prev"></span></label>
-                            <textarea id="update-kidney" class="input" rows="2" placeholder="Contoh: Normal / SGPT meningkat / Kreatinin tinggi"></textarea>
-                        </div>
-                        <div>
-                            <label class="label">SGOT <span class="text-gray-500" id="update-sgot-prev"></span></label>
-                            <input type="text" id="update-sgot" class="input" placeholder="Contoh: 25 U/L" />
-                        </div>
-                        <div>
-                            <label class="label">SGPT <span class="text-gray-500" id="update-sgpt-prev"></span></label>
-                            <input type="text" id="update-sgpt" class="input" placeholder="Contoh: 30 U/L" />
-                        </div>
-                        <div>
-                            <label class="label">CBC <span class="text-gray-500" id="update-cbc-prev"></span></label>
-                            <input type="text" id="update-cbc" class="input" placeholder="Contoh: Normal / HB rendah" />
+                            <textarea id="update-kidney" class="input" rows="2" placeholder="Contoh: Normal / Kreatinin tinggi"></textarea>
                         </div>
                         <div>
                             <label class="label">NAPZA <span class="text-gray-500" id="update-napza-prev"></span></label>
@@ -355,7 +344,7 @@
                         </div>
                     </div>
 
-                    <h4 class="font-semibold text-gray-900 mb-3">📮 Data Rujukan (Opsional)</h4>
+                    <h4 class="font-semibold text-gray-900 mb-3">Data Rujukan (Opsional)</h4>
                     <div class="grid grid-cols-1 gap-4 mb-4">
                         <div>
                             <label class="label">Kepada Yth (Penerima Rujukan) <span class="text-gray-500" id="update-recipient-prev"></span></label>
