@@ -320,7 +320,7 @@ function base64UrlEncode(data: string | Uint8Array): string {
   return btoa(binary)
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
-    .replace(/=+$, '');
+    .replace(/=+$/, '');
 }
 
 
