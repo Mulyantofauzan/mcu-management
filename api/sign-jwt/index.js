@@ -1,87 +1,24 @@
 /**
  * Vercel API - JWT Signing Service
- * Signs JWT tokens for Google OAuth using Node.js crypto (proven to work)
+ * Uses official Google Auth Library for reliable credential handling
  */
 
-const crypto = require('crypto');
+const { GoogleAuth } = require('google-auth-library');
 
 const googleCredentialsJson = process.env.GOOGLE_CREDENTIALS_JSON;
 
-// Parse credentials once at startup
-let serviceAccountKey = {};
+let credentials;
 try {
-  let credentialsStr = googleCredentialsJson;
-  if (typeof credentialsStr === 'string' && credentialsStr.includes('\\n')) {
-    credentialsStr = credentialsStr.replace(/\\n/g, '\n');
+  let credStr = googleCredentialsJson;
+  // Handle escaped newlines
+  if (credStr && credStr.includes('\\n')) {
+    credStr = credStr.replace(/\\n/g, '\n');
   }
-  serviceAccountKey = JSON.parse(credentialsStr);
-  console.log('Google credentials parsed at startup');
+  credentials = JSON.parse(credStr);
+  console.log('Google credentials loaded successfully');
 } catch (e) {
-  console.error('Failed to parse GOOGLE_CREDENTIALS:', e.message);
-}
-
-async function signJWT(scope) {
-  try {
-    const clientEmail = serviceAccountKey.client_email;
-    const privateKey = serviceAccountKey.private_key;
-
-    if (!clientEmail || !privateKey) {
-      throw new Error('Missing client_email or private_key in Google credentials');
-    }
-
-    // Create JWT
-    const now = Math.floor(Date.now() / 1000);
-    const header = { alg: 'RS256', typ: 'JWT' };
-    const payload = {
-      iss: clientEmail,
-      scope: scope,
-      aud: 'https://oauth2.googleapis.com/token',
-      exp: now + 3600,
-      iat: now,
-    };
-
-    // Base64url encode
-    const encodeBase64Url = (str) => {
-      return Buffer.from(str).toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=/g, '');
-    };
-
-    const headerEncoded = encodeBase64Url(JSON.stringify(header));
-    const payloadEncoded = encodeBase64Url(JSON.stringify(payload));
-    const signatureInput = `${headerEncoded}.${payloadEncoded}`;
-
-    // Sign using Node.js crypto
-    const sign = crypto.createSign('RSA-SHA256');
-    sign.update(signatureInput);
-    const signatureBuffer = sign.sign(privateKey);
-
-    const signatureBase64 = signatureBuffer.toString('base64')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=/g, '');
-
-    const jwt = `${signatureInput}.${signatureBase64}`;
-
-    // Exchange JWT for access token
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
-    });
-
-    if (!tokenResponse.ok) {
-      const errorData = await tokenResponse.json();
-      throw new Error(`Google OAuth error: ${JSON.stringify(errorData)}`);
-    }
-
-    const tokenData = await tokenResponse.json();
-    return tokenData.access_token;
-  } catch (error) {
-    console.error('Failed to sign JWT:', error.message);
-    throw error;
-  }
+  console.error('Failed to parse GOOGLE_CREDENTIALS_JSON:', e.message);
+  console.error('Credentials preview:', googleCredentialsJson ? googleCredentialsJson.substring(0, 50) : 'NOT SET');
 }
 
 export default async function handler(req, res) {
@@ -100,21 +37,35 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { scope } = req.body;
-
-    if (!scope) {
-      return res.status(400).json({ error: 'Missing scope parameter' });
+    if (!credentials) {
+      throw new Error('Google credentials not configured. Please set GOOGLE_CREDENTIALS_JSON environment variable.');
     }
 
-    const accessToken = await signJWT(scope);
+    // Create Google Auth instance
+    const auth = new GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/drive'],
+    });
+
+    console.log('Getting access token from Google...');
+
+    // Get access token
+    const { token } = await auth.getAccessToken();
+
+    if (!token) {
+      throw new Error('Failed to obtain access token from Google');
+    }
+
+    console.log('Access token obtained successfully');
 
     return res.status(200).json({
-      access_token: accessToken,
+      access_token: token,
       token_type: 'Bearer',
       expires_in: 3600,
     });
   } catch (error) {
     console.error('JWT signing error:', error.message);
+    console.error('Stack:', error.stack);
     return res.status(500).json({ error: error.message });
   }
 }
