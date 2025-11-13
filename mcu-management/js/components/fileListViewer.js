@@ -221,18 +221,35 @@ export class FileListViewer {
         if (!file) return;
 
         try {
-            // Use Google Drive link if available, otherwise fallback to Supabase
-            const downloadUrl = file.google_drive_link || file.supabase_storage_path;
+            // Determine download URL - prefer public URL over internal path
+            let downloadUrl = file.google_drive_link || file.supabase_storage_path || file.publicUrl;
 
             if (!downloadUrl) {
+                console.error('❌ No download URL available for file:', file);
                 showToast('File download link not available', 'error');
                 return;
             }
 
-            // Open Google Drive link in new tab
-            window.open(downloadUrl, '_blank');
-            showToast('File dibuka di tab baru', 'success');
+            console.log(`📥 Downloading file: ${file.filename}`);
+            console.log(`   URL: ${downloadUrl.substring(0, 50)}...`);
+
+            // For R2 public URLs (https://pub-*.r2.dev/...), open directly
+            if (downloadUrl.includes('r2.dev') || downloadUrl.includes('cloudflarestorage')) {
+                window.open(downloadUrl, '_blank');
+                showToast(`File dibuka: ${file.filename}`, 'success');
+            } else {
+                // For internal paths, call download API
+                console.log('📂 Using download API for internal path');
+                const { downloadFile } = await import('../services/supabaseStorageService.js');
+                const result = await downloadFile(fileId, file.filename, 'system');
+                if (result.success) {
+                    showToast('Download dimulai', 'success');
+                } else {
+                    showToast(`Download gagal: ${result.error}`, 'error');
+                }
+            }
         } catch (error) {
+            console.error('❌ Download error:', error);
             showToast('Error: ' + error.message, 'error');
         }
     }

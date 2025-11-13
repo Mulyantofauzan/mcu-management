@@ -463,14 +463,24 @@ window.openMCUUpdateModal = async function(mcuId) {
 
     // Populate form fields with current values as placeholders
     const fields = {
+      // Physical examination
       'update-bmi': currentMCU.bmi,
       'update-bp': currentMCU.bloodPressure,
+      'update-rr': currentMCU.respiratoryRate,
+      'update-pulse': currentMCU.pulse,
+      'update-temp': currentMCU.temperature,
+      // Vision & Hearing
       'update-vision': currentMCU.vision,
       'update-audio': currentMCU.audiometry,
+      'update-colorblind': currentMCU.colorblind,
+      // Respiratory
       'update-spiro': currentMCU.spirometry,
+      // Imaging
       'update-xray': currentMCU.xray,
+      // Cardio
       'update-ekg': currentMCU.ekg,
       'update-treadmill': currentMCU.treadmill,
+      // Lab Results
       'update-kidney': currentMCU.kidneyLiverFunction,
       'update-hbsag': currentMCU.hbsag,
       'update-sgot': currentMCU.sgot,
@@ -482,8 +492,12 @@ window.openMCUUpdateModal = async function(mcuId) {
     // Set placeholder text and clear values (user can keep or change)
     for (const [fieldId, value] of Object.entries(fields)) {
       const input = document.getElementById(fieldId);
-      if (input && value) {
-        input.placeholder = value;
+      if (input) {
+        if (value) {
+          input.placeholder = `Nilai sebelumnya: ${value}`;
+        } else {
+          input.placeholder = 'Belum ada data';
+        }
         input.value = ''; // Clear so user can type new or leave blank to keep old
       }
     }

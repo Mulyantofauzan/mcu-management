@@ -956,15 +956,25 @@ window.viewMCUDetail = async function(mcuId) {
         document.getElementById('mcu-detail-temp').textContent = mcu.temperature || '-';
 
         // Fill doctor data - compare as numbers to handle Supabase numeric IDs
-        const doctor = doctors.find(d => {
-            // Handle numeric and string ID comparison for Supabase/IndexedDB compatibility
-            return String(d.id) === String(mcu.doctor) || d.id === mcu.doctor || d.doctorId === mcu.doctor;
-        });
+        let doctor = null;
 
-        if (doctor) {
+        if (mcu.doctor) {
+            // Handle different ID formats: numeric, string, doctorId field
+            const doctorId = String(mcu.doctor).trim();
+            doctor = doctors.find(d => {
+                return String(d.id).trim() === doctorId ||
+                       String(d.doctorId).trim() === doctorId ||
+                       parseInt(d.id) === parseInt(mcu.doctor) ||
+                       parseInt(d.doctorId) === parseInt(mcu.doctor);
+            });
+        }
+
+        if (doctor && doctor.name) {
             document.getElementById('mcu-detail-doctor').textContent = doctor.name;
+            console.log(`✅ Doctor found: ${doctor.name} (ID: ${mcu.doctor})`);
         } else if (mcu.doctor) {
             // Doctor ID is set but not found in list - show ID as fallback
+            console.warn(`⚠️ Doctor ID ${mcu.doctor} not found in doctors list. Doctors available: ${doctors.length}`);
             document.getElementById('mcu-detail-doctor').textContent = `ID: ${mcu.doctor}`;
         } else {
             // No doctor assigned
