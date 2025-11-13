@@ -16,16 +16,23 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Parse Google credentials with proper handling of escaped newlines
 let serviceAccountKey: Record<string, unknown> = {};
+console.log('=== STARTUP: Parsing GOOGLE_CREDENTIALS ===');
+console.log('Credentials length:', googleCredentials.length);
+console.log('First 80 chars:', googleCredentials.substring(0, 80));
+console.log('Has escaped newlines:', googleCredentials.includes('\\n'));
+
 try {
   // Handle both raw JSON and escaped JSON strings
   let credentialsStr = googleCredentials;
 
   // If it's a string with escaped newlines, unescape them
   if (typeof credentialsStr === 'string' && credentialsStr.includes('\\n')) {
+    console.log('Unescaping newlines...');
     credentialsStr = credentialsStr.replace(/\\n/g, '\n');
   }
 
   serviceAccountKey = JSON.parse(credentialsStr);
+  console.log('Parsed credentials. Keys:', Object.keys(serviceAccountKey));
 
   // Validate required fields
   if (!serviceAccountKey.private_key) {
@@ -34,11 +41,17 @@ try {
 
   // Ensure private_key has proper format
   let pk = serviceAccountKey.private_key as string;
+  console.log('Private key first 50:', (pk as string).substring(0, 50));
+  console.log('Private key last 50:', (pk as string).substring((pk as string).length - 50));
+
   if (!pk.startsWith('-----BEGIN')) {
+    console.log('Private key not starting with BEGIN, unescaping...');
     // If it's escaped, unescape it
     pk = pk.replace(/\\n/g, '\n');
     serviceAccountKey.private_key = pk;
   }
+
+  console.log('Credentials parsed successfully');
 } catch (e) {
   console.error('Failed to parse GOOGLE_CREDENTIALS:', e instanceof Error ? e.message : String(e));
   console.error('Raw credentials preview:', googleCredentials.substring(0, 100));
