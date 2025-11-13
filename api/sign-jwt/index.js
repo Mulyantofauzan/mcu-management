@@ -56,8 +56,18 @@ export default async function handler(req, res) {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       if (body.credentials) {
         credentials = body.credentials;
-        console.log('Using credentials from request body');
+        console.log('✅ Using credentials from request body');
+        console.log('Credentials type:', credentials.type);
+        console.log('Credentials client_email:', credentials.client_email);
+        console.log('Credentials has private_key:', !!credentials.private_key);
+        if (credentials.private_key) {
+          console.log('Private key length:', credentials.private_key.length);
+          console.log('Private key first 50 chars:', credentials.private_key.substring(0, 50));
+          console.log('Private key has newlines:', credentials.private_key.includes('\n'));
+        }
       }
+    } else if (cachedCredentials) {
+      console.log('Using cached credentials from env var');
     }
 
     console.log('Credentials available:', !!credentials);

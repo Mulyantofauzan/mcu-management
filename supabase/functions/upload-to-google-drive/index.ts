@@ -202,6 +202,15 @@ async function getGoogleAccessToken(): Promise<string> {
     if (googleCredentials && Object.keys(googleCredentials).length > 0) {
       requestBody.credentials = googleCredentials;
       console.log('Including credentials in request body');
+      console.log('Credentials client_email:', (googleCredentials.client_email as string) || 'MISSING');
+      console.log('Credentials has private_key:', !!(googleCredentials.private_key as string) || 'MISSING');
+      const pk = googleCredentials.private_key as string;
+      if (pk) {
+        console.log('Private key length:', pk.length);
+        console.log('Private key first 50 chars:', pk.substring(0, 50));
+      }
+    } else {
+      console.log('⚠️ No credentials available to send');
     }
 
     const jwtResponse = await fetch(signingEndpoint, {
