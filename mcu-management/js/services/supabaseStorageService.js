@@ -266,12 +266,42 @@ export async function deleteOrphanedFiles(mcuId, employeeId) {
 }
 
 /**
- * Delete file from storage (stub for compatibility)
- * Placeholder for potential future deletion functionality
+ * Delete file by ID
+ * Soft deletes the file (marks as deleted in database)
+ * @param {string} fileId - File ID to delete
+ * @returns {Promise<Object>} Delete result
  */
-export async function deleteFile(fileId, mcuId) {
-  console.log('deleteFile: File deletion not yet implemented in Supabase Storage');
-  return { success: true };
+export async function deleteFile(fileId) {
+  try {
+    if (!fileId) {
+      throw new Error('Missing fileId');
+    }
+
+    console.log(`🗑️  Deleting file: ${fileId}`);
+
+    const response = await fetch(`/api/delete-file?fileId=${encodeURIComponent(fileId)}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log(`✅ File deleted: ${fileId}`);
+    return { success: true, data: result };
+
+  } catch (error) {
+    console.error(`❌ Delete file error: ${error.message}`);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
 }
 
 /**

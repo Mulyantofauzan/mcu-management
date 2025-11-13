@@ -17,6 +17,10 @@
     "api/test-r2-config/index.js": {
       "maxDuration": 10,
       "memory": 512
+    },
+    "api/delete-file/index.js": {
+      "maxDuration": 30,
+      "memory": 512
     }
   },
   "routes": [
