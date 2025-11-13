@@ -1,11 +1,10 @@
 /**
  * Supabase Edge Function - Upload MCU Files to Google Drive
  *
- * Uses direct JWT signing in Deno with jose library for reliable Google OAuth
+ * Uses manual JWT signing with crypto.subtle for reliable Google OAuth
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import * as jose from 'https://deno.land/x/jose@v5.2.0/index.ts';
 
 const googleDriveFolderId = Deno.env.get('GOOGLE_DRIVE_ROOT_FOLDER_ID') ?? '';
 const googleCredentialsJson = Deno.env.get('GOOGLE_CREDENTIALS_JSON') ?? '';
@@ -174,6 +173,7 @@ serve(async (req) => {
 
 /**
  * Get Google access token by signing a JWT with service account credentials
+ * Uses manual JWT signing to ensure compatibility
  */
 async function getGoogleAccessToken(): Promise<string> {
   try {
@@ -188,10 +188,14 @@ async function getGoogleAccessToken(): Promise<string> {
       throw new Error('Missing private_key or client_email in credentials');
     }
 
-    // Import private key
-    const key = await jose.importPKCS8(privateKey, 'RS256');
+    console.log('Creating JWT token...');
 
-    // Create JWT payload
+    // Create JWT header and payload
+    const header = {
+      alg: 'RS256',
+      typ: 'JWT',
+    };
+
     const payload = {
       iss: clientEmail,
       scope: 'https://www.googleapis.com/auth/drive',
@@ -200,13 +204,28 @@ async function getGoogleAccessToken(): Promise<string> {
       iat: now,
     };
 
-    // Sign JWT
-    console.log('Creating JWT token...');
-    const jwt = await new jose.SignJWT(payload)
-      .setProtectedHeader({ alg: 'RS256' })
-      .setIssuedAt(now)
-      .setExpirationTime(expiresAt)
-      .sign(key);
+    // Encode header and payload
+    const headerB64 = base64url(JSON.stringify(header));
+    const payloadB64 = base64url(JSON.stringify(payload));
+    const signatureInput = `${headerB64}.${payloadB64}`;
+
+    // Import private key and sign
+    const key = await crypto.subtle.importKey(
+      'pkcs8',
+      pemToArrayBuffer(privateKey),
+      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+
+    const signature = await crypto.subtle.sign(
+      'RSASSA-PKCS1-v1_5',
+      key,
+      new TextEncoder().encode(signatureInput)
+    );
+
+    const signatureB64 = base64url(new Uint8Array(signature));
+    const jwt = `${signatureInput}.${signatureB64}`;
 
     console.log('JWT created, exchanging for access token...');
 
@@ -238,6 +257,52 @@ async function getGoogleAccessToken(): Promise<string> {
     console.error('❌ Failed to get access token:', error instanceof Error ? error.message : String(error));
     throw error;
   }
+}
+
+/**
+ * Convert PEM format to ArrayBuffer
+ */
+function pemToArrayBuffer(pem: string): ArrayBuffer {
+  const pemHeader = '-----BEGIN PRIVATE KEY-----';
+  const pemFooter = '-----END PRIVATE KEY-----';
+
+  // Remove PEM headers and newlines
+  const pemContents = pem
+    .substring(pemHeader.length, pem.length - pemFooter.length)
+    .replace(/\s/g, '');
+
+  // Decode base64
+  const binaryString = atob(pemContents);
+  const bytes = new Uint8Array(binaryString.length);
+
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+
+  return bytes.buffer;
+}
+
+/**
+ * Base64url encoding
+ */
+function base64url(data: string | Uint8Array): string {
+  let bytes: Uint8Array;
+
+  if (typeof data === 'string') {
+    bytes = new TextEncoder().encode(data);
+  } else {
+    bytes = data;
+  }
+
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+
+  return btoa(binary)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
 }
 
 /**
