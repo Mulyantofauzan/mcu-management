@@ -1,3 +1,8 @@
 [functions.compress-pdf]
 # Node.js compatibility for edge function
 node_compat = true
+
+[functions.upload-to-google-drive]
+# Environment variables for Google Drive upload
+memory_size = 1024
+timeout_seconds = 60
