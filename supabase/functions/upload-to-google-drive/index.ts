@@ -1,11 +1,10 @@
 /**
  * Supabase Edge Function - Upload MCU Files to Google Drive
- * Using jose library for proper JWT signing
+ * Using native Deno crypto for RS256 JWT signing
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
-import * as jose from 'https://deno.land/x/jose@v5.4.1/index.ts';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -189,7 +188,8 @@ serve(async (req) => {
 });
 
 /**
- * Get Google access token using service account key with proper JWT signing
+ * Get Google access token using service account key
+ * Using Deno's built-in crypto for JWT signing
  */
 async function getAccessTokenFromServiceAccount(serviceAccountKey: Record<string, unknown>): Promise<string> {
   try {
@@ -200,22 +200,23 @@ async function getAccessTokenFromServiceAccount(serviceAccountKey: Record<string
       throw new Error('Missing client_email or private_key in Google credentials');
     }
 
-    // Debug: Log private key details
-    console.log('Private Key Debug:');
-    console.log('- First 50 chars:', privateKeyPem.substring(0, 50));
-    console.log('- Last 50 chars:', privateKeyPem.substring(privateKeyPem.length - 50));
-    console.log('- Length:', privateKeyPem.length);
-    console.log('- Contains escaped newlines:', privateKeyPem.includes('\\n'));
-    console.log('- Starts with BEGIN:', privateKeyPem.startsWith('-----BEGIN'));
+    console.log('=== JWT SIGNING ===');
+    console.log('Client Email:', clientEmail);
+    console.log('Private Key First 50:', privateKeyPem.substring(0, 50));
 
-    // Extra safety: ensure private key is properly formatted
+    // Ensure private key is properly formatted
     if (privateKeyPem.includes('\\n')) {
       privateKeyPem = privateKeyPem.replace(/\\n/g, '\n');
-      console.log('- Unescaped newlines in private key');
+      console.log('Unescaped newlines in private key');
     }
 
-    // Create and sign JWT using jose
+    // Create JWT header and payload
     const now = Math.floor(Date.now() / 1000);
+    const header = {
+      alg: 'RS256',
+      typ: 'JWT',
+    };
+
     const payload = {
       iss: clientEmail,
       scope: 'https://www.googleapis.com/auth/drive',
@@ -224,19 +225,48 @@ async function getAccessTokenFromServiceAccount(serviceAccountKey: Record<string
       iat: now,
     };
 
-    console.log('JWT Payload:', JSON.stringify(payload));
+    // Encode header and payload to base64url
+    const encodeBase64Url = (str: string): string => {
+      const bytes = new TextEncoder().encode(str);
+      const binary = String.fromCharCode(...bytes);
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    };
 
-    // Import private key
-    console.log('Attempting to import PKCS8 key...');
-    const key = await jose.importPKCS8(privateKeyPem, 'RS256');
-    console.log('Key imported successfully');
+    const headerEncoded = encodeBase64Url(JSON.stringify(header));
+    const payloadEncoded = encodeBase64Url(JSON.stringify(payload));
+    const signatureInput = `${headerEncoded}.${payloadEncoded}`;
 
-    // Sign JWT
-    const jwt = await new jose.SignJWT(payload)
-      .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
-      .sign(key);
+    console.log('Signature input created');
 
-    console.log('JWT signed successfully, first 100 chars:', jwt.substring(0, 100));
+    // Import and sign with private key
+    const privateKey = await crypto.subtle.importKey(
+      'pkcs8',
+      new TextEncoder().encode(privateKeyPem),
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        hash: 'SHA-256',
+      },
+      false,
+      ['sign']
+    );
+
+    console.log('Private key imported');
+
+    const signatureBuffer = await crypto.subtle.sign(
+      'RSASSA-PKCS1-v1_5',
+      privateKey,
+      new TextEncoder().encode(signatureInput)
+    );
+
+    const signatureArray = Array.from(new Uint8Array(signatureBuffer));
+    const signatureBase64 = btoa(String.fromCharCode(...signatureArray))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+
+    const jwt = `${signatureInput}.${signatureBase64}`;
+
+    console.log('JWT signed successfully');
 
     // Exchange JWT for access token
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -244,6 +274,8 @@ async function getAccessTokenFromServiceAccount(serviceAccountKey: Record<string
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
     });
+
+    console.log('Token response status:', tokenResponse.status);
 
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.json() as Record<string, unknown>;
