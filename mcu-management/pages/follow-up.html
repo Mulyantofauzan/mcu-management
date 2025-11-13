@@ -262,107 +262,113 @@
                 <form id="mcu-update-form" onsubmit="window.handleMCUUpdate(event)">
                     <input type="hidden" id="update-mcu-id" />
 
-                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Fisik</h4>
-                    <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
+                    <div class="grid grid-cols-3 gap-4 mb-4">
                         <div>
-                            <label class="label">BMI <span class="text-gray-500" id="update-bmi-prev"></span></label>
-                            <input type="number" step="0.1" id="update-bmi" class="input" placeholder="Contoh: 22.5" />
-                        </div>
-                        <div>
-                            <label class="label">Tekanan Darah <span class="text-gray-500" id="update-bp-prev"></span></label>
-                            <input type="text" id="update-bp" class="input" placeholder="Contoh: 120/80" />
-                        </div>
-                        <div>
-                            <label class="label">RR (Frekuensi Nafas) <span class="text-gray-500" id="update-rr-prev"></span></label>
-                            <input type="text" id="update-rr" class="input" placeholder="Contoh: 20" />
-                        </div>
-                        <div>
-                            <label class="label">Nadi <span class="text-gray-500" id="update-pulse-prev"></span></label>
-                            <input type="text" id="update-pulse" class="input" placeholder="Contoh: 80" />
-                        </div>
-                        <div>
-                            <label class="label">Suhu <span class="text-gray-500" id="update-temp-prev"></span></label>
-                            <input type="text" id="update-temp" class="input" placeholder="Contoh: 36.5" />
-                        </div>
-                    </div>
-
-                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Khusus</h4>
-                    <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
-                        <div>
-                            <label class="label">Penglihatan <span class="text-gray-500" id="update-vision-prev"></span></label>
-                            <input type="text" id="update-vision" class="input" placeholder="Contoh: 6/6" />
-                        </div>
-                        <div>
-                            <label class="label">Audiometri <span class="text-gray-500" id="update-audio-prev"></span></label>
-                            <input type="text" id="update-audio" class="input" placeholder="Contoh: Normal / Gangguan ringan" />
-                        </div>
-                        <div>
-                            <label class="label">Buta Warna <span class="text-gray-500" id="update-colorblind-prev"></span></label>
-                            <input type="text" id="update-colorblind" class="input" placeholder="Contoh: Normal / Merah–Hijau / Total" />
-                        </div>
-                        <div>
-                            <label class="label">Spirometri <span class="text-gray-500" id="update-spiro-prev"></span></label>
-                            <input type="text" id="update-spiro" class="input" placeholder="Contoh: Normal / Restriktif / Obstruktif" />
-                        </div>
-                    </div>
-
-                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Jantung & Paru</h4>
-                    <div class="grid grid-cols-1 gap-4 mb-6 text-sm">
-                        <div>
-                            <label class="label">X-Ray <span class="text-gray-500" id="update-xray-prev"></span></label>
-                            <textarea id="update-xray" class="input" rows="2" placeholder="Contoh: Normal / Infiltrat paru kanan / Pembesaran jantung"></textarea>
-                        </div>
-                        <div>
-                            <label class="label">EKG <span class="text-gray-500" id="update-ekg-prev"></span></label>
-                            <textarea id="update-ekg" class="input" rows="2" placeholder="Contoh: Irama sinus normal / Takikardi / Aritmia"></textarea>
-                        </div>
-                        <div>
-                            <label class="label">Treadmill <span class="text-gray-500" id="update-treadmill-prev"></span></label>
-                            <textarea id="update-treadmill" class="input" rows="2" placeholder="Contoh: Normal / Tanda iskemia ringan"></textarea>
-                        </div>
-                    </div>
-
-                    <h4 class="font-semibold text-gray-900 mb-3">Hasil Laboratorium</h4>
-                    <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
-                        <div>
-                            <label class="label">HBsAg <span class="text-gray-500" id="update-hbsag-prev"></span></label>
-                            <select id="update-hbsag" class="input">
+                            <label class="label">Jenis MCU <span class="text-danger">*</span></label>
+                            <select id="update-mcu-type" class="input" required>
                                 <option value="">Pilih...</option>
+                                <option value="Pre-Employee">Pre-Employee</option>
+                                <option value="Annual">Annual</option>
+                                <option value="Khusus">Khusus</option>
+                                <option value="Final">Final</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Tanggal MCU <span class="text-danger">*</span></label>
+                            <input type="date" id="update-mcu-date" class="input" required />
+                        </div>
+                    </div>
+
+                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan</h4>
+                    <div class="grid grid-cols-3 gap-4 mb-4">
+                        <div><label class="label">BMI</label><input type="number" step="0.1" id="update-bmi" class="input" placeholder="Contoh: 22.5" /></div>
+                        <div><label class="label">Tekanan Darah</label><input type="text" id="update-bp" class="input" placeholder="Contoh: 120/80" /></div>
+                        <div><label class="label">RR (Frekuensi Nafas)</label><input type="text" id="update-rr" class="input" placeholder="Contoh: 20" /></div>
+                        <div><label class="label">Nadi</label><input type="text" id="update-pulse" class="input" placeholder="Contoh: 80" /></div>
+                        <div><label class="label">Suhu</label><input type="text" id="update-temp" class="input" placeholder="Contoh: 36.5" /></div>
+                        <div><label class="label">Penglihatan</label><input type="text" id="update-vision" class="input" placeholder="Contoh: 6/6" /></div>
+                        <div><label class="label">Audiometri</label><input type="text" id="update-audio" class="input" placeholder="Contoh: Normal / Gangguan ringan" /></div>
+                        <div><label class="label">Spirometri</label><input type="text" id="update-spiro" class="input" placeholder="Contoh: Normal / Restriktif / Obstruktif" /></div>
+                        <div><label class="label">HBsAg</label>
+                            <select id="update-hbsag" class="input">
+                                <option value="">Pilih: Reaktif / Non-reaktif</option>
                                 <option value="Negatif">Negatif</option>
                                 <option value="Positif">Positif</option>
                                 <option value="Reaktif">Reaktif</option>
                                 <option value="Non-Reaktif">Non-Reaktif</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="label">Fungsi Ginjal & Hati <span class="text-gray-500" id="update-kidney-prev"></span></label>
-                            <textarea id="update-kidney" class="input" rows="2" placeholder="Contoh: Normal / Kreatinin tinggi"></textarea>
-                        </div>
-                        <div>
-                            <label class="label">NAPZA <span class="text-gray-500" id="update-napza-prev"></span></label>
-                            <input type="text" id="update-napza" class="input" placeholder="Contoh: Negatif / Positif amfetamin" />
-                        </div>
+                    </div>
+
+                    <!-- Pemeriksaan Lab Section -->
+                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Lab</h4>
+                    <div id="lab-results-container-update" class="space-y-2 mb-3">
+                        <!-- Lab result items akan di-generate secara dinamis dengan JavaScript -->
+                    </div>
+                    <button type="button" id="add-lab-result-btn-update" class="btn btn-secondary btn-sm mb-3" onclick="window.addLabResultToUpdateModal()">+ Add</button>
+
+                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Penunjang</h4>
+                    <div class="grid grid-cols-1 gap-4 mb-4">
+                        <div><label class="label">X-Ray</label><textarea id="update-xray" class="input" rows="2" placeholder="Contoh: Normal / Infiltrat paru kanan / Pembesaran jantung"></textarea></div>
+                        <div><label class="label">EKG</label><textarea id="update-ekg" class="input" rows="2" placeholder="Contoh: Irama sinus normal / Takikardi / Aritmia"></textarea></div>
+                        <div><label class="label">Treadmill</label><textarea id="update-treadmill" class="input" rows="2" placeholder="Contoh: Normal / Tanda iskemia ringan"></textarea></div>
+                        <div><label class="label">Fungsi Ginjal & Hati</label><textarea id="update-kidney" class="input" rows="2" placeholder="Contoh: Normal / SGPT meningkat / Kreatinin tinggi"></textarea></div>
+                        <div><label class="label">NAPZA</label><input type="text" id="update-napza" class="input" placeholder="Contoh: Negatif / Positif amfetamin" /></div>
+                        <div><label class="label">Buta Warna</label><input type="text" id="update-colorblind" class="input" placeholder="Contoh: Normal / Merah–Hijau / Total" /></div>
                     </div>
 
                     <h4 class="font-semibold text-gray-900 mb-3">Data Rujukan (Opsional)</h4>
                     <div class="grid grid-cols-1 gap-4 mb-4">
+                        <div><label class="label">Diberikan Oleh (Dokter)</label><select id="update-mcu-doctor" class="input"><option value="">Pilih dokter pemeriksa</option></select></div>
+                        <div><label class="label">Kepada Yth (Penerima Rujukan)</label><input type="text" id="update-recipient" class="input" placeholder="Contoh: dr. Sp.PD (Spesialis Penyakit Dalam)" /></div>
+                        <div><label class="label">Keluhan Utama</label><textarea id="update-keluhan" class="input" rows="2" placeholder="Contoh: Nyeri dada kiri / Sesak napas saat aktivitas"></textarea></div>
+                        <div><label class="label">Diagnosis Kerja</label><textarea id="update-diagnosis" class="input" rows="2" placeholder="Contoh: Hipertensi stage 2 / DM tipe 2"></textarea></div>
+                        <div><label class="label">Alasan Dirujuk</label><textarea id="update-alasan" class="input" rows="2" placeholder="Contoh: Perlu konsultasi spesialis jantung / pemeriksaan lanjutan"></textarea></div>
+                    </div>
+
+                    <h4 class="font-semibold text-gray-900 mb-3">Hasil Awal</h4>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
                         <div>
-                            <label class="label">Kepada Yth (Penerima Rujukan) <span class="text-gray-500" id="update-recipient-prev"></span></label>
-                            <input type="text" id="update-recipient" class="input" placeholder="Contoh: dr. Sp.PD (Spesialis Penyakit Dalam)" />
+                            <label class="label">Hasil Awal <span class="text-danger">*</span></label>
+                            <select id="update-initial-result" class="input" required onchange="window.toggleFinalResultSection()">
+                                <option value="">Pilih...</option>
+                                <option value="Fit">Fit</option>
+                                <option value="Fit With Note">Fit With Note</option>
+                                <option value="Temporary Unfit">Temporary Unfit</option>
+                                <option value="Follow-Up">Follow-Up</option>
+                                <option value="Unfit">Unfit</option>
+                            </select>
                         </div>
-                        <div>
-                            <label class="label">Keluhan Utama <span class="text-gray-500" id="update-keluhan-prev"></span></label>
-                            <textarea id="update-keluhan" class="input" rows="2" placeholder="Contoh: Nyeri dada kiri / Sesak napas saat aktivitas"></textarea>
-                        </div>
-                        <div>
-                            <label class="label">Diagnosis Kerja <span class="text-gray-500" id="update-diagnosis-prev"></span></label>
-                            <textarea id="update-diagnosis" class="input" rows="2" placeholder="Contoh: Hipertensi stage 2 / DM tipe 2"></textarea>
-                        </div>
-                        <div>
-                            <label class="label">Alasan Dirujuk <span class="text-gray-500" id="update-alasan-prev"></span></label>
-                            <textarea id="update-alasan" class="input" rows="2" placeholder="Contoh: Perlu konsultasi spesialis jantung / pemeriksaan lanjutan"></textarea>
+                        <div class="col-span-2">
+                            <label class="label">Catatan Awal <span class="text-danger">*</span></label>
+                            <textarea id="update-initial-notes" class="input" rows="3" required></textarea>
                         </div>
                     </div>
+
+                    <div id="update-final-result-section" class="hidden">
+                        <h4 class="font-semibold text-gray-900 mb-3">Hasil Akhir (Follow-Up)</h4>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="label">Hasil Akhir</label>
+                                <select id="update-final-result" class="input">
+                                    <option value="">Pilih...</option>
+                                    <option value="Fit">Fit</option>
+                                    <option value="Fit With Note">Fit With Note</option>
+                                    <option value="Temporary Unfit">Temporary Unfit</option>
+                                    <option value="Follow-Up">Follow-Up</option>
+                                    <option value="Unfit">Unfit</option>
+                                </select>
+                            </div>
+                            <div class="col-span-2">
+                                <label class="label">Catatan Akhir</label>
+                                <textarea id="update-final-notes" class="input" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- File Upload Section -->
+                    <h4 class="font-semibold text-gray-900 mb-3">📄 Dokumen MCU</h4>
+                    <div id="file-upload-container-update" class="bg-gray-50 rounded-lg p-4 mb-4"></div>
 
                     <div class="modal-footer">
                         <button type="button" onclick="closeMCUUpdateModal()" class="btn btn-secondary">Batal</button>

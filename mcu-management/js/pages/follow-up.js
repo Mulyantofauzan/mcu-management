@@ -461,58 +461,165 @@ window.openMCUUpdateModal = async function(mcuId) {
     // Set hidden mcuId
     document.getElementById('update-mcu-id').value = mcuId;
 
-    // Populate form fields with previous values displayed next to label
-    const fieldsWithPreviousValues = {
-      // Physical examination
-      'update-bmi': { value: currentMCU.bmi, prevId: 'update-bmi-prev' },
-      'update-bp': { value: currentMCU.bloodPressure, prevId: 'update-bp-prev' },
-      'update-rr': { value: currentMCU.respiratoryRate, prevId: 'update-rr-prev' },
-      'update-pulse': { value: currentMCU.pulse, prevId: 'update-pulse-prev' },
-      'update-temp': { value: currentMCU.temperature, prevId: 'update-temp-prev' },
-      // Vision & Hearing
-      'update-vision': { value: currentMCU.vision, prevId: 'update-vision-prev' },
-      'update-audio': { value: currentMCU.audiometry, prevId: 'update-audio-prev' },
-      'update-colorblind': { value: currentMCU.colorblind, prevId: 'update-colorblind-prev' },
-      // Respiratory
-      'update-spiro': { value: currentMCU.spirometry, prevId: 'update-spiro-prev' },
-      // Imaging
-      'update-xray': { value: currentMCU.xray, prevId: 'update-xray-prev' },
-      // Cardio
-      'update-ekg': { value: currentMCU.ekg, prevId: 'update-ekg-prev' },
-      'update-treadmill': { value: currentMCU.treadmill, prevId: 'update-treadmill-prev' },
-      // Lab Results
-      'update-kidney': { value: currentMCU.kidneyLiverFunction, prevId: 'update-kidney-prev' },
-      'update-hbsag': { value: currentMCU.hbsag, prevId: 'update-hbsag-prev' },
-      'update-napza': { value: currentMCU.napza, prevId: 'update-napza-prev' },
-      // Referral data
-      'update-recipient': { value: currentMCU.recipient, prevId: 'update-recipient-prev' },
-      'update-keluhan': { value: currentMCU.keluhanUtama, prevId: 'update-keluhan-prev' },
-      'update-diagnosis': { value: currentMCU.diagnosisKerja, prevId: 'update-diagnosis-prev' },
-      'update-alasan': { value: currentMCU.alasanRujuk, prevId: 'update-alasan-prev' }
+    // Set Jenis MCU and Tanggal MCU
+    const mcuTypeField = document.getElementById('update-mcu-type');
+    const mcuDateField = document.getElementById('update-mcu-date');
+
+    if (mcuTypeField) mcuTypeField.value = currentMCU.type || '';
+    if (mcuDateField) mcuDateField.value = currentMCU.date ? currentMCU.date.split('T')[0] : '';
+
+    // Set Doctor dropdown
+    const doctorField = document.getElementById('update-mcu-doctor');
+    if (doctorField && doctors && doctors.length > 0) {
+      doctorField.innerHTML = '<option value="">Pilih dokter pemeriksa</option>';
+      doctors.forEach(doctor => {
+        const option = document.createElement('option');
+        option.value = doctor.id;
+        option.textContent = doctor.name;
+        if (currentMCU.doctor && String(currentMCU.doctor) === String(doctor.id)) {
+          option.selected = true;
+        }
+        doctorField.appendChild(option);
+      });
+    }
+
+    // Set Initial Result and Notes
+    const initialResultField = document.getElementById('update-initial-result');
+    const initialNotesField = document.getElementById('update-initial-notes');
+
+    if (initialResultField) initialResultField.value = currentMCU.initialResult || '';
+    if (initialNotesField) initialNotesField.value = currentMCU.initialNotes || '';
+
+    // Set Final Result section (visible only if initialResult is Follow-Up or if finalResult exists)
+    const finalResultSection = document.getElementById('update-final-result-section');
+    if (finalResultSection) {
+      if (currentMCU.initialResult === 'Follow-Up' || currentMCU.finalResult) {
+        finalResultSection.classList.remove('hidden');
+      } else {
+        finalResultSection.classList.add('hidden');
+      }
+    }
+
+    // Set Final Result and Notes if applicable
+    const finalResultField = document.getElementById('update-final-result');
+    const finalNotesField = document.getElementById('update-final-notes');
+
+    if (finalResultField) finalResultField.value = currentMCU.finalResult || '';
+    if (finalNotesField) finalNotesField.value = currentMCU.finalNotes || '';
+
+    // Populate form fields with no previous values display (standardized like edit modal)
+    const fieldsToPopulate = {
+      'update-bmi': currentMCU.bmi,
+      'update-bp': currentMCU.bloodPressure,
+      'update-rr': currentMCU.respiratoryRate,
+      'update-pulse': currentMCU.pulse,
+      'update-temp': currentMCU.temperature,
+      'update-vision': currentMCU.vision,
+      'update-audio': currentMCU.audiometry,
+      'update-colorblind': currentMCU.colorblind,
+      'update-spiro': currentMCU.spirometry,
+      'update-xray': currentMCU.xray,
+      'update-ekg': currentMCU.ekg,
+      'update-treadmill': currentMCU.treadmill,
+      'update-kidney': currentMCU.kidneyLiverFunction,
+      'update-hbsag': currentMCU.hbsag,
+      'update-napza': currentMCU.napza,
+      'update-recipient': currentMCU.recipient,
+      'update-keluhan': currentMCU.keluhanUtama,
+      'update-diagnosis': currentMCU.diagnosisKerja,
+      'update-alasan': currentMCU.alasanRujuk
     };
 
-    // Display previous values next to labels and clear input fields
-    for (const [fieldId, fieldData] of Object.entries(fieldsWithPreviousValues)) {
+    // Clear all input fields (user can fill with new values)
+    for (const [fieldId, value] of Object.entries(fieldsToPopulate)) {
       const input = document.getElementById(fieldId);
-      const prevSpan = document.getElementById(fieldData.prevId);
-
       if (input) {
-        input.value = ''; // Clear input so user can enter new values
+        input.value = value || '';
       }
+    }
 
-      if (prevSpan && fieldData.value) {
-        prevSpan.textContent = `(Sebelumnya: ${fieldData.value})`;
-        prevSpan.className = 'text-gray-500 text-xs';
-      } else if (prevSpan) {
-        prevSpan.textContent = '(Belum ada data)';
-        prevSpan.className = 'text-gray-400 text-xs italic';
-      }
+    // Populate Lab Results if they exist
+    const labContainer = document.getElementById('lab-results-container-update');
+    if (labContainer && currentMCU.labResults && currentMCU.labResults.length > 0) {
+      labContainer.innerHTML = currentMCU.labResults.map(lab => `
+        <div class="flex gap-2 items-start p-2 bg-white border border-gray-200 rounded">
+          <input type="hidden" class="lab-test-name" value="${lab.testName || ''}" />
+          <input type="hidden" class="lab-result-value" value="${lab.resultValue || ''}" />
+          <div class="flex-1 text-sm text-gray-700">
+            <span class="font-medium">${lab.testName || 'Lab Test'}</span>: ${lab.resultValue || '-'}
+          </div>
+          <button type="button" class="btn-remove-lab text-red-500 hover:text-red-700 text-sm">Hapus</button>
+        </div>
+      `).join('');
+
+      // Attach remove handlers
+      labContainer.querySelectorAll('.btn-remove-lab').forEach(btn => {
+        btn.addEventListener('click', (e) => e.currentTarget.parentElement.remove());
+      });
+    } else if (labContainer) {
+      labContainer.innerHTML = '';
+    }
+
+    // Initialize File Upload Widget for update modal
+    const fileContainer = document.getElementById('file-upload-container-update');
+    if (fileContainer) {
+      fileContainer.innerHTML = '';
+      followupFileUploadWidget = new FileUploadWidget(
+        'file-upload-container-update',
+        currentMCU.id,
+        { readOnly: false, compact: true }
+      );
     }
 
     openModal('mcu-update-modal');
   } catch (error) {
 
     showToast('Gagal membuka modal: ' + error.message, 'error');
+  }
+};
+
+// Add Lab Result item to the update modal
+window.addLabResultToUpdateModal = function() {
+  const testName = prompt('Nama Test Laboratorium:');
+  if (!testName) return;
+
+  const resultValue = prompt('Hasil:');
+  if (resultValue === null) return;
+
+  const labContainer = document.getElementById('lab-results-container-update');
+  if (!labContainer) return;
+
+  const labItem = document.createElement('div');
+  labItem.className = 'flex gap-2 items-start p-2 bg-white border border-gray-200 rounded';
+  labItem.innerHTML = `
+    <input type="hidden" class="lab-test-name" value="${testName}" />
+    <input type="hidden" class="lab-result-value" value="${resultValue}" />
+    <div class="flex-1 text-sm text-gray-700">
+      <span class="font-medium">${testName}</span>: ${resultValue}
+    </div>
+    <button type="button" class="btn-remove-lab text-red-500 hover:text-red-700 text-sm">Hapus</button>
+  `;
+
+  labContainer.appendChild(labItem);
+
+  // Attach remove handler
+  labItem.querySelector('.btn-remove-lab').addEventListener('click', (e) => {
+    e.preventDefault();
+    labItem.remove();
+  });
+};
+
+// Toggle Final Result Section visibility when initial result changes
+window.toggleFinalResultSection = function() {
+  const initialResultField = document.getElementById('update-initial-result');
+  const finalResultSection = document.getElementById('update-final-result-section');
+
+  if (!initialResultField || !finalResultSection) return;
+
+  if (initialResultField.value === 'Follow-Up') {
+    finalResultSection.classList.remove('hidden');
+  } else {
+    finalResultSection.classList.add('hidden');
   }
 };
 
@@ -532,6 +639,9 @@ window.handleMCUUpdate = async function(event) {
     // Collect new values - only include if user entered something
     const updateData = {};
     const fieldMapping = {
+      'update-mcu-type': 'type',
+      'update-mcu-date': 'date',
+      'update-mcu-doctor': 'doctor',
       'update-bmi': 'bmi',
       'update-bp': 'bloodPressure',
       'update-rr': 'respiratoryRate',
@@ -549,13 +659,34 @@ window.handleMCUUpdate = async function(event) {
       'update-recipient': 'recipient',
       'update-keluhan': 'keluhanUtama',
       'update-diagnosis': 'diagnosisKerja',
-      'update-alasan': 'alasanRujuk'
+      'update-alasan': 'alasanRujuk',
+      'update-initial-result': 'initialResult',
+      'update-initial-notes': 'initialNotes',
+      'update-final-result': 'finalResult',
+      'update-final-notes': 'finalNotes'
     };
 
     for (const [fieldId, dataKey] of Object.entries(fieldMapping)) {
       const input = document.getElementById(fieldId);
       if (input && input.value.trim() !== '') {
-        updateData[dataKey] = input.value.trim();
+        // For date fields, don't trim
+        if (fieldId === 'update-mcu-date') {
+          updateData[dataKey] = input.value;
+        } else {
+          updateData[dataKey] = input.value.trim();
+        }
+      }
+    }
+
+    // Collect lab results from the lab container
+    const labContainer = document.getElementById('lab-results-container-update');
+    if (labContainer) {
+      const labItems = labContainer.querySelectorAll('div[class*="flex gap-2"]');
+      if (labItems.length > 0) {
+        updateData.labResults = Array.from(labItems).map(item => ({
+          testName: item.querySelector('.lab-test-name')?.value || '',
+          resultValue: item.querySelector('.lab-result-value')?.value || ''
+        }));
       }
     }
 
