@@ -183,92 +183,42 @@ serve(async (req) => {
 });
 
 /**
- * Get Google access token by manually signing JWT in Deno
- * Uses simple base64 + signing approach that works reliably
+ * Get Google access token via Vercel API endpoint
+ * Uses google-auth-library for reliable JWT signing
  */
 async function getGoogleAccessToken(): Promise<string> {
   try {
-    console.log('Signing JWT directly in Deno...');
+    console.log('Getting Google access token via Vercel API...');
 
-    if (!googleCredentials || !Object.keys(googleCredentials).length) {
-      throw new Error('No Google credentials loaded');
-    }
+    // Call Vercel API endpoint for JWT signing
+    const vercelEndpoint = 'https://mcu-app.vercel.app/api/sign-jwt';
 
-    const clientEmail = (googleCredentials.client_email as string) || '';
-    const privateKey = (googleCredentials.private_key as string) || '';
-
-    if (!clientEmail || !privateKey) {
-      throw new Error('Missing client_email or private_key');
-    }
-
-    const now = Math.floor(Date.now() / 1000);
-    const expiresAt = now + 3600;
-
-    // Create JWT manually
-    const header = { alg: 'RS256', typ: 'JWT' };
-    const payload = {
-      iss: clientEmail,
-      scope: 'https://www.googleapis.com/auth/drive',
-      aud: 'https://oauth2.googleapis.com/token',
-      exp: expiresAt,
-      iat: now,
-    };
-
-    // Encode header and payload
-    const headerB64 = base64UrlEncode(JSON.stringify(header));
-    const payloadB64 = base64UrlEncode(JSON.stringify(payload));
-    const messageToSign = `${headerB64}.${payloadB64}`;
-
-    console.log('JWT structure created');
-    console.log('Client email:', clientEmail);
-
-    // Sign using crypto.subtle
-    const keyData = pemToArrayBuffer(privateKey);
-    const key = await crypto.subtle.importKey(
-      'pkcs8',
-      keyData,
-      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-      false,
-      ['sign']
-    );
-
-    const signature = await crypto.subtle.sign(
-      'RSASSA-PKCS1-v1_5',
-      key,
-      new TextEncoder().encode(messageToSign)
-    );
-
-    const signatureB64 = base64UrlEncode(new Uint8Array(signature));
-    const jwt = `${messageToSign}.${signatureB64}`;
-
-    console.log('JWT signed successfully');
-
-    // Exchange JWT for access token
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+    const response = await fetch(vercelEndpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-        assertion: jwt,
-      }).toString(),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        credentials: googleCredentials,
+      }),
     });
 
-    console.log('Token exchange response status:', tokenResponse.status);
+    console.log('Vercel API response status:', response.status);
 
-    if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text();
-      console.error('❌ Token exchange failed:', errorText);
-      throw new Error(`Token exchange failed: ${errorText}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Vercel API failed:', errorText);
+      throw new Error(`Vercel API failed: ${errorText}`);
     }
 
-    const tokenData = (await tokenResponse.json()) as Record<string, unknown>;
+    const tokenData = (await response.json()) as Record<string, unknown>;
     const accessToken = (tokenData.access_token as string) || '';
 
     if (!accessToken) {
-      throw new Error('No access token in Google response');
+      throw new Error('No access token in Vercel API response');
     }
 
-    console.log('✅ Access token obtained, length:', accessToken.length);
+    console.log('✅ Access token obtained from Vercel API, length:', accessToken.length);
     return accessToken;
   } catch (error) {
     console.error('❌ Failed to get access token:', error instanceof Error ? error.message : String(error));
