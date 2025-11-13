@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS mcus (
     vision VARCHAR(50),
     audiometry VARCHAR(100),
     spirometry VARCHAR(100),
-    hbsag VARCHAR(50) CHECK (hbsag IN ('', 'Negatif', 'Positif', 'Reaktif')),
+    hbsag VARCHAR(50) CHECK (hbsag IN ('', 'Negatif', 'Positif', 'Reaktif', 'Non-Reaktif')),
     sgot VARCHAR(50),
     sgpt VARCHAR(50),
     cbc VARCHAR(100),
