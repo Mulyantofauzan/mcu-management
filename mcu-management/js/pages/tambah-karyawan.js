@@ -143,6 +143,28 @@ function enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap) {
     return emp;
 }
 
+// ✅ NEW: Populate doctor dropdown in MCU forms
+function populateDoctorDropdown(selectId) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+
+    // Keep the placeholder option
+    const placeholder = select.querySelector('option[value=""]');
+
+    // Clear existing options except placeholder
+    while (select.options.length > 1) {
+        select.remove(1);
+    }
+
+    // Add doctor options
+    doctors.forEach(doctor => {
+        const option = document.createElement('option');
+        option.value = doctor.id;
+        option.textContent = doctor.name;
+        select.appendChild(option);
+    });
+}
+
 function populateDropdowns() {
     // Job Titles - Searchable datalist
     const jobDatalist = document.getElementById('job-list');
@@ -330,6 +352,11 @@ window.handleAddEmployee = async function(event) {
 
 window.openAddMCUForEmployee = async function(employeeId) {
     try {
+        // ✅ CRITICAL: Ensure master data is loaded before opening modal
+        if (!doctors || doctors.length === 0) {
+            doctors = await masterDataService.getAllDoctors();
+        }
+
         currentEmployee = await employeeService.getById(employeeId);
 
         if (!currentEmployee) {
@@ -361,6 +388,9 @@ window.openAddMCUForEmployee = async function(employeeId) {
         // Generate MCU ID upfront for file uploads
         generatedMCUIdForAdd = generateMCUId();
         console.log(`✅ Generated MCU ID for uploads: ${generatedMCUIdForAdd}`);
+
+        // ✅ Populate doctor dropdown
+        populateDoctorDropdown('mcu-doctor');
 
         openModal('add-mcu-modal');
 
@@ -409,9 +439,10 @@ window.handleAddMCU = async function(event) {
     try {
         const currentUser = authService.getCurrentUser();
 
-        // Get doctor ID from selected dropdown
+        // ✅ FIX: Get doctor ID and convert to integer
         const doctorSelect = document.getElementById('mcu-doctor');
-        const selectedDoctorId = doctorSelect.value || null;
+        const doctorValue = doctorSelect.value;
+        const doctorId = doctorValue ? parseInt(doctorValue, 10) : null;
 
         const mcuData = {
             mcuId: generatedMCUIdForAdd,  // Use pre-generated ID
@@ -433,7 +464,7 @@ window.handleAddMCU = async function(event) {
             hbsag: document.getElementById('mcu-hbsag').value || null,
             napza: document.getElementById('mcu-napza').value || null,
             colorblind: document.getElementById('mcu-colorblind').value || null,
-            doctor: selectedDoctorId,
+            doctor: doctorId,
             recipient: document.getElementById('mcu-recipient').value || null,
             keluhanUtama: document.getElementById('mcu-keluhan').value || null,
             diagnosisKerja: document.getElementById('mcu-diagnosis').value || null,
@@ -442,10 +473,33 @@ window.handleAddMCU = async function(event) {
             initialNotes: document.getElementById('mcu-notes').value
         };
 
-        // Clear temporary files
+        // ✅ CRITICAL: Upload temporary files to Cloudflare R2 BEFORE saving MCU
+        const tempFiles = tempFileStorage.getFiles(mcuData.mcuId);
+        if (tempFiles && tempFiles.length > 0) {
+            console.log(`📤 Uploading ${tempFiles.length} file(s) to Cloudflare R2 for MCU ${mcuData.mcuId}...`);
+
+            const { uploadBatchFiles } = await import('../services/supabaseStorageService.js');
+            const uploadResult = await uploadBatchFiles(
+                tempFiles,
+                mcuData.employeeId,
+                mcuData.mcuId,
+                currentUser.id
+            );
+
+            if (!uploadResult.success && uploadResult.uploadedCount === 0) {
+                // All uploads failed - don't proceed with MCU creation
+                showToast(`❌ File upload ke R2 gagal: ${uploadResult.error}`, 'error');
+                return;
+            } else if (uploadResult.failedCount > 0) {
+                // Some uploads failed - warn user but continue
+                showToast(`⚠️ ${uploadResult.failedCount} file gagal diunggah, tapi MCU akan disimpan`, 'warning');
+            }
+        }
+
+        // ✅ CRITICAL: Clear temporary files ONLY after successful R2 upload
         tempFileStorage.clearFiles(mcuData.mcuId);
 
-        // NOW save MCU data after files are successfully uploaded (or if no files)
+        // ✅ NOW save MCU data after files are successfully uploaded to R2 (or if no files)
         const createdMCU = await mcuService.create(mcuData, currentUser);
 
         // Save lab results jika ada
