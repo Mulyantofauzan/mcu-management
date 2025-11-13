@@ -265,7 +265,7 @@
                     <div class="grid grid-cols-3 gap-4 mb-4">
                         <div>
                             <label class="label">Jenis MCU <span class="text-danger">*</span></label>
-                            <select id="update-mcu-type" class="input" required>
+                            <select id="update-mcu-type" class="input" required readonly disabled style="background-color: #f3f4f6; cursor: not-allowed;">
                                 <option value="">Pilih...</option>
                                 <option value="Pre-Employee">Pre-Employee</option>
                                 <option value="Annual">Annual</option>
@@ -275,7 +275,7 @@
                         </div>
                         <div>
                             <label class="label">Tanggal MCU <span class="text-danger">*</span></label>
-                            <input type="date" id="update-mcu-date" class="input" required />
+                            <input type="date" id="update-mcu-date" class="input" required readonly style="background-color: #f3f4f6; cursor: not-allowed;" />
                         </div>
                     </div>
 
@@ -319,7 +319,7 @@
 
                     <h4 class="font-semibold text-gray-900 mb-3">Data Rujukan (Opsional)</h4>
                     <div class="grid grid-cols-1 gap-4 mb-4">
-                        <div><label class="label">Diberikan Oleh (Dokter)</label><select id="update-mcu-doctor" class="input"><option value="">Pilih dokter pemeriksa</option></select></div>
+                        <div><label class="label">Diberikan Oleh (Dokter)</label><select id="update-mcu-doctor" class="input" readonly disabled style="background-color: #f3f4f6; cursor: not-allowed;"><option value="">Pilih dokter pemeriksa</option></select></div>
                         <div><label class="label">Kepada Yth (Penerima Rujukan)</label><input type="text" id="update-recipient" class="input" placeholder="Contoh: dr. Sp.PD (Spesialis Penyakit Dalam)" /></div>
                         <div><label class="label">Keluhan Utama</label><textarea id="update-keluhan" class="input" rows="2" placeholder="Contoh: Nyeri dada kiri / Sesak napas saat aktivitas"></textarea></div>
                         <div><label class="label">Diagnosis Kerja</label><textarea id="update-diagnosis" class="input" rows="2" placeholder="Contoh: Hipertensi stage 2 / DM tipe 2"></textarea></div>
@@ -330,7 +330,7 @@
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <div>
                             <label class="label">Hasil Awal <span class="text-danger">*</span></label>
-                            <select id="update-initial-result" class="input" required onchange="window.toggleFinalResultSection()">
+                            <select id="update-initial-result" class="input" required readonly disabled style="background-color: #f3f4f6; cursor: not-allowed;">
                                 <option value="">Pilih...</option>
                                 <option value="Fit">Fit</option>
                                 <option value="Fit With Note">Fit With Note</option>
@@ -341,7 +341,7 @@
                         </div>
                         <div class="col-span-2">
                             <label class="label">Catatan Awal <span class="text-danger">*</span></label>
-                            <textarea id="update-initial-notes" class="input" rows="3" required></textarea>
+                            <textarea id="update-initial-notes" class="input" rows="3" required readonly style="background-color: #f3f4f6; cursor: not-allowed;"></textarea>
                         </div>
                     </div>
 
@@ -350,7 +350,7 @@
                         <div class="grid grid-cols-2 gap-4 mb-4">
                             <div>
                                 <label class="label">Hasil Akhir</label>
-                                <select id="update-final-result" class="input">
+                                <select id="update-final-result" class="input" readonly disabled style="background-color: #f3f4f6; cursor: not-allowed;">
                                     <option value="">Pilih...</option>
                                     <option value="Fit">Fit</option>
                                     <option value="Fit With Note">Fit With Note</option>
@@ -361,14 +361,10 @@
                             </div>
                             <div class="col-span-2">
                                 <label class="label">Catatan Akhir</label>
-                                <textarea id="update-final-notes" class="input" rows="3"></textarea>
+                                <textarea id="update-final-notes" class="input" rows="3" readonly style="background-color: #f3f4f6; cursor: not-allowed;"></textarea>
                             </div>
                         </div>
                     </div>
-
-                    <!-- File Upload Section -->
-                    <h4 class="font-semibold text-gray-900 mb-3">📄 Dokumen MCU</h4>
-                    <div id="file-upload-container-update" class="bg-gray-50 rounded-lg p-4 mb-4"></div>
 
                     <div class="modal-footer">
                         <button type="button" onclick="closeMCUUpdateModal()" class="btn btn-secondary">Batal</button>

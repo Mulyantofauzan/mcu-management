@@ -507,7 +507,7 @@ window.openMCUUpdateModal = async function(mcuId) {
     if (finalResultField) finalResultField.value = currentMCU.finalResult || '';
     if (finalNotesField) finalNotesField.value = currentMCU.finalNotes || '';
 
-    // Populate form fields with no previous values display (standardized like edit modal)
+    // Populate all form fields with values from database (like edit modal)
     const fieldsToPopulate = {
       'update-bmi': currentMCU.bmi,
       'update-bp': currentMCU.bloodPressure,
@@ -530,7 +530,7 @@ window.openMCUUpdateModal = async function(mcuId) {
       'update-alasan': currentMCU.alasanRujuk
     };
 
-    // Clear all input fields (user can fill with new values)
+    // Populate all input fields with database values
     for (const [fieldId, value] of Object.entries(fieldsToPopulate)) {
       const input = document.getElementById(fieldId);
       if (input) {
@@ -558,17 +558,6 @@ window.openMCUUpdateModal = async function(mcuId) {
       });
     } else if (labContainer) {
       labContainer.innerHTML = '';
-    }
-
-    // Initialize File Upload Widget for update modal
-    const fileContainer = document.getElementById('file-upload-container-update');
-    if (fileContainer) {
-      fileContainer.innerHTML = '';
-      followupFileUploadWidget = new FileUploadWidget(
-        'file-upload-container-update',
-        currentMCU.id,
-        { readOnly: false, compact: true }
-      );
     }
 
     openModal('mcu-update-modal');
@@ -636,12 +625,10 @@ window.handleMCUUpdate = async function(event) {
   try {
     const currentUser = authService.getCurrentUser();
 
-    // Collect new values - only include if user entered something
+    // Collect new values - only include editable fields and if user changed something
     const updateData = {};
+    // Only these fields are editable (read-only fields are excluded)
     const fieldMapping = {
-      'update-mcu-type': 'type',
-      'update-mcu-date': 'date',
-      'update-mcu-doctor': 'doctor',
       'update-bmi': 'bmi',
       'update-bp': 'bloodPressure',
       'update-rr': 'respiratoryRate',
@@ -659,22 +646,13 @@ window.handleMCUUpdate = async function(event) {
       'update-recipient': 'recipient',
       'update-keluhan': 'keluhanUtama',
       'update-diagnosis': 'diagnosisKerja',
-      'update-alasan': 'alasanRujuk',
-      'update-initial-result': 'initialResult',
-      'update-initial-notes': 'initialNotes',
-      'update-final-result': 'finalResult',
-      'update-final-notes': 'finalNotes'
+      'update-alasan': 'alasanRujuk'
     };
 
     for (const [fieldId, dataKey] of Object.entries(fieldMapping)) {
       const input = document.getElementById(fieldId);
       if (input && input.value.trim() !== '') {
-        // For date fields, don't trim
-        if (fieldId === 'update-mcu-date') {
-          updateData[dataKey] = input.value;
-        } else {
-          updateData[dataKey] = input.value.trim();
-        }
+        updateData[dataKey] = input.value.trim();
       }
     }
 
