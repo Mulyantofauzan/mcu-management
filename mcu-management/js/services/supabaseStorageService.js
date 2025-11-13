@@ -101,8 +101,8 @@ export async function uploadFileToSupabase(file, employeeId, mcuId, onProgress =
         reject(new Error('Upload cancelled'));
       });
 
-      // Send request to API
-      const apiUrl = 'https://api-g5a9es3r5-adels-projects-5899a1ad.vercel.app/api/compress-upload';
+      // Send request to API (using relative URL to work on any deployment)
+      const apiUrl = '/api/compress-upload';
       console.log(`🔗 Uploading to: ${apiUrl}`);
 
       xhr.open('POST', apiUrl);
@@ -281,7 +281,7 @@ export async function getFilesByMCU(mcuId) {
       return { success: true, files: [] };
     }
 
-    const apiUrl = 'https://api-g5a9es3r5-adels-projects-5899a1ad.vercel.app/api/get-mcu-files';
+    const apiUrl = '/api/get-mcu-files';
     console.log(`📂 Fetching files for MCU: ${mcuId}`);
 
     const response = await fetch(`${apiUrl}?mcuId=${encodeURIComponent(mcuId)}`);
@@ -331,7 +331,7 @@ export async function downloadFile(fileId, fileName, userId) {
     console.log(`📥 Requesting download for file: ${fileId}`);
 
     // Request signed URL from server
-    const apiUrl = 'https://api-g5a9es3r5-adels-projects-5899a1ad.vercel.app/api/download-file';
+    const apiUrl = '/api/download-file';
     const response = await fetch(`${apiUrl}?fileId=${encodeURIComponent(fileId)}&userId=${encodeURIComponent(userId)}`);
 
     if (!response.ok) {
@@ -385,7 +385,7 @@ export async function getMCUFilesWithSignedUrls(mcuId, userId) {
 
     console.log(`📦 Getting all files for MCU: ${mcuId}`);
 
-    const apiUrl = 'https://api-g5a9es3r5-adels-projects-5899a1ad.vercel.app/api/download-file';
+    const apiUrl = '/api/download-file';
     const response = await fetch(`${apiUrl}?mcuId=${encodeURIComponent(mcuId)}&userId=${encodeURIComponent(userId)}`);
 
     if (!response.ok) {
