@@ -41,8 +41,13 @@ export async function uploadFileToGoogleDrive(file, employeeId, mcuId, userId, u
     }
 
     // Call backend API to upload to Google Drive
+    const anonKey = window.__SUPABASE_ANON_KEY__ || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxeXVrdHNmanZkcWZodWxvYmFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MjkxNzQsImV4cCI6MjA3NjQwNTE3NH0.8_lmNISdJ7AMi0QgAqBoPathoiUeH_WZRDqFaAiRDwY';
+
     const response = await fetch(GOOGLE_DRIVE_UPLOAD_ENDPOINT, {
       method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${anonKey}`,
+      },
       body: formData,
       // Don't set Content-Type header - browser will set it with boundary
     });
