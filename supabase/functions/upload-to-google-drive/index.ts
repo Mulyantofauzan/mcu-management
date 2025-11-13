@@ -1,10 +1,11 @@
 /**
  * Supabase Edge Function - Upload MCU Files to Google Drive
- * Simplified approach using Google Drive API directly
+ * Using jose library for proper JWT signing
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
+import * as jose from 'https://deno.land/x/jose@v5.4.1/index.ts';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -153,7 +154,7 @@ serve(async (req) => {
 });
 
 /**
- * Get Google access token using service account key
+ * Get Google access token using service account key with proper JWT signing
  */
 async function getAccessTokenFromServiceAccount(serviceAccountKey: Record<string, unknown>): Promise<string> {
   try {
@@ -164,9 +165,8 @@ async function getAccessTokenFromServiceAccount(serviceAccountKey: Record<string
       throw new Error('Missing client_email or private_key in Google credentials');
     }
 
-    // Create JWT manually
+    // Create and sign JWT using jose
     const now = Math.floor(Date.now() / 1000);
-    const header = { alg: 'RS256', typ: 'JWT' };
     const payload = {
       iss: clientEmail,
       scope: 'https://www.googleapis.com/auth/drive',
@@ -175,40 +175,13 @@ async function getAccessTokenFromServiceAccount(serviceAccountKey: Record<string
       iat: now,
     };
 
-    // Encode header and payload
-    const headerEncoded = btoa(JSON.stringify(header));
-    const payloadEncoded = btoa(JSON.stringify(payload));
-    const messageToSign = `${headerEncoded}.${payloadEncoded}`;
+    // Import private key
+    const key = await jose.importPKCS8(privateKeyPem, 'RS256');
 
-    // Sign using Web Crypto API
-    const keyData = privateKeyPem
-      .replace('-----BEGIN PRIVATE KEY-----', '')
-      .replace('-----END PRIVATE KEY-----', '')
-      .replace(/\n/g, '');
-
-    const binaryString = atob(keyData);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-
-    const cryptoKey = await crypto.subtle.importKey(
-      'pkcs8',
-      bytes.buffer,
-      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-      false,
-      ['sign']
-    );
-
-    const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, new TextEncoder().encode(messageToSign));
-    const signatureArray = new Uint8Array(signature);
-    let signatureBinary = '';
-    for (let i = 0; i < signatureArray.length; i++) {
-      signatureBinary += String.fromCharCode(signatureArray[i]);
-    }
-    const signatureEncoded = btoa(signatureBinary);
-
-    const jwt = `${messageToSign}.${signatureEncoded}`;
+    // Sign JWT
+    const jwt = await new jose.SignJWT(payload)
+      .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
+      .sign(key);
 
     // Exchange JWT for access token
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
