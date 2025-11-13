@@ -137,7 +137,9 @@ export async function uploadFilesToSupabase(
     totalSize += file.size;
   }
 
-  console.log(`📦 Uploading ${files.length} file(s) (total: ${(totalSize / 1024 / 1024).toFixed(1)}MB)`);
+  console.log(`📦 Uploading ${files.length} file(s) to Cloudflare R2 (total: ${(totalSize / 1024 / 1024).toFixed(1)}MB)`);
+  console.log(`   Employee ID: ${employeeId}`);
+  console.log(`   MCU ID: ${mcuId}`);
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
