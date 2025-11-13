@@ -461,44 +461,54 @@ window.openMCUUpdateModal = async function(mcuId) {
     // Set hidden mcuId
     document.getElementById('update-mcu-id').value = mcuId;
 
-    // Populate form fields with current values as placeholders
-    const fields = {
+    // Populate form fields with previous values displayed next to label
+    const fieldsWithPreviousValues = {
       // Physical examination
-      'update-bmi': currentMCU.bmi,
-      'update-bp': currentMCU.bloodPressure,
-      'update-rr': currentMCU.respiratoryRate,
-      'update-pulse': currentMCU.pulse,
-      'update-temp': currentMCU.temperature,
+      'update-bmi': { value: currentMCU.bmi, prevId: 'update-bmi-prev' },
+      'update-bp': { value: currentMCU.bloodPressure, prevId: 'update-bp-prev' },
+      'update-rr': { value: currentMCU.respiratoryRate, prevId: 'update-rr-prev' },
+      'update-pulse': { value: currentMCU.pulse, prevId: 'update-pulse-prev' },
+      'update-temp': { value: currentMCU.temperature, prevId: 'update-temp-prev' },
       // Vision & Hearing
-      'update-vision': currentMCU.vision,
-      'update-audio': currentMCU.audiometry,
-      'update-colorblind': currentMCU.colorblind,
+      'update-vision': { value: currentMCU.vision, prevId: 'update-vision-prev' },
+      'update-audio': { value: currentMCU.audiometry, prevId: 'update-audio-prev' },
+      'update-colorblind': { value: currentMCU.colorblind, prevId: 'update-colorblind-prev' },
       // Respiratory
-      'update-spiro': currentMCU.spirometry,
+      'update-spiro': { value: currentMCU.spirometry, prevId: 'update-spiro-prev' },
       // Imaging
-      'update-xray': currentMCU.xray,
+      'update-xray': { value: currentMCU.xray, prevId: 'update-xray-prev' },
       // Cardio
-      'update-ekg': currentMCU.ekg,
-      'update-treadmill': currentMCU.treadmill,
+      'update-ekg': { value: currentMCU.ekg, prevId: 'update-ekg-prev' },
+      'update-treadmill': { value: currentMCU.treadmill, prevId: 'update-treadmill-prev' },
       // Lab Results
-      'update-kidney': currentMCU.kidneyLiverFunction,
-      'update-hbsag': currentMCU.hbsag,
-      'update-sgot': currentMCU.sgot,
-      'update-sgpt': currentMCU.sgpt,
-      'update-cbc': currentMCU.cbc,
-      'update-napza': currentMCU.napza
+      'update-kidney': { value: currentMCU.kidneyLiverFunction, prevId: 'update-kidney-prev' },
+      'update-hbsag': { value: currentMCU.hbsag, prevId: 'update-hbsag-prev' },
+      'update-sgot': { value: currentMCU.sgot, prevId: 'update-sgot-prev' },
+      'update-sgpt': { value: currentMCU.sgpt, prevId: 'update-sgpt-prev' },
+      'update-cbc': { value: currentMCU.cbc, prevId: 'update-cbc-prev' },
+      'update-napza': { value: currentMCU.napza, prevId: 'update-napza-prev' },
+      // Referral data
+      'update-recipient': { value: currentMCU.recipient, prevId: 'update-recipient-prev' },
+      'update-keluhan': { value: currentMCU.keluhanUtama, prevId: 'update-keluhan-prev' },
+      'update-diagnosis': { value: currentMCU.diagnosisKerja, prevId: 'update-diagnosis-prev' },
+      'update-alasan': { value: currentMCU.alasanRujuk, prevId: 'update-alasan-prev' }
     };
 
-    // Set placeholder text and clear values (user can keep or change)
-    for (const [fieldId, value] of Object.entries(fields)) {
+    // Display previous values next to labels and clear input fields
+    for (const [fieldId, fieldData] of Object.entries(fieldsWithPreviousValues)) {
       const input = document.getElementById(fieldId);
+      const prevSpan = document.getElementById(fieldData.prevId);
+
       if (input) {
-        if (value) {
-          input.placeholder = `Nilai sebelumnya: ${value}`;
-        } else {
-          input.placeholder = 'Belum ada data';
-        }
-        input.value = ''; // Clear so user can type new or leave blank to keep old
+        input.value = ''; // Clear input so user can enter new values
+      }
+
+      if (prevSpan && fieldData.value) {
+        prevSpan.textContent = `(Sebelumnya: ${fieldData.value})`;
+        prevSpan.className = 'text-gray-500 text-xs';
+      } else if (prevSpan) {
+        prevSpan.textContent = '(Belum ada data)';
+        prevSpan.className = 'text-gray-400 text-xs italic';
       }
     }
 
