@@ -308,13 +308,53 @@ function createMultipartBody(fileName: string, mimeType: string, fileBuffer: Arr
 }
 
 /**
- * Sign JWT (simplified)
+ * Sign JWT using RSA with private key
  */
 async function signJwt(message: string, privateKey: string): Promise<string> {
-  // For production, use proper JWT signing library
-  // This is a simplified version - Deno doesn't have built-in RSA signing
-  // For now, return empty (actual implementation needs crypto library)
-  return '';
+  try {
+    // Convert private key from PEM format to crypto key
+    const keyData = privateKey
+      .replace('-----BEGIN PRIVATE KEY-----', '')
+      .replace('-----END PRIVATE KEY-----', '')
+      .replace(/\n/g, '');
+
+    const binaryString = atob(keyData);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    // For Deno, use native crypto API
+    const key = await crypto.subtle.importKey(
+      'pkcs8',
+      bytes.buffer,
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        hash: 'SHA-256',
+      },
+      false,
+      ['sign']
+    );
+
+    const encoder = new TextEncoder();
+    const signatureBuffer = await crypto.subtle.sign(
+      'RSASSA-PKCS1-v1_5',
+      key,
+      encoder.encode(message)
+    );
+
+    // Convert signature to base64
+    const signatureArray = new Uint8Array(signatureBuffer);
+    let binarySignature = '';
+    for (let i = 0; i < signatureArray.length; i++) {
+      binarySignature += String.fromCharCode(signatureArray[i]);
+    }
+
+    return btoa(binarySignature);
+  } catch (error) {
+    console.error('JWT signing error:', error);
+    throw new Error('Failed to sign JWT');
+  }
 }
 
 const corsHeaders = {
