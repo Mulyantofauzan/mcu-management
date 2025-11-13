@@ -210,13 +210,22 @@ async function getGoogleAccessToken(): Promise<string> {
     const signatureInput = `${headerB64}.${payloadB64}`;
 
     // Import private key and sign
+    console.log('Private key length:', privateKey.length);
+    console.log('Client email:', clientEmail);
+
+    const keyBuffer = pemToArrayBuffer(privateKey);
+    console.log('Key buffer size:', keyBuffer.byteLength);
+
     const key = await crypto.subtle.importKey(
       'pkcs8',
-      pemToArrayBuffer(privateKey),
+      keyBuffer,
       { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
       false,
       ['sign']
     );
+
+    console.log('✅ Private key imported successfully');
+    console.log('Signature input length:', signatureInput.length);
 
     const signature = await crypto.subtle.sign(
       'RSASSA-PKCS1-v1_5',
@@ -224,10 +233,16 @@ async function getGoogleAccessToken(): Promise<string> {
       new TextEncoder().encode(signatureInput)
     );
 
+    console.log('✅ JWT signature created, length:', signature.byteLength);
+
     const signatureB64 = base64url(new Uint8Array(signature));
     const jwt = `${signatureInput}.${signatureB64}`;
 
-    console.log('JWT created, exchanging for access token...');
+    console.log('✅ JWT token created, length:', jwt.length);
+    console.log('JWT header:', headerB64);
+    console.log('JWT payload:', payloadB64);
+    console.log('JWT signature (first 50 chars):', signatureB64.substring(0, 50));
+    console.log('Exchanging JWT for access token...');
 
     // Exchange JWT for access token
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
