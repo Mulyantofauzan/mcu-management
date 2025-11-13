@@ -1,108 +1,181 @@
-# Server-Side Compression - Deployment Checklist
+# R2 Storage - Pre-Deployment Checklist
 
-## Pre-Deployment (30 minutes)
+## ✅ MOST CRITICAL: Environment Variables
 
-- [ ] **Read Documentation**
-  - [ ] QUICK_START.md (5 min)
-  - [ ] COMPRESSION_SETUP.md (10 min)
-  - [ ] INTEGRATION_GUIDE.md (10 min)
+**Yang paling penting:** Set 5 env vars di Vercel!
 
-- [ ] **Verify Files Created**
-  - [ ] `/api/compress-upload.js` exists
-  - [ ] `/mcu-management/js/services/serverCompressionService.js` exists
-  - [ ] Documentation files exist
+Tanpa env vars, upload akan gagal.
 
-## Installation (5 minutes)
+### Langkah-langkah:
 
-```bash
-cd /Users/mulyanto/Desktop/MCU-APP/api
-npm install
+1. Login ke Vercel Dashboard: https://vercel.com
+2. Buka project: **MCU-APP**
+3. Go to: **Settings** → **Environment Variables**
+4. Tambah 5 variables baru:
+
+```
+CLOUDFLARE_R2_ENDPOINT
+Value: https://fd1c39fefc64308d6692bb137a7a55c0.r2.cloudflarestorage.com
+
+CLOUDFLARE_R2_ACCESS_KEY_ID
+Value: 9c414074a10f8be1f5832b17833048ea
+
+CLOUDFLARE_R2_SECRET_ACCESS_KEY
+Value: d63c43da985786e1a6a2563d870a0deedb01674212f208c6b8ef7a29f51e123a
+
+CLOUDFLARE_R2_BUCKET_NAME
+Value: mcu-files
+
+CLOUDFLARE_ACCOUNT_ID
+Value: fd1c39fefc64308d6692bb137a7a55c0
 ```
 
-- [ ] Dependencies installed successfully
-- [ ] No errors in npm install
-
-## Local Testing (10 minutes)
-
-- [ ] Test API locally with sample file
-- [ ] Verify compression working
-- [ ] Check Supabase upload
-
-## Deployment to Vercel (5 minutes)
-
-**Option 1: Web Dashboard (Recommended)**
-1. Go to https://vercel.com and sign in
-2. Click "Add New Project"
-3. Select your GitHub repository (MCU-APP)
-4. Click "Deploy"
-5. Vercel will auto-deploy on every push
-
-**Option 2: CLI with Token**
-```bash
-VERCEL_TOKEN=your_token npx vercel deploy --prod
-```
-(Get token from https://vercel.com/account/tokens)
-
-**Checklist**:
-- [ ] Vercel deployment successful
-- [ ] No build errors
-- [ ] Environment variables set (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-- [ ] API endpoint accessible at https://your-domain.vercel.app/api/compress-upload
-
-## Frontend Integration (15 minutes)
-
-Choose ONE option from INTEGRATION_GUIDE.md:
-- [ ] Option A: Replace uploadBatchFiles
-- [ ] Option B: Update FileUploadWidget  
-- [ ] Option C: Hybrid approach
-
-- [ ] Code updated
-- [ ] No syntax errors
-- [ ] Tested locally
-
-## Testing (15 minutes)
-
-- [ ] Single file upload works
-- [ ] Multiple files upload works
-- [ ] Compression ratios shown correctly
-- [ ] Files appear in Supabase
-- [ ] Error handling works
-- [ ] Progress tracking works
-
-## Verification (10 minutes)
-
-- [ ] Files in Supabase Storage
-- [ ] Records in mcufiles table
-- [ ] Compression ratios as expected
-  - PDF: 50-70% reduction
-  - PNG: 60-80% reduction
-  - JPG: 20-40% reduction
-
-## Go Live (5 minutes)
-
-- [ ] Commit changes to main
-- [ ] Vercel auto-deploys
-- [ ] Monitor logs for 1 hour
-- [ ] Notify team
-
-## Success Metrics
-
-- ✅ Upload speed: 3-5 seconds per file
-- ✅ Compression: 50-80% reduction  
-- ✅ Storage savings: 50-70% less
-- ✅ Error rate: <1%
-- ✅ No support tickets
-
-## Documentation Available
-
-- QUICK_START.md
-- COMPRESSION_SETUP.md
-- INTEGRATION_GUIDE.md
+5. Click **Save**
+6. Vercel akan auto-redeploy
 
 ---
 
-**Total Time**: 1-1.5 hours
+## ✅ Configuration Status
 
-**Estimated Savings**: 50-70% storage reduction
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Backend Services | ✅ Ready | `/api/r2StorageService.js`, `/api/r2SignedUrlService.js` |
+| Upload Endpoint | ✅ Ready | `/api/compress-upload/index.js` |
+| Download Endpoint | ✅ Ready | `/api/download-file/index.js` |
+| Frontend Services | ✅ Updated | `downloadFile()`, `getMCUFilesWithSignedUrls()` |
+| Vercel Config | ✅ Ready | `/vercel.json` configured |
+| Dependencies | ✅ Installed | AWS SDK S3 + Presigner |
+| Env Variables | ⚠️ **PENDING** | Perlu di-set di Vercel |
 
-✅ Ready to deploy!
+---
+
+## 🚀 What's Ready to Use
+
+### Upload File
+- ✅ Works immediately after env vars set
+- ✅ POST /api/compress-upload
+- ✅ Stores in R2 + metadata in Supabase
+
+### View File List
+- ✅ Works immediately
+- ✅ GET /api/get-mcu-files
+- ✅ Shows all files for MCU
+
+### Download File
+- ✅ Works immediately after env vars set
+- ✅ GET /api/download-file
+- ✅ Auto-generates signed URL (1 hour valid)
+
+---
+
+## ⚡ Quick Start
+
+### 1. Set Environment Variables (REQUIRED)
+```
+Go to Vercel Dashboard → Project Settings → Environment Variables
+Add 5 variables listed above
+Save → Auto-redeploy
+```
+
+### 2. Verify Deployment
+```bash
+vercel deploy --prod
+# or git push (auto-deploy)
+```
+
+### 3. Test Upload
+1. Open app
+2. Manage Employees → Select employee
+3. Tambah MCU → Upload file
+4. Click Save
+
+Expected: ✅ No errors, file saved
+
+### 4. Test View
+1. Click on employee again
+2. View MCU history → Click Detail
+3. Scroll to "📄 Dokumen MCU"
+
+Expected: ✅ File list visible
+
+### 5. Test Download
+1. In MCU detail modal
+2. Click Download button on file
+
+Expected: ✅ File downloads
+
+---
+
+## 🔍 Verification Commands
+
+```bash
+# Check if deployed
+vercel status
+
+# Check logs (live tail)
+vercel logs --tail
+
+# Check env vars set
+vercel env list
+
+# Manual redeploy if needed
+vercel deploy --prod
+```
+
+---
+
+## ❌ If Upload Fails
+
+**Error:** "Missing R2 environment variables"
+- → Set env vars in Vercel (see Step 1 above)
+
+**Error:** "R2 client not initialized"
+- → Same as above, env vars not loaded
+
+**Error:** "File too large"
+- → File must be under 2MB
+
+**Error:** "File type not allowed"
+- → Only PDF, JPG, PNG allowed
+
+**Error:** "Unauthorized"
+- → Download only works for file owner
+
+---
+
+## 📚 Documentation Files
+
+| File | Purpose |
+|------|---------|
+| R2_SETUP.md | Initial R2 setup |
+| R2_SIGNED_URLS.md | Complete signed URL guide |
+| R2_SIGNED_URLS_FAQ.md | FAQ & examples |
+| R2_CHEATSHEET.md | Quick reference |
+| R2_TROUBLESHOOTING.md | Debug guide |
+| DEPLOYMENT_CHECKLIST.md | This file |
+
+---
+
+## ✨ Summary
+
+```
+Everything is ready!
+
+Just need to:
+1. Set 5 env vars in Vercel ← CRITICAL
+2. Deploy (git push or vercel deploy --prod)
+3. Test in app
+
+Then:
+- Upload ✅
+- View ✅
+- Download ✅
+
+All automatic and secure! 🎉
+```
+
+---
+
+## Questions?
+
+See documentation files listed above.
