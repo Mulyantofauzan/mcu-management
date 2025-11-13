@@ -1,17 +1,26 @@
 /**
  * Supabase Edge Function - Upload MCU Files to Google Drive
  *
- * CRITICAL FIX: Due to Deno crypto.subtle producing incompatible signatures,
- * this function now uses a direct fetch to a helper endpoint that does JWT
- * signing in Node.js (which we've verified works)
+ * Uses direct JWT signing in Deno with jose library for reliable Google OAuth
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import * as jose from 'https://deno.land/x/jose@v5.2.0/index.ts';
 
 const googleDriveFolderId = Deno.env.get('GOOGLE_DRIVE_ROOT_FOLDER_ID') ?? '';
-const jwtSigningEndpoint = Deno.env.get('JWT_SIGNING_ENDPOINT') || 'https://madis.sabdamu.my.id/api/sign-jwt';
+const googleCredentialsJson = Deno.env.get('GOOGLE_CREDENTIALS_JSON') ?? '';
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
+// Parse credentials at startup
+let googleCredentials: Record<string, unknown>;
+try {
+  googleCredentials = JSON.parse(googleCredentialsJson);
+  console.log('✅ Google credentials loaded for JWT signing');
+} catch (e) {
+  console.error('❌ Failed to parse GOOGLE_CREDENTIALS_JSON:', e);
+  googleCredentials = {};
+}
 
 serve(async (req) => {
   // Handle CORS
@@ -74,26 +83,12 @@ serve(async (req) => {
     console.log('Starting file upload...');
     console.log('Employee ID:', employeeId, 'MCU ID:', mcuId, 'File:', file.name);
 
-    // Get access token using JWT signing endpoint
-    console.log('Requesting access token from JWT signing endpoint...');
-    const tokenResponse = await fetch(jwtSigningEndpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        scope: 'https://www.googleapis.com/auth/drive',
-      }),
-    });
-
-    if (!tokenResponse.ok) {
-      const errorData = await tokenResponse.json() as Record<string, unknown>;
-      throw new Error(`Failed to get access token: ${JSON.stringify(errorData)}`);
-    }
-
-    const tokenData = await tokenResponse.json() as Record<string, unknown>;
-    const accessToken = (tokenData.access_token as string) || '';
+    // Get access token by signing JWT and exchanging for access token
+    console.log('Signing JWT for Google OAuth...');
+    const accessToken = await getGoogleAccessToken();
 
     if (!accessToken) {
-      throw new Error('No access token received from JWT signing endpoint');
+      throw new Error('Failed to obtain Google access token');
     }
 
     console.log('Got access token successfully');
@@ -176,6 +171,74 @@ serve(async (req) => {
     );
   }
 });
+
+/**
+ * Get Google access token by signing a JWT with service account credentials
+ */
+async function getGoogleAccessToken(): Promise<string> {
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    const expiresIn = 3600;
+    const expiresAt = now + expiresIn;
+
+    const privateKey = (googleCredentials.private_key as string) || '';
+    const clientEmail = (googleCredentials.client_email as string) || '';
+
+    if (!privateKey || !clientEmail) {
+      throw new Error('Missing private_key or client_email in credentials');
+    }
+
+    // Import private key
+    const key = await jose.importPKCS8(privateKey, 'RS256');
+
+    // Create JWT payload
+    const payload = {
+      iss: clientEmail,
+      scope: 'https://www.googleapis.com/auth/drive',
+      aud: 'https://oauth2.googleapis.com/token',
+      exp: expiresAt,
+      iat: now,
+    };
+
+    // Sign JWT
+    console.log('Creating JWT token...');
+    const jwt = await new jose.SignJWT(payload)
+      .setProtectedHeader({ alg: 'RS256' })
+      .setIssuedAt(now)
+      .setExpirationTime(expiresAt)
+      .sign(key);
+
+    console.log('JWT created, exchanging for access token...');
+
+    // Exchange JWT for access token
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion: jwt,
+      }).toString(),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorData = await tokenResponse.text();
+      throw new Error(`Failed to exchange JWT for token: ${errorData}`);
+    }
+
+    const tokenData = (await tokenResponse.json()) as Record<string, unknown>;
+    const accessToken = (tokenData.access_token as string) || '';
+
+    if (!accessToken) {
+      throw new Error('No access token in response from Google');
+    }
+
+    console.log('✅ Access token obtained');
+    return accessToken;
+  } catch (error) {
+    console.error('❌ Failed to get access token:', error instanceof Error ? error.message : String(error));
+    throw error;
+  }
+}
 
 /**
  * Get or create employee folder in Google Drive
