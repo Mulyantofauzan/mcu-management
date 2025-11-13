@@ -1,16 +1,16 @@
 /**
- * File Upload API - Supabase Storage
+ * File Upload API - Cloudflare R2
  * Endpoint: POST /api/compress-upload
  *
  * Flow:
  * - Accept file upload from client
  * - Validate file type and size (max 2MB)
- * - Store file in Supabase Storage bucket
+ * - Store file in Cloudflare R2 bucket
  * - Save metadata + public URL to Supabase database
  */
 
 const busboy = require('busboy');
-const { uploadFileToStorage, ALLOWED_TYPES, MAX_FILE_SIZE } = require('../../supabaseStorageService');
+const { uploadFileToStorage, ALLOWED_TYPES, MAX_FILE_SIZE } = require('../r2StorageService');
 
 /**
  * Main handler function
