@@ -627,7 +627,7 @@ window.handleMCUUpdate = async function(event) {
 
     // Collect new values - only include editable fields and if user changed something
     const updateData = {};
-    // Only these fields are editable (read-only fields are excluded)
+    // Only these fields are editable (read-only fields like recipient, keluhan, diagnosis, alasan are excluded)
     const fieldMapping = {
       'update-bmi': 'bmi',
       'update-bp': 'bloodPressure',
@@ -642,11 +642,7 @@ window.handleMCUUpdate = async function(event) {
       'update-treadmill': 'treadmill',
       'update-kidney': 'kidneyLiverFunction',
       'update-hbsag': 'hbsag',
-      'update-napza': 'napza',
-      'update-recipient': 'recipient',
-      'update-keluhan': 'keluhanUtama',
-      'update-diagnosis': 'diagnosisKerja',
-      'update-alasan': 'alasanRujuk'
+      'update-napza': 'napza'
     };
 
     for (const [fieldId, dataKey] of Object.entries(fieldMapping)) {
