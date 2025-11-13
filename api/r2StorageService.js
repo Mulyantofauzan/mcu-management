@@ -80,8 +80,8 @@ try {
 }
 
 const STORAGE_BUCKET = process.env.CLOUDFLARE_R2_BUCKET_NAME;
-const R2_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
 const R2_ENDPOINT = process.env.CLOUDFLARE_R2_ENDPOINT;
+const R2_PUBLIC_URL = process.env.CLOUDFLARE_R2_PUBLIC_URL || 'https://pub-dd28e3fca9424669a25f4edf5ae53f1a.r2.dev';
 const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB
 const ALLOWED_TYPES = {
   'application/pdf': 'pdf',
@@ -130,11 +130,9 @@ async function generateStoragePath(employeeId, mcuId, fileName) {
  * Generate public URL for R2 file
  */
 function generatePublicUrl(filePath) {
-  // Format: https://{account-id}.r2.cloudflarestorage.com/{bucket}/{path}
-  // Or using custom domain if configured
-  const baseUrl = process.env.CLOUDFLARE_R2_PUBLIC_URL ||
-    `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
-  return `${baseUrl}/${STORAGE_BUCKET}/${filePath}`;
+  // Format: https://pub-{deployment-id}.r2.dev/{path}
+  // Uses public development URL for R2 bucket
+  return `${R2_PUBLIC_URL}/${filePath}`;
 }
 
 /**
