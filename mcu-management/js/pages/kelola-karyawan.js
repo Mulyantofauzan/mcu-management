@@ -798,9 +798,10 @@ window.handleAddMCU = async function(event) {
     try {
         const currentUser = authService.getCurrentUser();
 
-        // Get doctor ID from selected doctor (store ID, not name)
+        // ✅ FIX: Get doctor ID and convert to number (matching handleEditMCU logic)
         const doctorSelect = document.getElementById('mcu-doctor');
-        const selectedDoctorId = doctorSelect.value;
+        const doctorValue = doctorSelect.value;
+        const doctorId = doctorValue ? parseInt(doctorValue, 10) : null;
 
         const mcuData = {
             mcuId: generatedMCUIdForAdd, // Use the ID generated when modal opened
@@ -822,7 +823,7 @@ window.handleAddMCU = async function(event) {
             hbsag: document.getElementById('mcu-hbsag').value || null,
             napza: document.getElementById('mcu-napza').value || null,
             colorblind: document.getElementById('mcu-colorblind').value || null,
-            doctor: selectedDoctorId || null,
+            doctor: doctorId,
             recipient: document.getElementById('mcu-recipient').value || null,
             keluhanUtama: document.getElementById('mcu-keluhan').value || null,
             diagnosisKerja: document.getElementById('mcu-diagnosis').value || null,
@@ -838,10 +839,10 @@ window.handleAddMCU = async function(event) {
             return;
         }
 
-        // ✅ FIX: Upload temporary files BEFORE saving MCU data
+        // ✅ FIX: Upload temporary files to Cloudflare R2 BEFORE saving MCU data
         const tempFiles = tempFileStorage.getFiles(mcuData.mcuId);
         if (tempFiles && tempFiles.length > 0) {
-            console.log(`📤 Uploading ${tempFiles.length} file(s) for MCU ${mcuData.mcuId}...`);
+            console.log(`📤 Uploading ${tempFiles.length} file(s) to Cloudflare R2 for MCU ${mcuData.mcuId}...`);
 
             const { uploadBatchFiles } = await import('../services/supabaseStorageService.js');
             const uploadResult = await uploadBatchFiles(
@@ -853,7 +854,7 @@ window.handleAddMCU = async function(event) {
 
             if (!uploadResult.success && uploadResult.uploadedCount === 0) {
                 // All uploads failed - don't proceed with MCU creation
-                showToast(`❌ File upload gagal: ${uploadResult.error}`, 'error');
+                showToast(`❌ File upload ke R2 gagal: ${uploadResult.error}`, 'error');
                 return;
             } else if (uploadResult.failedCount > 0) {
                 // Some uploads failed - warn user but continue
@@ -861,10 +862,10 @@ window.handleAddMCU = async function(event) {
             }
         }
 
-        // Clear temporary files after successful upload
+        // ✅ CRITICAL: Clear temporary files ONLY after successful R2 upload
         tempFileStorage.clearFiles(mcuData.mcuId);
 
-        // ✅ FIX: NOW save MCU data after files are successfully uploaded (or if no files)
+        // ✅ FIX: NOW save MCU data after files are successfully uploaded to R2 (or if no files)
         await mcuService.create(mcuData, currentUser);
 
         showToast('MCU berhasil ditambahkan!', 'success');
@@ -875,6 +876,7 @@ window.handleAddMCU = async function(event) {
 
     } catch (error) {
         showToast('Gagal menambah MCU: ' + error.message, 'error');
+        console.error('Error in handleAddMCU:', error);
         // Note: Temporary files are kept in memory and will be cleared when user reopens the modal or reloads page
     }
 };
@@ -1302,7 +1304,29 @@ window.handleEditMCU = async function(event) {
             updateData.finalNotes = document.getElementById('edit-mcu-final-notes').value || null;
         }
 
-        // Clear temporary files
+        // ✅ FIX: Upload temporary files to Cloudflare R2 BEFORE clearing from storage
+        const tempFiles = tempFileStorage.getFiles(mcuId);
+        if (tempFiles && tempFiles.length > 0) {
+            console.log(`📤 Uploading ${tempFiles.length} file(s) to Cloudflare R2 for MCU ${mcuId}...`);
+
+            const { uploadBatchFiles } = await import('../services/supabaseStorageService.js');
+            const uploadResult = await uploadBatchFiles(
+                tempFiles,
+                updateData.employeeId || (await mcuService.getById(mcuId)).employeeId,
+                mcuId,
+                currentUser.id
+            );
+
+            if (!uploadResult.success && uploadResult.uploadedCount === 0) {
+                // All uploads failed - warn but continue with MCU update
+                showToast(`⚠️ File upload ke R2 gagal: ${uploadResult.error}`, 'warning');
+            } else if (uploadResult.failedCount > 0) {
+                // Some uploads failed
+                showToast(`⚠️ ${uploadResult.failedCount} file gagal diunggah`, 'warning');
+            }
+        }
+
+        // ✅ CRITICAL: Clear temporary files ONLY after upload attempt
         tempFileStorage.clearFiles(mcuId);
 
         // Save/update lab results if widget exists
