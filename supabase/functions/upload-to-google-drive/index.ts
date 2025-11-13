@@ -185,12 +185,14 @@ serve(async (req) => {
 /**
  * Get Google access token via Vercel API endpoint
  * Uses google-auth-library for reliable JWT signing
+ * Vercel endpoint reads credentials from GOOGLE_CREDENTIALS_JSON env var
  */
 async function getGoogleAccessToken(): Promise<string> {
   try {
     console.log('Getting Google access token via Vercel API...');
 
     // Call Vercel API endpoint for JWT signing
+    // Vercel endpoint will use GOOGLE_CREDENTIALS_JSON from its environment
     const vercelEndpoint = 'https://mcu-app.vercel.app/api/sign-jwt';
 
     const response = await fetch(vercelEndpoint, {
@@ -198,9 +200,6 @@ async function getGoogleAccessToken(): Promise<string> {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        credentials: googleCredentials,
-      }),
     });
 
     console.log('Vercel API response status:', response.status);
