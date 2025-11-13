@@ -7,17 +7,27 @@ const { GoogleAuth } = require('google-auth-library');
 
 const googleCredentialsJson = process.env.GOOGLE_CREDENTIALS_JSON;
 
+console.log('=== API STARTUP ===');
+console.log('GOOGLE_CREDENTIALS_JSON exists:', !!googleCredentialsJson);
+if (googleCredentialsJson) {
+  console.log('Length:', googleCredentialsJson.length);
+  console.log('First 100 chars:', googleCredentialsJson.substring(0, 100));
+  console.log('Contains \\n:', googleCredentialsJson.includes('\\n'));
+}
+
 let credentials;
 try {
   let credStr = googleCredentialsJson;
   // Handle escaped newlines
   if (credStr && credStr.includes('\\n')) {
+    console.log('Found escaped newlines, unescaping...');
     credStr = credStr.replace(/\\n/g, '\n');
   }
   credentials = JSON.parse(credStr);
-  console.log('Google credentials loaded successfully');
+  console.log('✅ Google credentials loaded successfully');
+  console.log('Client email:', credentials.client_email);
 } catch (e) {
-  console.error('Failed to parse GOOGLE_CREDENTIALS_JSON:', e.message);
+  console.error('❌ Failed to parse GOOGLE_CREDENTIALS_JSON:', e.message);
   console.error('Credentials preview:', googleCredentialsJson ? googleCredentialsJson.substring(0, 50) : 'NOT SET');
 }
 
@@ -37,15 +47,20 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log('=== SIGN JWT REQUEST ===');
+    console.log('Credentials loaded:', !!credentials);
+
     if (!credentials) {
       throw new Error('Google credentials not configured. Please set GOOGLE_CREDENTIALS_JSON environment variable.');
     }
 
     // Create Google Auth instance
+    console.log('Creating GoogleAuth instance...');
     const auth = new GoogleAuth({
       credentials,
       scopes: ['https://www.googleapis.com/auth/drive'],
     });
+    console.log('✅ GoogleAuth instance created');
 
     console.log('Getting access token from Google...');
 
@@ -56,7 +71,8 @@ export default async function handler(req, res) {
       throw new Error('Failed to obtain access token from Google');
     }
 
-    console.log('Access token obtained successfully');
+    console.log('✅ Access token obtained successfully');
+    console.log('Token length:', token.length);
 
     return res.status(200).json({
       access_token: token,
@@ -64,7 +80,7 @@ export default async function handler(req, res) {
       expires_in: 3600,
     });
   } catch (error) {
-    console.error('JWT signing error:', error.message);
+    console.error('❌ JWT signing error:', error.message);
     console.error('Stack:', error.stack);
     return res.status(500).json({ error: error.message });
   }
