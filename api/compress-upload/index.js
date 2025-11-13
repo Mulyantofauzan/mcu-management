@@ -7,6 +7,8 @@
  * - Validate file type and size (max 3MB)
  * - Store file in Cloudflare R2 bucket
  * - Save metadata + public URL to Supabase database
+ *
+ * IMPORTANT: This ONLY uploads to Cloudflare R2, NOT Supabase Storage
  */
 
 const busboy = require('busboy');
