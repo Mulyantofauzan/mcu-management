@@ -34,7 +34,9 @@
       "Bash(npm install:*)",
       "Bash(npx vercel logs:*)",
       "Bash(python3:*)",
-      "Bash(xargs sed:*)"
+      "Bash(xargs sed:*)",
+      "Bash(VERCEL_TOKEN=Ri5HSbQZkmmC05ZBSjzYcTAy npx vercel env pull:*)",
+      "Bash(npx vercel env pull:*)"
     ],
     "deny": [],
     "ask": []

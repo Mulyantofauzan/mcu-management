@@ -5,7 +5,7 @@
  */
 
 // Get Supabase URL from environment
-const SUPABASE_URL = window.__SUPABASE_URL__ || 'https://ygvhixktmnmgqmqfmtlr.supabase.co';
+const SUPABASE_URL = window.__SUPABASE_URL__ || 'https://xqyuktsfivdqfhulobai.supabase.co';
 const GOOGLE_DRIVE_UPLOAD_ENDPOINT = `${SUPABASE_URL}/functions/v1/upload-to-google-drive`;
 
 /**
