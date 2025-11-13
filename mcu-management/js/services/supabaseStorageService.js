@@ -1,8 +1,8 @@
 /**
  * Supabase Storage Upload Service
  *
- * Frontend service untuk upload files ke Supabase Storage
- * - Max 2MB per file
+ * Frontend service untuk upload files ke Cloudflare R2
+ * - Max 3MB per file
  * - Supported: PDF, JPG, PNG
  * - Upload tracking dengan progress callback
  *
@@ -11,7 +11,7 @@
  */
 
 /**
- * Upload file ke Supabase Storage
+ * Upload file ke Cloudflare R2
  * @param {File} file - File object dari input
  * @param {string} employeeId - Employee ID
  * @param {string} mcuId - MCU ID
@@ -36,11 +36,11 @@ export async function uploadFileToSupabase(file, employeeId, mcuId, onProgress =
       );
     }
 
-    // Validate file size (2MB max)
-    const maxSize = 2 * 1024 * 1024;
+    // Validate file size (3MB max)
+    const maxSize = 3 * 1024 * 1024;
     if (file.size > maxSize) {
       throw new Error(
-        `File terlalu besar (${(file.size / 1024 / 1024).toFixed(1)}MB). Maksimal file 2MB per file`
+        `File terlalu besar (${(file.size / 1024 / 1024).toFixed(1)}MB). Maksimal file 3MB per file`
       );
     }
 
@@ -50,7 +50,7 @@ export async function uploadFileToSupabase(file, employeeId, mcuId, onProgress =
     formData.append('employeeId', employeeId);
     formData.append('mcuId', mcuId);
 
-    console.log(`📤 Uploading to Supabase: ${file.name}`);
+    console.log(`📤 Uploading to Cloudflare R2: ${file.name}`);
 
     // Upload dengan progress tracking
     const xhr = new XMLHttpRequest();

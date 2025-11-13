@@ -4,7 +4,7 @@
  *
  * Flow:
  * - Accept file upload from client
- * - Validate file type and size (max 2MB)
+ * - Validate file type and size (max 3MB)
  * - Store file in Cloudflare R2 bucket
  * - Save metadata + public URL to Supabase database
  */
@@ -121,7 +121,7 @@ module.exports = async (req, res) => {
           const fileType = ALLOWED_TYPES[file.mimeType];
 
           // Upload to Supabase Storage
-          console.log(`\n📤 Uploading to Supabase Storage...`);
+          console.log(`\n📤 Uploading to Cloudflare R2...`);
           const uploadResult = await uploadFileToStorage(
             file.buffer,
             file.filename,
@@ -146,7 +146,7 @@ module.exports = async (req, res) => {
               path: uploadResult.storagePath,
               publicUrl: uploadResult.publicUrl
             },
-            message: 'File uploaded successfully to Supabase Storage'
+            message: 'File uploaded successfully to Cloudflare R2'
           });
         } catch (error) {
           console.error('❌ Error:', error.message);

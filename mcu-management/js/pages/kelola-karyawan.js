@@ -798,11 +798,9 @@ window.handleAddMCU = async function(event) {
     try {
         const currentUser = authService.getCurrentUser();
 
-        // Get doctor name from selected doctor ID (must lookup from doctors array)
+        // Get doctor ID from selected doctor (store ID, not name)
         const doctorSelect = document.getElementById('mcu-doctor');
         const selectedDoctorId = doctorSelect.value;
-        const selectedDoctor = doctors.find(d => d.id == selectedDoctorId);
-        const doctorName = selectedDoctor ? selectedDoctor.name : null;
 
         const mcuData = {
             mcuId: generatedMCUIdForAdd, // Use the ID generated when modal opened
@@ -824,7 +822,7 @@ window.handleAddMCU = async function(event) {
             hbsag: document.getElementById('mcu-hbsag').value || null,
             napza: document.getElementById('mcu-napza').value || null,
             colorblind: document.getElementById('mcu-colorblind').value || null,
-            doctor: doctorName,
+            doctor: selectedDoctorId || null,
             recipient: document.getElementById('mcu-recipient').value || null,
             keluhanUtama: document.getElementById('mcu-keluhan').value || null,
             diagnosisKerja: document.getElementById('mcu-diagnosis').value || null,
@@ -840,7 +838,30 @@ window.handleAddMCU = async function(event) {
             return;
         }
 
-        // Clear temporary files
+        // ✅ FIX: Upload temporary files BEFORE saving MCU data
+        const tempFiles = tempFileStorage.getFiles(mcuData.mcuId);
+        if (tempFiles && tempFiles.length > 0) {
+            console.log(`📤 Uploading ${tempFiles.length} file(s) for MCU ${mcuData.mcuId}...`);
+
+            const { uploadBatchFiles } = await import('../services/supabaseStorageService.js');
+            const uploadResult = await uploadBatchFiles(
+                tempFiles,
+                mcuData.employeeId,
+                mcuData.mcuId,
+                currentUser.id
+            );
+
+            if (!uploadResult.success && uploadResult.uploadedCount === 0) {
+                // All uploads failed - don't proceed with MCU creation
+                showToast(`❌ File upload gagal: ${uploadResult.error}`, 'error');
+                return;
+            } else if (uploadResult.failedCount > 0) {
+                // Some uploads failed - warn user but continue
+                showToast(`⚠️ ${uploadResult.failedCount} file gagal diunggah, tapi MCU akan disimpan`, 'warning');
+            }
+        }
+
+        // Clear temporary files after successful upload
         tempFileStorage.clearFiles(mcuData.mcuId);
 
         // ✅ FIX: NOW save MCU data after files are successfully uploaded (or if no files)

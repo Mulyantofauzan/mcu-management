@@ -76,7 +76,7 @@ try {
 const STORAGE_BUCKET = process.env.CLOUDFLARE_R2_BUCKET_NAME;
 const R2_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
 const R2_ENDPOINT = process.env.CLOUDFLARE_R2_ENDPOINT;
-const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB
 const ALLOWED_TYPES = {
   'application/pdf': 'pdf',
   'image/jpeg': 'image',
@@ -181,7 +181,7 @@ async function uploadFileToStorage(fileBuffer, fileName, employeeId, mcuId, mime
     // Validate file size
     if (fileBuffer.length > MAX_FILE_SIZE) {
       throw new Error(
-        `File terlalu besar (${(fileBuffer.length / 1024 / 1024).toFixed(1)}MB). Maksimal 2MB per file`
+        `File terlalu besar (${(fileBuffer.length / 1024 / 1024).toFixed(1)}MB). Maksimal 3MB per file`
       );
     }
 
