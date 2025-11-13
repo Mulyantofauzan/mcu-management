@@ -50,9 +50,12 @@ let s3Client = null;
 let R2_CONFIG_VALID = false;
 
 try {
+  console.log('🔍 Validating R2 configuration...');
   validateR2Config();
+  console.log('✅ R2 configuration validated');
 
   // Initialize R2 S3 Client with proper error handling
+  console.log('🔧 Initializing S3Client...');
   s3Client = new S3Client({
     region: 'auto',
     endpoint: process.env.CLOUDFLARE_R2_ENDPOINT,
@@ -68,9 +71,12 @@ try {
     }
   });
 
+  console.log('✅ S3Client initialized successfully');
   R2_CONFIG_VALID = true;
 } catch (error) {
-  console.error('⚠️ R2 Client initialization failed:', error.message);
+  console.error('❌ R2 Client initialization failed:', error.message);
+  console.error('❌ Stack trace:', error.stack);
+  console.error('❌ This means files will FAIL to upload to R2!');
 }
 
 const STORAGE_BUCKET = process.env.CLOUDFLARE_R2_BUCKET_NAME;
