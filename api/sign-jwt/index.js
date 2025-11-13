@@ -1,47 +1,40 @@
 /**
  * Vercel API - JWT Signing Service
  * Uses official Google Auth Library for reliable credential handling
+ *
+ * Credentials can be provided via:
+ * 1. Environment variable GOOGLE_CREDENTIALS_JSON
+ * 2. Request body (for Supabase Edge Function calls)
  */
 
 const { GoogleAuth } = require('google-auth-library');
+const crypto = require('crypto');
 
+// Try to get credentials from env var at startup
+let cachedCredentials = null;
 const googleCredentialsJson = process.env.GOOGLE_CREDENTIALS_JSON;
 
-console.log('=== API STARTUP ===');
-console.log('GOOGLE_CREDENTIALS_JSON exists:', !!googleCredentialsJson);
 if (googleCredentialsJson) {
-  console.log('Length:', googleCredentialsJson.length);
-  console.log('First 100 chars:', googleCredentialsJson.substring(0, 100));
-  console.log('Contains \\n:', googleCredentialsJson.includes('\\n'));
-}
+  console.log('=== API STARTUP ===');
+  console.log('GOOGLE_CREDENTIALS_JSON found in environment');
 
-let credentials;
-try {
-  let credStr = googleCredentialsJson;
-  // Handle escaped newlines (from environment variable)
-  if (credStr && credStr.includes('\\n')) {
-    console.log('Found escaped newlines, unescaping...');
-    credStr = credStr.replace(/\\n/g, '\n');
+  try {
+    let credStr = googleCredentialsJson;
+    if (credStr.includes('\\n')) {
+      credStr = credStr.replace(/\\n/g, '\n');
+    }
+    cachedCredentials = JSON.parse(credStr);
+    console.log('✅ Google credentials loaded from env');
+  } catch (e) {
+    console.error('❌ Failed to parse env GOOGLE_CREDENTIALS_JSON:', e.message);
   }
-  credentials = JSON.parse(credStr);
-  console.log('✅ Google credentials loaded successfully');
-  console.log('Client email:', credentials.client_email);
-  console.log('Key type:', credentials.type);
-  console.log('Has private_key:', !!credentials.private_key);
-  if (credentials.private_key) {
-    console.log('Private key starts with:', credentials.private_key.substring(0, 50));
-    console.log('Private key ends with:', credentials.private_key.substring(credentials.private_key.length - 50));
-  }
-} catch (e) {
-  console.error('❌ Failed to parse GOOGLE_CREDENTIALS_JSON:', e.message);
-  console.error('Credentials preview:', googleCredentialsJson ? googleCredentialsJson.substring(0, 50) : 'NOT SET');
 }
 
 export default async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -54,10 +47,23 @@ export default async function handler(req, res) {
 
   try {
     console.log('=== SIGN JWT REQUEST ===');
-    console.log('Credentials loaded:', !!credentials);
+
+    // Get credentials from cache or request body
+    let credentials = cachedCredentials;
+
+    // If no cached credentials, try to get from request body (Supabase Edge Function)
+    if (!credentials && req.body) {
+      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      if (body.credentials) {
+        credentials = body.credentials;
+        console.log('Using credentials from request body');
+      }
+    }
+
+    console.log('Credentials available:', !!credentials);
 
     if (!credentials) {
-      throw new Error('Google credentials not configured. Please set GOOGLE_CREDENTIALS_JSON environment variable.');
+      throw new Error('Google credentials not configured. Provide via GOOGLE_CREDENTIALS_JSON env var or in request body.');
     }
 
     // Verify credentials structure
@@ -69,14 +75,15 @@ export default async function handler(req, res) {
       throw new Error('Credentials missing client_email field');
     }
 
+    console.log('Client email:', credentials.client_email);
+    console.log('Creating GoogleAuth instance...');
+
     // Create Google Auth instance
-    console.log('Creating GoogleAuth instance with scopes...');
     const auth = new GoogleAuth({
       credentials,
       scopes: ['https://www.googleapis.com/auth/drive'],
     });
     console.log('✅ GoogleAuth instance created');
-    console.log('Auth credentials type:', auth.constructor.name);
 
     console.log('Getting access token from Google...');
 
@@ -89,7 +96,6 @@ export default async function handler(req, res) {
 
     console.log('✅ Access token obtained successfully');
     console.log('Token length:', token.length);
-    console.log('Token type:', token.split('.').length === 3 ? 'JWT' : 'Unknown');
 
     return res.status(200).json({
       access_token: token,
@@ -98,7 +104,9 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('❌ JWT signing error:', error.message);
-    console.error('Stack:', error.stack);
+    if (error.stack) {
+      console.error('Stack:', error.stack);
+    }
     return res.status(500).json({ error: error.message });
   }
 }

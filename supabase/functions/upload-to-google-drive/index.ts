@@ -194,12 +194,20 @@ async function getGoogleAccessToken(): Promise<string> {
     const signingEndpoint = Deno.env.get('JWT_SIGNING_ENDPOINT') ||
       'https://madis.sabdamu.my.id/api/sign-jwt';
 
+    // Send credentials in request body as fallback if env var not set
+    const requestBody: Record<string, unknown> = {
+      scope: 'https://www.googleapis.com/auth/drive',
+    };
+
+    if (googleCredentials && Object.keys(googleCredentials).length > 0) {
+      requestBody.credentials = googleCredentials;
+      console.log('Including credentials in request body');
+    }
+
     const jwtResponse = await fetch(signingEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        scope: 'https://www.googleapis.com/auth/drive',
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     console.log('JWT endpoint response status:', jwtResponse.status);
