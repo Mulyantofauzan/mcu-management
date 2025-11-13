@@ -697,8 +697,10 @@ function populateDoctorDropdown(selectId) {
         select.remove(1);
     }
 
-    // Add doctor options
+    // Debug: Check if doctors array is populated
+    console.log(`👨‍⚕️ Populating doctor dropdown "${selectId}": ${doctors.length} doctor(s) available`);
     doctors.forEach(doctor => {
+        console.log(`   - Doctor: ${doctor.name} (ID: ${doctor.id})`);
         const option = document.createElement('option');
         option.value = doctor.id;
         option.textContent = doctor.name;
@@ -1306,6 +1308,19 @@ window.handleEditMCU = async function(event) {
     try {
         const currentUser = authService.getCurrentUser();
 
+        // ✅ FIX: Get doctor ID and convert to number
+        const doctorSelect = document.getElementById('edit-mcu-doctor');
+        const doctorValue = doctorSelect.value;
+        const doctorId = doctorValue ? parseInt(doctorValue, 10) : null;
+
+        // Debug: Log doctor selection
+        console.log(`👨‍⚕️ Doctor selected: "${doctorValue}" → ID: ${doctorId}`);
+        if (!doctorValue) {
+            console.warn(`⚠️ WARNING: No doctor selected! Doctor ID will be NULL.`);
+            showToast('❌ Harap pilih dokter pemeriksa sebelum menyimpan', 'error');
+            return; // Stop form submission if doctor is not selected
+        }
+
         const updateData = {
             mcuType: document.getElementById('edit-mcu-type').value,
             mcuDate: document.getElementById('edit-mcu-date').value,
@@ -1324,11 +1339,7 @@ window.handleEditMCU = async function(event) {
             kidneyLiverFunction: document.getElementById('edit-mcu-kidney').value || null,
             napza: document.getElementById('edit-mcu-napza').value || null,
             colorblind: document.getElementById('edit-mcu-colorblind').value || null,
-            // ✅ FIX: Convert doctor ID to number (doctors.id is INTEGER)
-            doctor: (() => {
-                const val = document.getElementById('edit-mcu-doctor').value;
-                return val ? parseInt(val, 10) : null;
-            })(),
+            doctor: doctorId,
             recipient: document.getElementById('edit-mcu-recipient').value || null,
             keluhanUtama: document.getElementById('edit-mcu-keluhan').value || null,
             diagnosisKerja: document.getElementById('edit-mcu-diagnosis').value || null,

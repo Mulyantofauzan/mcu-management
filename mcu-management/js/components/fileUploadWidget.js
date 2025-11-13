@@ -378,6 +378,10 @@ export class FileUploadWidget {
      * Add file to UI list
      */
     addFileToList(file) {
+        // Generate a temporary fileid if not provided (for temp files)
+        if (!file.fileid) {
+            file.fileid = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        }
         this.uploadedFiles.push(file);
         this.renderFilesList();
     }
@@ -433,20 +437,47 @@ export class FileUploadWidget {
      * Handle file deletion
      */
     async handleDelete(fileid) {
-        if (!confirm('Are you sure you want to delete this file?')) {
+        if (!confirm('Yakin ingin menghapus file ini?')) {
             return;
         }
 
-        this.showProgress('Deleting file...');
+        // Find the file to determine if it's temporary or already uploaded
+        const fileToDelete = this.uploadedFiles.find(f => f.fileid === fileid);
+
+        if (!fileToDelete) {
+            this.showError('File not found');
+            return;
+        }
+
+        // If file is marked as temporary (not yet in database), just remove from queue
+        if (fileToDelete.isTemp) {
+            console.log(`🗑️  Removing temporary file from queue: ${fileToDelete.filename}`);
+
+            // Remove from tempFileStorage by finding the file with matching name
+            const tempFiles = tempFileStorage.getFiles(this.options.mcuId);
+            const fileIndex = tempFiles.findIndex(f => f.name === fileToDelete.filename);
+            if (fileIndex >= 0) {
+                tempFileStorage.removeFile(this.options.mcuId, fileIndex);
+            }
+
+            // Remove from UI list
+            this.uploadedFiles = this.uploadedFiles.filter(f => f.fileid !== fileid);
+            this.renderFilesList();
+            this.showSuccess(`File dihapus dari antrian: ${fileToDelete.filename}`);
+            return;
+        }
+
+        // For already-uploaded files, call delete API
+        this.showProgress('Menghapus file...');
 
         const result = await deleteFile(fileid);
 
         if (result.success) {
             this.uploadedFiles = this.uploadedFiles.filter(f => f.fileid !== fileid);
             this.renderFilesList();
-            this.showSuccess('File deleted');
+            this.showSuccess('File berhasil dihapus');
         } else {
-            this.showError(`Delete failed: ${result.error}`);
+            this.showError(`Gagal menghapus: ${result.error}`);
         }
     }
 

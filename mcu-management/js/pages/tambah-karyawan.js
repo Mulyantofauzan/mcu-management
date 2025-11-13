@@ -156,8 +156,10 @@ function populateDoctorDropdown(selectId) {
         select.remove(1);
     }
 
-    // Add doctor options
+    // Debug: Check if doctors array is populated
+    console.log(`👨‍⚕️ Populating doctor dropdown "${selectId}": ${doctors.length} doctor(s) available`);
     doctors.forEach(doctor => {
+        console.log(`   - Doctor: ${doctor.name} (ID: ${doctor.id})`);
         const option = document.createElement('option');
         option.value = doctor.id;
         option.textContent = doctor.name;
@@ -443,6 +445,14 @@ window.handleAddMCU = async function(event) {
         const doctorSelect = document.getElementById('mcu-doctor');
         const doctorValue = doctorSelect.value;
         const doctorId = doctorValue ? parseInt(doctorValue, 10) : null;
+
+        // Debug: Log doctor selection
+        console.log(`👨‍⚕️ Doctor selected: "${doctorValue}" → ID: ${doctorId}`);
+        if (!doctorValue) {
+            console.warn(`⚠️ WARNING: No doctor selected! Doctor ID will be NULL.`);
+            showToast('❌ Harap pilih dokter pemeriksa sebelum menyimpan', 'error');
+            return; // Stop form submission if doctor is not selected
+        }
 
         const mcuData = {
             mcuId: generatedMCUIdForAdd,  // Use pre-generated ID
