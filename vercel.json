@@ -10,11 +10,11 @@
   "functions": {
     "api/uploadToGoogleDrive/index.js": {
       "maxDuration": 60,
-      "memory": 3008
+      "memory": 1024
     },
     "api/compress-upload/index.js": {
       "maxDuration": 60,
-      "memory": 3008
+      "memory": 1024
     },
     "api/get-mcu-files/index.js": {
       "maxDuration": 30,
