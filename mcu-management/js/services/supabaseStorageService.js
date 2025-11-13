@@ -309,22 +309,107 @@ export async function getFilesByMCU(mcuId) {
 }
 
 /**
- * Download file - Opens file in new tab via Google Drive link
- * @param {string} downloadUrl - Google Drive link or Supabase storage path
- * @param {string} fileName - File name (optional)
+ * Download file - Gets signed URL from server and opens file
+ * For private R2 buckets, server generates temporary signed URLs
+ * @param {string} fileId - File ID from mcufiles table
+ * @param {string} fileName - File name (optional, for display)
+ * @param {string} userId - Current user ID
  * @returns {Object} Download result
  */
-export async function downloadFile(downloadUrl, fileName) {
+export async function downloadFile(fileId, fileName, userId) {
   try {
-    if (!downloadUrl) {
-      return { success: false, error: 'No download URL provided' };
+    if (!fileId) {
+      return { success: false, error: 'No file ID provided' };
     }
 
-    // Open in new tab - works for Google Drive links and Supabase URLs
-    window.open(downloadUrl, '_blank');
-    return { success: true };
+    if (!userId) {
+      return { success: false, error: 'User authentication required' };
+    }
+
+    console.log(`📥 Requesting download for file: ${fileId}`);
+
+    // Request signed URL from server
+    const apiUrl = 'https://api-g5a9es3r5-adels-projects-5899a1ad.vercel.app/api/download-file';
+    const response = await fetch(`${apiUrl}?fileId=${encodeURIComponent(fileId)}&userId=${encodeURIComponent(userId)}`);
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('❌ Download error:', error);
+      return {
+        success: false,
+        error: error.error || `HTTP ${response.status}`
+      };
+    }
+
+    const result = await response.json();
+
+    if (!result.success || !result.signedUrl) {
+      console.error('❌ No signed URL received:', result);
+      return {
+        success: false,
+        error: result.error || 'Failed to generate download link'
+      };
+    }
+
+    console.log(`✅ Signed URL received, opening download...`);
+    console.log(`   File: ${result.fileName}`);
+    console.log(`   Expires in: ${result.expiresIn}s`);
+
+    // Open signed URL in new tab
+    window.open(result.signedUrl, '_blank');
+
+    return {
+      success: true,
+      fileName: result.fileName,
+      expiresIn: result.expiresIn
+    };
   } catch (error) {
+    console.error('Download error:', error);
     return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Get all files for MCU with signed URLs (batch download)
+ * @param {string} mcuId - MCU ID
+ * @param {string} userId - Current user ID
+ * @returns {Object} { success, files: [{filename, signedUrl}] }
+ */
+export async function getMCUFilesWithSignedUrls(mcuId, userId) {
+  try {
+    if (!mcuId || !userId) {
+      return { success: false, error: 'MCU ID and user ID required', files: [] };
+    }
+
+    console.log(`📦 Getting all files for MCU: ${mcuId}`);
+
+    const apiUrl = 'https://api-g5a9es3r5-adels-projects-5899a1ad.vercel.app/api/download-file';
+    const response = await fetch(`${apiUrl}?mcuId=${encodeURIComponent(mcuId)}&userId=${encodeURIComponent(userId)}`);
+
+    if (!response.ok) {
+      const error = await response.json();
+      return {
+        success: false,
+        error: error.error || `HTTP ${response.status}`,
+        files: []
+      };
+    }
+
+    const result = await response.json();
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error,
+        files: []
+      };
+    }
+
+    console.log(`✅ Retrieved ${result.count || 0} file(s) with signed URLs`);
+    return result;
+  } catch (error) {
+    console.error('Error getting MCU files:', error);
+    return { success: false, error: error.message, files: [] };
   }
 }
 
@@ -337,5 +422,6 @@ export default {
   deleteFile,
   uploadFile,
   getFilesByMCU,
-  downloadFile
+  downloadFile,
+  getMCUFilesWithSignedUrls
 };
