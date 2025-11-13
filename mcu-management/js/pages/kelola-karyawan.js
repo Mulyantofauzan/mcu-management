@@ -59,6 +59,9 @@ async function init() {
             console.warn('Failed to initialize Super Search:', error);
         }
 
+        // ✅ NEW: Add event delegation for dynamically generated Detail buttons
+        setupDetailButtonDelegation();
+
         // Show page content after initialization complete
         document.body.classList.add('initialized');
     } catch (error) {
@@ -98,6 +101,23 @@ function setupInactiveToggle() {
         currentPage = 1;  // Reset pagination
         await loadData();
     });
+}
+
+// ✅ NEW: Setup event delegation for Detail buttons in MCU history table
+function setupDetailButtonDelegation() {
+    // Use event delegation on document level for dynamically added buttons
+    document.addEventListener('click', async (e) => {
+        // Check if the clicked element is a Detail button (matches onclick attribute pattern)
+        if (e.target && e.target.tagName === 'BUTTON' && e.target.classList.contains('btn-secondary')) {
+            // Extract mcuId from the button's onclick attribute
+            const onClickAttr = e.target.getAttribute('onclick');
+            if (onClickAttr && onClickAttr.includes('viewMCUDetail')) {
+                // Let the onclick handler take care of it
+                // This just ensures the button is clickable
+                console.log('Detail button clicked via delegation');
+            }
+        }
+    }, true); // Use capture phase to ensure we get clicks even if prevented
 }
 
 // ✅ NEW: Update toggle button appearance

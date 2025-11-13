@@ -13,24 +13,69 @@
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { createClient } = require('@supabase/supabase-js');
 
+// Validate R2 configuration on startup
+function validateR2Config() {
+  const required = {
+    'CLOUDFLARE_R2_ENDPOINT': process.env.CLOUDFLARE_R2_ENDPOINT,
+    'CLOUDFLARE_R2_ACCESS_KEY_ID': process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
+    'CLOUDFLARE_R2_SECRET_ACCESS_KEY': process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+    'CLOUDFLARE_R2_BUCKET_NAME': process.env.CLOUDFLARE_R2_BUCKET_NAME,
+    'CLOUDFLARE_ACCOUNT_ID': process.env.CLOUDFLARE_ACCOUNT_ID
+  };
+
+  const missing = [];
+  for (const [key, value] of Object.entries(required)) {
+    if (!value) {
+      missing.push(key);
+    }
+  }
+
+  if (missing.length > 0) {
+    console.error('❌ R2 Config Error - Missing:', missing.join(', '));
+    throw new Error(`Missing R2 environment variables: ${missing.join(', ')}`);
+  }
+
+  console.log('✅ R2 configuration loaded and validated');
+  return true;
+}
+
 // Initialize Supabase client for metadata and employee name lookups
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Initialize R2 S3 Client
-const s3Client = new S3Client({
-  region: 'auto',
-  endpoint: process.env.CLOUDFLARE_R2_ENDPOINT,
-  credentials: {
-    accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
-    secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY
-  }
-});
+// Validate and initialize R2 configuration
+let s3Client = null;
+let R2_CONFIG_VALID = false;
 
-const STORAGE_BUCKET = process.env.CLOUDFLARE_R2_BUCKET_NAME || 'mcu-files';
+try {
+  validateR2Config();
+
+  // Initialize R2 S3 Client with proper error handling
+  s3Client = new S3Client({
+    region: 'auto',
+    endpoint: process.env.CLOUDFLARE_R2_ENDPOINT,
+    credentials: {
+      accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
+      secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY
+    },
+    logger: {
+      debug: (msg) => console.debug(`[R2 Debug] ${msg}`),
+      info: (msg) => console.info(`[R2 Info] ${msg}`),
+      warn: (msg) => console.warn(`[R2 Warn] ${msg}`),
+      error: (msg) => console.error(`[R2 Error] ${msg}`)
+    }
+  });
+
+  R2_CONFIG_VALID = true;
+} catch (error) {
+  console.error('⚠️ R2 Client initialization failed:', error.message);
+}
+
+const STORAGE_BUCKET = process.env.CLOUDFLARE_R2_BUCKET_NAME;
 const R2_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
+const R2_ENDPOINT = process.env.CLOUDFLARE_R2_ENDPOINT;
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const ALLOWED_TYPES = {
   'application/pdf': 'pdf',
@@ -128,11 +173,29 @@ async function saveFileMetadata(fileName, employeeId, mcuId, fileSize, mimeType,
  */
 async function uploadFileToStorage(fileBuffer, fileName, employeeId, mcuId, mimeType) {
   try {
+    // Check R2 configuration
+    if (!R2_CONFIG_VALID || !s3Client) {
+      throw new Error('R2 client not initialized. Check environment variables.');
+    }
+
     // Validate file size
     if (fileBuffer.length > MAX_FILE_SIZE) {
       throw new Error(
         `File terlalu besar (${(fileBuffer.length / 1024 / 1024).toFixed(1)}MB). Maksimal 2MB per file`
       );
+    }
+
+    // Validate inputs
+    if (!fileBuffer || fileBuffer.length === 0) {
+      throw new Error('File buffer is empty');
+    }
+
+    if (!fileName) {
+      throw new Error('File name is required');
+    }
+
+    if (!employeeId || !mcuId) {
+      throw new Error('Employee ID and MCU ID are required');
     }
 
     // Generate file path with correct structure
@@ -141,6 +204,8 @@ async function uploadFileToStorage(fileBuffer, fileName, employeeId, mcuId, mime
     console.log(`📤 Uploading to Cloudflare R2: ${fileName}`);
     console.log(`   Size: ${(fileBuffer.length / 1024).toFixed(1)}KB`);
     console.log(`   Path: ${filePath}`);
+    console.log(`   Bucket: ${STORAGE_BUCKET}`);
+    console.log(`   Endpoint: ${R2_ENDPOINT}`);
 
     // Upload to R2
     const uploadCommand = new PutObjectCommand({
@@ -150,22 +215,28 @@ async function uploadFileToStorage(fileBuffer, fileName, employeeId, mcuId, mime
       ContentType: mimeType
     });
 
+    console.log(`🔄 Sending upload command to R2...`);
     const uploadResult = await s3Client.send(uploadCommand);
 
+    // Validate upload response
     if (!uploadResult) {
-      throw new Error('R2 upload returned no result');
+      throw new Error('R2 upload returned no response');
     }
+
+    console.log(`✅ Upload command succeeded`);
+    console.log(`   ETag: ${uploadResult.$metadata?.httpHeaders?.etag || 'N/A'}`);
+    console.log(`   Status Code: ${uploadResult.$metadata?.httpStatusCode || 'N/A'}`);
 
     // Generate public URL
     const publicUrl = generatePublicUrl(filePath);
 
-    console.log(`✅ File uploaded successfully`);
+    console.log(`✅ File uploaded successfully to R2`);
     console.log(`   Folder: ${folderPath}`);
     console.log(`   R2 path: ${filePath}`);
     console.log(`   Public URL: ${publicUrl}`);
 
     // Save metadata
-    await saveFileMetadata(
+    const metadataResult = await saveFileMetadata(
       fileName,
       employeeId,
       mcuId,
@@ -174,6 +245,10 @@ async function uploadFileToStorage(fileBuffer, fileName, employeeId, mcuId, mime
       filePath,
       publicUrl
     );
+
+    if (!metadataResult) {
+      console.warn('⚠️ File uploaded but metadata save failed');
+    }
 
     return {
       success: true,
@@ -185,6 +260,7 @@ async function uploadFileToStorage(fileBuffer, fileName, employeeId, mcuId, mime
     };
   } catch (error) {
     console.error('❌ Upload error:', error.message);
+    console.error('   Stack:', error.stack);
     throw error;
   }
 }
