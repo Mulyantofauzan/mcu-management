@@ -242,35 +242,48 @@ async function uploadFileToGoogleDrive(
   parentFolderId: string
 ): Promise<string> {
   try {
-    const boundary = '===============7330845974216740156==';
+    const boundary = '===============7330845974216740156';
     const metadata = {
       name: fileName,
       mimeType: mimeType,
       parents: [parentFolderId],
     };
 
-    const parts = [
-      `--${boundary}`,
-      'Content-Type: application/json; charset=UTF-8',
-      '',
-      JSON.stringify(metadata),
-      `--${boundary}`,
-      `Content-Type: ${mimeType}`,
-      '',
-    ];
+    // Build multipart body properly
+    const metadataJson = JSON.stringify(metadata);
 
-    const beforeFile = parts.join('\r\n') + '\r\n';
-    const afterFile = `\r\n--${boundary}--`;
+    // Build parts
+    const parts: Uint8Array[] = [];
 
-    const beforeBytes = new TextEncoder().encode(beforeFile);
-    const afterBytes = new TextEncoder().encode(afterFile);
+    // Part 1: Boundary and metadata header
+    parts.push(new TextEncoder().encode(`--${boundary}\r\n`));
+    parts.push(new TextEncoder().encode('Content-Type: application/json; charset=UTF-8\r\n\r\n'));
 
-    const totalLength = beforeBytes.length + fileBuffer.byteLength + afterBytes.length;
+    // Part 2: Metadata JSON
+    parts.push(new TextEncoder().encode(metadataJson + '\r\n'));
+
+    // Part 3: File boundary
+    parts.push(new TextEncoder().encode(`--${boundary}\r\n`));
+    parts.push(new TextEncoder().encode(`Content-Type: ${mimeType}\r\n\r\n`));
+
+    // Part 4: File data
+    parts.push(new Uint8Array(fileBuffer));
+
+    // Part 5: Closing boundary
+    parts.push(new TextEncoder().encode(`\r\n--${boundary}--`));
+
+    // Combine all parts
+    const totalLength = parts.reduce((sum, part) => sum + part.length, 0);
     const body = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const part of parts) {
+      body.set(part, offset);
+      offset += part.length;
+    }
 
-    body.set(beforeBytes);
-    body.set(new Uint8Array(fileBuffer), beforeBytes.length);
-    body.set(afterBytes, beforeBytes.length + fileBuffer.byteLength);
+    console.log('Uploading file to Google Drive...');
+    console.log('File size:', fileBuffer.byteLength);
+    console.log('Total body size:', body.length);
 
     const uploadResponse = await fetch(
       'https://www.googleapis.com/drive/v3/files?uploadType=multipart&fields=id',
@@ -290,9 +303,10 @@ async function uploadFileToGoogleDrive(
     }
 
     const uploadData = await uploadResponse.json() as Record<string, unknown>;
+    console.log('✅ File uploaded to Google Drive:', uploadData.id);
     return (uploadData.id as string) || '';
   } catch (error) {
-    console.error('Failed to upload file:', error instanceof Error ? error.message : String(error));
+    console.error('❌ Failed to upload file:', error instanceof Error ? error.message : String(error));
     throw error;
   }
 }
