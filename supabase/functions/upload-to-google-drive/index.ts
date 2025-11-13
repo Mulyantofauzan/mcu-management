@@ -181,10 +181,24 @@ serve(async (req) => {
 async function getAccessTokenFromServiceAccount(serviceAccountKey: Record<string, unknown>): Promise<string> {
   try {
     const clientEmail = serviceAccountKey.client_email as string;
-    const privateKeyPem = serviceAccountKey.private_key as string;
+    let privateKeyPem = serviceAccountKey.private_key as string;
 
     if (!clientEmail || !privateKeyPem) {
       throw new Error('Missing client_email or private_key in Google credentials');
+    }
+
+    // Debug: Log private key details
+    console.log('Private Key Debug:');
+    console.log('- First 50 chars:', privateKeyPem.substring(0, 50));
+    console.log('- Last 50 chars:', privateKeyPem.substring(privateKeyPem.length - 50));
+    console.log('- Length:', privateKeyPem.length);
+    console.log('- Contains escaped newlines:', privateKeyPem.includes('\\n'));
+    console.log('- Starts with BEGIN:', privateKeyPem.startsWith('-----BEGIN'));
+
+    // Extra safety: ensure private key is properly formatted
+    if (privateKeyPem.includes('\\n')) {
+      privateKeyPem = privateKeyPem.replace(/\\n/g, '\n');
+      console.log('- Unescaped newlines in private key');
     }
 
     // Create and sign JWT using jose
@@ -197,13 +211,19 @@ async function getAccessTokenFromServiceAccount(serviceAccountKey: Record<string
       iat: now,
     };
 
+    console.log('JWT Payload:', JSON.stringify(payload));
+
     // Import private key
+    console.log('Attempting to import PKCS8 key...');
     const key = await jose.importPKCS8(privateKeyPem, 'RS256');
+    console.log('Key imported successfully');
 
     // Sign JWT
     const jwt = await new jose.SignJWT(payload)
       .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
       .sign(key);
+
+    console.log('JWT signed successfully, first 100 chars:', jwt.substring(0, 100));
 
     // Exchange JWT for access token
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -218,6 +238,7 @@ async function getAccessTokenFromServiceAccount(serviceAccountKey: Record<string
     }
 
     const tokenData = await tokenResponse.json() as Record<string, unknown>;
+    console.log('Got access token from Google');
     return (tokenData.access_token as string) || '';
   } catch (error) {
     console.error('Failed to get access token:', error instanceof Error ? error.message : String(error));
