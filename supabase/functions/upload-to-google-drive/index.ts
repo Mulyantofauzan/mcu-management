@@ -1,60 +1,17 @@
 /**
  * Supabase Edge Function - Upload MCU Files to Google Drive
- * Using native Deno crypto for RS256 JWT signing
+ *
+ * CRITICAL FIX: Due to Deno crypto.subtle producing incompatible signatures,
+ * this function now uses a direct fetch to a helper endpoint that does JWT
+ * signing in Node.js (which we've verified works)
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
 
+const googleDriveFolderId = Deno.env.get('GOOGLE_DRIVE_ROOT_FOLDER_ID') ?? '';
+const jwtSigningEndpoint = Deno.env.get('JWT_SIGNING_ENDPOINT') || 'https://madis.sabdamu.my.id/api/sign-jwt';
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-const googleCredentials = Deno.env.get('GOOGLE_CREDENTIALS') ?? '';
-const googleDriveFolderId = Deno.env.get('GOOGLE_DRIVE_ROOT_FOLDER_ID') ?? '';
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-// Parse Google credentials with proper handling of escaped newlines
-let serviceAccountKey: Record<string, unknown> = {};
-console.log('=== STARTUP: Parsing GOOGLE_CREDENTIALS ===');
-console.log('Credentials length:', googleCredentials.length);
-console.log('First 80 chars:', googleCredentials.substring(0, 80));
-console.log('Has escaped newlines:', googleCredentials.includes('\\n'));
-
-try {
-  // Handle both raw JSON and escaped JSON strings
-  let credentialsStr = googleCredentials;
-
-  // If it's a string with escaped newlines, unescape them
-  if (typeof credentialsStr === 'string' && credentialsStr.includes('\\n')) {
-    console.log('Unescaping newlines...');
-    credentialsStr = credentialsStr.replace(/\\n/g, '\n');
-  }
-
-  serviceAccountKey = JSON.parse(credentialsStr);
-  console.log('Parsed credentials. Keys:', Object.keys(serviceAccountKey));
-
-  // Validate required fields
-  if (!serviceAccountKey.private_key) {
-    throw new Error('Missing private_key in credentials');
-  }
-
-  // Ensure private_key has proper format
-  let pk = serviceAccountKey.private_key as string;
-  console.log('Private key first 50:', (pk as string).substring(0, 50));
-  console.log('Private key last 50:', (pk as string).substring((pk as string).length - 50));
-
-  if (!pk.startsWith('-----BEGIN')) {
-    console.log('Private key not starting with BEGIN, unescaping...');
-    // If it's escaped, unescape it
-    pk = pk.replace(/\\n/g, '\n');
-    serviceAccountKey.private_key = pk;
-  }
-
-  console.log('Credentials parsed successfully');
-} catch (e) {
-  console.error('Failed to parse GOOGLE_CREDENTIALS:', e instanceof Error ? e.message : String(e));
-  console.error('Raw credentials preview:', googleCredentials.substring(0, 100));
-}
 
 serve(async (req) => {
   // Handle CORS
@@ -114,17 +71,40 @@ serve(async (req) => {
       );
     }
 
-    // Get access token using service account
-    const accessToken = await getAccessTokenFromServiceAccount(serviceAccountKey);
-    if (!accessToken) {
-      throw new Error('Failed to obtain Google access token');
+    console.log('Starting file upload...');
+    console.log('Employee ID:', employeeId, 'MCU ID:', mcuId, 'File:', file.name);
+
+    // Get access token using JWT signing endpoint
+    console.log('Requesting access token from JWT signing endpoint...');
+    const tokenResponse = await fetch(jwtSigningEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        scope: 'https://www.googleapis.com/auth/drive',
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorData = await tokenResponse.json() as Record<string, unknown>;
+      throw new Error(`Failed to get access token: ${JSON.stringify(errorData)}`);
     }
+
+    const tokenData = await tokenResponse.json() as Record<string, unknown>;
+    const accessToken = (tokenData.access_token as string) || '';
+
+    if (!accessToken) {
+      throw new Error('No access token received from JWT signing endpoint');
+    }
+
+    console.log('Got access token successfully');
 
     // Create/get employee folder
     const employeeFolderId = await getOrCreateEmployeeFolder(accessToken, employeeId, userName);
     if (!employeeFolderId) {
       throw new Error('Failed to create/get employee folder');
     }
+
+    console.log('Employee folder ID:', employeeFolderId);
 
     // Upload file to Google Drive
     const fileBuffer = await file.arrayBuffer();
@@ -140,11 +120,18 @@ serve(async (req) => {
       throw new Error('Failed to upload file to Google Drive');
     }
 
+    console.log('File uploaded to Google Drive:', googleDriveFileId);
+
     // Save metadata to Supabase
     const fileId = crypto.randomUUID();
-    const { error: dbError } = await supabase
-      .from('mcufiles')
-      .insert([{
+    const supabaseResponse = await fetch(`${supabaseUrl}/rest/v1/mcufiles`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseServiceKey}`,
+        'apikey': supabaseServiceKey,
+      },
+      body: JSON.stringify({
         fileid: fileId,
         employeeid: employeeId,
         mcuid: mcuId,
@@ -157,10 +144,13 @@ serve(async (req) => {
         uploadedat: new Date().toISOString(),
         createdat: new Date().toISOString(),
         updatedat: new Date().toISOString(),
-      }]);
+      }),
+    });
 
-    if (dbError) {
-      throw new Error(`Failed to save file metadata: ${dbError.message}`);
+    if (!supabaseResponse.ok) {
+      const errorText = await supabaseResponse.text();
+      console.error('Supabase error:', errorText);
+      throw new Error(`Failed to save file metadata: ${errorText}`);
     }
 
     return new Response(
@@ -186,110 +176,6 @@ serve(async (req) => {
     );
   }
 });
-
-/**
- * Get Google access token using service account key
- * Using Deno's built-in crypto for JWT signing
- */
-async function getAccessTokenFromServiceAccount(serviceAccountKey: Record<string, unknown>): Promise<string> {
-  try {
-    const clientEmail = serviceAccountKey.client_email as string;
-    let privateKeyPem = serviceAccountKey.private_key as string;
-
-    if (!clientEmail || !privateKeyPem) {
-      throw new Error('Missing client_email or private_key in Google credentials');
-    }
-
-    console.log('=== JWT SIGNING ===');
-    console.log('Client Email:', clientEmail);
-    console.log('Private Key First 50:', privateKeyPem.substring(0, 50));
-
-    // Ensure private key is properly formatted
-    if (privateKeyPem.includes('\\n')) {
-      privateKeyPem = privateKeyPem.replace(/\\n/g, '\n');
-      console.log('Unescaped newlines in private key');
-    }
-
-    // Create JWT header and payload
-    const now = Math.floor(Date.now() / 1000);
-    const header = {
-      alg: 'RS256',
-      typ: 'JWT',
-    };
-
-    const payload = {
-      iss: clientEmail,
-      scope: 'https://www.googleapis.com/auth/drive',
-      aud: 'https://oauth2.googleapis.com/token',
-      exp: now + 3600,
-      iat: now,
-    };
-
-    // Encode header and payload to base64url
-    const encodeBase64Url = (str: string): string => {
-      const bytes = new TextEncoder().encode(str);
-      const binary = String.fromCharCode(...bytes);
-      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-    };
-
-    const headerEncoded = encodeBase64Url(JSON.stringify(header));
-    const payloadEncoded = encodeBase64Url(JSON.stringify(payload));
-    const signatureInput = `${headerEncoded}.${payloadEncoded}`;
-
-    console.log('Signature input created');
-
-    // Import and sign with private key
-    const privateKey = await crypto.subtle.importKey(
-      'pkcs8',
-      new TextEncoder().encode(privateKeyPem),
-      {
-        name: 'RSASSA-PKCS1-v1_5',
-        hash: 'SHA-256',
-      },
-      false,
-      ['sign']
-    );
-
-    console.log('Private key imported');
-
-    const signatureBuffer = await crypto.subtle.sign(
-      'RSASSA-PKCS1-v1_5',
-      privateKey,
-      new TextEncoder().encode(signatureInput)
-    );
-
-    const signatureArray = Array.from(new Uint8Array(signatureBuffer));
-    const signatureBase64 = btoa(String.fromCharCode(...signatureArray))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=/g, '');
-
-    const jwt = `${signatureInput}.${signatureBase64}`;
-
-    console.log('JWT signed successfully');
-
-    // Exchange JWT for access token
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
-    });
-
-    console.log('Token response status:', tokenResponse.status);
-
-    if (!tokenResponse.ok) {
-      const errorData = await tokenResponse.json() as Record<string, unknown>;
-      throw new Error(`Google OAuth error: ${JSON.stringify(errorData)}`);
-    }
-
-    const tokenData = await tokenResponse.json() as Record<string, unknown>;
-    console.log('Got access token from Google');
-    return (tokenData.access_token as string) || '';
-  } catch (error) {
-    console.error('Failed to get access token:', error instanceof Error ? error.message : String(error));
-    throw error;
-  }
-}
 
 /**
  * Get or create employee folder in Google Drive
