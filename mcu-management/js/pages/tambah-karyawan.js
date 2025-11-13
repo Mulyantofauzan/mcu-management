@@ -14,7 +14,6 @@ import { supabaseReady } from '../config/supabase.js';
 import { initSuperSearch } from '../components/superSearch.js';
 import FileUploadWidget from '../components/fileUploadWidget.js';
 import { generateMCUId } from '../utils/idGenerator.js';
-import { uploadBatchFilesToGoogleDrive } from '../services/googleDriveUploadService.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';
 import { createLabResultWidget } from '../components/labResultWidget.js';
 
@@ -443,40 +442,8 @@ window.handleAddMCU = async function(event) {
             initialNotes: document.getElementById('mcu-notes').value
         };
 
-        // Check if there are files to upload
-        const pendingFiles = tempFileStorage.getFiles(mcuData.mcuId);
-
-        // If there are files, upload them FIRST before saving MCU
-        if (pendingFiles && pendingFiles.length > 0) {
-            let lastProgressShown = 0;
-            const uploadResult = await uploadBatchFilesToGoogleDrive(
-                pendingFiles,
-                mcuData.employeeId,
-                mcuData.mcuId,
-                currentUser.userId || currentUser.user_id,
-                // Progress callback
-                (current, total, message) => {
-                    const percentage = Math.round((current / total) * 100);
-                    // Only show toast every 25% or at end
-                    if (percentage >= lastProgressShown + 25 || percentage === 100) {
-                        lastProgressShown = percentage;
-                    }
-                }
-            );
-
-            // Check if upload was completely successful
-            if (!uploadResult.success || uploadResult.uploadedCount === 0) {
-                showToast(`❌ File upload failed: ${uploadResult.error}. MCU data tidak disimpan.`, 'error');
-                return; // Don't save MCU if files failed to upload
-            }
-
-            if (uploadResult.uploadedCount > 0) {
-                showToast(`✅ ${uploadResult.uploadedCount} file(s) uploaded to Google Drive successfully`, 'success');
-            }
-
-            // Clear temporary files after successful upload
-            tempFileStorage.clearFiles(mcuData.mcuId);
-        }
+        // Clear temporary files
+        tempFileStorage.clearFiles(mcuData.mcuId);
 
         // NOW save MCU data after files are successfully uploaded (or if no files)
         const createdMCU = await mcuService.create(mcuData, currentUser);

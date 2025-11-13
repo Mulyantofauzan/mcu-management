@@ -11,8 +11,6 @@
 export const ENV = {
   SUPABASE_URL: null,
   SUPABASE_ANON_KEY: null,
-  GOOGLE_DRIVE_ROOT_FOLDER_ID: null,
-  GOOGLE_DRIVE_UPLOAD_ENDPOINT: null,
   ENABLE_AUTO_SEED: false
 };
 
@@ -33,8 +31,6 @@ export async function loadEnvironmentConfig() {
         Object.assign(ENV, {
           SUPABASE_URL: config.SUPABASE_URL,
           SUPABASE_ANON_KEY: config.SUPABASE_ANON_KEY,
-          GOOGLE_DRIVE_ROOT_FOLDER_ID: config.VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID,
-          GOOGLE_DRIVE_UPLOAD_ENDPOINT: config.VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT,
           ENABLE_AUTO_SEED: config.ENABLE_AUTO_SEED || false
         });
         console.log('✅ Configuration loaded from /api/config endpoint (Vercel)');
@@ -53,8 +49,6 @@ export async function loadEnvironmentConfig() {
     Object.assign(ENV, {
       SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
       SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
-      GOOGLE_DRIVE_ROOT_FOLDER_ID: import.meta.env.VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID,
-      GOOGLE_DRIVE_UPLOAD_ENDPOINT: import.meta.env.VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT,
       ENABLE_AUTO_SEED: import.meta.env.VITE_ENABLE_AUTO_SEED === 'true'
     });
     console.log('✅ Configuration loaded from Vite environment variables (.env.local or .env.production)');
@@ -95,6 +89,4 @@ export function logEnvStatus() {
   console.log('📋 Environment Configuration Status:');
   console.log('   SUPABASE_URL:', ENV.SUPABASE_URL ? '✅ Set' : '❌ Not set');
   console.log('   SUPABASE_ANON_KEY:', ENV.SUPABASE_ANON_KEY ? '✅ Set (hidden)' : '❌ Not set');
-  console.log('   GOOGLE_DRIVE_ROOT_FOLDER_ID:', ENV.GOOGLE_DRIVE_ROOT_FOLDER_ID ? '✅ Set' : '❌ Not set');
-  console.log('   GOOGLE_DRIVE_UPLOAD_ENDPOINT:', ENV.GOOGLE_DRIVE_UPLOAD_ENDPOINT ? '✅ Set' : '❌ Not set');
 }

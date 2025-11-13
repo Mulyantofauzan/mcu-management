@@ -7,9 +7,7 @@
     "build": "cd mcu-management && npm run build"
   },
   "private": true,
-  "dependencies": {
-    "google-auth-library": "^9.6.3"
-  },
+  "dependencies": {},
   "devDependencies": {
     "supabase": "^2.54.11"
   }

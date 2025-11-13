@@ -21,7 +21,6 @@ import { initSuperSearch } from '../components/superSearch.js';
 import FileUploadWidget from '../components/fileUploadWidget.js';
 import FileListViewer from '../components/fileListViewer.js';
 import { deleteOrphanedFiles } from '../services/supabaseStorageService.js';
-import { uploadBatchFilesToGoogleDrive } from '../services/googleDriveUploadService.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';
 import { createLabResultWidget } from '../components/labResultWidget.js';
 
@@ -821,37 +820,8 @@ window.handleAddMCU = async function(event) {
             return;
         }
 
-        // ✅ FIX: Upload files FIRST before saving MCU to database
-        // This prevents orphaned MCU records if file upload fails
-        const pendingFiles = tempFileStorage.getFiles(mcuData.mcuId);
-
-        if (pendingFiles && pendingFiles.length > 0) {
-            let lastProgressShown = 0;
-            const uploadResult = await uploadBatchFilesToGoogleDrive(
-                pendingFiles,
-                mcuData.employeeId,
-                mcuData.mcuId,
-                currentUser.userId || currentUser.user_id,
-                // Progress callback
-                (current, total, message) => {
-                    const percentage = Math.round((current / total) * 100);
-                    // Only show toast every 25% or at end
-                    if (percentage >= lastProgressShown + 25 || percentage === 100) {
-                        lastProgressShown = percentage;
-                    }
-                }
-            );
-
-            // ✅ FIX: Check if upload was completely successful
-            if (!uploadResult.success || uploadResult.uploadedCount === 0) {
-                showToast(`❌ File upload failed: ${uploadResult.error}. MCU data tidak disimpan.`, 'error');
-                return; // ← CRITICAL: Don't save MCU if files failed
-            }
-
-            // Clear temporary files after successful upload
-            tempFileStorage.clearFiles(mcuData.mcuId);
-            showToast(`✅ ${uploadResult.uploadedCount} file(s) uploaded to Google Drive successfully`, 'success');
-        }
+        // Clear temporary files
+        tempFileStorage.clearFiles(mcuData.mcuId);
 
         // ✅ FIX: NOW save MCU data after files are successfully uploaded (or if no files)
         await mcuService.create(mcuData, currentUser);
@@ -1291,40 +1261,8 @@ window.handleEditMCU = async function(event) {
             updateData.finalNotes = document.getElementById('edit-mcu-final-notes').value || null;
         }
 
-        // Check if there are files to upload
-        const pendingFiles = tempFileStorage.getFiles(mcuId);
-
-        // If there are files, upload them FIRST before updating MCU
-        if (pendingFiles && pendingFiles.length > 0) {
-            let lastProgressShown = 0;
-            const uploadResult = await uploadBatchFilesToGoogleDrive(
-                pendingFiles,
-                updateData.employeeId || (await mcuService.getById(mcuId)).employeeId,
-                mcuId,
-                currentUser.userId || currentUser.user_id,
-                // Progress callback
-                (current, total, message) => {
-                    const percentage = Math.round((current / total) * 100);
-                    // Only show toast every 25% or at end
-                    if (percentage >= lastProgressShown + 25 || percentage === 100) {
-                        lastProgressShown = percentage;
-                    }
-                }
-            );
-
-            // Check if upload was completely successful
-            if (!uploadResult.success || uploadResult.uploadedCount === 0) {
-                showToast(`File upload failed: ${uploadResult.error}. Data MCU tidak diupdate.`, 'error');
-                return; // Don't update MCU if files failed to upload
-            }
-
-            if (uploadResult.uploadedCount > 0) {
-                showToast(`${uploadResult.uploadedCount} file(s) uploaded to Google Drive successfully`, 'success');
-            }
-
-            // Clear temporary files after successful upload
-            tempFileStorage.clearFiles(mcuId);
-        }
+        // Clear temporary files
+        tempFileStorage.clearFiles(mcuId);
 
         // Save/update lab results if widget exists
         if (labResultWidget) {
