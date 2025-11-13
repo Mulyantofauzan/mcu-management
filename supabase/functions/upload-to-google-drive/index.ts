@@ -16,6 +16,17 @@ let googleCredentials: Record<string, unknown>;
 try {
   googleCredentials = JSON.parse(googleCredentialsJson);
   console.log('✅ Google credentials loaded for JWT signing');
+  console.log('Credentials keys:', Object.keys(googleCredentials).join(', '));
+
+  // Validate the private_key format
+  const pk = googleCredentials.private_key as string;
+  if (pk) {
+    console.log('Private key format check:');
+    console.log('  - Starts with BEGIN:', pk.includes('-----BEGIN'));
+    console.log('  - Ends with END:', pk.includes('-----END'));
+    console.log('  - Contains newlines:', pk.includes('\n'));
+    console.log('  - First 100 chars:', pk.substring(0, 100));
+  }
 } catch (e) {
   console.error('❌ Failed to parse GOOGLE_CREDENTIALS_JSON:', e);
   googleCredentials = {};
@@ -254,22 +265,32 @@ async function getGoogleAccessToken(): Promise<string> {
       }).toString(),
     });
 
+    console.log('Token response status:', tokenResponse.status);
+
     if (!tokenResponse.ok) {
-      const errorData = await tokenResponse.text();
-      throw new Error(`Failed to exchange JWT for token: ${errorData}`);
+      const errorText = await tokenResponse.text();
+      console.error('❌ Google token exchange failed');
+      console.error('Response status:', tokenResponse.status);
+      console.error('Response body:', errorText);
+      throw new Error(`Failed to exchange JWT for token: ${errorText}`);
     }
 
     const tokenData = (await tokenResponse.json()) as Record<string, unknown>;
     const accessToken = (tokenData.access_token as string) || '';
 
     if (!accessToken) {
+      console.error('No access token in response');
+      console.error('Response data:', JSON.stringify(tokenData));
       throw new Error('No access token in response from Google');
     }
 
-    console.log('✅ Access token obtained');
+    console.log('✅ Access token obtained, length:', accessToken.length);
     return accessToken;
   } catch (error) {
     console.error('❌ Failed to get access token:', error instanceof Error ? error.message : String(error));
+    if (error instanceof Error) {
+      console.error('Stack trace:', error.stack);
+    }
     throw error;
   }
 }
