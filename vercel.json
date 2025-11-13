@@ -9,6 +9,10 @@
     "api/get-mcu-files/index.js": {
       "maxDuration": 30,
       "memory": 1024
+    },
+    "api/sign-jwt/index.js": {
+      "maxDuration": 30,
+      "memory": 512
     }
   },
   "routes": [
