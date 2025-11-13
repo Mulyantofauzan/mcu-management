@@ -5,12 +5,13 @@
  * Features:
  * - Upload files to Supabase Storage bucket
  * - 2MB file size limit per file
- * - File path: /mcu-files/{mcuId}/{employeeId}/{filename}
+ * - File path structure: /mcu_files/{EmployeeName_EmployeeId}/{MCU-ID}/{filename}
  * - Metadata saved to Supabase database
  * - Public download URLs
  */
 
 const { createClient } = require('@supabase/supabase-js');
+const axios = require('axios');
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -26,6 +27,42 @@ const ALLOWED_TYPES = {
   'image/jpg': 'image',
   'image/png': 'image'
 };
+
+/**
+ * Helper function to get employee name by ID
+ */
+async function getEmployeeName(employeeId) {
+  try {
+    const { data, error } = await supabase
+      .from('employees')
+      .select('name')
+      .eq('employeeid', employeeId)
+      .single();
+
+    if (error || !data) {
+      console.warn(`⚠️ Could not find employee name for ID: ${employeeId}`);
+      return employeeId; // Fallback to ID if name not found
+    }
+
+    return data.name || employeeId;
+  } catch (error) {
+    console.warn(`⚠️ Error fetching employee name: ${error.message}`);
+    return employeeId; // Fallback to ID
+  }
+}
+
+/**
+ * Generate folder path for file storage
+ * Format: mcu_files/{EmployeeName_EmployeeId}/{MCU-ID}
+ */
+async function generateStoragePath(employeeId, mcuId, fileName) {
+  const employeeName = await getEmployeeName(employeeId);
+  // Sanitize employee name (remove special characters, spaces to underscores)
+  const sanitizedName = employeeName.replace(/[^a-zA-Z0-9]/g, '_');
+  const folderPath = `mcu_files/${sanitizedName}_${employeeId}/${mcuId}`;
+  const filePath = `${folderPath}/${fileName}`;
+  return { folderPath, filePath };
+}
 
 /**
  * Save file metadata to database
@@ -76,9 +113,8 @@ async function uploadFileToStorage(fileBuffer, fileName, employeeId, mcuId, mime
       );
     }
 
-    // Create file path
-    const timestamp = Date.now();
-    const filePath = `mcu-files/${mcuId}/${employeeId}/${timestamp}-${fileName}`;
+    // Generate file path with correct structure
+    const { folderPath, filePath } = await generateStoragePath(employeeId, mcuId, fileName);
 
     console.log(`📤 Uploading to Supabase Storage: ${fileName}`);
     console.log(`   Size: ${(fileBuffer.length / 1024).toFixed(1)}KB`);
@@ -104,6 +140,7 @@ async function uploadFileToStorage(fileBuffer, fileName, employeeId, mcuId, mime
     const publicUrl = publicData?.publicUrl;
 
     console.log(`✅ File uploaded successfully`);
+    console.log(`   Folder: ${folderPath}`);
     console.log(`   Storage path: ${filePath}`);
     console.log(`   Public URL: ${publicUrl}`);
 
@@ -134,6 +171,8 @@ async function uploadFileToStorage(fileBuffer, fileName, employeeId, mcuId, mime
 
 module.exports = {
   uploadFileToStorage,
+  generateStoragePath,
+  getEmployeeName,
   ALLOWED_TYPES,
   MAX_FILE_SIZE,
   STORAGE_BUCKET
