@@ -14,12 +14,34 @@ const googleDriveFolderId = Deno.env.get('GOOGLE_DRIVE_ROOT_FOLDER_ID') ?? '';
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Parse Google credentials
+// Parse Google credentials with proper handling of escaped newlines
 let serviceAccountKey: Record<string, unknown> = {};
 try {
-  serviceAccountKey = JSON.parse(googleCredentials);
+  // Handle both raw JSON and escaped JSON strings
+  let credentialsStr = googleCredentials;
+
+  // If it's a string with escaped newlines, unescape them
+  if (typeof credentialsStr === 'string' && credentialsStr.includes('\\n')) {
+    credentialsStr = credentialsStr.replace(/\\n/g, '\n');
+  }
+
+  serviceAccountKey = JSON.parse(credentialsStr);
+
+  // Validate required fields
+  if (!serviceAccountKey.private_key) {
+    throw new Error('Missing private_key in credentials');
+  }
+
+  // Ensure private_key has proper format
+  let pk = serviceAccountKey.private_key as string;
+  if (!pk.startsWith('-----BEGIN')) {
+    // If it's escaped, unescape it
+    pk = pk.replace(/\\n/g, '\n');
+    serviceAccountKey.private_key = pk;
+  }
 } catch (e) {
   console.error('Failed to parse GOOGLE_CREDENTIALS:', e instanceof Error ? e.message : String(e));
+  console.error('Raw credentials preview:', googleCredentials.substring(0, 100));
 }
 
 serve(async (req) => {
