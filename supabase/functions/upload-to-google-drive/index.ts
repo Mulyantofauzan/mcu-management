@@ -183,108 +183,45 @@ serve(async (req) => {
 });
 
 /**
- * Get Google access token by signing a JWT with service account credentials
- * Uses manual JWT signing to ensure compatibility
+ * Get Google access token by calling Vercel JWT signing endpoint
+ * Vercel endpoint uses Node.js crypto which produces valid Google signatures
  */
 async function getGoogleAccessToken(): Promise<string> {
   try {
-    const now = Math.floor(Date.now() / 1000);
-    const expiresIn = 3600;
-    const expiresAt = now + expiresIn;
+    console.log('Requesting JWT from Vercel signing endpoint...');
 
-    const privateKey = (googleCredentials.private_key as string) || '';
-    const clientEmail = (googleCredentials.client_email as string) || '';
+    // Call Vercel endpoint to get JWT signed properly with Node.js crypto
+    const signingEndpoint = Deno.env.get('JWT_SIGNING_ENDPOINT') ||
+      'https://madis.sabdamu.my.id/api/sign-jwt';
 
-    if (!privateKey || !clientEmail) {
-      throw new Error('Missing private_key or client_email in credentials');
-    }
-
-    console.log('Creating JWT token...');
-
-    // Create JWT header and payload
-    const header = {
-      alg: 'RS256',
-      typ: 'JWT',
-    };
-
-    const payload = {
-      iss: clientEmail,
-      scope: 'https://www.googleapis.com/auth/drive',
-      aud: 'https://oauth2.googleapis.com/token',
-      exp: expiresAt,
-      iat: now,
-    };
-
-    // Encode header and payload
-    const headerB64 = base64url(JSON.stringify(header));
-    const payloadB64 = base64url(JSON.stringify(payload));
-    const signatureInput = `${headerB64}.${payloadB64}`;
-
-    // Import private key and sign
-    console.log('Private key length:', privateKey.length);
-    console.log('Client email:', clientEmail);
-
-    const keyBuffer = pemToArrayBuffer(privateKey);
-    console.log('Key buffer size:', keyBuffer.byteLength);
-
-    const key = await crypto.subtle.importKey(
-      'pkcs8',
-      keyBuffer,
-      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-      false,
-      ['sign']
-    );
-
-    console.log('✅ Private key imported successfully');
-    console.log('Signature input length:', signatureInput.length);
-
-    const signature = await crypto.subtle.sign(
-      'RSASSA-PKCS1-v1_5',
-      key,
-      new TextEncoder().encode(signatureInput)
-    );
-
-    console.log('✅ JWT signature created, length:', signature.byteLength);
-
-    const signatureB64 = base64url(new Uint8Array(signature));
-    const jwt = `${signatureInput}.${signatureB64}`;
-
-    console.log('✅ JWT token created, length:', jwt.length);
-    console.log('JWT header:', headerB64);
-    console.log('JWT payload:', payloadB64);
-    console.log('JWT signature (first 50 chars):', signatureB64.substring(0, 50));
-    console.log('Exchanging JWT for access token...');
-
-    // Exchange JWT for access token
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+    const jwtResponse = await fetch(signingEndpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-        assertion: jwt,
-      }).toString(),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        scope: 'https://www.googleapis.com/auth/drive',
+      }),
     });
 
-    console.log('Token response status:', tokenResponse.status);
+    console.log('JWT endpoint response status:', jwtResponse.status);
 
-    if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text();
-      console.error('❌ Google token exchange failed');
-      console.error('Response status:', tokenResponse.status);
+    if (!jwtResponse.ok) {
+      const errorText = await jwtResponse.text();
+      console.error('❌ Failed to get JWT from signing endpoint');
+      console.error('Response status:', jwtResponse.status);
       console.error('Response body:', errorText);
-      throw new Error(`Failed to exchange JWT for token: ${errorText}`);
+      throw new Error(`Failed to get JWT: ${errorText}`);
     }
 
-    const tokenData = (await tokenResponse.json()) as Record<string, unknown>;
-    const accessToken = (tokenData.access_token as string) || '';
+    const jwtData = (await jwtResponse.json()) as Record<string, unknown>;
+    const accessToken = (jwtData.access_token as string) || '';
 
     if (!accessToken) {
-      console.error('No access token in response');
-      console.error('Response data:', JSON.stringify(tokenData));
-      throw new Error('No access token in response from Google');
+      console.error('No access token in JWT response');
+      console.error('Response data:', JSON.stringify(jwtData));
+      throw new Error('No access token in response from JWT endpoint');
     }
 
-    console.log('✅ Access token obtained, length:', accessToken.length);
+    console.log('✅ Access token obtained from Vercel, length:', accessToken.length);
     return accessToken;
   } catch (error) {
     console.error('❌ Failed to get access token:', error instanceof Error ? error.message : String(error));
@@ -295,51 +232,6 @@ async function getGoogleAccessToken(): Promise<string> {
   }
 }
 
-/**
- * Convert PEM format to ArrayBuffer
- */
-function pemToArrayBuffer(pem: string): ArrayBuffer {
-  const pemHeader = '-----BEGIN PRIVATE KEY-----';
-  const pemFooter = '-----END PRIVATE KEY-----';
-
-  // Remove PEM headers and newlines
-  const pemContents = pem
-    .substring(pemHeader.length, pem.length - pemFooter.length)
-    .replace(/\s/g, '');
-
-  // Decode base64
-  const binaryString = atob(pemContents);
-  const bytes = new Uint8Array(binaryString.length);
-
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-
-  return bytes.buffer;
-}
-
-/**
- * Base64url encoding
- */
-function base64url(data: string | Uint8Array): string {
-  let bytes: Uint8Array;
-
-  if (typeof data === 'string') {
-    bytes = new TextEncoder().encode(data);
-  } else {
-    bytes = data;
-  }
-
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-
-  return btoa(binary)
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-}
 
 /**
  * Get or create employee folder in Google Drive
