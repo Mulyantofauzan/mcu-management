@@ -410,6 +410,8 @@ export const MCUs = {
                     ekg: mcu.ekg,
                     treadmill: mcu.treadmill,
                     kidney_liver_function: mcu.kidneyLiverFunction,
+                    // ✅ FIX: Add doctor field to insert (was missing!)
+                    doctor: mcu.doctor,
                     recipient: mcu.recipient,
                     keluhan_utama: mcu.keluhanUtama,
                     diagnosis_kerja: mcu.diagnosisKerja,
