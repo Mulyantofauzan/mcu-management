@@ -166,8 +166,9 @@ function updateUserInfo() {
 
 async function loadMasterData() {
   try {
-    // ✅ FIX: Load ONLY active employees (performance optimization)
-    employees = await employeeService.getActive();
+    // ✅ FIX: Load ALL employees (including inactive) for follow-up list
+    // Follow-up MCUs might exist for inactive employees too
+    employees = await employeeService.getAll();
     departments = await masterDataService.getAllDepartments();
     jobTitles = await masterDataService.getAllJobTitles();
     doctors = await masterDataService.getAllDoctors();
