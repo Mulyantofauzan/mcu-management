@@ -726,11 +726,14 @@ window.handleMCUUpdate = async function(event) {
     // Update MCU record (this will also create MCUChange entries)
     await mcuService.updateFollowUp(mcuId, updateData, currentUser);
 
-    showToast('Detail MCU berhasil diupdate! Silakan copy data sebelum menutup modal.', 'success');
+    showToast('Detail MCU berhasil diupdate!', 'success');
 
-    // Manual close (user can copy data before closing)
-    // Reload follow-up list untuk update tampilan
-    await loadFollowUpList();
+    // Auto-close modal after save (user can see the follow-up table is updated)
+    setTimeout(() => {
+      closeMCUUpdateModal();
+      // Reload follow-up list untuk update tampilan
+      loadFollowUpList();
+    }, 800);
 
   } catch (error) {
 
