@@ -13,18 +13,18 @@ class AuthService {
   }
 
   loadCurrentUser() {
-    const userJson = sessionStorage.getItem('currentUser');
+    const userJson = localStorage.getItem('currentUser');
     return userJson ? JSON.parse(userJson) : null;
   }
 
   saveCurrentUser(user) {
     this.currentUser = user;
-    sessionStorage.setItem('currentUser', JSON.stringify(user));
+    localStorage.setItem('currentUser', JSON.stringify(user));
   }
 
   clearCurrentUser() {
     this.currentUser = null;
-    sessionStorage.removeItem('currentUser');
+    localStorage.removeItem('currentUser');
   }
 
   async createUser(userData) {
