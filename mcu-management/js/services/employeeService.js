@@ -160,17 +160,32 @@ class EmployeeService {
     let totalFilesDeleted = 0;
 
     for (const mcu of mcus) {
-      // ✅ CASCADE DELETE: Delete all associated MCU files
+      // ✅ CASCADE DELETE: Delete all associated MCU files (database + storage)
       const mcuFiles = await database.query('mcufiles', file => file.mcuId === mcu.mcuId);
       for (const file of mcuFiles) {
-        // Hard delete file record from database
-        await database.hardDelete('mcufiles', file.fileid || file.id);
+        try {
+          // Hard delete file from both R2 storage AND database via API
+          const hardDeleteResponse = await fetch(`/api/hard-delete-file?fileId=${encodeURIComponent(file.fileid || file.id)}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+          });
+
+          if (!hardDeleteResponse.ok) {
+            const errorData = await hardDeleteResponse.json().catch(() => ({}));
+            console.warn(`⚠️ Failed to hard delete file: ${file.filename} (${file.fileid}) - ${errorData.error}`);
+          } else {
+            console.log(`✅ Hard deleted from R2 + Database: ${file.filename}`);
+          }
+        } catch (err) {
+          console.warn(`⚠️ Error hard deleting file: ${err.message}`);
+        }
+
         totalFilesDeleted++;
 
         // Log file deletion
         if (currentUser?.userId) {
           await database.logActivity('delete', 'File', file.fileid || file.id, currentUser.userId,
-            `File deleted (cascade from MCU delete): ${file.filename}`);
+            `File permanently deleted (cascade from employee hard delete): ${file.filename}`);
         }
       }
 
