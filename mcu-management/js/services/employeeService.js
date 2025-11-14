@@ -157,8 +157,24 @@ class EmployeeService {
 
     // Delete all associated MCU records (hard delete)
     const mcus = await database.query('mcus', mcu => mcu.employeeId === employeeId);
+    let totalFilesDeleted = 0;
+
     for (const mcu of mcus) {
-      // Delete associated change records first
+      // ✅ CASCADE DELETE: Delete all associated MCU files
+      const mcuFiles = await database.query('mcufiles', file => file.mcuId === mcu.mcuId);
+      for (const file of mcuFiles) {
+        // Hard delete file record from database
+        await database.hardDelete('mcufiles', file.fileid || file.id);
+        totalFilesDeleted++;
+
+        // Log file deletion
+        if (currentUser?.userId) {
+          await database.logActivity('delete', 'File', file.fileid || file.id, currentUser.userId,
+            `File deleted (cascade from MCU delete): ${file.filename}`);
+        }
+      }
+
+      // Delete associated change records
       const changes = await database.query('mcuChanges', change => change.mcuId === mcu.mcuId);
       for (const change of changes) {
         await database.hardDelete('mcuChanges', change.changeId || change.id);
@@ -170,7 +186,7 @@ class EmployeeService {
       // ✅ FIX: Log each MCU deletion
       if (currentUser?.userId) {
         await database.logActivity('delete', 'MCU', mcu.mcuId, currentUser.userId,
-          `MCU deleted (cascade from employee delete): ${mcu.mcuId}`);
+          `MCU deleted (cascade from employee delete): ${mcu.mcuId}. Associated ${mcuFiles.length} file(s) also deleted.`);
       }
     }
 
@@ -180,7 +196,7 @@ class EmployeeService {
     // ✅ FIX: Log employee deletion with details
     if (currentUser?.userId) {
       await database.logActivity('delete', 'Employee', employeeId, currentUser.userId,
-        `Employee permanently deleted: ${employeeName} (${employeeId}). Associated ${mcus.length} MCU records also deleted.`);
+        `Employee permanently deleted: ${employeeName} (${employeeId}). Cascade deleted: ${mcus.length} MCU record(s), ${totalFilesDeleted} file(s).`);
     }
 
     return true;

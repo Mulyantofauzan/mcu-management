@@ -520,6 +520,66 @@ export const MCUs = {
 };
 
 /**
+ * MCU FILES (File Storage)
+ */
+export const MCUFiles = {
+    async getAll(includeDeleted = false) {
+        if (getUseSupabase()) {
+            const supabase = getSupabaseClient();
+            let query = supabase.from('mcufiles').select('*');
+
+            if (!includeDeleted) {
+                query = query.is('deletedat', null);
+            }
+
+            const { data, error } = await query.order('uploaded_at', { ascending: false });
+
+            if (error) throw error;
+            return data || [];
+        }
+
+        if (includeDeleted) {
+            return await indexedDB.db.mcufiles?.toArray() || [];
+        }
+        return await indexedDB.db.mcufiles?.filter(f => !f.deletedAt).toArray() || [];
+    },
+
+    async getById(fileId) {
+        if (getUseSupabase()) {
+            const supabase = getSupabaseClient();
+            const { data, error } = await supabase
+                .from('mcufiles')
+                .select('*')
+                .eq('fileid', fileId)
+                .single();
+
+            if (error && error.code !== 'PGRST116') throw error;
+            return data;
+        }
+        return await indexedDB.db.mcufiles?.where('fileid').equals(fileId).first();
+    },
+
+    async hardDelete(fileId) {
+        if (getUseSupabase()) {
+            const supabase = getSupabaseClient();
+            const { error } = await supabase
+                .from('mcufiles')
+                .delete()
+                .eq('fileid', fileId);
+
+            if (error) throw error;
+            return true;
+        }
+        return await indexedDB.db.mcufiles?.where('fileid').equals(fileId).delete();
+    },
+
+    async delete(fileId) {
+        // Alias for hardDelete for backward compatibility
+        return await this.hardDelete(fileId);
+    }
+};
+
+/**
  * MCU CHANGES (Change History)
  */
 export const MCUChanges = {
@@ -998,6 +1058,7 @@ export default {
     Users,
     Employees,
     MCUs,
+    MCUFiles,
     MCUChanges,
     MasterData,
     ActivityLog,

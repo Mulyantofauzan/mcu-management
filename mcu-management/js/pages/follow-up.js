@@ -24,6 +24,8 @@ let jobTitles = [];
 let followupFileUploadWidget = null;
 let doctors = [];
 let currentMCU = null;
+let currentPage = 1;
+const itemsPerPage = 10;
 
 // Download Surat Rujukan PDF from table action button
 window.downloadRujukanPDFAction = async function(mcuId) {
@@ -241,15 +243,15 @@ function updateStats() {
   document.getElementById('stat-completed').textContent = completedCount;
   console.log(`✓ Completed this month: ${completedCount}`);
 
-  // Urgent/Critical - MCUs more than 30 days old (oldest follow-ups, need attention)
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  // Urgent/Critical - MCUs more than 14 days old (follow-ups that need urgent attention)
+  const fourteenDaysAgo = new Date();
+  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
   const criticalCount = followUpList.filter(mcu => {
     const mcuDate = new Date(mcu.mcuDate);
-    return mcuDate < thirtyDaysAgo; // Older than 30 days = needs urgent attention
+    return mcuDate < fourteenDaysAgo; // Older than 14 days = needs urgent attention
   }).length;
   document.getElementById('stat-critical').textContent = criticalCount;
-  console.log(`⚠️ Urgent (> 30 days old): ${criticalCount}`);
+  console.log(`⚠️ Urgent (> 14 days old): ${criticalCount}`);
 }
 
 function renderTable() {
@@ -259,6 +261,16 @@ function renderTable() {
     container.innerHTML = '<p class="text-center text-gray-500 py-8">Tidak ada data follow-up</p>';
     return;
   }
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredList.length / itemsPerPage);
+  if (currentPage > totalPages) {
+    currentPage = totalPages; // Reset if current page exceeds total
+  }
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedList = filteredList.slice(startIndex, endIndex);
 
   let html = '<div class="table-container"><table class="table"><thead><tr>';
   html += '<th>Nama Karyawan</th>';
@@ -270,7 +282,7 @@ function renderTable() {
   html += '<th>Aksi</th>';
   html += '</tr></thead><tbody>';
 
-  filteredList.forEach(mcu => {
+  paginatedList.forEach(mcu => {
     const employee = employees.find(e => e.employeeId === mcu.employeeId);
     if (!employee) return;
 
@@ -301,7 +313,32 @@ function renderTable() {
   });
 
   html += '</tbody></table></div>';
+
+  // Add pagination controls
+  if (totalPages > 1) {
+    html += `<div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 16px;">`;
+    html += `<button onclick="goToPage(1)" class="btn btn-sm" style="background: ${currentPage === 1 ? '#e5e7eb' : '#fff'}; border: 1px solid #d1d5db;">◀◀</button>`;
+    html += `<button onclick="goToPage(${Math.max(1, currentPage - 1)})" class="btn btn-sm" style="background: ${currentPage === 1 ? '#e5e7eb' : '#fff'}; border: 1px solid #d1d5db;">◀</button>`;
+
+    for (let i = 1; i <= totalPages; i++) {
+      const isActive = i === currentPage;
+      html += `<button onclick="goToPage(${i})" class="btn btn-sm" style="background: ${isActive ? '#3b82f6' : '#fff'}; color: ${isActive ? '#fff' : '#000'}; border: 1px solid #d1d5db; min-width: 32px;">${i}</button>`;
+    }
+
+    html += `<button onclick="goToPage(${Math.min(totalPages, currentPage + 1)})" class="btn btn-sm" style="background: ${currentPage === totalPages ? '#e5e7eb' : '#fff'}; border: 1px solid #d1d5db;">▶</button>`;
+    html += `<button onclick="goToPage(${totalPages})" class="btn btn-sm" style="background: ${currentPage === totalPages ? '#e5e7eb' : '#fff'}; border: 1px solid #d1d5db;">▶▶</button>`;
+    html += `<span style="margin-left: 16px; font-size: 14px; color: #666;">Halaman ${currentPage} dari ${totalPages} (Total: ${filteredList.length})</span>`;
+    html += `</div>`;
+  }
+
   container.innerHTML = html;
+}
+
+window.goToPage = function(pageNum) {
+  currentPage = pageNum;
+  renderTable();
+  // Scroll to table
+  document.getElementById('followup-table-container').scrollIntoView({ behavior: 'smooth' });
 }
 
 window.handleSearch = function() {

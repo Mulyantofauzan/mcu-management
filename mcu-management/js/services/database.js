@@ -41,6 +41,7 @@ class DatabaseService {
             case 'users': return await adp.Users.getAll();
             case 'employees': return await adp.Employees.getAll(includeDeleted);
             case 'mcus': return await adp.MCUs.getAll(includeDeleted);
+            case 'mcufiles': return await adp.MCUFiles.getAll(includeDeleted);
             case 'mcuChanges': return await adp.MCUChanges.getAll();
             case 'departments': return await adp.MasterData.getDepartments();
             case 'jobTitles': return await adp.MasterData.getJobTitles();
@@ -117,6 +118,7 @@ class DatabaseService {
             case 'users': return await adp.Users.delete(id);
             case 'employees': return await adp.Employees.hardDelete(id);
             case 'mcus': return await adp.MCUs.hardDelete(id);
+            case 'mcufiles': return await adp.MCUFiles.hardDelete(id);
             case 'mcuChanges': return await adp.MCUChanges.delete(id);
             case 'jobTitles': return await adp.MasterData.deleteJobTitle(id);
             case 'departments': return await adp.MasterData.deleteDepartment(id);
