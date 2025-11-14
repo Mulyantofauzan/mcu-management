@@ -172,12 +172,10 @@ class EmployeeService {
 
           if (!hardDeleteResponse.ok) {
             const errorData = await hardDeleteResponse.json().catch(() => ({}));
-            console.warn(`⚠️ Failed to hard delete file: ${file.filename} (${file.fileid}) - ${errorData.error}`);
-          } else {
-            console.log(`✅ Hard deleted from R2 + Database: ${file.filename}`);
+            console.warn(`Failed to hard delete file: ${file.filename}`);
           }
         } catch (err) {
-          console.warn(`⚠️ Error hard deleting file: ${err.message}`);
+          console.warn(`Error hard deleting file: ${err.message}`);
         }
 
         totalFilesDeleted++;

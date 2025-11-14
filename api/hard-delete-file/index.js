@@ -48,8 +48,6 @@ module.exports = async (req, res) => {
       });
     }
 
-    console.log(`🗑️🔥 Hard deleting file: ${fileId}`);
-
     // Step 1: Get file details from database
     const { data: fileData, error: fetchError } = await supabase
       .from('mcufiles')
@@ -58,7 +56,6 @@ module.exports = async (req, res) => {
       .single();
 
     if (fetchError || !fileData) {
-      console.warn(`⚠️ File not found in database: ${fileId}`);
       return res.status(404).json({
         error: 'File not found'
       });
@@ -71,9 +68,7 @@ module.exports = async (req, res) => {
           Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME,
           Key: fileData.storage_path
         }).promise();
-        console.log(`✅ Deleted from R2 storage: ${fileData.storage_path}`);
       } catch (r2Error) {
-        console.warn(`⚠️ Failed to delete from R2: ${r2Error.message}`);
         // Continue anyway - we'll still delete from database
       }
     }
@@ -85,13 +80,11 @@ module.exports = async (req, res) => {
       .eq('fileid', fileId);
 
     if (deleteError) {
-      console.error('❌ Database deletion error:', deleteError.message);
+      console.error('Database deletion error:', deleteError.message);
       return res.status(500).json({
         error: `Failed to delete file record: ${deleteError.message}`
       });
     }
-
-    console.log(`✅ File permanently deleted: ${fileId}`);
 
     return res.status(200).json({
       success: true,
@@ -99,8 +92,7 @@ module.exports = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Unhandled error:', error.message);
-    console.error('❌ Stack:', error.stack);
+    console.error('Unhandled error:', error.message);
     return res.status(500).json({
       error: 'Internal server error'
     });

@@ -229,7 +229,6 @@ window.loadFollowUpList = async function() {
 function updateStats() {
   // Total follow-up - all MCUs marked for follow-up
   document.getElementById('stat-total').textContent = followUpList.length;
-  console.log(`📊 Total Follow-Up MCUs: ${followUpList.length}`);
 
   // Completed this month - MCUs with finalResult !== 'Follow-Up' and finalResult !== null in current month
   const now = new Date();
@@ -242,7 +241,6 @@ function updateStats() {
     return isCompleted && isThisMonth;
   }).length;
   document.getElementById('stat-completed').textContent = completedCount;
-  console.log(`✓ Completed this month: ${completedCount}`);
 
   // Urgent/Critical - MCUs more than 14 days old (follow-ups that need urgent attention)
   const fourteenDaysAgo = new Date();
@@ -252,13 +250,10 @@ function updateStats() {
     return mcuDate < fourteenDaysAgo; // Older than 14 days = needs urgent attention
   }).length;
   document.getElementById('stat-critical').textContent = criticalCount;
-  console.log(`⚠️ Urgent (> 14 days old): ${criticalCount}`);
 }
 
 function renderTable() {
   const container = document.getElementById('followup-table-container');
-
-  console.log(`🔍 renderTable: filteredList.length = ${filteredList.length}, employees.length = ${employees.length}`);
 
   if (filteredList.length === 0) {
     container.innerHTML = '<p class="text-center text-gray-500 py-8">Tidak ada data follow-up</p>';
@@ -275,8 +270,6 @@ function renderTable() {
   const endIndex = startIndex + itemsPerPage;
   const paginatedList = filteredList.slice(startIndex, endIndex);
 
-  console.log(`📄 renderTable: paginatedList.length = ${paginatedList.length}, page ${currentPage}/${totalPages}`);
-
   let html = '<div class="table-container"><table class="table"><thead><tr>';
   html += '<th>Nama Karyawan</th>';
   html += '<th>ID Karyawan</th>';
@@ -287,14 +280,9 @@ function renderTable() {
   html += '<th>Aksi</th>';
   html += '</tr></thead><tbody>';
 
-  let renderedCount = 0;
   paginatedList.forEach(mcu => {
     const employee = employees.find(e => e.employeeId === mcu.employeeId);
-    if (!employee) {
-      console.warn(`⚠️ Employee not found for MCU ${mcu.mcuId} (employeeId: ${mcu.employeeId})`);
-      return;
-    }
-    renderedCount++;
+    if (!employee) return;
 
     const dept = departments.find(d => d.id === employee.departmentId);
 
@@ -323,8 +311,6 @@ function renderTable() {
   });
 
   html += '</tbody></table></div>';
-
-  console.log(`✓ Rendered ${renderedCount} out of ${paginatedList.length} rows`);
 
   // Add pagination controls
   if (totalPages > 1) {
