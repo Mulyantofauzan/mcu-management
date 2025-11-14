@@ -266,13 +266,17 @@ function renderTable() {
 
     const dept = departments.find(d => d.id === employee.departmentId);
 
+    // Get initial notes and truncate if too long
+    const notes = (mcu.initialNotes || '');
+    const displayNotes = notes.length > 100 ? notes.substring(0, 100) + '...' : notes || '-';
+
     html += '<tr>';
     html += `<td><span class="font-medium text-gray-900">${employee.name}</span></td>`;
     html += `<td><span class="text-sm text-gray-600">${employee.employeeId}</span></td>`;
     html += `<td>${dept?.name || '-'}</td>`;
     html += `<td>${formatDateDisplay(mcu.mcuDate)}</td>`;
     html += `<td><span class="badge badge-warning">${mcu.initialResult}</span></td>`;
-    html += `<td><span class="text-xs text-gray-600">${(mcu.initialNotes || '').substring(0, 50)}...</span></td>`;
+    html += `<td title="${notes}"><span class="text-xs text-gray-600" style="display: block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayNotes}</span></td>`;
     html += `<td>
       <div class="flex gap-2">
         <button onclick="downloadRujukanPDFAction('${mcu.mcuId}')" class="btn btn-sm btn-secondary" title="Download Surat Rujukan (dengan Rujukan Balik)" style="padding: 0.375rem 0.75rem; background-color: #3b82f6; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">

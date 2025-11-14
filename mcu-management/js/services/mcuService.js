@@ -324,11 +324,30 @@ class MCUService {
 
   async getFollowUpList() {
     const latestMCUs = await this.getLatestMCUPerEmployee();
-    // Return only those with status Follow-Up and final result not Fit
-    return latestMCUs.filter(mcu =>
-      mcu.status === 'Follow-Up' &&
-      (mcu.finalResult !== 'Fit' || mcu.finalResult === null)
-    );
+    // Return all MCUs with initialResult === 'Follow-Up' (regardless of final result)
+    // These are MCUs that need follow-up examination
+    return latestMCUs.filter(mcu => {
+      // Check if initialResult is Follow-Up
+      const needsFollowUp = mcu.initialResult === 'Follow-Up';
+
+      if (!needsFollowUp) return false;
+
+      // If no final result yet, definitely include in follow-up list
+      if (!mcu.finalResult) {
+        console.log(`✓ MCU ${mcu.mcuId} needs follow-up (no final result yet)`);
+        return true;
+      }
+
+      // If final result is also Follow-Up, still needs follow-up
+      if (mcu.finalResult === 'Follow-Up') {
+        console.log(`✓ MCU ${mcu.mcuId} needs follow-up (final result still Follow-Up)`);
+        return true;
+      }
+
+      // Otherwise, include it (even if Fit, because it was marked for follow-up initially)
+      console.log(`✓ MCU ${mcu.mcuId} in follow-up list (final result: ${mcu.finalResult})`);
+      return true;
+    });
   }
 
   async getByDateRange(startDate, endDate) {
