@@ -1205,11 +1205,24 @@ window.editMCU = async function() {
         // Use setTimeout to ensure DOM is ready before setting values
         setTimeout(() => {
             try {
-                // Reset form first
-                const form = document.getElementById('edit-mcu-form');
-                if (form) form.reset();
+                // ✅ FIX: Don't reset form (would clear lab-results-container)
+                // Instead, only clear specific input fields manually
+                const fieldsToClear = [
+                    'edit-mcu-id', 'edit-mcu-type', 'edit-mcu-date',
+                    'edit-mcu-bmi', 'edit-mcu-bp', 'edit-mcu-rr', 'edit-mcu-pulse',
+                    'edit-mcu-temp', 'edit-mcu-vision', 'edit-mcu-audio', 'edit-mcu-spiro',
+                    'edit-mcu-xray', 'edit-mcu-ekg', 'edit-mcu-treadmill', 'edit-mcu-kidney',
+                    'edit-mcu-napza', 'edit-mcu-colorblind', 'edit-mcu-recipient',
+                    'edit-mcu-keluhan', 'edit-mcu-diagnosis', 'edit-mcu-alasan',
+                    'edit-mcu-hbsag', 'edit-mcu-initial-result', 'edit-mcu-initial-notes',
+                    'edit-mcu-final-result', 'edit-mcu-final-notes'
+                ];
+                fieldsToClear.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = '';
+                });
 
-                // Load existing lab results AFTER form reset
+                // Load existing lab results
                 if (labResultWidget) {
                     labResultWidget.loadExistingResults(window.currentMCUId);
                 }
