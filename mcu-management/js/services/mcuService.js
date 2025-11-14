@@ -324,8 +324,8 @@ class MCUService {
 
   async getFollowUpList() {
     const latestMCUs = await this.getLatestMCUPerEmployee();
-    // Return all MCUs with initialResult === 'Follow-Up' (regardless of final result)
-    // These are MCUs that need follow-up examination
+    // Return MCUs that need follow-up examination
+    // Exclude MCUs that already have a final result other than "Follow-Up"
     return latestMCUs.filter(mcu => {
       // Check if initialResult is Follow-Up
       const needsFollowUp = mcu.initialResult === 'Follow-Up';
@@ -344,9 +344,9 @@ class MCUService {
         return true;
       }
 
-      // Otherwise, include it (even if Fit, because it was marked for follow-up initially)
-      console.log(`✓ MCU ${mcu.mcuId} in follow-up list (final result: ${mcu.finalResult})`);
-      return true;
+      // If final result is something other than Follow-Up (e.g., Fit), exclude it
+      console.log(`✗ MCU ${mcu.mcuId} excluded (final result: ${mcu.finalResult} - already completed)`);
+      return false;
     });
   }
 
