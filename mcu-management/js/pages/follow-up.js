@@ -224,22 +224,32 @@ window.loadFollowUpList = async function() {
 };
 
 function updateStats() {
-  // Total follow-up
+  // Total follow-up - all MCUs marked for follow-up
   document.getElementById('stat-total').textContent = followUpList.length;
+  console.log(`📊 Total Follow-Up MCUs: ${followUpList.length}`);
 
-  // Completed this month (MCUs that were follow-up but now Fit in current month)
+  // Completed this month - MCUs with finalResult !== 'Follow-Up' and finalResult !== null in current month
   const now = new Date();
   const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-  const completedCount = 0; // Would need to track this in history
+  const completedCount = followUpList.filter(mcu => {
+    const mcuDate = new Date(mcu.mcuDate);
+    // Check if MCU has been completed (has final result other than Follow-Up)
+    const isCompleted = mcu.finalResult && mcu.finalResult !== 'Follow-Up';
+    const isThisMonth = mcuDate >= firstDay && mcuDate <= now;
+    return isCompleted && isThisMonth;
+  }).length;
   document.getElementById('stat-completed').textContent = completedCount;
+  console.log(`✓ Completed this month: ${completedCount}`);
 
-  // Critical (more than 30 days old)
+  // Urgent/Critical - MCUs more than 30 days old (oldest follow-ups, need attention)
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const criticalCount = followUpList.filter(mcu =>
-    new Date(mcu.mcuDate) < thirtyDaysAgo
-  ).length;
+  const criticalCount = followUpList.filter(mcu => {
+    const mcuDate = new Date(mcu.mcuDate);
+    return mcuDate < thirtyDaysAgo; // Older than 30 days = needs urgent attention
+  }).length;
   document.getElementById('stat-critical').textContent = criticalCount;
+  console.log(`⚠️ Urgent (> 30 days old): ${criticalCount}`);
 }
 
 function renderTable() {
