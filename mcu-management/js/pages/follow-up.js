@@ -257,6 +257,8 @@ function updateStats() {
 function renderTable() {
   const container = document.getElementById('followup-table-container');
 
+  console.log(`🔍 renderTable: filteredList.length = ${filteredList.length}, employees.length = ${employees.length}`);
+
   if (filteredList.length === 0) {
     container.innerHTML = '<p class="text-center text-gray-500 py-8">Tidak ada data follow-up</p>';
     return;
@@ -272,6 +274,8 @@ function renderTable() {
   const endIndex = startIndex + itemsPerPage;
   const paginatedList = filteredList.slice(startIndex, endIndex);
 
+  console.log(`📄 renderTable: paginatedList.length = ${paginatedList.length}, page ${currentPage}/${totalPages}`);
+
   let html = '<div class="table-container"><table class="table"><thead><tr>';
   html += '<th>Nama Karyawan</th>';
   html += '<th>ID Karyawan</th>';
@@ -282,9 +286,14 @@ function renderTable() {
   html += '<th>Aksi</th>';
   html += '</tr></thead><tbody>';
 
+  let renderedCount = 0;
   paginatedList.forEach(mcu => {
     const employee = employees.find(e => e.employeeId === mcu.employeeId);
-    if (!employee) return;
+    if (!employee) {
+      console.warn(`⚠️ Employee not found for MCU ${mcu.mcuId} (employeeId: ${mcu.employeeId})`);
+      return;
+    }
+    renderedCount++;
 
     const dept = departments.find(d => d.id === employee.departmentId);
 
@@ -313,6 +322,8 @@ function renderTable() {
   });
 
   html += '</tbody></table></div>';
+
+  console.log(`✓ Rendered ${renderedCount} out of ${paginatedList.length} rows`);
 
   // Add pagination controls
   if (totalPages > 1) {
