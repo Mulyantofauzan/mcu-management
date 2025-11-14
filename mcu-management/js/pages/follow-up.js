@@ -510,12 +510,12 @@ window.openMCUUpdateModal = async function(mcuId) {
     // Set hidden mcuId
     document.getElementById('update-mcu-id').value = mcuId;
 
-    // Set Jenis MCU and Tanggal MCU
+    // Set Jenis MCU and Tanggal MCU (load from database)
     const mcuTypeField = document.getElementById('update-mcu-type');
     const mcuDateField = document.getElementById('update-mcu-date');
 
-    if (mcuTypeField) mcuTypeField.value = currentMCU.type || '';
-    if (mcuDateField) mcuDateField.value = currentMCU.date ? currentMCU.date.split('T')[0] : '';
+    if (mcuTypeField) mcuTypeField.value = currentMCU.mcuType || '';
+    if (mcuDateField) mcuDateField.value = currentMCU.mcuDate ? currentMCU.mcuDate.split('T')[0] : '';
 
     // Set Doctor dropdown
     const doctorField = document.getElementById('update-mcu-doctor');
