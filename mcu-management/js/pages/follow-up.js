@@ -7,6 +7,7 @@ import { authService } from '../services/authService.js';
 import { employeeService } from '../services/employeeService.js';
 import { mcuService } from '../services/mcuService.js';
 import { masterDataService } from '../services/masterDataService.js';
+import { labService } from '../services/labService.js';
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
 import { generateRujukanPDF, generateRujukanBalikPDF } from '../utils/rujukanPDFGenerator.js';
@@ -587,26 +588,41 @@ window.openMCUUpdateModal = async function(mcuId) {
       }
     }
 
-    // Populate Lab Results if they exist
+    // Populate Lab Results from database
     const labContainer = document.getElementById('lab-results-container-update');
-    if (labContainer && currentMCU.labResults && currentMCU.labResults.length > 0) {
-      labContainer.innerHTML = currentMCU.labResults.map(lab => `
-        <div class="flex gap-2 items-start p-2 bg-white border border-gray-200 rounded">
-          <input type="hidden" class="lab-test-name" value="${lab.testName || ''}" />
-          <input type="hidden" class="lab-result-value" value="${lab.resultValue || ''}" />
-          <div class="flex-1 text-sm text-gray-700">
-            <span class="font-medium">${lab.testName || 'Lab Test'}</span>: ${lab.resultValue || '-'}
-          </div>
-          <button type="button" class="btn-remove-lab text-red-500 hover:text-red-700 text-sm">Hapus</button>
-        </div>
-      `).join('');
+    if (labContainer) {
+      try {
+        const labResults = await labService.getPemeriksaanLabByMcuId(mcuId);
+        if (labResults && labResults.length > 0) {
+          labContainer.innerHTML = labResults.map(lab => `
+            <div class="flex gap-2 items-start p-2 bg-white border border-gray-200 rounded">
+              <input type="hidden" class="lab-result-id" value="${lab.id || ''}" />
+              <input type="hidden" class="lab-test-name" value="${lab.lab_items?.name || ''}" />
+              <input type="hidden" class="lab-result-value" value="${lab.value || ''}" />
+              <div class="flex-1 text-sm text-gray-700">
+                <span class="font-medium">${lab.lab_items?.name || 'Lab Test'}</span>: ${lab.value || '-'} ${lab.unit || ''}
+              </div>
+              <button type="button" class="btn-remove-lab text-red-500 hover:text-red-700 text-sm">Hapus</button>
+            </div>
+          `).join('');
 
-      // Attach remove handlers
-      labContainer.querySelectorAll('.btn-remove-lab').forEach(btn => {
-        btn.addEventListener('click', (e) => e.currentTarget.parentElement.remove());
-      });
-    } else if (labContainer) {
-      labContainer.innerHTML = '';
+          // Attach remove handlers
+          labContainer.querySelectorAll('.btn-remove-lab').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              const labResultElement = e.currentTarget.parentElement;
+              const labResultId = labResultElement.querySelector('.lab-result-id')?.value;
+              if (labResultId) {
+                labResultElement.dataset.labResultId = labResultId;
+              }
+              labResultElement.remove();
+            });
+          });
+        } else {
+          labContainer.innerHTML = '';
+        }
+      } catch (error) {
+        labContainer.innerHTML = '';
+      }
     }
 
     openModal('mcu-update-modal');
