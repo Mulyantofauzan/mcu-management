@@ -7,11 +7,14 @@ export class ActivityLogService {
     constructor(database) {
         this.database = database;
         this.allActivities = [];
+        this.cacheLoadTime = null;
+        this.CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache duration
+        this.MAX_RECORDS = 5000; // Load maximum 5000 records instead of 10000
     }
 
     /**
      * Get activities with filtering and pagination
-     * @param {Object} options - { action, target, userName, fromDate, toDate, page, limit }
+     * @param {Object} options - { action, target, userName, fromDate, toDate, page, limit, forceRefresh }
      * @returns {Object} - { data, totalPages, total, page }
      */
     async getActivities(options = {}) {
@@ -23,14 +26,22 @@ export class ActivityLogService {
                 fromDate = null,
                 toDate = null,
                 page = 1,
-                limit = 20
+                limit = 20,
+                forceRefresh = false
             } = options;
 
-            // Get all activities from database (or cache if already loaded)
-            if (this.allActivities.length === 0) {
-                // Get all records (with high limit to get everything)
-                const result = await this.database.getActivityLog(10000);
+            // Check if cache is still valid (within 5 minutes)
+            const now = Date.now();
+            const cacheExpired = !this.cacheLoadTime || (now - this.cacheLoadTime) > this.CACHE_DURATION;
+
+            // Get all activities from database (or cache if recently loaded)
+            if (this.allActivities.length === 0 || cacheExpired || forceRefresh) {
+                console.log(`📊 Loading activity logs (cache expired: ${cacheExpired}, force: ${forceRefresh})...`);
+                // Get records with optimized limit
+                const result = await this.database.ActivityLog.getAll(this.MAX_RECORDS);
                 this.allActivities = result || [];
+                this.cacheLoadTime = now;
+                console.log(`✅ Loaded ${this.allActivities.length} activity records`);
             }
 
             // Filter activities
@@ -62,9 +73,17 @@ export class ActivityLogService {
             };
 
         } catch (error) {
-
+            console.error('❌ Error fetching activities:', error);
             throw error;
         }
+    }
+
+    /**
+     * Clear cache to force reload on next request
+     */
+    clearCache() {
+        this.allActivities = [];
+        this.cacheLoadTime = null;
     }
 
     /**

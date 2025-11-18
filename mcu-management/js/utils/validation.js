@@ -161,6 +161,11 @@ export function validateMCUForm(data) {
         }
     }
 
+    // Validate doctor field
+    if (!data.doctor) {
+        errors.push('Dokter pemeriksa harus dipilih');
+    }
+
     // Validate initial result
     if (!data.initialResult) {
         errors.push('Hasil MCU harus dipilih');
