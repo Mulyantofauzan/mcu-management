@@ -37,10 +37,23 @@ class EmployeeService {
       if (employee.departmentId) {
         try {
           const depts = await database.getAll('departments');
-          const dept = depts?.find(d => d.id === employee.departmentId);
-          deptName = dept?.name || employee.departmentId;
+          console.log('📋 Departments available:', depts?.length, 'Looking for ID:', employee.departmentId);
+
+          if (depts && Array.isArray(depts)) {
+            // Try to find by exact ID match (compare as strings)
+            const dept = depts.find(d => {
+              const deptId = String(d.id).trim();
+              const empDeptId = String(employee.departmentId).trim();
+              const matches = deptId === empDeptId;
+              if (matches) console.log('✅ Dept match found:', d.name);
+              return matches;
+            });
+
+            deptName = dept?.name || employee.departmentId;
+            console.log('Department result:', deptName);
+          }
         } catch (err) {
-          console.error('Error fetching department:', err);
+          console.error('❌ Error fetching department:', err);
           deptName = employee.departmentId;
         }
       }
@@ -49,10 +62,23 @@ class EmployeeService {
       if (employee.jobTitleId) {
         try {
           const jobs = await database.getAll('jobTitles');
-          const job = jobs?.find(j => j.id === employee.jobTitleId);
-          jobTitle = job?.name || employee.jobTitleId;
+          console.log('📋 Job titles available:', jobs?.length, 'Looking for ID:', employee.jobTitleId);
+
+          if (jobs && Array.isArray(jobs)) {
+            // Try to find by exact ID match (compare as strings)
+            const job = jobs.find(j => {
+              const jobId = String(j.id).trim();
+              const empJobId = String(employee.jobTitleId).trim();
+              const matches = jobId === empJobId;
+              if (matches) console.log('✅ Job match found:', j.name);
+              return matches;
+            });
+
+            jobTitle = job?.name || employee.jobTitleId;
+            console.log('Job title result:', jobTitle);
+          }
         } catch (err) {
-          console.error('Error fetching job title:', err);
+          console.error('❌ Error fetching job title:', err);
           jobTitle = employee.jobTitleId;
         }
       }
@@ -67,6 +93,7 @@ class EmployeeService {
         `Blood Type: ${employee.bloodType || 'Not Set'}`
       ].join('. ');
 
+      console.log('📝 Activity log:', details);
       await database.logActivity('create', 'Employee', employee.employeeId, currentUser.userId, details);
     }
 
