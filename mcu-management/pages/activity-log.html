@@ -439,8 +439,7 @@
         // Expose to window for onclick handlers
         window.applyFilters = async function() {
             currentPage = 1;
-            // Clear cache when applying filters to ensure fresh data
-            activityLogService.clearCache();
+            // With server-side pagination, filters are applied immediately by database
             await loadActivityLog();
             showToast('Filter diterapkan', 'success');
         };

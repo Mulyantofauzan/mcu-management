@@ -1004,6 +1004,107 @@ export const ActivityLog = {
         }
     },
 
+    /**
+     * Get activity log with server-side filtering and pagination
+     * @param {Object} filters - { action, target, userName, fromDate, toDate }
+     * @param {number} page - Page number (1-based)
+     * @param {number} limit - Items per page
+     * @returns {Object} - { data, total, page, limit, totalPages }
+     */
+    async getFiltered(filters = {}, page = 1, limit = 20) {
+        if (getUseSupabase()) {
+            const supabase = getSupabaseClient();
+            try {
+                let query = supabase.from('activity_log').select('*', { count: 'exact' });
+
+                // Apply filters
+                if (filters.action) {
+                    query = query.eq('action', filters.action);
+                }
+                if (filters.target) {
+                    query = query.eq('target', filters.target);
+                }
+                if (filters.userName) {
+                    query = query.ilike('user_name', `%${filters.userName}%`);
+                }
+                if (filters.fromDate) {
+                    const fromDate = new Date(filters.fromDate);
+                    fromDate.setHours(0, 0, 0, 0);
+                    query = query.gte('timestamp', fromDate.toISOString());
+                }
+                if (filters.toDate) {
+                    const toDate = new Date(filters.toDate);
+                    toDate.setHours(23, 59, 59, 999);
+                    query = query.lte('timestamp', toDate.toISOString());
+                }
+
+                // Apply sorting, pagination
+                query = query
+                    .order('timestamp', { ascending: false })
+                    .range((page - 1) * limit, page * limit - 1);
+
+                const { data, error, count } = await query;
+
+                if (error) {
+                    console.error('❌ Activity log filtered fetch failed:', error.message);
+                    return { data: [], total: 0, page, limit, totalPages: 0 };
+                }
+
+                const total = count || 0;
+                const totalPages = Math.ceil(total / limit);
+
+                return {
+                    data: data ? data.map(transformActivityLog) : [],
+                    total,
+                    page,
+                    limit,
+                    totalPages
+                };
+            } catch (err) {
+                console.error('❌ Activity log getFiltered error:', err.message);
+                return { data: [], total: 0, page, limit, totalPages: 0 };
+            }
+        }
+
+        // For IndexedDB - do client-side filtering
+        try {
+            const allRecords = await indexedDB.db.activityLog.orderBy('timestamp').reverse().toArray();
+
+            // Apply filters
+            let filtered = allRecords.filter(activity => {
+                if (filters.action && activity.action !== filters.action) return false;
+                if (filters.target && activity.entityType !== filters.target && activity.target !== filters.target) return false;
+                if (filters.userName && !(activity.userName || '').toLowerCase().includes(filters.userName.toLowerCase())) return false;
+
+                if (filters.fromDate || filters.toDate) {
+                    const activityDate = new Date(activity.timestamp);
+                    if (filters.fromDate) {
+                        const fromDate = new Date(filters.fromDate);
+                        fromDate.setHours(0, 0, 0, 0);
+                        if (activityDate < fromDate) return false;
+                    }
+                    if (filters.toDate) {
+                        const toDate = new Date(filters.toDate);
+                        toDate.setHours(23, 59, 59, 999);
+                        if (activityDate > toDate) return false;
+                    }
+                }
+                return true;
+            });
+
+            const total = filtered.length;
+            const totalPages = Math.ceil(total / limit);
+            const start = (page - 1) * limit;
+            const end = start + limit;
+            const data = filtered.slice(start, end);
+
+            return { data, total, page, limit, totalPages };
+        } catch (err) {
+            console.error('❌ Activity log IndexedDB getFiltered error:', err.message);
+            return { data: [], total: 0, page, limit, totalPages: 0 };
+        }
+    },
+
     async add(activity) {
         // When Supabase is enabled, use ONLY Supabase (no IndexedDB caching to prevent duplicates)
         if (getUseSupabase()) {

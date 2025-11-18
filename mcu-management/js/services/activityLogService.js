@@ -13,9 +13,9 @@ export class ActivityLogService {
     }
 
     /**
-     * Get activities with filtering and pagination
-     * @param {Object} options - { action, target, userName, fromDate, toDate, page, limit, forceRefresh }
-     * @returns {Object} - { data, totalPages, total, page }
+     * Get activities with filtering and pagination (SERVER-SIDE)
+     * @param {Object} options - { action, target, userName, fromDate, toDate, page, limit }
+     * @returns {Object} - { data, totalPages, total, page, limit }
      */
     async getActivities(options = {}) {
         try {
@@ -26,50 +26,30 @@ export class ActivityLogService {
                 fromDate = null,
                 toDate = null,
                 page = 1,
-                limit = 20,
-                forceRefresh = false
+                limit = 20
             } = options;
 
-            // Check if cache is still valid (within 5 minutes)
-            const now = Date.now();
-            const cacheExpired = !this.cacheLoadTime || (now - this.cacheLoadTime) > this.CACHE_DURATION;
+            // Use server-side filtering and pagination for better performance
+            const filters = {
+                action,
+                target,
+                userName,
+                fromDate,
+                toDate
+            };
 
-            // Get all activities from database (or cache if recently loaded)
-            if (this.allActivities.length === 0 || cacheExpired || forceRefresh) {
-                console.log(`📊 Loading activity logs (cache expired: ${cacheExpired}, force: ${forceRefresh})...`);
-                // Get records with optimized limit
-                const result = await this.database.ActivityLog.getAll(this.MAX_RECORDS);
-                this.allActivities = result || [];
-                this.cacheLoadTime = now;
-                console.log(`✅ Loaded ${this.allActivities.length} activity records`);
-            }
+            console.log(`📊 Fetching activity logs (page: ${page}, limit: ${limit}, filters:`, filters, ')');
 
-            // Filter activities
-            let filtered = this.filterActivities(
-                this.allActivities,
-                { action, target, userName, fromDate, toDate }
-            );
+            const result = await this.database.ActivityLog.getFiltered(filters, page, limit);
 
-            // Sort by timestamp descending
-            filtered.sort((a, b) => {
-                const timeA = new Date(a.timestamp || 0).getTime();
-                const timeB = new Date(b.timestamp || 0).getTime();
-                return timeB - timeA;
-            });
-
-            // Paginate
-            const totalItems = filtered.length;
-            const totalPages = Math.ceil(totalItems / limit);
-            const start = (page - 1) * limit;
-            const end = start + limit;
-            const data = filtered.slice(start, end);
+            console.log(`✅ Loaded ${result.data.length} activity records (total: ${result.total})`);
 
             return {
-                data,
-                totalPages,
-                total: totalItems,
-                page,
-                limit
+                data: result.data,
+                totalPages: result.totalPages,
+                total: result.total,
+                page: result.page,
+                limit: result.limit
             };
 
         } catch (error) {
@@ -141,21 +121,39 @@ export class ActivityLogService {
     }
 
     /**
-     * Export activities to CSV
+     * Export all filtered activities to CSV
+     * Fetches all pages of filtered data and exports them
      */
     async exportToCSV(filters = {}) {
         try {
-            // Get all filtered activities (no pagination)
-            const result = await this.getActivities({
+            console.log(`📥 Starting export with filters:`, filters);
+
+            // First, get the first page to know total count
+            const firstPage = await this.getActivities({
                 ...filters,
                 page: 1,
-                limit: 10000
+                limit: 100  // Use larger page size for export
             });
 
-            const activities = result.data;
+            if (!firstPage.data || firstPage.data.length === 0) {
+                throw new Error('Tidak ada data untuk diekspor dengan filter yang dipilih');
+            }
 
-            if (!activities || activities.length === 0) {
-                throw new Error('Tidak ada data untuk diekspor');
+            // Collect all activities by fetching all pages
+            let allActivities = [...firstPage.data];
+            const totalPages = firstPage.totalPages;
+
+            console.log(`📄 Total pages to export: ${totalPages}, Total records: ${firstPage.total}`);
+
+            // Fetch remaining pages
+            for (let page = 2; page <= totalPages; page++) {
+                const pageResult = await this.getActivities({
+                    ...filters,
+                    page,
+                    limit: 100
+                });
+                allActivities = [...allActivities, ...pageResult.data];
+                console.log(`✅ Fetched page ${page}/${totalPages}`);
             }
 
             // Prepare CSV headers
@@ -168,7 +166,7 @@ export class ActivityLogService {
             ];
 
             // Prepare CSV rows
-            const rows = activities.map(activity => [
+            const rows = allActivities.map(activity => [
                 this.formatDate(activity.timestamp),
                 activity.userName || 'System',
                 activity.action,
@@ -176,31 +174,49 @@ export class ActivityLogService {
                 activity.entityId || activity.details || '-'
             ]);
 
-            // Create CSV content
-            const csvContent = [
-                headers.join(','),
-                ...rows.map(row =>
-                    row.map(cell => {
-                        // Escape quotes and wrap in quotes if contains comma
-                        const cellStr = String(cell);
-                        return cellStr.includes(',') || cellStr.includes('"')
-                            ? `"${cellStr.replace(/"/g, '""')}"`
-                            : cellStr;
-                    }).join(',')
-                )
-            ].join('\n');
+            // Create CSV content with filter info in comment
+            let csvContent = '# Activity Log Export\n';
+            csvContent += `# Exported: ${new Date().toLocaleString('id-ID')}\n`;
+            if (Object.values(filters).some(v => v)) {
+                csvContent += '# Filters Applied:\n';
+                if (filters.action) csvContent += `# - Action: ${filters.action}\n`;
+                if (filters.target) csvContent += `# - Target: ${filters.target}\n`;
+                if (filters.userName) csvContent += `# - User: ${filters.userName}\n`;
+                if (filters.fromDate) csvContent += `# - From Date: ${filters.fromDate}\n`;
+                if (filters.toDate) csvContent += `# - To Date: ${filters.toDate}\n`;
+            }
+            csvContent += '#\n';
+            csvContent += headers.join(',') + '\n';
+
+            // Add data rows
+            csvContent += rows.map(row =>
+                row.map(cell => {
+                    const cellStr = String(cell);
+                    return cellStr.includes(',') || cellStr.includes('"')
+                        ? `"${cellStr.replace(/"/g, '""')}"`
+                        : cellStr;
+                }).join(',')
+            ).join('\n');
+
+            // Generate filename with filter info
+            const filterInfo = [];
+            if (filters.action) filterInfo.push(`action-${filters.action}`);
+            if (filters.target) filterInfo.push(`target-${filters.target}`);
+            const filterStr = filterInfo.length > 0 ? `-${filterInfo.join('-')}` : '';
+            const filename = `activity-log${filterStr}-${new Date().toISOString().split('T')[0]}.csv`;
 
             // Download CSV
             const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = `activity-log-${new Date().toISOString().split('T')[0]}.csv`;
+            link.download = filename;
             link.click();
 
-            return { success: true, recordsExported: activities.length };
+            console.log(`✅ Export complete: ${allActivities.length} records exported`);
+            return { success: true, recordsExported: allActivities.length };
 
         } catch (error) {
-
+            console.error('❌ Export error:', error);
             throw error;
         }
     }
