@@ -648,29 +648,43 @@ window.handleMCUUpdate = async function(event) {
   try {
     const currentUser = authService.getCurrentUser();
 
-    // Collect new values - only include editable fields and if user changed something
+    // Collect new values - only include editable fields
     const updateData = {};
-    // Only these fields are editable (read-only fields like recipient, keluhan, diagnosis, alasan are excluded)
-    const fieldMapping = {
-      'update-bmi': 'bmi',
-      'update-bp': 'bloodPressure',
-      'update-rr': 'respiratoryRate',
-      'update-pulse': 'pulse',
-      'update-temp': 'temperature',
-      'update-vision': 'vision',
-      'update-audio': 'audiometry',
-      'update-spiro': 'spirometry',
-      'update-xray': 'xray',
-      'update-ekg': 'ekg',
-      'update-treadmill': 'treadmill',
-      'update-hbsag': 'hbsag',
-      'update-napza': 'napza'
+    const changes = [];  // Track all changes for history display
+    const fieldLabels = {
+      'update-bmi': { label: 'BMI', dataKey: 'bmi' },
+      'update-bp': { label: 'Tekanan Darah', dataKey: 'bloodPressure' },
+      'update-rr': { label: 'RR (Frekuensi Nafas)', dataKey: 'respiratoryRate' },
+      'update-pulse': { label: 'Nadi', dataKey: 'pulse' },
+      'update-temp': { label: 'Suhu', dataKey: 'temperature' },
+      'update-vision': { label: 'Penglihatan', dataKey: 'vision' },
+      'update-audio': { label: 'Audiometri', dataKey: 'audiometry' },
+      'update-spiro': { label: 'Spirometri', dataKey: 'spirometry' },
+      'update-xray': { label: 'X-Ray', dataKey: 'xray' },
+      'update-ekg': { label: 'EKG', dataKey: 'ekg' },
+      'update-treadmill': { label: 'Treadmill', dataKey: 'treadmill' },
+      'update-hbsag': { label: 'HBsAg', dataKey: 'hbsag' },
+      'update-napza': { label: 'NAPZA', dataKey: 'napza' }
     };
 
-    for (const [fieldId, dataKey] of Object.entries(fieldMapping)) {
+    // Check for changes and collect them
+    for (const [fieldId, fieldInfo] of Object.entries(fieldLabels)) {
       const input = document.getElementById(fieldId);
-      if (input && input.value.trim() !== '') {
-        updateData[dataKey] = input.value.trim();
+      const newValue = input?.value?.trim() || '';
+      const oldValue = currentMCU[fieldInfo.dataKey] || '';
+
+      if (newValue !== '') {
+        updateData[fieldInfo.dataKey] = newValue;
+
+        // Track this as a change if value actually changed
+        if (String(oldValue) !== String(newValue)) {
+          changes.push({
+            itemName: fieldInfo.label,
+            oldValue: oldValue || '-',
+            newValue: newValue,
+            changed: true
+          });
+        }
       }
     }
 
@@ -706,27 +720,69 @@ window.handleMCUUpdate = async function(event) {
             notes: result.notes
           }, currentUser);
         }
-        showToast(`${labResults.length} hasil lab berhasil diupdate`, 'success');
       } catch (error) {
         console.error('Error saving lab results:', error);
         showToast(`Peringatan: Gagal menyimpan hasil lab: ${error.message}`, 'warning');
       }
     }
 
-    showToast('Detail MCU berhasil diupdate!', 'success');
-
-    // Auto-close modal after save (user can see the follow-up table is updated)
-    setTimeout(() => {
-      closeMCUUpdateModal();
-      // Reload follow-up list untuk update tampilan
-      loadFollowUpList();
-    }, 800);
+    // Display change history if there are changes
+    if (changes.length > 0) {
+      displayChangeHistory(changes);
+    } else {
+      showToast('Detail MCU berhasil diupdate!', 'success');
+      // Auto-close modal after save
+      setTimeout(() => {
+        closeMCUUpdateModal();
+        loadFollowUpList();
+      }, 800);
+    }
 
   } catch (error) {
-
     showToast('Gagal mengupdate MCU: ' + error.message, 'error');
   }
 };
+
+// Display change history in modal
+function displayChangeHistory(changes) {
+  const historySection = document.getElementById('change-history-section');
+  const historyContainer = document.getElementById('change-history-container');
+
+  if (!historySection || !historyContainer) return;
+
+  // Build table HTML
+  let tableHtml = '<table class="table"><thead><tr>';
+  tableHtml += '<th>ITEM MCU</th>';
+  tableHtml += '<th>HASIL AWAL</th>';
+  tableHtml += '<th>HASIL AKHIR</th>';
+  tableHtml += '<th>STATUS</th>';
+  tableHtml += '</tr></thead><tbody>';
+
+  changes.forEach(change => {
+    tableHtml += '<tr>';
+    tableHtml += `<td><span class="font-medium">${change.itemName}</span></td>`;
+    tableHtml += `<td><span class="text-gray-700">${change.oldValue}</span></td>`;
+    tableHtml += `<td><span class="text-gray-700">${change.newValue}</span></td>`;
+    tableHtml += `<td><span class="badge badge-success">Diubah</span></td>`;
+    tableHtml += '</tr>';
+  });
+
+  tableHtml += '</tbody></table>';
+
+  historyContainer.innerHTML = tableHtml;
+  historySection.classList.remove('hidden');
+
+  // Scroll to history section
+  historySection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  // Show toast and close after delay
+  showToast(`${changes.length} item MCU berhasil diupdate!`, 'success');
+
+  setTimeout(() => {
+    closeMCUUpdateModal();
+    loadFollowUpList();
+  }, 2000);
+}
 
 window.handleLogout = function() {
   authService.logout();
