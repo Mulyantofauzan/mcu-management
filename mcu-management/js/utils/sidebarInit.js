@@ -10,7 +10,6 @@
  */
 export async function initSidebar() {
     try {
-        console.debug('[SidebarInit] Initializing sidebar...');
 
         // Set active link based on current page
         setActiveSidebarLink();
@@ -21,7 +20,6 @@ export async function initSidebar() {
         // Update admin menu visibility
         updateAdminMenuVisibility();
 
-        console.debug('[SidebarInit] Sidebar initialized successfully');
     } catch (error) {
     }
 }
@@ -42,7 +40,6 @@ function setActiveSidebarLink() {
         }
     });
 
-    console.debug(`[SidebarInit] Active page set to: ${currentPageName}`);
 }
 
 /**
@@ -81,12 +78,10 @@ function updateUserInfoDisplay() {
         try {
             user = window.authService.getCurrentUser();
         } catch (e) {
-            console.debug('[SidebarInit] Could not get user from authService');
         }
     }
 
     if (!user) {
-        console.debug('[SidebarInit] No user data available');
         return;
     }
 
@@ -112,7 +107,6 @@ function updateUserInfoDisplay() {
         userRoleEl.textContent = role;
     }
 
-    console.debug(`[SidebarInit] Updated user info: ${displayName}`);
 }
 
 /**
@@ -121,7 +115,6 @@ function updateUserInfoDisplay() {
 function updateAdminMenuVisibility() {
     const user = window.currentUser;
     if (!user) {
-        console.debug('[SidebarInit] No user for admin menu check');
         return;
     }
 
@@ -138,7 +131,6 @@ function updateAdminMenuVisibility() {
     }
 
     if (isAdmin) {
-        console.debug('[SidebarInit] Admin menus shown');
     }
 }
 

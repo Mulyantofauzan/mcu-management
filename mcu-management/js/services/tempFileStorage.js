@@ -22,7 +22,6 @@ class TempFileStorage {
             this.tempFiles[mcuId] = [];
         }
         this.tempFiles[mcuId].push(file);
-        console.log(`📝 File added to temp storage: ${file.name} (${(file.size / 1024).toFixed(1)}KB)`);
     }
 
     /**
@@ -65,7 +64,6 @@ class TempFileStorage {
      */
     clearFiles(mcuId) {
         if (this.tempFiles[mcuId]) {
-            console.log(`🧹 Cleared ${this.tempFiles[mcuId].length} temporary file(s) for MCU ${mcuId}`);
             delete this.tempFiles[mcuId];
         }
     }
@@ -74,7 +72,6 @@ class TempFileStorage {
      * Clear all temporary files (when canceling, etc.)
      */
     clearAll() {
-        console.log(`🧹 Cleared all temporary files (${Object.keys(this.tempFiles).length} MCU(s))`);
         this.tempFiles = {};
     }
 

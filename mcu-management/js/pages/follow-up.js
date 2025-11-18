@@ -475,7 +475,6 @@ window.handleFollowUpSubmit = async function(event) {
     // ✅ NEW: Upload files if any are pending
     const pendingFiles = tempFileStorage.getFiles(mcuId);
     if (pendingFiles && pendingFiles.length > 0) {
-      console.log(`📦 Uploading ${pendingFiles.length} file(s) for follow-up MCU ${mcuId}...`);
 
       // Show loading overlay
       showUploadLoading(`Mengunggah ${pendingFiles.length} file...`);
@@ -494,7 +493,6 @@ window.handleFollowUpSubmit = async function(event) {
 
         if (uploadResult.success) {
           if (uploadResult.uploadedCount > 0) {
-            console.log(`✅ ${uploadResult.uploadedCount} file(s) uploaded successfully`);
           }
           // Clear temporary files after successful upload
           tempFileStorage.clearFiles(mcuId);

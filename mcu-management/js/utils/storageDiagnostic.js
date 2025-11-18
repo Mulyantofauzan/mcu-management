@@ -9,10 +9,8 @@
  * Test 1: Check if Supabase is properly initialized
  */
 export async function testSupabaseConnection() {
-    console.group('🔍 Test 1: Supabase Connection');
 
     if (!window._supabaseClient) {
-        console.groupEnd();
         return false;
     }
 
@@ -23,18 +21,14 @@ export async function testSupabaseConnection() {
         const { data: { user }, error: authError } = await supabase.auth.getUser();
 
         if (authError) {
-            console.groupEnd();
             return false;
         }
 
         if (!user) {
-            console.groupEnd();
             return false;
         }
-        console.groupEnd();
         return true;
     } catch (error) {
-        console.groupEnd();
         return false;
     }
 }
@@ -43,10 +37,8 @@ export async function testSupabaseConnection() {
  * Test 2: Check bucket existence and access
  */
 export async function testBucketAccess() {
-    console.group('🔍 Test 2: Bucket Access');
 
     if (!window._supabaseClient) {
-        console.groupEnd();
         return false;
     }
 
@@ -58,21 +50,16 @@ export async function testBucketAccess() {
         const { data: buckets, error: listError } = await supabase.storage.listBuckets();
 
         if (listError) {
-            console.groupEnd();
             return false;
         }
 
         const bucket = buckets.find(b => b.name === bucketName);
 
         if (!bucket) {
-            console.log('   Available buckets:', buckets.map(b => b.name));
-            console.groupEnd();
             return false;
         }
-        console.groupEnd();
         return true;
     } catch (error) {
-        console.groupEnd();
         return false;
     }
 }
@@ -81,18 +68,14 @@ export async function testBucketAccess() {
  * Test 3: Check RLS policies
  */
 export async function checkRLSPolicies() {
-    console.group('🔍 Test 3: RLS Policies');
-    console.groupEnd();
 }
 
 /**
  * Test 4: Simple test upload (will actually upload a small test file)
  */
 export async function testUploadSimple() {
-    console.group('🔍 Test 4: Simple Test Upload');
 
     if (!window._supabaseClient) {
-        console.groupEnd();
         return false;
     }
 
@@ -114,15 +97,12 @@ export async function testUploadSimple() {
             } else if (error.message.includes('does not exist')) {
             }
 
-            console.groupEnd();
             return false;
         }
         // Clean up test file
         await supabase.storage.from(bucketName).remove([testFileName]);
-        console.groupEnd();
         return true;
     } catch (error) {
-        console.groupEnd();
         return false;
     }
 }
@@ -131,10 +111,8 @@ export async function testUploadSimple() {
  * Test 5: Test upload with valid file type (PDF)
  */
 export async function testUploadPDF() {
-    console.group('🔍 Test 5: PDF Upload Test');
 
     if (!window._supabaseClient) {
-        console.groupEnd();
         return false;
     }
 
@@ -150,22 +128,18 @@ export async function testUploadPDF() {
     const testFile = new File([pdfContent], testFileName, { type: 'application/pdf' });
 
     try {
-        console.log(`📤 Attempting to upload PDF: ${testFileName} (${testFile.size} bytes)`);
 
         const { data, error } = await supabase.storage
             .from(bucketName)
             .upload(testFileName, testFile);
 
         if (error) {
-            console.groupEnd();
             return false;
         }
         // Clean up test file
         await supabase.storage.from(bucketName).remove([testFileName]);
-        console.groupEnd();
         return true;
     } catch (error) {
-        console.groupEnd();
         return false;
     }
 }
@@ -180,8 +154,6 @@ export async function runAllDiagnostics() {
     const test4 = test2 ? await testUploadSimple() : false;
     const test5 = test2 ? await testUploadPDF() : false;
     // Summary
-    console.group('📊 DIAGNOSTIC SUMMARY');
-    console.groupEnd();
 
     return {
         supabaseConnection: test1,
@@ -204,11 +176,6 @@ if (typeof window !== 'undefined') {
         testUploadPDF,
         runAllDiagnostics
     };
-    console.log('   window.storageDiagnostic.runAllDiagnostics()  // Run all tests');
-    console.log('   window.storageDiagnostic.testSupabaseConnection()  // Test auth only');
-    console.log('   window.storageDiagnostic.testBucketAccess()  // Test bucket access');
-    console.log('   window.storageDiagnostic.testUploadSimple()  // Test simple upload');
-    console.log('   window.storageDiagnostic.testUploadPDF()  // Test PDF upload');
 }
 
 export default {

@@ -51,7 +51,6 @@ export async function uploadFileToSupabase(file, employeeId, mcuId, onProgress =
     // Show warning if file > 2MB
     if (file.size > warningSize) {
       const fileSizeMB = (file.size / 1024 / 1024).toFixed(1);
-      console.warn(`⚠️ Large file detected: ${file.name} (${fileSizeMB}MB). Upload may take longer.`);
       showToast(`Perhatian: File ${file.name} berukuran ${fileSizeMB}MB. Proses upload mungkin memakan waktu lebih lama.`, 'warning');
     }
 
@@ -141,7 +140,6 @@ export async function uploadFilesToSupabase(
     totalSize += file.size;
   }
 
-  console.log(`📦 Uploading ${files.length} file(s) to Cloudflare R2 (total: ${(totalSize / 1024 / 1024).toFixed(1)}MB)`);
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     try {
@@ -162,7 +160,6 @@ export async function uploadFilesToSupabase(
       uploadedSize += file.size;
       results.push(result);
 
-      console.log(
         `✅ Uploaded: ${(result.originalSize / 1024).toFixed(1)}KB`
       );
     } catch (error) {
@@ -236,7 +233,6 @@ export async function uploadBatchFiles(files, employeeId, mcuId, userId, onProgr
  * New API handles metadata automatically, so this is a no-op
  */
 export async function saveUploadedFilesMetadata(mcuId, employeeId, userId) {
-  console.log('saveUploadedFilesMetadata is not needed with new API (metadata saved automatically)');
   return { success: true, count: 0 };
 }
 
@@ -245,7 +241,6 @@ export async function saveUploadedFilesMetadata(mcuId, employeeId, userId) {
  * New API doesn't create orphaned files, so this is a no-op
  */
 export async function deleteOrphanedFiles(mcuId, employeeId) {
-  console.log('deleteOrphanedFiles is not needed with new API (no orphaned files created)');
   return { success: true, deletedCount: 0 };
 }
 
@@ -313,7 +308,6 @@ export async function getFilesByMCU(mcuId) {
       return { success: false, files: [], error: result.error };
     }
 
-    console.log(`✅ Retrieved ${result.files?.length || 0} file(s) for MCU ${mcuId}`);
     return {
       success: true,
       files: result.files || [],
@@ -407,7 +401,6 @@ export async function getMCUFilesWithSignedUrls(mcuId, userId) {
       };
     }
 
-    console.log(`✅ Retrieved ${result.count || 0} file(s) with signed URLs`);
     return result;
   } catch (error) {
     return { success: false, error: error.message, files: [] };
@@ -435,7 +428,6 @@ export async function deleteFileFromStorage(storagePath) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.warn(`⚠️ Could not delete file from R2 (may not exist): ${storagePath}`, errorData);
       // Return success anyway since we might be deleting a file that doesn't exist
       return { success: true, message: 'File deletion attempt completed' };
     }

@@ -192,9 +192,7 @@ function populateDoctorDropdown(selectId) {
     }
 
     // Debug: Check if doctors array is populated
-    console.log(`👨‍⚕️ Populating doctor dropdown "${selectId}": ${doctors.length} doctor(s) available`);
     doctors.forEach(doctor => {
-        console.log(`   - Doctor: ${doctor.name} (ID: ${doctor.id})`);
         const option = document.createElement('option');
         option.value = doctor.id;
         option.textContent = doctor.name;
@@ -515,7 +513,6 @@ window.handleAddMCU = async function(event) {
         // ✅ CRITICAL: Upload temporary files to Cloudflare R2 BEFORE saving MCU
         const tempFiles = tempFileStorage.getFiles(mcuData.mcuId);
         if (tempFiles && tempFiles.length > 0) {
-            console.log(`📤 Uploading ${tempFiles.length} file(s) to Cloudflare R2 for MCU ${mcuData.mcuId}...`);
 
             showUploadLoading(`Mengunggah ${tempFiles.length} file...`);
             try {
@@ -554,7 +551,6 @@ window.handleAddMCU = async function(event) {
         if (labResultWidget) {
             const labResults = labResultWidget.getAllLabResults();
             if (labResults && labResults.length > 0) {
-                console.log(`📋 Saving ${labResults.length} lab result(s) untuk MCU ${createdMCU.mcuId}`);
 
                 for (const result of labResults) {
                     try {

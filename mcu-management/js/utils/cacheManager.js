@@ -92,12 +92,10 @@ export function withCache(fn, cacheKey, ttl = 5 * 60 * 1000) {
     // Check cache first
     const cached = cacheManager.get(key);
     if (cached !== null) {
-      console.debug(`[Cache] HIT: ${key}`);
       return cached;
     }
 
     // Cache miss - execute function
-    console.debug(`[Cache] MISS: ${key}`);
     const result = await fn(...args);
 
     // Store in cache

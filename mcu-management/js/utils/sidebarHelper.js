@@ -9,7 +9,6 @@
  */
 export function updateSidebarUserDisplay(user) {
     if (!user) {
-        console.debug('[SidebarHelper] No user provided');
         return;
     }
 
@@ -19,7 +18,6 @@ export function updateSidebarUserDisplay(user) {
     const userRoleEl = document.getElementById('user-role');
 
     if (!userInitialEl || !userNameEl || !userRoleEl) {
-        console.debug('[SidebarHelper] Sidebar elements not found in DOM');
         return;
     }
 
@@ -37,7 +35,6 @@ export function updateSidebarUserDisplay(user) {
     // Store user globally for later reference
     window.currentUser = user;
 
-    console.debug(`[SidebarHelper] Updated sidebar user: ${displayName}`);
 }
 
 /**
@@ -54,7 +51,6 @@ export function getCurrentUserSafe() {
         try {
             return window.authService.getCurrentUser();
         } catch (e) {
-            console.debug('[SidebarHelper] Error getting user from authService:', e.message);
         }
     }
 

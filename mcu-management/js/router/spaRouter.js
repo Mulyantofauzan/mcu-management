@@ -48,7 +48,6 @@ class SPARouter {
     this.pageContentContainer = document.getElementById('main-content');
 
     if (!this.pageContentContainer) {
-      console.warn('⚠️ SPA Router: #main-content container not found. SPA routing disabled.');
       return;
     }
 
@@ -114,7 +113,6 @@ class SPARouter {
       const routeConfig = this.routes[normalizedPath];
 
       if (!routeConfig) {
-        console.warn(`⚠️ Route not found: ${normalizedPath}`);
         this.isNavigating = false;
         return;
       }
@@ -133,7 +131,6 @@ class SPARouter {
         try {
           await this.currentModule.cleanup();
         } catch (error) {
-          console.warn('Error cleaning up previous page:', error);
         }
       }
 
@@ -164,7 +161,6 @@ class SPARouter {
       // Hide loading indicator
       this.hideLoadingIndicator();
     } catch (error) {
-      console.error('Navigation error:', error);
       this.hideLoadingIndicator();
       alert('Failed to load page: ' + error.message);
     } finally {
@@ -195,7 +191,6 @@ class SPARouter {
 
       return module;
     } catch (error) {
-      console.error(`Failed to load page module: ${modulePath}`, error);
       throw error;
     }
   }
@@ -327,7 +322,6 @@ class SPARouter {
 
     if (routeConfig && !routeConfig.noSPA) {
       this.loadPageModule(routeConfig.path).catch(error => {
-        console.warn(`Failed to preload page: ${path}`, error);
       });
     }
   }

@@ -29,7 +29,6 @@ window.ENV = {
   SUPABASE_ANON_KEY: '${SUPABASE_ANON_KEY}'
 };
 
-console.log('🔧 Environment variables loaded from build-time injection');
 
 // Development fallback: Check localStorage for testing (NEVER use in production)
 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
@@ -37,7 +36,6 @@ if (window.location.hostname === 'localhost' || window.location.hostname === '12
   const devKey = localStorage.getItem('DEV_SUPABASE_ANON_KEY');
 
   if (devUrl && devKey) {
-    console.log('🔧 Overriding with development credentials from localStorage');
     window.ENV.SUPABASE_URL = devUrl;
     window.ENV.SUPABASE_ANON_KEY = devKey;
   }
@@ -48,11 +46,6 @@ if (window.location.hostname === 'localhost' || window.location.hostname === '12
 const outputPath = path.join(__dirname, '..', 'env-config.js');
 fs.writeFileSync(outputPath, envConfig, 'utf8');
 
-console.log('✅ env-config.js generated successfully');
-console.log(`   SUPABASE_URL: ${SUPABASE_URL ? '✓ Set' : '✗ Missing'}`);
-console.log(`   SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY ? '✓ Set' : '✗ Missing'}`);
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.warn('⚠️  WARNING: Some environment variables are missing!');
-  console.warn('   Make sure to set them in Netlify: Settings → Environment variables');
 }

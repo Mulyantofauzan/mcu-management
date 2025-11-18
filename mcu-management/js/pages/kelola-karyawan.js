@@ -163,7 +163,6 @@ function updateInactiveToggleButton() {
 function updateUserInfo() {
     const user = authService.getCurrentUser();
     if (!user) {
-        console.debug('No user available in updateUserInfo');
         return;
     }
 
@@ -724,9 +723,7 @@ function populateDoctorDropdown(selectId) {
     }
 
     // Debug: Check if doctors array is populated
-    console.log(`👨‍⚕️ Populating doctor dropdown "${selectId}": ${doctors.length} doctor(s) available`);
     doctors.forEach(doctor => {
-        console.log(`   - Doctor: ${doctor.name} (ID: ${doctor.id})`);
         const option = document.createElement('option');
         option.value = doctor.id;
         option.textContent = doctor.name;
@@ -869,7 +866,6 @@ window.handleAddMCU = async function(event) {
         // ✅ FIX: Upload temporary files to Cloudflare R2 BEFORE saving MCU data
         const tempFiles = tempFileStorage.getFiles(mcuData.mcuId);
         if (tempFiles && tempFiles.length > 0) {
-            console.log(`📤 Uploading ${tempFiles.length} file(s) to Cloudflare R2 for MCU ${mcuData.mcuId}...`);
 
             showUploadLoading(`Mengunggah ${tempFiles.length} file...`);
 
@@ -936,7 +932,6 @@ window.viewMCUDetail = async function(mcuId) {
             return;
         }
 
-        console.log('🔍 MCU Detail Data loaded:', JSON.stringify({
             mcuId: mcu.mcuId,
             bmi: mcu.bmi,
             bp: mcu.bloodPressure,
@@ -1012,9 +1007,7 @@ window.viewMCUDetail = async function(mcuId) {
             const doctorId = String(mcu.doctor).trim();
             const mcuDoctorInt = parseInt(mcu.doctor);
 
-            console.log(`🔍 Looking for doctor with ID: ${doctorId} (numeric: ${mcuDoctorInt})`);
             if (doctors.length > 0) {
-                console.log(`🏥 Sample doctor structure:`, JSON.stringify(doctors[0], null, 2));
             }
 
             doctor = doctors.find(d => {
@@ -1024,7 +1017,6 @@ window.viewMCUDetail = async function(mcuId) {
                        parseInt(d.doctorId) === mcuDoctorInt;
 
                 if (match && d.name) {
-                    console.log(`✅ Doctor matched: ${d.name} (id: ${d.id}, doctorId: ${d.doctorId})`);
                 }
                 return match;
             });
@@ -1032,7 +1024,6 @@ window.viewMCUDetail = async function(mcuId) {
 
         if (doctor && doctor.name) {
             document.getElementById('mcu-detail-doctor').textContent = doctor.name;
-            console.log(`✅ Doctor FOUND and displayed: ${doctor.name} (ID: ${mcu.doctor})`);
         } else if (mcu.doctor) {
             // Doctor ID is set but not found in list - show ID as fallback
             if (doctors.length > 0) {
@@ -1398,7 +1389,6 @@ window.handleEditMCU = async function(event) {
         // ✅ FIX: Upload temporary files to Cloudflare R2 BEFORE clearing from storage
         const tempFiles = tempFileStorage.getFiles(mcuId);
         if (tempFiles && tempFiles.length > 0) {
-            console.log(`📤 Uploading ${tempFiles.length} file(s) to Cloudflare R2 for MCU ${mcuId}...`);
 
             showUploadLoading(`Mengunggah ${tempFiles.length} file...`);
 

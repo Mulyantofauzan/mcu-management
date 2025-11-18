@@ -61,7 +61,6 @@ export class FileListViewer {
             } else {
                 this.files = [];
             }
-            console.log(`📂 Loaded ${this.files.length} file(s) for MCU`);
         } catch (error) {
             this.files = [];
         }
@@ -226,7 +225,6 @@ export class FileListViewer {
                 showToast('File download link not available', 'error');
                 return;
             }
-            console.log(`   URL: ${downloadUrl.substring(0, 50)}...`);
 
             // For R2 public URLs (https://pub-*.r2.dev/...), open directly
             if (downloadUrl.includes('r2.dev') || downloadUrl.includes('cloudflarestorage')) {

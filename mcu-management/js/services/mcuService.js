@@ -333,18 +333,15 @@ class MCUService {
 
       // If no final result yet, definitely include in follow-up list
       if (!mcu.finalResult) {
-        console.log(`✓ MCU ${mcu.mcuId} needs follow-up (no final result yet)`);
         return true;
       }
 
       // If final result is also Follow-Up, still needs follow-up
       if (mcu.finalResult === 'Follow-Up') {
-        console.log(`✓ MCU ${mcu.mcuId} needs follow-up (final result still Follow-Up)`);
         return true;
       }
 
       // If final result is something other than Follow-Up (e.g., Fit), exclude it
-      console.log(`✗ MCU ${mcu.mcuId} excluded (final result: ${mcu.finalResult} - already completed)`);
       return false;
     });
   }

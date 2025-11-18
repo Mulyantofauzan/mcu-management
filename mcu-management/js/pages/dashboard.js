@@ -10,7 +10,7 @@ if ('serviceWorker' in navigator) {
     .then((reg) => {
     })
     .catch((error) => {
-      console.warn('Service Worker registration failed:', error);
+    // Removed console statement
     });
 }
 

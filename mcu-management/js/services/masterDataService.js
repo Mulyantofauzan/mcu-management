@@ -39,7 +39,6 @@ class MasterDataService {
     // Check cache first
     const cached = cacheManager.get('jobTitles:all');
     if (cached) {
-      console.debug('[Cache] getAllJobTitles - HIT');
       return cached;
     }
 
@@ -54,7 +53,6 @@ class MasterDataService {
     const cacheKey = `jobTitle:${id}`;
     const cached = cacheManager.get(cacheKey);
     if (cached) {
-      console.debug(`[Cache] getJobTitleById(${id}) - HIT`);
       return cached;
     }
 
@@ -125,7 +123,6 @@ class MasterDataService {
     // Check cache first
     const cached = cacheManager.get('departments:all');
     if (cached) {
-      console.debug('[Cache] getAllDepartments - HIT');
       return cached;
     }
 
@@ -140,7 +137,6 @@ class MasterDataService {
     const cacheKey = `department:${id}`;
     const cached = cacheManager.get(cacheKey);
     if (cached) {
-      console.debug(`[Cache] getDepartmentById(${id}) - HIT`);
       return cached;
     }
 
@@ -263,7 +259,6 @@ class MasterDataService {
     // Check cache first
     const cached = cacheManager.get('vendors:all');
     if (cached) {
-      console.debug('[Cache] getAllVendors - HIT');
       return cached;
     }
 
@@ -278,7 +273,6 @@ class MasterDataService {
     const cacheKey = `vendor:${id}`;
     const cached = cacheManager.get(cacheKey);
     if (cached) {
-      console.debug(`[Cache] getVendorById(${id}) - HIT`);
       return cached;
     }
 
@@ -356,7 +350,6 @@ class MasterDataService {
     // Check cache first
     const cached = cacheManager.get('doctors:all');
     if (cached) {
-      console.debug('[Cache] getAllDoctors - HIT');
       return cached;
     }
 
@@ -371,7 +364,6 @@ class MasterDataService {
     const cacheKey = `doctor:${id}`;
     const cached = cacheManager.get(cacheKey);
     if (cached) {
-      console.debug(`[Cache] getDoctorById(${id}) - HIT`);
       return cached;
     }
 

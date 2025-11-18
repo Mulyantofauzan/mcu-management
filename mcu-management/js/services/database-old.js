@@ -60,13 +60,11 @@ class MCUDatabase {
       doctors: '++id, name'
     }).upgrade(db => {
       // Force clear doctors again to ensure clean state
-      console.log('🔄 Force clearing doctors table (version 5)');
       return db.doctors.clear();
     });
 
     try {
       await this.db.open();
-      console.log('✅ IndexedDB initialized successfully (version ' + this.db.verno + ')');
     } catch (error) {
       // If version conflict or upgrade error, delete and recreate
       if (error.name === 'VersionError' || error.name === 'UpgradeError') {
@@ -89,7 +87,6 @@ class MCUDatabase {
           });
 
           await this.db.open();
-          console.log('✅ IndexedDB recreated successfully (version ' + this.db.verno + ')');
         } catch (recreateError) {
           throw recreateError;
         }

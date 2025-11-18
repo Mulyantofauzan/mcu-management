@@ -40,7 +40,6 @@ self.addEventListener('install', (event) => {
     })
     .then(() => self.skipWaiting()) // Activate immediately
     .catch((error) => {
-      console.warn('Service Worker: Failed to cache static assets', error);
     })
   );
 });

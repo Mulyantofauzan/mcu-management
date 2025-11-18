@@ -23,7 +23,6 @@ async function loadSidebar() {
     // Create the loading promise
     sidebarLoadingPromise = (async () => {
         try {
-            console.debug('[Sidebar] Starting sidebar load...');
 
             // Determine sidebar template path
             let sidebarPath = await findSidebarPath();
@@ -31,7 +30,6 @@ async function loadSidebar() {
                 throw new Error('Could not locate sidebar template');
             }
 
-            console.debug(`[Sidebar] Loading from: ${sidebarPath}`);
 
             // Fetch sidebar HTML
             const response = await fetch(sidebarPath);
@@ -52,7 +50,6 @@ async function loadSidebar() {
 
             // Mark as loaded
             sidebarLoaded = true;
-            console.debug('[Sidebar] Sidebar loaded successfully');
 
             // Dispatch event for legacy code
             document.dispatchEvent(new CustomEvent('sidebarLoaded', {
@@ -110,7 +107,6 @@ async function findSidebarPath() {
         try {
             const response = await fetch(path, { method: 'HEAD' });
             if (response.ok) {
-                console.debug(`[Sidebar] Found sidebar at: ${path}`);
                 return path;
             }
         } catch (e) {
@@ -123,7 +119,6 @@ async function findSidebarPath() {
         try {
             const response = await fetch(path);
             if (response.ok) {
-                console.debug(`[Sidebar] Found sidebar at: ${path}`);
                 return path;
             }
         } catch (e) {
@@ -233,12 +228,10 @@ function updateSidebarUserInfo() {
         try {
             user = window.authService.getCurrentUser();
         } catch (e) {
-            console.debug('[Sidebar] Could not get user from authService:', e.message);
         }
     }
 
     if (!user) {
-        console.debug('[Sidebar] No user data available yet');
         return;
     }
 
@@ -260,7 +253,6 @@ function updateSidebarUserInfo() {
         userRoleEl.textContent = role;
     }
 
-    console.debug(`[Sidebar] Updated user info: ${displayName}`);
 }
 
 /**
@@ -282,7 +274,6 @@ function updateAdminMenuVisibility() {
     }
 
     if (isAdmin) {
-        console.debug('[Sidebar] Showing admin menus');
     }
 }
 
@@ -322,7 +313,6 @@ window.waitForSidebar = function() {
     return new Promise((resolve) => {
         // If sidebar already loaded, resolve immediately
         if (sidebarLoaded) {
-            console.debug('[Sidebar] Sidebar already loaded, resolving immediately');
             resolve();
             return;
         }
@@ -346,7 +336,6 @@ window.waitForSidebar = function() {
 
         // Check immediately
         if (isSidebarReady()) {
-            console.debug('[Sidebar] Sidebar DOM ready on check');
             resolve();
             return;
         }
@@ -360,7 +349,6 @@ window.waitForSidebar = function() {
 
                 // Wait a tick for DOM to fully settle
                 setTimeout(() => {
-                    console.debug('[Sidebar] Sidebar event fired, DOM settled');
                     resolve();
                 }, 0);
             }
@@ -372,7 +360,6 @@ window.waitForSidebar = function() {
         setTimeout(() => {
             if (!resolved) {
                 resolved = true;
-                console.warn('[Sidebar] Timeout waiting for sidebar (8s), resolving anyway');
                 resolve();
             }
         }, 8000);
@@ -386,12 +373,10 @@ window.waitForSidebar = function() {
 if (document.readyState === 'loading') {
     // DOM is still loading
     document.addEventListener('DOMContentLoaded', () => {
-        console.debug('[Sidebar] DOMContentLoaded fired, loading sidebar...');
         loadSidebar();
     });
 } else {
     // DOM is already loaded
-    console.debug('[Sidebar] DOM already loaded, loading sidebar immediately...');
     loadSidebar();
 }
 

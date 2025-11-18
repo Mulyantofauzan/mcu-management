@@ -44,7 +44,6 @@ class EmployeeService {
               const deptId = String(d.id).trim();
               const empDeptId = String(employee.departmentId).trim();
               const matches = deptId === empDeptId;
-              if (matches) console.log('✅ Dept match found:', d.name);
               return matches;
             });
 
@@ -65,7 +64,6 @@ class EmployeeService {
               const jobId = String(j.id).trim();
               const empJobId = String(employee.jobTitleId).trim();
               const matches = jobId === empJobId;
-              if (matches) console.log('✅ Job match found:', j.name);
               return matches;
             });
 

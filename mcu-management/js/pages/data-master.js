@@ -219,7 +219,6 @@ window.editItem = async function(id) {
     const item = currentData.find(i => i.id === id);
 
     if (!item) {
-        console.error('❌ Item NOT FOUND:', {
             searchId: id,
             currentTab: currentTab,
             allItems: currentData.map(i => ({ id: i.id, name: i.name }))

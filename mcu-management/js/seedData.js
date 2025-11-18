@@ -74,7 +74,6 @@ export async function seedDatabase() {
       await database.clearAll();
 
     } catch (error) {
-      console.log('Skipping clearAll (likely using Supabase)');
     }
 
     // 1. Create Master Data
@@ -116,7 +115,6 @@ export async function seedDatabase() {
       role: 'Petugas'
     });
 
-    console.log('Created 2 users (admin/admin123, petugas/petugas123)');
 
     // 3. Create Employees
 
@@ -212,8 +210,6 @@ export async function seedDatabase() {
       await employeeService.softDelete(emp.employeeId);
     }
 
-    console.log(`- Users: 2 (admin, petugas)`);
-    console.log(`- Employees: ${employees.length} (${employeesToDelete.length} soft-deleted)`);
 
     return {
       success: true,
@@ -248,7 +244,6 @@ export async function checkAndSeedIfEmpty() {
   const enableAutoSeed = window.ENV?.ENABLE_AUTO_SEED === true;
 
   if (!enableAutoSeed) {
-    console.log('ℹ️ Auto-seeding DISABLED (production mode)');
 
     return { success: true, message: 'Auto-seeding disabled for production' };
   }
@@ -263,7 +258,6 @@ export async function checkAndSeedIfEmpty() {
       return await seedDatabase();
     }
 
-    console.log(`Database already has ${users.length} user(s)`);
     return { success: true, message: 'Database already has data' };
   } catch (error) {
 

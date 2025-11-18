@@ -33,13 +33,11 @@ export async function loadEnvironmentConfig() {
           SUPABASE_ANON_KEY: config.SUPABASE_ANON_KEY,
           ENABLE_AUTO_SEED: config.ENABLE_AUTO_SEED || false
         });
-        console.log('✅ Configuration loaded from /api/config endpoint (Vercel)');
         return true;
       }
     }
   } catch (error) {
     // API endpoint not available (expected in dev without backend)
-    console.debug('ℹ️  /api/config not available, trying Vite env vars...');
   }
 
   // Priority 2: Load from Vite environment variables
@@ -51,7 +49,6 @@ export async function loadEnvironmentConfig() {
       SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
       ENABLE_AUTO_SEED: import.meta.env.VITE_ENABLE_AUTO_SEED === 'true'
     });
-    console.log('✅ Configuration loaded from Vite environment variables (.env.local or .env.production)');
     return true;
   }
 
@@ -65,7 +62,6 @@ export async function loadEnvironmentConfig() {
         SUPABASE_URL: devUrl,
         SUPABASE_ANON_KEY: devKey
       });
-      console.log('🔧 Configuration loaded from localStorage (development only)');
       return true;
     }
   }
@@ -84,5 +80,4 @@ export async function initializeEnv() {
 
 // Export logging function
 export function logEnvStatus() {
-  console.log('   SUPABASE_ANON_KEY:', ENV.SUPABASE_ANON_KEY ? '✅ Set (hidden)' : '❌ Not set');
 }

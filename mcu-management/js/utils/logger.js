@@ -44,7 +44,6 @@ export const logger = {
      */
     info: (message, data = null) => {
         if (currentLogLevel <= LogLevel.INFO) {
-            console.info(`[INFO] ${message}`, data || '');
         }
     },
 

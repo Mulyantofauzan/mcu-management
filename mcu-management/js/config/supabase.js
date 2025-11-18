@@ -40,26 +40,22 @@ async function initSupabase() {
             try {
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 useSupabase = true;
-                console.log('   Client available as: supabase object (imported)');
             } catch (error) {
             }
         } else {
             if (typeof window.supabase !== 'undefined') {
-                console.log('   window.supabase keys:', Object.keys(window.supabase || {}).slice(0, 5));
             }
         }
     }
 }
 
 // Initialize Supabase immediately
-console.log('   SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? '✅ Set (hidden)' : '❌ Not set');
 
 // ✅ FIX: Create a promise that can be awaited by init() functions
 // This prevents race condition where app tries to use Supabase before it's initialized
 export const supabaseReady = initSupabase().then(() => {
     if (useSupabase && supabase) {
     } else {
-        console.log('📦 Using IndexedDB (Supabase not configured)');
     }
     return { ready: true, enabled: useSupabase };
 }).catch(err => {

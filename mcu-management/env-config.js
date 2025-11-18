@@ -32,13 +32,11 @@ async function loadConfig() {
       const config = await response.json();
       if (config.SUPABASE_URL) {
         window.ENV = { ...window.ENV, ...config };
-        console.log('✅ Configuration loaded from /api/config endpoint');
         return true;
       }
     }
   } catch (error) {
     // API endpoint not available (expected in dev without backend)
-    console.debug('API endpoint not available, trying alternatives...');
   }
 
   // Priority 2: Check for Vite-injected globals (from .env.production build)
@@ -50,7 +48,6 @@ async function loadConfig() {
     window.ENV.VITE_GOOGLE_CLIENT_ID = window.__VITE_GOOGLE_CLIENT_ID__;
     window.ENV.VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID = window.__VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID__;
     window.ENV.VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT = window.__VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT__;
-    console.log('✅ Configuration loaded from build-time globals');
     return true;
   }
 
@@ -59,7 +56,6 @@ async function loadConfig() {
   if (window.__ENV_LOADED__) {
     // Already loaded from external config, use what's in window.ENV
     if (window.ENV.SUPABASE_URL || window.ENV.VITE_GOOGLE_CLIENT_ID) {
-      console.log('✅ Configuration loaded from runtime injection');
       return true;
     }
   }
@@ -88,7 +84,6 @@ async function loadConfig() {
     }
 
     if (devUrl && devKey) {
-      console.log('🔧 Using development credentials from localStorage');
       return true;
     }
   }
@@ -100,10 +95,3 @@ async function loadConfig() {
 loadConfig();
 
 // Debug: Log loaded configuration
-console.log('═══════════════════════════════════════');
-console.log('📋 Environment Configuration Loaded');
-console.log('═══════════════════════════════════════');
-console.log('SUPABASE_URL:', window.ENV.SUPABASE_URL ? '✓ Loaded' : '✗ Missing');
-console.log('VITE_GOOGLE_CLIENT_ID:', window.ENV.VITE_GOOGLE_CLIENT_ID ? '✓ Loaded' : '✗ Missing');
-console.log('VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID:', window.ENV.VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID ? '✓ Loaded' : '✗ Missing');
-console.log('═══════════════════════════════════════');

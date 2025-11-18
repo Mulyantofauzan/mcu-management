@@ -23,7 +23,6 @@ const getAdapter = async () => {
 if (isSupabaseEnabled()) {
 
 } else {
-    console.log('📦 Using IndexedDB (Dexie) as fallback database');
 }
 
 /**
@@ -220,10 +219,8 @@ class DatabaseService {
             if (indexedDBInstance && typeof indexedDBInstance.clearAll === 'function') {
                 await indexedDBInstance.clearAll();
             } else {
-                console.warn('⚠️ clearAll() not available on database instance');
             }
         } else {
-            console.warn('⚠️ clearAll() is disabled for Supabase to prevent accidental data loss');
             // If you really need to clear Supabase data, do it manually from Supabase Dashboard
         }
     }

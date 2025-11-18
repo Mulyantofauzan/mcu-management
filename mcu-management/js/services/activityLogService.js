@@ -43,11 +43,9 @@ export class ActivityLogService {
                 toDate
             };
 
-            console.log(`📊 Fetching activity logs (page: ${page}, limit: ${limit}, filters:`, filters, ')');
 
             const result = await this.database.ActivityLog.getFiltered(filters, page, limit);
 
-            console.log(`✅ Loaded ${result.data.length} activity records (total: ${result.total})`);
 
             return {
                 data: result.data,
