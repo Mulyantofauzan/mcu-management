@@ -29,6 +29,14 @@ export class ActivityLogService {
                 limit = 20
             } = options;
 
+            // Validate database adapter
+            if (!this.database || !this.database.ActivityLog || !this.database.ActivityLog.getFiltered) {
+                console.error('❌ Database adapter not properly initialized');
+                console.error('database:', this.database);
+                console.error('ActivityLog:', this.database?.ActivityLog);
+                throw new Error('Database adapter tidak tersedia. ActivityLog.getFiltered tidak ditemukan');
+            }
+
             // Use server-side filtering and pagination for better performance
             const filters = {
                 action,

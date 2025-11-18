@@ -314,7 +314,15 @@
         // Load activity log
         async function loadActivityLog() {
             try {
+                // Check if service is initialized
+                if (!activityLogService) {
+                    console.error('❌ ActivityLogService not initialized');
+                    showToast('Service belum siap, silakan tunggu...', 'warning');
+                    return;
+                }
+
                 const filters = getFilters();
+                console.log('📊 Loading activity log with filters:', filters);
                 const result = await activityLogService.getActivities({
                     ...filters,
                     page: currentPage,
@@ -325,7 +333,7 @@
                 renderPagination(result.totalPages, currentPage);
 
             } catch (error) {
-                console.error('Load error:', error);
+                console.error('❌ Load error:', error);
                 showToast('Gagal memuat activity log: ' + error.message, 'error');
             }
         }
