@@ -37,6 +37,35 @@ let addFileUploadWidget = null;
 let generatedMCUIdForAdd = null;  // Store generated MCU ID for the add modal
 let labResultWidget = null;  // Lab result widget instance
 
+// Upload loading overlay functions
+function showUploadLoading(message = 'Mengunggah File...') {
+  const overlay = document.getElementById('upload-loading-overlay');
+  const title = document.getElementById('upload-loading-title');
+  if (overlay) {
+    overlay.classList.remove('hidden');
+    if (title) title.textContent = message;
+  }
+}
+
+function updateUploadProgress(current, total) {
+  const progressFill = document.getElementById('upload-progress-fill');
+  const message = document.getElementById('upload-loading-message');
+  if (progressFill) {
+    const percentage = (current / total) * 100;
+    progressFill.style.width = percentage + '%';
+  }
+  if (message) {
+    message.textContent = `${current} dari ${total} file`;
+  }
+}
+
+function hideUploadLoading() {
+  const overlay = document.getElementById('upload-loading-overlay');
+  if (overlay) {
+    overlay.classList.add('hidden');
+  }
+}
+
 async function init() {
     try {
         if (!authService.isAuthenticated()) {
@@ -845,22 +874,39 @@ window.handleAddMCU = async function(event) {
         if (tempFiles && tempFiles.length > 0) {
             console.log(`📤 Uploading ${tempFiles.length} file(s) to Cloudflare R2 for MCU ${mcuData.mcuId}...`);
 
-            const { uploadBatchFiles } = await import('../services/supabaseStorageService.js');
-            const uploadResult = await uploadBatchFiles(
-                tempFiles,
-                mcuData.employeeId,
-                mcuData.mcuId,
-                currentUser.id
-            );
+            showUploadLoading(`Mengunggah ${tempFiles.length} file...`);
 
-            if (!uploadResult.success && uploadResult.uploadedCount === 0) {
-                // All uploads failed - don't proceed with MCU creation
-                showToast(`❌ File upload ke R2 gagal: ${uploadResult.error}`, 'error');
+            try {
+                const { uploadBatchFiles } = await import('../services/supabaseStorageService.js');
+                const uploadResult = await uploadBatchFiles(
+                    tempFiles,
+                    mcuData.employeeId,
+                    mcuData.mcuId,
+                    currentUser.id,
+                    // Progress callback
+                    (current, total, message) => {
+                        console.log(`⏳ Upload progress: ${current}/${total} - ${message}`);
+                        updateUploadProgress(current, total);
+                    }
+                );
+
+                if (!uploadResult.success && uploadResult.uploadedCount === 0) {
+                    // All uploads failed - don't proceed with MCU creation
+                    hideUploadLoading();
+                    showToast(`❌ File upload ke R2 gagal: ${uploadResult.error}`, 'error');
+                    return;
+                } else if (uploadResult.failedCount > 0) {
+                    // Some uploads failed - warn user but continue
+                    hideUploadLoading();
+                    showToast(`⚠️ ${uploadResult.failedCount} file gagal diunggah, tapi MCU akan disimpan`, 'warning');
+                }
+            } catch (error) {
+                hideUploadLoading();
+                showToast(`❌ Upload error: ${error.message}`, 'error');
                 return;
-            } else if (uploadResult.failedCount > 0) {
-                // Some uploads failed - warn user but continue
-                showToast(`⚠️ ${uploadResult.failedCount} file gagal diunggah, tapi MCU akan disimpan`, 'warning');
             }
+
+            hideUploadLoading();
         }
 
         // ✅ CRITICAL: Clear temporary files ONLY after successful R2 upload
@@ -1368,21 +1414,38 @@ window.handleEditMCU = async function(event) {
         if (tempFiles && tempFiles.length > 0) {
             console.log(`📤 Uploading ${tempFiles.length} file(s) to Cloudflare R2 for MCU ${mcuId}...`);
 
-            const { uploadBatchFiles } = await import('../services/supabaseStorageService.js');
-            const uploadResult = await uploadBatchFiles(
-                tempFiles,
-                updateData.employeeId || (await mcuService.getById(mcuId)).employeeId,
-                mcuId,
-                currentUser.id
-            );
+            showUploadLoading(`Mengunggah ${tempFiles.length} file...`);
 
-            if (!uploadResult.success && uploadResult.uploadedCount === 0) {
-                // All uploads failed - warn but continue with MCU update
-                showToast(`⚠️ File upload ke R2 gagal: ${uploadResult.error}`, 'warning');
-            } else if (uploadResult.failedCount > 0) {
-                // Some uploads failed
-                showToast(`⚠️ ${uploadResult.failedCount} file gagal diunggah`, 'warning');
+            try {
+                const { uploadBatchFiles } = await import('../services/supabaseStorageService.js');
+                const uploadResult = await uploadBatchFiles(
+                    tempFiles,
+                    updateData.employeeId || (await mcuService.getById(mcuId)).employeeId,
+                    mcuId,
+                    currentUser.id,
+                    // Progress callback
+                    (current, total, message) => {
+                        console.log(`⏳ Upload progress: ${current}/${total} - ${message}`);
+                        updateUploadProgress(current, total);
+                    }
+                );
+
+                if (!uploadResult.success && uploadResult.uploadedCount === 0) {
+                    // All uploads failed - warn but continue with MCU update
+                    hideUploadLoading();
+                    showToast(`⚠️ File upload ke R2 gagal: ${uploadResult.error}`, 'warning');
+                } else if (uploadResult.failedCount > 0) {
+                    // Some uploads failed
+                    hideUploadLoading();
+                    showToast(`⚠️ ${uploadResult.failedCount} file gagal diunggah`, 'warning');
+                }
+            } catch (error) {
+                hideUploadLoading();
+                showToast(`❌ Upload error: ${error.message}`, 'error');
+                return;
             }
+
+            hideUploadLoading();
         }
 
         // ✅ CRITICAL: Clear temporary files ONLY after upload attempt

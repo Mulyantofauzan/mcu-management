@@ -686,7 +686,7 @@ window.handleMCUUpdate = async function(event) {
 
     // Collect new values - only include editable fields
     const updateData = {};
-    const changes = [];  // Track all changes for history display
+    let changes = [];  // Track all changes for history display (use let instead of const for reassignment)
     const fieldLabels = {
       'update-bmi': { label: 'BMI', dataKey: 'bmi' },
       'update-bp': { label: 'Tekanan Darah', dataKey: 'bloodPressure' },

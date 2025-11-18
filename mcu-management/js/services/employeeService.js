@@ -211,38 +211,60 @@ class EmployeeService {
 
     for (const mcu of mcus) {
       // ✅ CASCADE DELETE: Delete all associated MCU files (database + storage)
-      const mcuFiles = await database.query('mcufiles', file => file.mcuId === mcu.mcuId);
-      for (const file of mcuFiles) {
-        try {
-          // Delete from Supabase storage using storage path
-          if (file.storage_path || file.storagePath) {
-            const storagePath = file.storage_path || file.storagePath;
-            const deleteResult = await deleteFileFromStorage(storagePath);
-            if (!deleteResult.success) {
-              failedDeletions.push(`${file.filename}: ${deleteResult.error}`);
+      // Check both snake_case and camelCase field names for compatibility
+      const mcuFiles = await database.query('mcufiles', file =>
+        (file.mcu_id === mcu.mcuId) || (file.mcuId === mcu.mcuId)
+      );
+
+      console.log(`🗑️ Found ${mcuFiles?.length || 0} files to delete for MCU ${mcu.mcuId}`);
+
+      if (mcuFiles && mcuFiles.length > 0) {
+        for (const file of mcuFiles) {
+          try {
+            // Delete from Supabase storage using storage path
+            if (file.storage_path || file.storagePath) {
+              const storagePath = file.storage_path || file.storagePath;
+              console.log(`🗑️ Deleting file from storage: ${storagePath}`);
+              const deleteResult = await deleteFileFromStorage(storagePath);
+              if (!deleteResult.success) {
+                failedDeletions.push(`${file.filename}: ${deleteResult.error}`);
+              } else {
+                console.log(`✅ File deleted from storage: ${storagePath}`);
+              }
+            } else {
+              console.warn(`⚠️ No storage path found for file ${file.filename}. File ID: ${file.fileid || file.id}`);
             }
-          }
 
-          // Hard delete file record from database
-          await database.hardDelete('mcufiles', file.fileid || file.id);
-          totalFilesDeleted++;
+            // Hard delete file record from database using MCUFiles adapter
+            const fileId = file.fileid || file.id;
+            console.log(`🗑️ Deleting file record from database: ${fileId}`);
+            await database.MCUFiles.hardDelete(fileId);
+            totalFilesDeleted++;
+            console.log(`✅ File record deleted from database: ${fileId}`);
 
-          // Log file deletion
-          if (currentUser?.userId) {
-            await database.logActivity('delete', 'File', file.fileid || file.id, currentUser.userId,
-              `File permanently deleted from storage and database (cascade from employee hard delete): ${file.filename}`);
+            // Log file deletion
+            if (currentUser?.userId) {
+              await database.logActivity('delete', 'File', fileId, currentUser.userId,
+                `File permanently deleted from storage and database (cascade from employee hard delete): ${file.filename}`);
+            }
+          } catch (err) {
+            console.warn(`Error deleting file ${file.filename}: ${err.message}`);
+            failedDeletions.push(`${file.filename}: ${err.message}`);
           }
-        } catch (err) {
-          console.warn(`Error deleting file ${file.filename}: ${err.message}`);
-          failedDeletions.push(`${file.filename}: ${err.message}`);
         }
       }
 
       // Delete associated lab results
       try {
-        const labResults = await database.query('pemeriksaan_lab', lab => lab.mcu_id === mcu.mcuId);
-        for (const lab of labResults) {
-          await database.hardDelete('pemeriksaan_lab', lab.id);
+        const labResults = await database.query('pemeriksaan_lab', lab =>
+          (lab.mcu_id === mcu.mcuId) || (lab.mcuId === mcu.mcuId)
+        );
+        console.log(`🗑️ Found ${labResults?.length || 0} lab results to delete for MCU ${mcu.mcuId}`);
+        if (labResults && labResults.length > 0) {
+          for (const lab of labResults) {
+            await database.hardDelete('pemeriksaan_lab', lab.id);
+          }
+          console.log(`✅ Deleted ${labResults.length} lab results`);
         }
       } catch (err) {
         console.warn(`Error deleting lab results for MCU ${mcu.mcuId}: ${err.message}`);
