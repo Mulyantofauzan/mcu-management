@@ -30,6 +30,35 @@ let currentPage = 1;
 const itemsPerPage = 10;
 let labResultWidgetUpdate = null;  // Lab result widget for update modal
 
+// Upload loading overlay functions
+function showUploadLoading(message = 'Mengunggah File...') {
+  const overlay = document.getElementById('upload-loading-overlay');
+  const title = document.getElementById('upload-loading-title');
+  if (overlay) {
+    overlay.classList.remove('hidden');
+    if (title) title.textContent = message;
+  }
+}
+
+function updateUploadProgress(current, total) {
+  const progressFill = document.getElementById('upload-progress-fill');
+  const message = document.getElementById('upload-loading-message');
+  if (progressFill) {
+    const percentage = (current / total) * 100;
+    progressFill.style.width = percentage + '%';
+  }
+  if (message) {
+    message.textContent = `${current} dari ${total} file`;
+  }
+}
+
+function hideUploadLoading() {
+  const overlay = document.getElementById('upload-loading-overlay');
+  if (overlay) {
+    overlay.classList.add('hidden');
+  }
+}
+
 // Download Surat Rujukan PDF from table action button
 window.downloadRujukanPDFAction = async function(mcuId) {
   try {
@@ -449,33 +478,40 @@ window.handleFollowUpSubmit = async function(event) {
     if (pendingFiles && pendingFiles.length > 0) {
       console.log(`📦 Uploading ${pendingFiles.length} file(s) for follow-up MCU ${mcuId}...`);
 
-      let lastProgressShown = 0;
-      const uploadResult = await uploadBatchFiles(
-        pendingFiles,
-        currentMCU.employeeId,
-        mcuId,
-        currentUser.userId || currentUser.user_id,
-        // Progress callback
-        (current, total, message) => {
-          const percentage = Math.round((current / total) * 100);
-          // Only show toast every 25% or at end
-          if (percentage >= lastProgressShown + 25 || percentage === 100) {
-            console.log(`⏳ Upload progress: ${current}/${total} - ${message}`);
-            lastProgressShown = percentage;
-          }
-        }
-      );
+      // Show loading overlay
+      showUploadLoading(`Mengunggah ${pendingFiles.length} file...`);
 
-      if (uploadResult.success) {
-        if (uploadResult.uploadedCount > 0) {
-          showToast(`✅ ${uploadResult.uploadedCount} file(s) uploaded successfully`, 'success');
+      try {
+        const uploadResult = await uploadBatchFiles(
+          pendingFiles,
+          currentMCU.employeeId,
+          mcuId,
+          currentUser.userId || currentUser.user_id,
+          // Progress callback
+          (current, total, message) => {
+            console.log(`⏳ Upload progress: ${current}/${total} - ${message}`);
+            updateUploadProgress(current, total);
+          }
+        );
+
+        if (uploadResult.success) {
+          if (uploadResult.uploadedCount > 0) {
+            console.log(`✅ ${uploadResult.uploadedCount} file(s) uploaded successfully`);
+          }
+          // Clear temporary files after successful upload
+          tempFileStorage.clearFiles(mcuId);
+        } else {
+          hideUploadLoading();
+          showToast(`❌ File upload error: ${uploadResult.error}`, 'error');
+          return; // Don't proceed if file upload failed
         }
-        // Clear temporary files after successful upload
-        tempFileStorage.clearFiles(mcuId);
-      } else {
-        showToast(`❌ File upload error: ${uploadResult.error}`, 'error');
-        return; // Don't proceed if file upload failed
+      } catch (error) {
+        hideUploadLoading();
+        showToast(`❌ Upload error: ${error.message}`, 'error');
+        return;
       }
+
+      hideUploadLoading();
     }
 
     // Close first modal
@@ -693,6 +729,58 @@ window.handleMCUUpdate = async function(event) {
     if (labResultWidgetUpdate) {
       labResults = labResultWidgetUpdate.getAllLabResults();
     }
+
+    // Compare lab results with existing ones to track changes
+    let labChanges = [];
+    try {
+      const existingLabResults = await labService.getPemeriksaanLabByMcuId(mcuId);
+
+      if (existingLabResults && existingLabResults.length > 0) {
+        // Check for modified lab results
+        for (const newLab of labResults) {
+          const existingLab = existingLabResults.find(lab => lab.lab_item_id === newLab.labItemId);
+          if (existingLab) {
+            // If value changed, track it
+            if (String(existingLab.value) !== String(newLab.value)) {
+              labChanges.push({
+                itemName: `Hasil Lab: ${existingLab.lab_items?.name || 'Unknown'}`,
+                oldValue: `${existingLab.value} ${existingLab.unit || ''}`,
+                newValue: `${newLab.value} ${existingLab.unit || ''}`,
+                changed: true
+              });
+            }
+          }
+        }
+
+        // Check for deleted lab results
+        for (const existingLab of existingLabResults) {
+          const stillExists = labResults.find(lab => lab.labItemId === existingLab.lab_item_id);
+          if (!stillExists) {
+            labChanges.push({
+              itemName: `Hasil Lab: ${existingLab.lab_items?.name || 'Unknown'} (Dihapus)`,
+              oldValue: `${existingLab.value} ${existingLab.unit || ''}`,
+              newValue: '-',
+              changed: true
+            });
+          }
+        }
+      } else if (labResults.length > 0) {
+        // New lab results added
+        for (const newLab of labResults) {
+          labChanges.push({
+            itemName: `Hasil Lab: ${newLab.labItemName || 'Unknown'} (Baru)`,
+            oldValue: '-',
+            newValue: `${newLab.value}`,
+            changed: true
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Error comparing lab results:', err);
+    }
+
+    // Merge lab changes with other changes
+    changes = [...changes, ...labChanges];
 
     // Only update if there are changes
     if (Object.keys(updateData).length === 0 && labResults.length === 0) {
