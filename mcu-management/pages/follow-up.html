@@ -283,16 +283,16 @@
 
                     <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan</h4>
                     <div class="grid grid-cols-3 gap-4 mb-4">
-                        <div><label class="label">BMI</label><input type="number" step="0.1" id="update-bmi" class="input" placeholder="Contoh: 22.5" /></div>
-                        <div><label class="label">Tekanan Darah</label><input type="text" id="update-bp" class="input" placeholder="Contoh: 120/80" /></div>
-                        <div><label class="label">RR (Frekuensi Nafas)</label><input type="text" id="update-rr" class="input" placeholder="Contoh: 20" /></div>
-                        <div><label class="label">Nadi</label><input type="text" id="update-pulse" class="input" placeholder="Contoh: 80" /></div>
-                        <div><label class="label">Suhu</label><input type="text" id="update-temp" class="input" placeholder="Contoh: 36.5" /></div>
-                        <div><label class="label">Penglihatan</label><input type="text" id="update-vision" class="input" placeholder="Contoh: 6/6" /></div>
-                        <div><label class="label">Audiometri</label><input type="text" id="update-audio" class="input" placeholder="Contoh: Normal / Gangguan ringan" /></div>
-                        <div><label class="label">Spirometri</label><input type="text" id="update-spiro" class="input" placeholder="Contoh: Normal / Restriktif / Obstruktif" /></div>
-                        <div><label class="label">HBsAg</label>
-                            <select id="update-hbsag" class="input">
+                        <div><label class="label">BMI <span class="text-red-500">*</span></label><input type="number" step="0.1" id="update-bmi" class="input" placeholder="Contoh: 22.5" required /></div>
+                        <div><label class="label">Tekanan Darah <span class="text-red-500">*</span></label><input type="text" id="update-bp" class="input" placeholder="Contoh: 120/80" required /></div>
+                        <div><label class="label">RR (Frekuensi Nafas) <span class="text-red-500">*</span></label><input type="text" id="update-rr" class="input" placeholder="Contoh: 20" required /></div>
+                        <div><label class="label">Nadi <span class="text-red-500">*</span></label><input type="text" id="update-pulse" class="input" placeholder="Contoh: 80" required /></div>
+                        <div><label class="label">Suhu <span class="text-red-500">*</span></label><input type="text" id="update-temp" class="input" placeholder="Contoh: 36.5" required /></div>
+                        <div><label class="label">Penglihatan <span class="text-red-500">*</span></label><input type="text" id="update-vision" class="input" placeholder="Contoh: 6/6" required /></div>
+                        <div><label class="label">Audiometri <span class="text-red-500">*</span></label><input type="text" id="update-audio" class="input" placeholder="Contoh: Normal / Gangguan ringan" required /></div>
+                        <div><label class="label">Spirometri <span class="text-red-500">*</span></label><input type="text" id="update-spiro" class="input" placeholder="Contoh: Normal / Restriktif / Obstruktif" required /></div>
+                        <div><label class="label">HBsAg <span class="text-red-500">*</span></label>
+                            <select id="update-hbsag" class="input" required>
                                 <option value="">Pilih: Reaktif / Non-reaktif</option>
                                 <option value="Negatif">Negatif</option>
                                 <option value="Positif">Positif</option>
@@ -311,11 +311,11 @@
 
                     <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Penunjang</h4>
                     <div class="grid grid-cols-1 gap-4 mb-4">
-                        <div><label class="label">X-Ray</label><textarea id="update-xray" class="input" rows="2" placeholder="Contoh: Normal / Infiltrat paru kanan / Pembesaran jantung"></textarea></div>
-                        <div><label class="label">EKG</label><textarea id="update-ekg" class="input" rows="2" placeholder="Contoh: Irama sinus normal / Takikardi / Aritmia"></textarea></div>
-                        <div><label class="label">Treadmill</label><textarea id="update-treadmill" class="input" rows="2" placeholder="Contoh: Normal / Tanda iskemia ringan"></textarea></div>
-                        <div><label class="label">NAPZA</label><input type="text" id="update-napza" class="input" placeholder="Contoh: Negatif / Positif amfetamin" /></div>
-                        <div><label class="label">Buta Warna</label><input type="text" id="update-colorblind" class="input" placeholder="Contoh: Normal / Merah–Hijau / Total" /></div>
+                        <div><label class="label">X-Ray <span class="text-red-500">*</span></label><textarea id="update-xray" class="input" rows="2" placeholder="Contoh: Normal / Infiltrat paru kanan / Pembesaran jantung" required></textarea></div>
+                        <div><label class="label">EKG <span class="text-red-500">*</span></label><textarea id="update-ekg" class="input" rows="2" placeholder="Contoh: Irama sinus normal / Takikardi / Aritmia" required></textarea></div>
+                        <div><label class="label">Treadmill <span class="text-red-500">*</span></label><textarea id="update-treadmill" class="input" rows="2" placeholder="Contoh: Normal / Tanda iskemia ringan" required></textarea></div>
+                        <div><label class="label">NAPZA <span class="text-red-500">*</span></label><input type="text" id="update-napza" class="input" placeholder="Contoh: Negatif / Positif amfetamin" required /></div>
+                        <div><label class="label">Buta Warna <span class="text-red-500">*</span></label><input type="text" id="update-colorblind" class="input" placeholder="Contoh: Normal / Merah–Hijau / Total" required /></div>
                     </div>
 
                     <h4 class="font-semibold text-gray-900 mb-3">Data Rujukan (Opsional)</h4>
