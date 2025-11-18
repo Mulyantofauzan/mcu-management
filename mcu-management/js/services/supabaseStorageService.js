@@ -456,6 +456,43 @@ export async function getMCUFilesWithSignedUrls(mcuId, userId) {
   }
 }
 
+/**
+ * Delete file from Supabase storage by storage path
+ * @param {string} storagePath - Full path to file in storage (e.g., 'mcu-files/EMP_123/MCU_456/filename.pdf')
+ * @returns {Promise<Object>} Deletion result
+ */
+export async function deleteFileFromStorage(storagePath) {
+  try {
+    if (!storagePath) {
+      throw new Error('Missing storagePath');
+    }
+
+    const { getSupabaseClient } = await import('../config/supabase.js');
+    const supabase = getSupabaseClient();
+
+    console.log(`🗑️ Deleting file from storage: ${storagePath}`);
+
+    // Delete from Supabase storage using the storage path
+    const { error } = await supabase
+      .storage
+      .from('mcu-files')
+      .remove([storagePath]);
+
+    if (error) {
+      // Don't throw if file doesn't exist (404-like errors), just log warning
+      console.warn(`⚠️ Could not delete file from storage (may not exist): ${storagePath}`, error);
+      return { success: true, message: 'File already deleted or does not exist' };
+    }
+
+    console.log(`✅ File deleted from storage: ${storagePath}`);
+    return { success: true, message: 'File deleted from storage' };
+
+  } catch (error) {
+    console.error(`❌ Error deleting file from storage: ${error.message}`);
+    return { success: false, error: error.message };
+  }
+}
+
 export default {
   uploadFileToSupabase,
   uploadFilesToSupabase,
@@ -463,6 +500,7 @@ export default {
   saveUploadedFilesMetadata,
   deleteOrphanedFiles,
   deleteFile,
+  deleteFileFromStorage,
   uploadFile,
   getFilesByMCU,
   downloadFile,

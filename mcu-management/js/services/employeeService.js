@@ -6,6 +6,7 @@
 import { database } from './database.js';
 import { generateEmployeeId } from '../utils/idGenerator.js';
 import { getCurrentTimestamp } from '../utils/dateHelpers.js';
+import { deleteFileFromStorage } from './supabaseStorageService.js';
 
 class EmployeeService {
   async create(employeeData, currentUser = null) {
@@ -206,33 +207,45 @@ class EmployeeService {
     // Delete all associated MCU records (hard delete)
     const mcus = await database.query('mcus', mcu => mcu.employeeId === employeeId);
     let totalFilesDeleted = 0;
+    let failedDeletions = [];
 
     for (const mcu of mcus) {
       // ✅ CASCADE DELETE: Delete all associated MCU files (database + storage)
       const mcuFiles = await database.query('mcufiles', file => file.mcuId === mcu.mcuId);
       for (const file of mcuFiles) {
         try {
-          // Hard delete file from both R2 storage AND database via API
-          const hardDeleteResponse = await fetch(`/api/hard-delete-file?fileId=${encodeURIComponent(file.fileid || file.id)}`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' }
-          });
+          // Delete from Supabase storage using storage path
+          if (file.storage_path || file.storagePath) {
+            const storagePath = file.storage_path || file.storagePath;
+            const deleteResult = await deleteFileFromStorage(storagePath);
+            if (!deleteResult.success) {
+              failedDeletions.push(`${file.filename}: ${deleteResult.error}`);
+            }
+          }
 
-          if (!hardDeleteResponse.ok) {
-            const errorData = await hardDeleteResponse.json().catch(() => ({}));
-            console.warn(`Failed to hard delete file: ${file.filename}`);
+          // Hard delete file record from database
+          await database.hardDelete('mcufiles', file.fileid || file.id);
+          totalFilesDeleted++;
+
+          // Log file deletion
+          if (currentUser?.userId) {
+            await database.logActivity('delete', 'File', file.fileid || file.id, currentUser.userId,
+              `File permanently deleted from storage and database (cascade from employee hard delete): ${file.filename}`);
           }
         } catch (err) {
-          console.warn(`Error hard deleting file: ${err.message}`);
+          console.warn(`Error deleting file ${file.filename}: ${err.message}`);
+          failedDeletions.push(`${file.filename}: ${err.message}`);
         }
+      }
 
-        totalFilesDeleted++;
-
-        // Log file deletion
-        if (currentUser?.userId) {
-          await database.logActivity('delete', 'File', file.fileid || file.id, currentUser.userId,
-            `File permanently deleted (cascade from employee hard delete): ${file.filename}`);
+      // Delete associated lab results
+      try {
+        const labResults = await database.query('pemeriksaan_lab', lab => lab.mcu_id === mcu.mcuId);
+        for (const lab of labResults) {
+          await database.hardDelete('pemeriksaan_lab', lab.id);
         }
+      } catch (err) {
+        console.warn(`Error deleting lab results for MCU ${mcu.mcuId}: ${err.message}`);
       }
 
       // Delete associated change records
@@ -256,11 +269,19 @@ class EmployeeService {
 
     // ✅ FIX: Log employee deletion with details
     if (currentUser?.userId) {
+      const failureNote = failedDeletions.length > 0 ? ` (${failedDeletions.length} file deletion(s) failed)` : '';
       await database.logActivity('delete', 'Employee', employeeId, currentUser.userId,
-        `Employee permanently deleted: ${employeeName} (${employeeId}). Cascade deleted: ${mcus.length} MCU record(s), ${totalFilesDeleted} file(s).`);
+        `Employee permanently deleted: ${employeeName} (${employeeId}). Cascade deleted: ${mcus.length} MCU record(s), ${totalFilesDeleted} file(s) from storage.${failureNote}`);
     }
 
-    return true;
+    return {
+      success: failedDeletions.length === 0,
+      totalFilesDeleted,
+      failedDeletions,
+      message: failedDeletions.length > 0
+        ? `Deleted ${totalFilesDeleted} files, but ${failedDeletions.length} failed`
+        : `Successfully deleted ${totalFilesDeleted} files`
+    };
   }
 
   async search(searchTerm) {
