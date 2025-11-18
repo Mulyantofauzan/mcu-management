@@ -3,6 +3,17 @@
  * Main dashboard with KPIs and charts
  */
 
+// ✅ PERFORMANCE: Register service worker for offline support and caching
+// Must be done on app initialization for best results
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/mcu-management/sw.js', { scope: '/mcu-management/' })
+    .then((reg) => {
+    })
+    .catch((error) => {
+      console.warn('Service Worker registration failed:', error);
+    });
+}
+
 // ✅ CRITICAL: Load environment config BEFORE importing Supabase
 // This ensures window.ENV is set before supabase.js tries to use it
 import { initializeEnv, logEnvStatus } from '../config/envConfig.js';
