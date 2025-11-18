@@ -28,16 +28,40 @@ class EmployeeService {
 
     await database.add('employees', employee);
 
-    // Log activity with details
+    // Log activity with details - fetch department and job title names
     if (currentUser) {
-      // Note: At this point, we have the IDs stored.
-      // The actual department and job title names are in Supabase as separate fields.
-      // We'll log just the IDs and the system will show proper names from related tables.
+      let deptName = 'Not Set';
+      let jobTitle = 'Not Set';
+
+      // Fetch department name by ID
+      if (employee.departmentId) {
+        try {
+          const depts = await database.getAll('departments');
+          const dept = depts?.find(d => d.id === employee.departmentId);
+          deptName = dept?.name || employee.departmentId;
+        } catch (err) {
+          console.error('Error fetching department:', err);
+          deptName = employee.departmentId;
+        }
+      }
+
+      // Fetch job title name by ID
+      if (employee.jobTitleId) {
+        try {
+          const jobs = await database.getAll('jobTitles');
+          const job = jobs?.find(j => j.id === employee.jobTitleId);
+          jobTitle = job?.name || employee.jobTitleId;
+        } catch (err) {
+          console.error('Error fetching job title:', err);
+          jobTitle = employee.jobTitleId;
+        }
+      }
+
       const details = [
         `Created employee: ${employee.name}`,
         `Employee ID: ${employee.employeeId}`,
-        `Department ID: ${employee.departmentId || 'Not Set'}`,
-        `Job Title ID: ${employee.jobTitleId || 'Not Set'}`,
+        `Department: ${deptName}`,
+        `Job Title: ${jobTitle}`,
         `Employment Status: ${employee.employmentStatus}`,
         `Date of Birth: ${employee.birthDate}`,
         `Blood Type: ${employee.bloodType || 'Not Set'}`
