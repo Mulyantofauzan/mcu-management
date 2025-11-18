@@ -36,9 +36,6 @@ module.exports = async (req, res) => {
         error: 'Missing required parameter: mcuId'
       });
     }
-
-    console.log(`📂 Fetching files for MCU: ${mcuId}`);
-
     // Query mcufiles table for this MCU
     const { data, error } = await supabase
       .from('mcufiles')
@@ -48,7 +45,6 @@ module.exports = async (req, res) => {
       .order('uploadedat', { ascending: false });
 
     if (error) {
-      console.error('❌ Database query error:', error.message);
       return res.status(500).json({
         error: `Failed to fetch files: ${error.message}`
       });
@@ -64,8 +60,6 @@ module.exports = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Unhandled error:', error.message);
-    console.error('❌ Stack:', error.stack);
     return res.status(500).json({
       error: 'Internal server error'
     });

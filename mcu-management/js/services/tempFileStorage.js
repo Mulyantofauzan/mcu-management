@@ -52,8 +52,6 @@ class TempFileStorage {
         if (this.tempFiles[mcuId] && this.tempFiles[mcuId][index]) {
             const file = this.tempFiles[mcuId][index];
             this.tempFiles[mcuId].splice(index, 1);
-            console.log(`🗑️ File removed from temp storage: ${file.name}`);
-
             // Clean up empty entries
             if (this.tempFiles[mcuId].length === 0) {
                 delete this.tempFiles[mcuId];

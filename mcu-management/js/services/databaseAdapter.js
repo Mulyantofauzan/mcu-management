@@ -983,13 +983,11 @@ export const ActivityLog = {
                     .limit(limit);
 
                 if (error) {
-                    console.error('❌ Activity log fetch failed:', error.message);
                     return [];
                 }
 
                 return data ? data.map(transformActivityLog) : [];
             } catch (err) {
-                console.error('❌ Activity log fetch error:', err.message);
                 return [];
             }
         }
@@ -999,7 +997,6 @@ export const ActivityLog = {
             const result = await indexedDB.db.activityLog.orderBy('timestamp').reverse().limit(limit).toArray();
             return result || [];
         } catch (err) {
-            console.error('❌ Activity log IndexedDB fetch failed:', err.message);
             return [];
         }
     },
@@ -1046,7 +1043,6 @@ export const ActivityLog = {
                 const { data, error, count } = await query;
 
                 if (error) {
-                    console.error('❌ Activity log filtered fetch failed:', error.message);
                     return { data: [], total: 0, page, limit, totalPages: 0 };
                 }
 
@@ -1061,7 +1057,6 @@ export const ActivityLog = {
                     totalPages
                 };
             } catch (err) {
-                console.error('❌ Activity log getFiltered error:', err.message);
                 return { data: [], total: 0, page, limit, totalPages: 0 };
             }
         }
@@ -1100,7 +1095,6 @@ export const ActivityLog = {
 
             return { data, total, page, limit, totalPages };
         } catch (err) {
-            console.error('❌ Activity log IndexedDB getFiltered error:', err.message);
             return { data: [], total: 0, page, limit, totalPages: 0 };
         }
     },

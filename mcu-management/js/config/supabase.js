@@ -20,8 +20,6 @@ const SUPABASE_URL = ENV.SUPABASE_URL || window.ENV?.SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = ENV.SUPABASE_ANON_KEY || window.ENV?.SUPABASE_ANON_KEY || '';
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.warn('⚠️ Supabase credentials not found. Using IndexedDB fallback.');
-    console.warn('To use Supabase: Set SUPABASE_URL and SUPABASE_ANON_KEY in Netlify environment variables');
 }
 
 // Initialize Supabase client
@@ -42,40 +40,29 @@ async function initSupabase() {
             try {
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 useSupabase = true;
-                console.log('✅ Supabase client initialized successfully');
                 console.log('   Client available as: supabase object (imported)');
             } catch (error) {
-                console.error('❌ Failed to initialize Supabase:', error);
-                console.log('📦 Falling back to IndexedDB');
             }
         } else {
-            console.warn('⚠️ Supabase library failed to load from CDN');
-            console.log('   typeof window.supabase:', typeof window.supabase);
             if (typeof window.supabase !== 'undefined') {
                 console.log('   window.supabase keys:', Object.keys(window.supabase || {}).slice(0, 5));
             }
-            console.log('📦 Falling back to IndexedDB');
         }
     }
 }
 
 // Initialize Supabase immediately
-console.log('🔍 Supabase initialization starting...');
-console.log('   SUPABASE_URL:', SUPABASE_URL ? '✅ Set' : '❌ Not set');
 console.log('   SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? '✅ Set (hidden)' : '❌ Not set');
 
 // ✅ FIX: Create a promise that can be awaited by init() functions
 // This prevents race condition where app tries to use Supabase before it's initialized
 export const supabaseReady = initSupabase().then(() => {
-    console.log('✅ Supabase initialization complete');
     if (useSupabase && supabase) {
-        console.log('✅ Supabase client is ready and enabled');
     } else {
         console.log('📦 Using IndexedDB (Supabase not configured)');
     }
     return { ready: true, enabled: useSupabase };
 }).catch(err => {
-    console.error('❌ Supabase initialization failed:', err);
     return { ready: true, enabled: false };
 });
 

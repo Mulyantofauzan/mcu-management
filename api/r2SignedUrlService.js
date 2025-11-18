@@ -45,8 +45,6 @@ async function generateSignedUrl(filePath, expirySeconds = SIGNED_URL_EXPIRY_SEC
     if (!filePath) {
       throw new Error('File path is required');
     }
-
-    console.log(`🔑 Generating signed URL for: ${filePath}`);
     console.log(`   Expires in: ${expirySeconds} seconds (${(expirySeconds / 3600).toFixed(1)} hours)`);
 
     // Create GetObject command for the file
@@ -59,13 +57,8 @@ async function generateSignedUrl(filePath, expirySeconds = SIGNED_URL_EXPIRY_SEC
     const signedUrl = await getSignedUrl(s3Client, getObjectCommand, {
       expiresIn: expirySeconds
     });
-
-    console.log(`✅ Signed URL generated successfully`);
-    console.log(`   Expires in: ${expirySeconds}s`);
-
     return signedUrl;
   } catch (error) {
-    console.error('❌ Error generating signed URL:', error.message);
     throw error;
   }
 }
@@ -82,11 +75,6 @@ async function getAuthorizedSignedUrl(fileId, userId) {
     if (!fileId || !userId) {
       throw new Error('File ID and User ID are required');
     }
-
-    console.log(`🔐 Authorizing signed URL request`);
-    console.log(`   File ID: ${fileId}`);
-    console.log(`   User ID: ${userId}`);
-
     // Get file from database
     const { data: file, error: fileError } = await supabase
       .from('mcufiles')
@@ -97,9 +85,6 @@ async function getAuthorizedSignedUrl(fileId, userId) {
     if (fileError || !file) {
       throw new Error('File not found');
     }
-
-    console.log(`✅ File found: ${file.filename}`);
-
     // Get MCU details
     const { data: mcu, error: mcuError } = await supabase
       .from('mcu')
@@ -128,12 +113,8 @@ async function getAuthorizedSignedUrl(fileId, userId) {
 
     if (!isOwner) {
       // Could add admin check here
-      console.warn(`⚠️ Unauthorized access attempt by user ${userId} for file ${fileId}`);
       throw new Error('Unauthorized: You do not have access to this file');
     }
-
-    console.log(`✅ User authorized to access file`);
-
     // Generate signed URL
     const signedUrl = await generateSignedUrl(file.supabase_storage_path);
 
@@ -144,7 +125,6 @@ async function getAuthorizedSignedUrl(fileId, userId) {
       expiresIn: SIGNED_URL_EXPIRY_SECONDS
     };
   } catch (error) {
-    console.error('❌ Authorization error:', error.message);
     return {
       success: false,
       error: error.message
@@ -163,9 +143,6 @@ async function getAuthorizedMcuFiles(mcuId, userId) {
     if (!mcuId || !userId) {
       throw new Error('MCU ID and User ID are required');
     }
-
-    console.log(`📂 Getting authorized files for MCU: ${mcuId}`);
-
     // Get all files for MCU
     const { data: files, error: filesError } = await supabase
       .from('mcufiles')
@@ -177,7 +154,6 @@ async function getAuthorizedMcuFiles(mcuId, userId) {
     }
 
     if (!files || files.length === 0) {
-      console.log('ℹ️ No files found for this MCU');
       return {
         success: true,
         files: [],
@@ -216,7 +192,6 @@ async function getAuthorizedMcuFiles(mcuId, userId) {
             expiresIn: SIGNED_URL_EXPIRY_SECONDS
           };
         } catch (error) {
-          console.error(`Error generating URL for ${file.filename}:`, error.message);
           return {
             fileId: file.fileid,
             filename: file.filename,
@@ -232,7 +207,6 @@ async function getAuthorizedMcuFiles(mcuId, userId) {
       count: filesWithUrls.length
     };
   } catch (error) {
-    console.error('❌ Error getting MCU files:', error.message);
     return {
       success: false,
       error: error.message

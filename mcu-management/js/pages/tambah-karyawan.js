@@ -94,13 +94,11 @@ async function init() {
         try {
             await initSuperSearch();
         } catch (error) {
-            console.warn('Failed to initialize Super Search:', error);
         }
 
         // Show page content after initialization complete
         document.body.classList.add('initialized');
     } catch (error) {
-        console.error('Initialization error:', error);
         showToast('Error initializing page: ' + error.message, 'error');
         // Still show page even on error
         document.body.classList.add('initialized');
@@ -426,8 +424,6 @@ window.openAddMCUForEmployee = async function(employeeId) {
 
         // Generate MCU ID upfront for file uploads
         generatedMCUIdForAdd = generateMCUId();
-        console.log(`✅ Generated MCU ID for uploads: ${generatedMCUIdForAdd}`);
-
         // ✅ Populate doctor dropdown
         populateDoctorDropdown('mcu-doctor');
 
@@ -441,7 +437,6 @@ window.openAddMCUForEmployee = async function(employeeId) {
             userId: currentUser.userId || currentUser.user_id,
             onUploadComplete: () => {
                 // Refresh file list if needed
-                console.log('✅ File added to upload queue');
             },
             onError: (error) => {
                 showToast('Upload gagal: ' + error, 'error');
@@ -484,9 +479,7 @@ window.handleAddMCU = async function(event) {
         const doctorId = doctorValue ? parseInt(doctorValue, 10) : null;
 
         // Debug: Log doctor selection
-        console.log(`👨‍⚕️ Doctor selected: "${doctorValue}" → ID: ${doctorId}`);
         if (!doctorValue) {
-            console.warn(`⚠️ WARNING: No doctor selected! Doctor ID will be NULL.`);
             showToast('❌ Harap pilih dokter pemeriksa sebelum menyimpan', 'error');
             return; // Stop form submission if doctor is not selected
         }
@@ -533,7 +526,6 @@ window.handleAddMCU = async function(event) {
                     mcuData.mcuId,
                     currentUser.id,
                     (current, total, message) => {
-                        console.log(`⏳ Upload progress: ${current}/${total} - ${message}`);
                         updateUploadProgress(current, total);
                     }
                 );
@@ -574,7 +566,6 @@ window.handleAddMCU = async function(event) {
                             notes: result.notes
                         }, currentUser);
                     } catch (error) {
-                        console.error(`❌ Error saving lab result:`, error);
                         showToast(`Peringatan: Gagal menyimpan hasil lab: ${error.message}`, 'warning');
                     }
                 }
@@ -640,6 +631,5 @@ window.handleLogout = function() {
 supabaseReady.then(() => {
   init();
 }).catch(err => {
-  console.error('Failed to wait for Supabase:', err);
   init();
 });

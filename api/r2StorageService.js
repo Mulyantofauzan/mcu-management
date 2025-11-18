@@ -34,8 +34,6 @@ function validateR2Config() {
     console.error('❌ R2 Config Error - Missing:', missing.join(', '));
     throw new Error(`Missing R2 environment variables: ${missing.join(', ')}`);
   }
-
-  console.log('✅ R2 configuration loaded and validated');
   return true;
 }
 
@@ -50,12 +48,8 @@ let s3Client = null;
 let R2_CONFIG_VALID = false;
 
 try {
-  console.log('🔍 Validating R2 configuration...');
   validateR2Config();
-  console.log('✅ R2 configuration validated');
-
   // Initialize R2 S3 Client with proper error handling
-  console.log('🔧 Initializing S3Client...');
   s3Client = new S3Client({
     region: 'auto',
     endpoint: process.env.CLOUDFLARE_R2_ENDPOINT,
@@ -70,13 +64,8 @@ try {
       error: (msg) => console.error(`[R2 Error] ${msg}`)
     }
   });
-
-  console.log('✅ S3Client initialized successfully');
   R2_CONFIG_VALID = true;
 } catch (error) {
-  console.error('❌ R2 Client initialization failed:', error.message);
-  console.error('❌ Stack trace:', error.stack);
-  console.error('❌ This means files will FAIL to upload to R2!');
 }
 
 const STORAGE_BUCKET = process.env.CLOUDFLARE_R2_BUCKET_NAME;
@@ -102,13 +91,11 @@ async function getEmployeeName(employeeId) {
       .single();
 
     if (error || !data) {
-      console.warn(`⚠️ Could not find employee name for ID: ${employeeId}`);
       return null; // Return null instead of ID to indicate employee not found
     }
 
     return data.name || null;
   } catch (error) {
-    console.warn(`⚠️ Error fetching employee name: ${error.message}`);
     return null; // Return null on error
   }
 }
@@ -122,7 +109,6 @@ async function generateStoragePath(employeeId, mcuId, fileName) {
   // If employee name lookup fails, we don't want to concatenate identifiers
   const folderPath = `mcu_files/${employeeId}/${mcuId}`;
   const filePath = `${folderPath}/${fileName}`;
-  console.log(`📁 Generated storage path: ${filePath}`);
   return { folderPath, filePath };
 }
 
@@ -160,14 +146,10 @@ async function saveFileMetadata(fileName, employeeId, mcuId, fileSize, mimeType,
       .select();
 
     if (error) {
-      console.error('⚠️ Database insert failed:', error.message);
       return null;
     }
-
-    console.log(`✅ Metadata saved: ${fileName}`);
     return data?.[0] || null;
   } catch (error) {
-    console.error('⚠️ Metadata save error:', error.message);
     return null;
   }
 }
@@ -204,13 +186,7 @@ async function uploadFileToStorage(fileBuffer, fileName, employeeId, mcuId, mime
 
     // Generate file path with correct structure
     const { folderPath, filePath } = await generateStoragePath(employeeId, mcuId, fileName);
-
-    console.log(`📤 Uploading to Cloudflare R2: ${fileName}`);
     console.log(`   Size: ${(fileBuffer.length / 1024).toFixed(1)}KB`);
-    console.log(`   Path: ${filePath}`);
-    console.log(`   Bucket: ${STORAGE_BUCKET}`);
-    console.log(`   Endpoint: ${R2_ENDPOINT}`);
-
     // Upload to R2
     const uploadCommand = new PutObjectCommand({
       Bucket: STORAGE_BUCKET,
@@ -218,27 +194,14 @@ async function uploadFileToStorage(fileBuffer, fileName, employeeId, mcuId, mime
       Body: fileBuffer,
       ContentType: mimeType
     });
-
-    console.log(`🔄 Sending upload command to R2...`);
     const uploadResult = await s3Client.send(uploadCommand);
 
     // Validate upload response
     if (!uploadResult) {
       throw new Error('R2 upload returned no response');
     }
-
-    console.log(`✅ Upload command succeeded`);
-    console.log(`   ETag: ${uploadResult.$metadata?.httpHeaders?.etag || 'N/A'}`);
-    console.log(`   Status Code: ${uploadResult.$metadata?.httpStatusCode || 'N/A'}`);
-
     // Generate public URL
     const publicUrl = generatePublicUrl(filePath);
-
-    console.log(`✅ File uploaded successfully to R2`);
-    console.log(`   Folder: ${folderPath}`);
-    console.log(`   R2 path: ${filePath}`);
-    console.log(`   Public URL: ${publicUrl}`);
-
     // Save metadata
     const metadataResult = await saveFileMetadata(
       fileName,
@@ -251,7 +214,6 @@ async function uploadFileToStorage(fileBuffer, fileName, employeeId, mcuId, mime
     );
 
     if (!metadataResult) {
-      console.warn('⚠️ File uploaded but metadata save failed');
     }
 
     return {
@@ -263,8 +225,6 @@ async function uploadFileToStorage(fileBuffer, fileName, employeeId, mcuId, mime
       publicUrl: publicUrl
     };
   } catch (error) {
-    console.error('❌ Upload error:', error.message);
-    console.error('   Stack:', error.stack);
     throw error;
   }
 }

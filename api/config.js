@@ -36,13 +36,6 @@ module.exports = (req, res) => {
   };
 
   // Log what's being returned for debugging
-  console.log('Config endpoint returning:', {
-    hasSUPABASE_URL: !!config.SUPABASE_URL,
-    hasSUPABASE_ANON_KEY: !!config.SUPABASE_ANON_KEY,
-    hasGOOGLE_DRIVE_ROOT_FOLDER_ID: !!config.VITE_GOOGLE_DRIVE_ROOT_FOLDER_ID,
-    hasGOOGLE_DRIVE_UPLOAD_ENDPOINT: !!config.VITE_GOOGLE_DRIVE_UPLOAD_ENDPOINT
-  });
-
   // Debug: Log all env vars that start with VITE_
   console.log('Available env vars:', Object.keys(process.env).filter(k => k.startsWith('VITE_')));
 

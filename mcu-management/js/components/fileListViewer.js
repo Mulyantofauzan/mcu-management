@@ -19,7 +19,6 @@ export class FileListViewer {
     constructor(containerId, options = {}) {
         this.container = document.getElementById(containerId);
         if (!this.container) {
-            console.warn(`⚠️ Container #${containerId} not found`);
             return;
         }
 
@@ -64,7 +63,6 @@ export class FileListViewer {
             }
             console.log(`📂 Loaded ${this.files.length} file(s) for MCU`);
         } catch (error) {
-            console.error('❌ FileListViewer: Error loading files:', error.message);
             this.files = [];
         }
     }
@@ -225,12 +223,9 @@ export class FileListViewer {
             let downloadUrl = file.google_drive_link || file.supabase_storage_path || file.publicUrl;
 
             if (!downloadUrl) {
-                console.error('❌ No download URL available for file:', file);
                 showToast('File download link not available', 'error');
                 return;
             }
-
-            console.log(`📥 Downloading file: ${file.filename}`);
             console.log(`   URL: ${downloadUrl.substring(0, 50)}...`);
 
             // For R2 public URLs (https://pub-*.r2.dev/...), open directly
@@ -239,7 +234,6 @@ export class FileListViewer {
                 showToast(`File dibuka: ${file.filename}`, 'success');
             } else {
                 // For internal paths, call download API
-                console.log('📂 Using download API for internal path');
                 const { downloadFile } = await import('../services/supabaseStorageService.js');
                 const result = await downloadFile(fileId, file.filename, 'system');
                 if (result.success) {
@@ -249,7 +243,6 @@ export class FileListViewer {
                 }
             }
         } catch (error) {
-            console.error('❌ Download error:', error);
             showToast('Error: ' + error.message, 'error');
         }
     }

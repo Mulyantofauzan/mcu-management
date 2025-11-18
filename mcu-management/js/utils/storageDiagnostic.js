@@ -12,7 +12,6 @@ export async function testSupabaseConnection() {
     console.group('🔍 Test 1: Supabase Connection');
 
     if (!window._supabaseClient) {
-        console.error('❌ Supabase client not available. Make sure app is loaded.');
         console.groupEnd();
         return false;
     }
@@ -24,23 +23,17 @@ export async function testSupabaseConnection() {
         const { data: { user }, error: authError } = await supabase.auth.getUser();
 
         if (authError) {
-            console.error('❌ Auth error:', authError);
             console.groupEnd();
             return false;
         }
 
         if (!user) {
-            console.error('❌ Not authenticated. Please log in first.');
             console.groupEnd();
             return false;
         }
-
-        console.log('✅ Authenticated as:', user.email);
-        console.log('   User ID:', user.id);
         console.groupEnd();
         return true;
     } catch (error) {
-        console.error('❌ Error checking connection:', error);
         console.groupEnd();
         return false;
     }
@@ -53,7 +46,6 @@ export async function testBucketAccess() {
     console.group('🔍 Test 2: Bucket Access');
 
     if (!window._supabaseClient) {
-        console.error('❌ Supabase client not available.');
         console.groupEnd();
         return false;
     }
@@ -66,7 +58,6 @@ export async function testBucketAccess() {
         const { data: buckets, error: listError } = await supabase.storage.listBuckets();
 
         if (listError) {
-            console.error('❌ Cannot list buckets:', listError);
             console.groupEnd();
             return false;
         }
@@ -74,23 +65,13 @@ export async function testBucketAccess() {
         const bucket = buckets.find(b => b.name === bucketName);
 
         if (!bucket) {
-            console.error(`❌ Bucket '${bucketName}' not found`);
             console.log('   Available buckets:', buckets.map(b => b.name));
             console.groupEnd();
             return false;
         }
-
-        console.log(`✅ Bucket '${bucketName}' found`);
-        console.log('   Bucket details:', {
-            id: bucket.id,
-            name: bucket.name,
-            public: bucket.public,
-                created: bucket.created_at
-        });
         console.groupEnd();
         return true;
     } catch (error) {
-        console.error('❌ Error checking bucket:', error);
         console.groupEnd();
         return false;
     }
@@ -101,12 +82,6 @@ export async function testBucketAccess() {
  */
 export async function checkRLSPolicies() {
     console.group('🔍 Test 3: RLS Policies');
-
-    console.warn('⚠️ RLS policies can only be checked via Supabase Dashboard or SQL Editor');
-    console.log('To check RLS policies:');
-    console.log('1. Go to Supabase Dashboard');
-    console.log('2. Storage → mcu-documents → Policies');
-    console.log('3. Screenshot the policies and note their USING/WITH CHECK clauses');
     console.groupEnd();
 }
 
@@ -117,7 +92,6 @@ export async function testUploadSimple() {
     console.group('🔍 Test 4: Simple Test Upload');
 
     if (!window._supabaseClient) {
-        console.error('❌ Supabase client not available.');
         console.groupEnd();
         return false;
     }
@@ -129,48 +103,25 @@ export async function testUploadSimple() {
     const testFile = new File([testContent], testFileName);
 
     try {
-        console.log(`📤 Attempting to upload: ${testFileName}`);
-
         const { data, error } = await supabase.storage
             .from(bucketName)
             .upload(testFileName, testFile);
 
         if (error) {
-            console.error('❌ Upload failed');
-            console.error('   Message:', error.message);
-            console.error('   Status:', error.status);
-            console.error('   Full error:', error);
-
             // Provide diagnostic hints
             if (error.message.includes('violates row-level security')) {
-                console.log('\n💡 DIAGNOSIS: RLS Policy Issue');
-                console.log('   The bucket has RLS policies blocking uploads');
-                console.log('   Next steps: See RLS-DIAGNOSIS-AND-FIX.md');
             } else if (error.message.includes('mime type')) {
-                console.log('\n💡 DIAGNOSIS: MIME Type Restriction');
-                console.log('   The bucket restricts file types');
-                console.log('   Next steps: Check bucket settings in Supabase Dashboard');
             } else if (error.message.includes('does not exist')) {
-                console.log('\n💡 DIAGNOSIS: Bucket Not Found');
-                console.log('   The bucket does not exist or is inaccessible');
             }
 
             console.groupEnd();
             return false;
         }
-
-        console.log('✅ Test upload successful');
-        console.log('   Path:', data.path);
-        console.log('   ID:', data.id);
-
         // Clean up test file
         await supabase.storage.from(bucketName).remove([testFileName]);
-        console.log('✅ Test file cleaned up');
-
         console.groupEnd();
         return true;
     } catch (error) {
-        console.error('❌ Unexpected error:', error);
         console.groupEnd();
         return false;
     }
@@ -183,7 +134,6 @@ export async function testUploadPDF() {
     console.group('🔍 Test 5: PDF Upload Test');
 
     if (!window._supabaseClient) {
-        console.error('❌ Supabase client not available.');
         console.groupEnd();
         return false;
     }
@@ -207,24 +157,14 @@ export async function testUploadPDF() {
             .upload(testFileName, testFile);
 
         if (error) {
-            console.error('❌ PDF upload failed');
-            console.error('   Message:', error.message);
-            console.error('   Status:', error.status);
             console.groupEnd();
             return false;
         }
-
-        console.log('✅ PDF upload successful');
-        console.log('   Path:', data.path);
-
         // Clean up test file
         await supabase.storage.from(bucketName).remove([testFileName]);
-        console.log('✅ Test file cleaned up');
-
         console.groupEnd();
         return true;
     } catch (error) {
-        console.error('❌ Unexpected error:', error);
         console.groupEnd();
         return false;
     }
@@ -234,29 +174,13 @@ export async function testUploadPDF() {
  * Run all diagnostics
  */
 export async function runAllDiagnostics() {
-    console.log('🔍 Running all diagnostic tests...\n');
-
     const test1 = await testSupabaseConnection();
-    console.log();
-
     const test2 = test1 ? await testBucketAccess() : false;
-    console.log();
-
     await checkRLSPolicies();
-    console.log();
-
     const test4 = test2 ? await testUploadSimple() : false;
-    console.log();
-
     const test5 = test2 ? await testUploadPDF() : false;
-    console.log();
-
     // Summary
     console.group('📊 DIAGNOSTIC SUMMARY');
-    console.log('✅ Supabase Connection:', test1 ? 'OK' : 'FAILED');
-    console.log('✅ Bucket Access:', test2 ? 'OK' : 'FAILED');
-    console.log('✅ Text File Upload:', test4 ? 'OK' : 'FAILED');
-    console.log('✅ PDF Upload:', test5 ? 'OK' : 'FAILED');
     console.groupEnd();
 
     return {
@@ -280,8 +204,6 @@ if (typeof window !== 'undefined') {
         testUploadPDF,
         runAllDiagnostics
     };
-
-    console.log('✅ Storage diagnostic tools available. Run:');
     console.log('   window.storageDiagnostic.runAllDiagnostics()  // Run all tests');
     console.log('   window.storageDiagnostic.testSupabaseConnection()  // Test auth only');
     console.log('   window.storageDiagnostic.testBucketAccess()  // Test bucket access');

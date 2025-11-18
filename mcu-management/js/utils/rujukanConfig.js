@@ -105,7 +105,6 @@ export function updateRujukanConfig(newConfig) {
     }
   });
 
-
 }
 
 /**

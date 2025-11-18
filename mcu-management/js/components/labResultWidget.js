@@ -21,7 +21,6 @@ class LabResultWidget {
             this.labItems = await labService.getAllLabItems();
             return true;
         } catch (error) {
-            console.error('Error initializing LabResultWidget:', error);
             return false;
         }
     }
@@ -31,7 +30,6 @@ class LabResultWidget {
      */
     addLabResultForm(resultData = null) {
         if (!this.container) {
-            console.error('Container not found:', this.containerId);
             return;
         }
 
@@ -261,7 +259,6 @@ class LabResultWidget {
                 });
             });
         } catch (error) {
-            console.error('Error loading existing results:', error);
         }
     }
 }

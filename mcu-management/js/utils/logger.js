@@ -36,7 +36,6 @@ export const logger = {
      */
     debug: (message, data = null) => {
         if (currentLogLevel <= LogLevel.DEBUG) {
-            console.log(`[DEBUG] ${message}`, data || '');
         }
     },
 
@@ -54,7 +53,6 @@ export const logger = {
      */
     warn: (message, data = null) => {
         if (currentLogLevel <= LogLevel.WARN) {
-            console.warn(`[WARN] ${message}`, data || '');
         }
     },
 
@@ -64,9 +62,7 @@ export const logger = {
     error: (message, error = null) => {
         if (currentLogLevel <= LogLevel.ERROR) {
             if (error instanceof Error) {
-                console.error(`[ERROR] ${message}`, error.message, error.stack);
             } else {
-                console.error(`[ERROR] ${message}`, error || '');
             }
         }
     },
@@ -78,7 +74,6 @@ export const logger = {
         if (currentLogLevel <= LogLevel.DEBUG) {
             const statusColor = status >= 400 ? '❌' : '✅';
             const timing = duration ? ` (${duration}ms)` : '';
-            console.log(`[API] ${statusColor} ${method} ${url}${timing}`);
         }
     },
 
@@ -88,7 +83,6 @@ export const logger = {
     database: (operation, table, count = null) => {
         if (currentLogLevel <= LogLevel.DEBUG) {
             const countInfo = count !== null ? ` - ${count} row(s)` : '';
-            console.log(`[DB] ${operation} ${table}${countInfo}`);
         }
     },
 
@@ -97,7 +91,6 @@ export const logger = {
      */
     action: (action, details = null) => {
         if (currentLogLevel <= LogLevel.INFO) {
-            console.log(`[ACTION] ${action}`, details || '');
         }
     },
 
@@ -106,7 +99,6 @@ export const logger = {
      */
     performance: (metric, duration) => {
         if (currentLogLevel <= LogLevel.DEBUG) {
-            console.log(`[PERF] ${metric}: ${duration}ms`);
         }
     },
 

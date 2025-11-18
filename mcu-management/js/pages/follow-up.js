@@ -145,7 +145,6 @@ async function init() {
     try {
       await initSuperSearch();
     } catch (error) {
-      console.warn('Failed to initialize Super Search:', error);
     }
 
     // Show page content after initialization complete
@@ -489,7 +488,6 @@ window.handleFollowUpSubmit = async function(event) {
           currentUser.userId || currentUser.user_id,
           // Progress callback
           (current, total, message) => {
-            console.log(`⏳ Upload progress: ${current}/${total} - ${message}`);
             updateUploadProgress(current, total);
           }
         );
@@ -634,7 +632,6 @@ window.openMCUUpdateModal = async function(mcuId) {
     try {
       await labResultWidgetUpdate.loadExistingResults(mcuId);
     } catch (error) {
-      console.error('Error loading lab results:', error);
       labResultWidgetUpdate.clear();
     }
 
@@ -776,7 +773,6 @@ window.handleMCUUpdate = async function(event) {
         }
       }
     } catch (err) {
-      console.warn('Error comparing lab results:', err);
     }
 
     // Merge lab changes with other changes
@@ -790,9 +786,24 @@ window.handleMCUUpdate = async function(event) {
       return;
     }
 
-    // Update MCU record (this will also create MCUChange entries)
+    // Update MCU record (this will also create MCUChange entries for MCU fields)
     if (Object.keys(updateData).length > 0) {
       await mcuService.updateFollowUp(mcuId, updateData, currentUser);
+    }
+
+    // ✅ IMPORTANT: Save lab changes to mcuChanges table so they appear in change history
+    if (labChanges.length > 0) {
+      const { database } = await import('../services/database.js');
+      for (const labChange of labChanges) {
+        await database.add('mcuChanges', {
+          mcuId: mcuId,
+          fieldName: labChange.itemName,
+          oldValue: labChange.oldValue,
+          newValue: labChange.newValue,
+          changedBy: currentUser?.userId || currentUser?.id,
+          changedAt: new Date().toISOString()
+        });
+      }
     }
 
     // Save/update lab results separately
@@ -809,7 +820,6 @@ window.handleMCUUpdate = async function(event) {
           }, currentUser);
         }
       } catch (error) {
-        console.error('Error saving lab results:', error);
         showToast(`Peringatan: Gagal menyimpan hasil lab: ${error.message}`, 'warning');
       }
     }

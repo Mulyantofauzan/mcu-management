@@ -24,7 +24,6 @@ import storageDiagnostic from '../utils/storageDiagnostic.js';  // ✅ Diagnosti
 initializeEnv().then(() => {
   logEnvStatus();
 }).catch(err => {
-  console.error('Failed to initialize environment:', err);
 });
 
 // State
@@ -68,7 +67,6 @@ async function init() {
     try {
       await initSuperSearch();
     } catch (error) {
-      console.warn('Failed to initialize Super Search:', error);
     }
 
     // Set default date range (empty = show all)

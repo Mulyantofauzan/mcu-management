@@ -85,7 +85,6 @@ async function init() {
         try {
             await initSuperSearch();
         } catch (error) {
-            console.warn('Failed to initialize Super Search:', error);
         }
 
         // ✅ NEW: Add event delegation for dynamically generated Detail buttons
@@ -94,7 +93,6 @@ async function init() {
         // Show page content after initialization complete
         document.body.classList.add('initialized');
     } catch (error) {
-        console.error('Initialization error:', error);
         showToast('Error initializing page: ' + error.message, 'error');
         // Still show page even on error
         document.body.classList.add('initialized');
@@ -143,7 +141,6 @@ function setupDetailButtonDelegation() {
             if (onClickAttr && onClickAttr.includes('viewMCUDetail')) {
                 // Let the onclick handler take care of it
                 // This just ensures the button is clickable
-                console.log('Detail button clicked via delegation');
             }
         }
     }, true); // Use capture phase to ensure we get clicks even if prevented
@@ -885,7 +882,6 @@ window.handleAddMCU = async function(event) {
                     currentUser.id,
                     // Progress callback
                     (current, total, message) => {
-                        console.log(`⏳ Upload progress: ${current}/${total} - ${message}`);
                         updateUploadProgress(current, total);
                     }
                 );
@@ -923,7 +919,6 @@ window.handleAddMCU = async function(event) {
 
     } catch (error) {
         showToast('Gagal menambah MCU: ' + error.message, 'error');
-        console.error('Error in handleAddMCU:', error);
         // Note: Temporary files are kept in memory and will be cleared when user reopens the modal or reloads page
     }
 };
@@ -1018,7 +1013,6 @@ window.viewMCUDetail = async function(mcuId) {
             const mcuDoctorInt = parseInt(mcu.doctor);
 
             console.log(`🔍 Looking for doctor with ID: ${doctorId} (numeric: ${mcuDoctorInt})`);
-            console.log(`📋 Available doctors: ${doctors.length}`);
             if (doctors.length > 0) {
                 console.log(`🏥 Sample doctor structure:`, JSON.stringify(doctors[0], null, 2));
             }
@@ -1041,10 +1035,8 @@ window.viewMCUDetail = async function(mcuId) {
             console.log(`✅ Doctor FOUND and displayed: ${doctor.name} (ID: ${mcu.doctor})`);
         } else if (mcu.doctor) {
             // Doctor ID is set but not found in list - show ID as fallback
-            console.error(`❌ Doctor ID ${mcu.doctor} NOT found in doctors list. Doctors available: ${doctors.length}`);
             if (doctors.length > 0) {
                 const doctorIds = doctors.map(d => `${d.name}(id:${d.id},docId:${d.doctorId})`).join(', ');
-                console.error(`📋 Available doctors: ${doctorIds}`);
             }
             document.getElementById('mcu-detail-doctor').textContent = `ID: ${mcu.doctor}`;
         } else {
@@ -1170,7 +1162,6 @@ window.viewMCUDetail = async function(mcuId) {
                 labResultsBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500 py-3">Tidak ada hasil lab</td></tr>';
             }
         } catch (error) {
-            console.error('Error loading lab results:', error);
             document.getElementById('mcu-detail-lab-results-body').innerHTML = '<tr><td colspan="5" class="text-center text-red-500 py-3">Gagal memuat hasil lab</td></tr>';
         }
 
@@ -1339,14 +1330,11 @@ window.editMCU = async function() {
                     document.getElementById('edit-final-result-section').classList.add('hidden');
                 }
 
-
             } catch (error) {
-                console.error('Error filling form fields:', error);
             }
         }, 50);
 
     } catch (error) {
-        console.error('Edit MCU error:', error);
         showToast('Gagal membuka form edit: ' + error.message, 'error');
     }
 };
@@ -1369,9 +1357,7 @@ window.handleEditMCU = async function(event) {
         const doctorId = doctorValue ? parseInt(doctorValue, 10) : null;
 
         // Debug: Log doctor selection
-        console.log(`👨‍⚕️ Doctor selected: "${doctorValue}" → ID: ${doctorId}`);
         if (!doctorValue) {
-            console.warn(`⚠️ WARNING: No doctor selected! Doctor ID will be NULL.`);
             showToast('❌ Harap pilih dokter pemeriksa sebelum menyimpan', 'error');
             return; // Stop form submission if doctor is not selected
         }
@@ -1425,7 +1411,6 @@ window.handleEditMCU = async function(event) {
                     currentUser.id,
                     // Progress callback
                     (current, total, message) => {
-                        console.log(`⏳ Upload progress: ${current}/${total} - ${message}`);
                         updateUploadProgress(current, total);
                     }
                 );
@@ -1474,7 +1459,6 @@ window.handleEditMCU = async function(event) {
                             notes: result.notes
                         }, currentUser);
                     } catch (error) {
-                        console.error('Error saving lab result:', error);
                         showToast(`Peringatan: Gagal menyimpan hasil lab: ${error.message}`, 'warning');
                     }
                 }
@@ -1525,6 +1509,5 @@ window.handleLogout = function() {
 supabaseReady.then(() => {
   init();
 }).catch(err => {
-  console.error('Failed to wait for Supabase:', err);
   init();
 });

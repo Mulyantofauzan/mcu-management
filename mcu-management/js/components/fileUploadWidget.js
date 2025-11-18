@@ -18,7 +18,6 @@ export class FileUploadWidget {
     constructor(containerId, options = {}) {
         this.container = document.getElementById(containerId);
         if (!this.container) {
-            console.warn(`⚠️ Container #${containerId} not found`);
             return;
         }
 
@@ -370,7 +369,6 @@ export class FileUploadWidget {
                 this.renderFilesList();
             }
         } catch (error) {
-            console.error('Error loading files:', error);
         }
     }
 
@@ -451,8 +449,6 @@ export class FileUploadWidget {
 
         // If file is marked as temporary (not yet in database), just remove from queue
         if (fileToDelete.isTemp) {
-            console.log(`🗑️  Removing temporary file from queue: ${fileToDelete.filename}`);
-
             // Remove from tempFileStorage by finding the file with matching name
             const tempFiles = tempFileStorage.getFiles(this.options.mcuId);
             const fileIndex = tempFiles.findIndex(f => f.name === fileToDelete.filename);

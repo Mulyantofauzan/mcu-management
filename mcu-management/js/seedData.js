@@ -68,7 +68,6 @@ function generateRandomBMI() {
 export async function seedDatabase() {
   try {
 
-
     // Clear existing data (only for IndexedDB, not Supabase)
     // For Supabase, we skip clearing to preserve production data
     try {
@@ -80,14 +79,12 @@ export async function seedDatabase() {
 
     // 1. Create Master Data
 
-
     const departments = [];
     const departmentNames = ['IT', 'HR', 'Finance', 'Operations', 'Marketing'];
     for (const name of departmentNames) {
       const dept = await masterDataService.createDepartment({ name });
       departments.push(dept);
     }
-
 
     const jobTitles = [];
     const jobTitleNames = ['Manager', 'Staff', 'Supervisor', 'Officer', 'Analyst', 'Specialist', 'Coordinator'];
@@ -96,7 +93,6 @@ export async function seedDatabase() {
       jobTitles.push(job);
     }
 
-
     const vendors = [];
     const vendorNames = ['PT Vendor A', 'PT Vendor B', 'CV Outsource C'];
     for (const name of vendorNames) {
@@ -104,9 +100,7 @@ export async function seedDatabase() {
       vendors.push(vendor);
     }
 
-
     // 2. Create Users
-
 
     await authService.createUser({
       username: 'admin',
@@ -125,7 +119,6 @@ export async function seedDatabase() {
     console.log('Created 2 users (admin/admin123, petugas/petugas123)');
 
     // 3. Create Employees
-
 
     const employees = [];
     for (let i = 0; i < 50; i++) {
@@ -147,9 +140,7 @@ export async function seedDatabase() {
       employees.push(employee);
     }
 
-
     // 4. Create MCU Records
-
 
     const dummyUser = { userId: 'SYSTEM', username: 'system' };
     let mcuCount = 0;
@@ -214,26 +205,15 @@ export async function seedDatabase() {
       }
     }
 
-
-
     // 5. Create some soft-deleted records for testing restore
-
 
     const employeesToDelete = employees.slice(0, 3);
     for (const emp of employeesToDelete) {
       await employeeService.softDelete(emp.employeeId);
     }
 
-
-
-
-
-
-
-
     console.log(`- Users: 2 (admin, petugas)`);
     console.log(`- Employees: ${employees.length} (${employeesToDelete.length} soft-deleted)`);
-
 
     return {
       success: true,
@@ -274,7 +254,6 @@ export async function checkAndSeedIfEmpty() {
   }
 
   // Development mode: Auto-seed if database is empty
-
 
   try {
     // Check if users exist (more important than employees for login)

@@ -38,8 +38,6 @@ class EmployeeService {
       if (employee.departmentId) {
         try {
           const depts = await database.getAll('departments');
-          console.log('📋 Departments available:', depts?.length, 'Looking for ID:', employee.departmentId);
-
           if (depts && Array.isArray(depts)) {
             // Try to find by exact ID match (compare as strings)
             const dept = depts.find(d => {
@@ -51,10 +49,8 @@ class EmployeeService {
             });
 
             deptName = dept?.name || employee.departmentId;
-            console.log('Department result:', deptName);
           }
         } catch (err) {
-          console.error('❌ Error fetching department:', err);
           deptName = employee.departmentId;
         }
       }
@@ -63,8 +59,6 @@ class EmployeeService {
       if (employee.jobTitleId) {
         try {
           const jobs = await database.getAll('jobTitles');
-          console.log('📋 Job titles available:', jobs?.length, 'Looking for ID:', employee.jobTitleId);
-
           if (jobs && Array.isArray(jobs)) {
             // Try to find by exact ID match (compare as strings)
             const job = jobs.find(j => {
@@ -76,10 +70,8 @@ class EmployeeService {
             });
 
             jobTitle = job?.name || employee.jobTitleId;
-            console.log('Job title result:', jobTitle);
           }
         } catch (err) {
-          console.error('❌ Error fetching job title:', err);
           jobTitle = employee.jobTitleId;
         }
       }
@@ -93,8 +85,6 @@ class EmployeeService {
         `Date of Birth: ${employee.birthDate}`,
         `Blood Type: ${employee.bloodType || 'Not Set'}`
       ].join('. ');
-
-      console.log('📝 Activity log:', details);
       await database.logActivity('create', 'Employee', employee.employeeId, currentUser.userId, details);
     }
 
@@ -215,32 +205,26 @@ class EmployeeService {
       const mcuFiles = await database.query('mcufiles', file =>
         (file.mcu_id === mcu.mcuId) || (file.mcuId === mcu.mcuId)
       );
-
-      console.log(`🗑️ Found ${mcuFiles?.length || 0} files to delete for MCU ${mcu.mcuId}`);
-
       if (mcuFiles && mcuFiles.length > 0) {
         for (const file of mcuFiles) {
           try {
-            // Delete from Supabase storage using storage path
-            if (file.storage_path || file.storagePath) {
-              const storagePath = file.storage_path || file.storagePath;
-              console.log(`🗑️ Deleting file from storage: ${storagePath}`);
+            const fileId = file.fileid || file.id;
+
+            // Get storage path - check multiple field name variations (supabase_storage_path, storage_path, storagePath)
+            const storagePath = file.supabase_storage_path || file.storage_path || file.storagePath;
+            if (storagePath) {
+              // Call backend API to delete from R2 storage and database
               const deleteResult = await deleteFileFromStorage(storagePath);
               if (!deleteResult.success) {
                 failedDeletions.push(`${file.filename}: ${deleteResult.error}`);
-              } else {
-                console.log(`✅ File deleted from storage: ${storagePath}`);
               }
             } else {
-              console.warn(`⚠️ No storage path found for file ${file.filename}. File ID: ${file.fileid || file.id}`);
+              // If no storage path, still delete from database record
+              await database.MCUFiles.hardDelete(fileId);
             }
 
-            // Hard delete file record from database using MCUFiles adapter
-            const fileId = file.fileid || file.id;
-            console.log(`🗑️ Deleting file record from database: ${fileId}`);
-            await database.MCUFiles.hardDelete(fileId);
+            // Note: deleteFileFromStorage handles both R2 deletion AND database deletion via backend API
             totalFilesDeleted++;
-            console.log(`✅ File record deleted from database: ${fileId}`);
 
             // Log file deletion
             if (currentUser?.userId) {
@@ -248,7 +232,6 @@ class EmployeeService {
                 `File permanently deleted from storage and database (cascade from employee hard delete): ${file.filename}`);
             }
           } catch (err) {
-            console.warn(`Error deleting file ${file.filename}: ${err.message}`);
             failedDeletions.push(`${file.filename}: ${err.message}`);
           }
         }
@@ -259,15 +242,12 @@ class EmployeeService {
         const labResults = await database.query('pemeriksaan_lab', lab =>
           (lab.mcu_id === mcu.mcuId) || (lab.mcuId === mcu.mcuId)
         );
-        console.log(`🗑️ Found ${labResults?.length || 0} lab results to delete for MCU ${mcu.mcuId}`);
         if (labResults && labResults.length > 0) {
           for (const lab of labResults) {
             await database.hardDelete('pemeriksaan_lab', lab.id);
           }
-          console.log(`✅ Deleted ${labResults.length} lab results`);
         }
       } catch (err) {
-        console.warn(`Error deleting lab results for MCU ${mcu.mcuId}: ${err.message}`);
       }
 
       // Delete associated change records

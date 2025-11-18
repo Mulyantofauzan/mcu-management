@@ -203,7 +203,6 @@ class DatabaseService {
             return result;
         } catch (err) {
             // Activity log is non-critical - don't block main operations
-            console.warn('[Activity Log Error]', err.message);
             return null;
         }
     }

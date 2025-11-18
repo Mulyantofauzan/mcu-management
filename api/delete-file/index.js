@@ -37,9 +37,6 @@ module.exports = async (req, res) => {
         error: 'Missing required parameter: fileId'
       });
     }
-
-    console.log(`🗑️  Deleting file: ${fileId}`);
-
     // Soft delete - set deletedat timestamp
     const { data, error } = await supabase
       .from('mcufiles')
@@ -48,29 +45,22 @@ module.exports = async (req, res) => {
       .select();
 
     if (error) {
-      console.error('❌ Database error:', error.message);
       return res.status(500).json({
         error: `Failed to delete file: ${error.message}`
       });
     }
 
     if (!data || data.length === 0) {
-      console.warn(`⚠️  File not found: ${fileId}`);
       return res.status(404).json({
         error: 'File not found'
       });
     }
-
-    console.log(`✅ File deleted: ${fileId}`);
-
     return res.status(200).json({
       success: true,
       message: 'File deleted successfully'
     });
 
   } catch (error) {
-    console.error('❌ Unhandled error:', error.message);
-    console.error('❌ Stack:', error.stack);
     return res.status(500).json({
       error: 'Internal server error'
     });

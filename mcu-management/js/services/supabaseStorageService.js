@@ -60,9 +60,6 @@ export async function uploadFileToSupabase(file, employeeId, mcuId, onProgress =
     formData.append('file', file);
     formData.append('employeeId', employeeId);
     formData.append('mcuId', mcuId);
-
-    console.log(`📤 Uploading to Cloudflare R2: ${file.name}`);
-
     // Upload dengan progress tracking
     const xhr = new XMLHttpRequest();
 
@@ -81,7 +78,6 @@ export async function uploadFileToSupabase(file, employeeId, mcuId, onProgress =
         if (xhr.status === 200) {
           try {
             const response = JSON.parse(xhr.responseText);
-            console.log(`✅ File uploaded successfully:`, response);
             resolve({
               success: true,
               fileName: file.name,
@@ -114,13 +110,10 @@ export async function uploadFileToSupabase(file, employeeId, mcuId, onProgress =
 
       // Send request to API (using relative URL to work on any deployment)
       const apiUrl = '/api/compress-upload';
-      console.log(`🔗 Uploading to: ${apiUrl}`);
-
       xhr.open('POST', apiUrl);
       xhr.send(formData);
     });
   } catch (error) {
-    console.error('❌ Upload error:', error.message);
     throw error;
   }
 }
@@ -149,13 +142,8 @@ export async function uploadFilesToSupabase(
   }
 
   console.log(`📦 Uploading ${files.length} file(s) to Cloudflare R2 (total: ${(totalSize / 1024 / 1024).toFixed(1)}MB)`);
-  console.log(`   Employee ID: ${employeeId}`);
-  console.log(`   MCU ID: ${mcuId}`);
-
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
-    console.log(`\n📄 File ${i + 1}/${files.length}: ${file.name}`);
-
     try {
       const result = await uploadFileToSupabase(
         file,
@@ -178,7 +166,6 @@ export async function uploadFilesToSupabase(
         `✅ Uploaded: ${(result.originalSize / 1024).toFixed(1)}KB`
       );
     } catch (error) {
-      console.error(`❌ Failed to upload ${file.name}:`, error.message);
       results.push({
         success: false,
         fileName: file.name,
@@ -188,8 +175,6 @@ export async function uploadFilesToSupabase(
   }
 
   const successCount = results.filter((r) => r.success).length;
-  console.log(`\n✅ Upload complete: ${successCount}/${files.length} files successful`);
-
   return results;
 }
 
@@ -238,7 +223,6 @@ export async function uploadBatchFiles(files, employeeId, mcuId, userId, onProgr
       results
     };
   } catch (error) {
-    console.error('Batch upload error:', error);
     return {
       success: false,
       uploadedCount: 0,
@@ -276,9 +260,6 @@ export async function deleteFile(fileId) {
     if (!fileId) {
       throw new Error('Missing fileId');
     }
-
-    console.log(`🗑️  Deleting file: ${fileId}`);
-
     const response = await fetch(`/api/delete-file?fileId=${encodeURIComponent(fileId)}`, {
       method: 'DELETE',
       headers: {
@@ -292,11 +273,9 @@ export async function deleteFile(fileId) {
     }
 
     const result = await response.json();
-    console.log(`✅ File deleted: ${fileId}`);
     return { success: true, data: result };
 
   } catch (error) {
-    console.error(`❌ Delete file error: ${error.message}`);
     return {
       success: false,
       error: error.message
@@ -318,24 +297,19 @@ export async function uploadFile(file, employeeId, mcuId, onProgress) {
 export async function getFilesByMCU(mcuId) {
   try {
     if (!mcuId) {
-      console.warn('⚠️ getFilesByMCU: Missing mcuId');
       return { success: true, files: [] };
     }
 
     const apiUrl = '/api/get-mcu-files';
-    console.log(`📂 Fetching files for MCU: ${mcuId}`);
-
     const response = await fetch(`${apiUrl}?mcuId=${encodeURIComponent(mcuId)}`);
 
     if (!response.ok) {
-      console.error(`⚠️ API error: ${response.status}`);
       return { success: false, files: [], error: `HTTP ${response.status}` };
     }
 
     const result = await response.json();
 
     if (!result.success) {
-      console.error(`⚠️ API returned error: ${result.error}`);
       return { success: false, files: [], error: result.error };
     }
 
@@ -346,7 +320,6 @@ export async function getFilesByMCU(mcuId) {
       count: result.count || 0
     };
   } catch (error) {
-    console.error('❌ Error getting files:', error.message);
     return { success: false, files: [], error: error.message };
   }
 }
@@ -368,16 +341,12 @@ export async function downloadFile(fileId, fileName, userId) {
     if (!userId) {
       return { success: false, error: 'User authentication required' };
     }
-
-    console.log(`📥 Requesting download for file: ${fileId}`);
-
     // Request signed URL from server
     const apiUrl = '/api/download-file';
     const response = await fetch(`${apiUrl}?fileId=${encodeURIComponent(fileId)}&userId=${encodeURIComponent(userId)}`);
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('❌ Download error:', error);
       return {
         success: false,
         error: error.error || `HTTP ${response.status}`
@@ -387,17 +356,11 @@ export async function downloadFile(fileId, fileName, userId) {
     const result = await response.json();
 
     if (!result.success || !result.signedUrl) {
-      console.error('❌ No signed URL received:', result);
       return {
         success: false,
         error: result.error || 'Failed to generate download link'
       };
     }
-
-    console.log(`✅ Signed URL received, opening download...`);
-    console.log(`   File: ${result.fileName}`);
-    console.log(`   Expires in: ${result.expiresIn}s`);
-
     // Open signed URL in new tab
     window.open(result.signedUrl, '_blank');
 
@@ -407,7 +370,6 @@ export async function downloadFile(fileId, fileName, userId) {
       expiresIn: result.expiresIn
     };
   } catch (error) {
-    console.error('Download error:', error);
     return { success: false, error: error.message };
   }
 }
@@ -423,9 +385,6 @@ export async function getMCUFilesWithSignedUrls(mcuId, userId) {
     if (!mcuId || !userId) {
       return { success: false, error: 'MCU ID and user ID required', files: [] };
     }
-
-    console.log(`📦 Getting all files for MCU: ${mcuId}`);
-
     const apiUrl = '/api/download-file';
     const response = await fetch(`${apiUrl}?mcuId=${encodeURIComponent(mcuId)}&userId=${encodeURIComponent(userId)}`);
 
@@ -451,7 +410,6 @@ export async function getMCUFilesWithSignedUrls(mcuId, userId) {
     console.log(`✅ Retrieved ${result.count || 0} file(s) with signed URLs`);
     return result;
   } catch (error) {
-    console.error('Error getting MCU files:', error);
     return { success: false, error: error.message, files: [] };
   }
 }
@@ -466,9 +424,6 @@ export async function deleteFileFromStorage(storagePath) {
     if (!storagePath) {
       throw new Error('Missing storagePath');
     }
-
-    console.log(`🗑️ Deleting file from Cloudflare R2: ${storagePath}`);
-
     // Call backend API to delete from R2 storage
     // The backend API will handle both R2 deletion and database cleanup
     const response = await fetch(`/api/hard-delete-file?storagePath=${encodeURIComponent(storagePath)}`, {
@@ -486,11 +441,9 @@ export async function deleteFileFromStorage(storagePath) {
     }
 
     const result = await response.json();
-    console.log(`✅ File deleted from R2: ${storagePath}`);
     return { success: true, message: result.message || 'File deleted from storage' };
 
   } catch (error) {
-    console.error(`❌ Error deleting file from storage: ${error.message}`);
     return { success: false, error: error.message };
   }
 }

@@ -23,7 +23,6 @@ export async function initSidebar() {
 
         console.debug('[SidebarInit] Sidebar initialized successfully');
     } catch (error) {
-        console.error('[SidebarInit] Error initializing sidebar:', error);
     }
 }
 
@@ -164,7 +163,6 @@ window.handleLogout = async function() {
             window.location.href = loginPath;
         }
     } catch (error) {
-        console.error('[SidebarInit] Logout error:', error);
         window.location.href = '../pages/login.html';
     }
 };

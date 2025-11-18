@@ -84,7 +84,6 @@ module.exports = async (req, res) => {
 
         fileStream.on('error', (error) => {
           error_occurred = true;
-          console.error('❌ File stream error:', error.message);
           return res.status(400).json({
             error: `File stream error: ${error.message}`
           });
@@ -113,17 +112,10 @@ module.exports = async (req, res) => {
               error: 'No file provided'
             });
           }
-
-          console.log(`\n📄 Processing file: ${file.filename}`);
           console.log(`   Size: ${(file.size / 1024).toFixed(1)}KB`);
-          console.log(`   Type: ${file.mimeType}`);
-          console.log(`   Employee: ${employeeId}`);
-          console.log(`   MCU ID: ${mcuId}`);
-
           const fileType = ALLOWED_TYPES[file.mimeType];
 
           // Upload to Supabase Storage
-          console.log(`\n📤 Uploading to Cloudflare R2...`);
           const uploadResult = await uploadFileToStorage(
             file.buffer,
             file.filename,
@@ -131,11 +123,6 @@ module.exports = async (req, res) => {
             mcuId,
             file.mimeType
           );
-
-          console.log(`✅ File upload successful!`);
-          console.log(`   Storage path: ${uploadResult.storagePath}`);
-          console.log(`   Public URL: ${uploadResult.publicUrl}`);
-
           return res.status(200).json({
             success: true,
             file: {
@@ -151,8 +138,6 @@ module.exports = async (req, res) => {
             message: 'File uploaded successfully to Cloudflare R2'
           });
         } catch (error) {
-          console.error('❌ Error:', error.message);
-          console.error('❌ Stack:', error.stack);
           return res.status(500).json({
             error: error.message || 'Internal server error'
           });
@@ -160,7 +145,6 @@ module.exports = async (req, res) => {
       });
 
       bb.on('error', (error) => {
-        console.error('❌ Busboy error:', error.message);
         error_occurred = true;
         return res.status(400).json({
           error: `Form parsing error: ${error.message}`
@@ -170,8 +154,6 @@ module.exports = async (req, res) => {
       req.pipe(bb);
     });
   } catch (error) {
-    console.error('❌ Unhandled error:', error.message);
-    console.error('❌ Stack:', error.stack);
     return res.status(500).json({
       error: 'Internal server error'
     });

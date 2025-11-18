@@ -72,18 +72,15 @@ module.exports = async (req, res) => {
     const fileStoragePath = fileData.supabase_storage_path || fileData.storage_path;
     if (fileStoragePath) {
       try {
-        console.log(`🗑️ Deleting from R2: ${fileStoragePath}`);
         await r2.deleteObject({
           Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME,
           Key: fileStoragePath
         }).promise();
-        console.log(`✅ Successfully deleted from R2: ${fileStoragePath}`);
       } catch (r2Error) {
         console.warn(`⚠️ Failed to delete from R2 (will continue with DB delete): ${r2Error.message}`);
         // Continue anyway - we'll still delete from database
       }
     } else {
-      console.warn(`⚠️ No storage path found in file record`);
     }
 
     // Step 3: Hard delete file record from database
@@ -93,7 +90,6 @@ module.exports = async (req, res) => {
       .eq('fileid', fileId);
 
     if (deleteError) {
-      console.error('Database deletion error:', deleteError.message);
       return res.status(500).json({
         error: `Failed to delete file record: ${deleteError.message}`
       });
@@ -105,7 +101,6 @@ module.exports = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Unhandled error:', error.message);
     return res.status(500).json({
       error: 'Internal server error'
     });

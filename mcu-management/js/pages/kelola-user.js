@@ -64,13 +64,11 @@ async function init() {
         try {
             await initSuperSearch();
         } catch (error) {
-            console.warn('Failed to initialize Super Search:', error);
         }
 
         // Show page content after initialization complete
         document.body.classList.add('initialized');
     } catch (error) {
-        console.error('Initialization error:', error);
         showToast('Error initializing page: ' + error.message, 'error');
         // Still show page even on error
         document.body.classList.add('initialized');
@@ -386,6 +384,5 @@ window.handleLogout = function() {
 supabaseReady.then(() => {
   init();
 }).catch(err => {
-  console.error('Failed to wait for Supabase:', err);
   init();
 });

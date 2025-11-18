@@ -31,9 +31,6 @@ export class ActivityLogService {
 
             // Validate database adapter
             if (!this.database || !this.database.ActivityLog || !this.database.ActivityLog.getFiltered) {
-                console.error('❌ Database adapter not properly initialized');
-                console.error('database:', this.database);
-                console.error('ActivityLog:', this.database?.ActivityLog);
                 throw new Error('Database adapter tidak tersedia. ActivityLog.getFiltered tidak ditemukan');
             }
 
@@ -61,7 +58,6 @@ export class ActivityLogService {
             };
 
         } catch (error) {
-            console.error('❌ Error fetching activities:', error);
             throw error;
         }
     }
@@ -134,8 +130,6 @@ export class ActivityLogService {
      */
     async exportToCSV(filters = {}) {
         try {
-            console.log(`📥 Starting export with filters:`, filters);
-
             // First, get the first page to know total count
             const firstPage = await this.getActivities({
                 ...filters,
@@ -150,9 +144,6 @@ export class ActivityLogService {
             // Collect all activities by fetching all pages
             let allActivities = [...firstPage.data];
             const totalPages = firstPage.totalPages;
-
-            console.log(`📄 Total pages to export: ${totalPages}, Total records: ${firstPage.total}`);
-
             // Fetch remaining pages
             for (let page = 2; page <= totalPages; page++) {
                 const pageResult = await this.getActivities({
@@ -161,7 +152,6 @@ export class ActivityLogService {
                     limit: 100
                 });
                 allActivities = [...allActivities, ...pageResult.data];
-                console.log(`✅ Fetched page ${page}/${totalPages}`);
             }
 
             // Prepare CSV headers
@@ -219,12 +209,9 @@ export class ActivityLogService {
             link.href = URL.createObjectURL(blob);
             link.download = filename;
             link.click();
-
-            console.log(`✅ Export complete: ${allActivities.length} records exported`);
             return { success: true, recordsExported: allActivities.length };
 
         } catch (error) {
-            console.error('❌ Export error:', error);
             throw error;
         }
     }

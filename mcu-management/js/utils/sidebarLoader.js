@@ -61,9 +61,6 @@ async function loadSidebar() {
 
             return true;
         } catch (error) {
-            console.error('[Sidebar] Error loading sidebar:', error);
-            console.error('[Sidebar] Current URL:', window.location.href);
-
             // Show sidebar anyway, dispatch error event
             const sidebar = document.getElementById('sidebar');
             if (sidebar) {
@@ -133,8 +130,6 @@ async function findSidebarPath() {
             // Continue to next path
         }
     }
-
-    console.error(`[Sidebar] Could not find sidebar at any of these paths:`, possiblePaths);
     return null;
 }
 
@@ -178,7 +173,6 @@ function initializeSidebarFunctionality() {
         // Update menu visibility
         updateAdminMenuVisibility();
     } catch (error) {
-        console.error('[Sidebar] Error initializing sidebar functionality:', error);
     }
 }
 
@@ -315,7 +309,6 @@ window.handleLogout = async function() {
             window.location.href = loginPath;
         }
     } catch (error) {
-        console.error('[Sidebar] Logout error:', error);
         // Still try to redirect
         window.location.href = '../pages/login.html';
     }

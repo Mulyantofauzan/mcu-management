@@ -78,7 +78,6 @@ export async function waitForSidebarAndUser() {
     }
 
     if (!window.currentUser) {
-        console.warn('[SidebarHelper] User data still not available after waiting');
     }
 }
 
@@ -96,7 +95,6 @@ export async function initializePageWithSidebar(initFunction) {
             await initFunction();
         }
     } catch (error) {
-        console.error('[SidebarHelper] Error initializing page:', error);
         throw error;
     }
 }

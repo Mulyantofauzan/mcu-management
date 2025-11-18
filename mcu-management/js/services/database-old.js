@@ -70,8 +70,6 @@ class MCUDatabase {
     } catch (error) {
       // If version conflict or upgrade error, delete and recreate
       if (error.name === 'VersionError' || error.name === 'UpgradeError') {
-        console.warn('⚠️ IndexedDB upgrade error detected:', error.message);
-        console.log('🔄 Deleting and recreating database...');
         try {
           await this.db.delete();
           this.db = new Dexie('MCU_Database');
@@ -93,11 +91,9 @@ class MCUDatabase {
           await this.db.open();
           console.log('✅ IndexedDB recreated successfully (version ' + this.db.verno + ')');
         } catch (recreateError) {
-          console.error('❌ Failed to recreate database:', recreateError);
           throw recreateError;
         }
       } else {
-        console.error('❌ IndexedDB initialization error:', error);
         throw error;
       }
     }

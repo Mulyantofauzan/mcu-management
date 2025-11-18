@@ -69,8 +69,6 @@ export async function loadEnvironmentConfig() {
       return true;
     }
   }
-
-  console.warn('⚠️ No Supabase credentials found. App will use IndexedDB fallback.');
   return false;
 }
 
@@ -86,7 +84,5 @@ export async function initializeEnv() {
 
 // Export logging function
 export function logEnvStatus() {
-  console.log('📋 Environment Configuration Status:');
-  console.log('   SUPABASE_URL:', ENV.SUPABASE_URL ? '✅ Set' : '❌ Not set');
   console.log('   SUPABASE_ANON_KEY:', ENV.SUPABASE_ANON_KEY ? '✅ Set (hidden)' : '❌ Not set');
 }

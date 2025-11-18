@@ -46,7 +46,6 @@ class LabService {
 
       return { success: true, data: result[0] };
     } catch (error) {
-      console.error('❌ Error creating lab item:', error.message);
       return { success: false, error: error.message };
     }
   }
@@ -61,7 +60,6 @@ class LabService {
 
       // Check if Supabase is enabled
       if (!isSupabaseEnabled()) {
-        console.warn('⚠️ Supabase not enabled. Returning empty lab items.');
         return [];
       }
 
@@ -86,7 +84,6 @@ class LabService {
 
       return data || [];
     } catch (error) {
-      console.error('❌ Error fetching lab items:', error.message);
       return [];
     }
   }
@@ -106,7 +103,6 @@ class LabService {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('❌ Error fetching lab item:', error.message);
       return null;
     }
   }
@@ -138,7 +134,6 @@ class LabService {
 
       return { success: true, data: result[0] };
     } catch (error) {
-      console.error('❌ Error updating lab item:', error.message);
       return { success: false, error: error.message };
     }
   }
@@ -176,7 +171,6 @@ class LabService {
 
       return { success: true };
     } catch (error) {
-      console.error('❌ Error deleting lab item:', error.message);
       return { success: false, error: error.message };
     }
   }
@@ -223,7 +217,6 @@ class LabService {
 
       return { success: true, data: result[0] };
     } catch (error) {
-      console.error('❌ Error creating pemeriksaan lab:', error.message);
       return { success: false, error: error.message };
     }
   }
@@ -237,7 +230,6 @@ class LabService {
       await supabaseReady;
 
       if (!isSupabaseEnabled()) {
-        console.warn('⚠️ Supabase not enabled. Returning empty results.');
         return [];
       }
 
@@ -265,7 +257,6 @@ class LabService {
 
       return data || [];
     } catch (error) {
-      console.error('❌ Error fetching pemeriksaan lab:', error.message);
       return [];
     }
   }
@@ -290,7 +281,6 @@ class LabService {
 
       return { success: true, data: result[0] };
     } catch (error) {
-      console.error('❌ Error updating pemeriksaan lab:', error.message);
       return { success: false, error: error.message };
     }
   }
@@ -309,7 +299,6 @@ class LabService {
 
       return { success: true };
     } catch (error) {
-      console.error('❌ Error deleting pemeriksaan lab:', error.message);
       return { success: false, error: error.message };
     }
   }
@@ -329,7 +318,6 @@ class LabService {
 
       return { success: true };
     } catch (error) {
-      console.error('❌ Error deleting pemeriksaan lab by MCU ID:', error.message);
       return { success: false, error: error.message };
     }
   }
