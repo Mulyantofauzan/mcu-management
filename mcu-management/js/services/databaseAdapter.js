@@ -409,7 +409,6 @@ export const MCUs = {
                     xray: mcu.xray,
                     ekg: mcu.ekg,
                     treadmill: mcu.treadmill,
-                    kidney_liver_function: mcu.kidneyLiverFunction,
                     // ✅ FIX: Add doctor field to insert (was missing!)
                     doctor: mcu.doctor,
                     recipient: mcu.recipient,
@@ -456,7 +455,6 @@ export const MCUs = {
                 xray: 'xray',
                 ekg: 'ekg',
                 treadmill: 'treadmill',
-                kidneyLiverFunction: 'kidney_liver_function',
                 napza: 'napza',
                 colorblind: 'colorblind',
                 // ✅ FIX: Add doctor field mapping (for referral data)

@@ -821,7 +821,6 @@ window.handleAddMCU = async function(event) {
             xray: document.getElementById('mcu-xray').value || null,
             ekg: document.getElementById('mcu-ekg').value || null,
             treadmill: document.getElementById('mcu-treadmill').value || null,
-            kidneyLiverFunction: document.getElementById('mcu-kidney').value || null,
             hbsag: document.getElementById('mcu-hbsag').value || null,
             napza: document.getElementById('mcu-napza').value || null,
             colorblind: document.getElementById('mcu-colorblind').value || null,
@@ -956,7 +955,6 @@ window.viewMCUDetail = async function(mcuId) {
         document.getElementById('mcu-detail-xray').textContent = mcu.xray || '-';
         document.getElementById('mcu-detail-ekg').textContent = mcu.ekg || '-';
         document.getElementById('mcu-detail-treadmill').textContent = mcu.treadmill || '-';
-        document.getElementById('mcu-detail-kidney').textContent = mcu.kidneyLiverFunction || '-';
         document.getElementById('mcu-detail-napza').textContent = mcu.napza || '-';
         document.getElementById('mcu-detail-colorblind').textContent = mcu.colorblind || '-';
 
@@ -1039,7 +1037,6 @@ window.viewMCUDetail = async function(mcuId) {
                 'xray': 'X-Ray',
                 'ekg': 'EKG',
                 'treadmill': 'Treadmill',
-                'kidneyLiverFunction': 'Fungsi Ginjal & Hati',
                 'hbsag': 'HBsAg',
                 'sgot': 'SGOT',
                 'sgpt': 'SGPT',
@@ -1211,7 +1208,7 @@ window.editMCU = async function() {
                     'edit-mcu-id', 'edit-mcu-type', 'edit-mcu-date',
                     'edit-mcu-bmi', 'edit-mcu-bp', 'edit-mcu-rr', 'edit-mcu-pulse',
                     'edit-mcu-temp', 'edit-mcu-vision', 'edit-mcu-audio', 'edit-mcu-spiro',
-                    'edit-mcu-xray', 'edit-mcu-ekg', 'edit-mcu-treadmill', 'edit-mcu-kidney',
+                    'edit-mcu-xray', 'edit-mcu-ekg', 'edit-mcu-treadmill',
                     'edit-mcu-napza', 'edit-mcu-colorblind', 'edit-mcu-recipient',
                     'edit-mcu-keluhan', 'edit-mcu-diagnosis', 'edit-mcu-alasan',
                     'edit-mcu-hbsag', 'edit-mcu-initial-result', 'edit-mcu-initial-notes',
@@ -1245,7 +1242,6 @@ window.editMCU = async function() {
                     'edit-mcu-xray': mcu.xray,
                     'edit-mcu-ekg': mcu.ekg,
                     'edit-mcu-treadmill': mcu.treadmill,
-                    'edit-mcu-kidney': mcu.kidneyLiverFunction,
                     'edit-mcu-napza': mcu.napza,
                     'edit-mcu-colorblind': mcu.colorblind,
                     'edit-mcu-recipient': mcu.recipient,
@@ -1349,7 +1345,6 @@ window.handleEditMCU = async function(event) {
             xray: document.getElementById('edit-mcu-xray').value || null,
             ekg: document.getElementById('edit-mcu-ekg').value || null,
             treadmill: document.getElementById('edit-mcu-treadmill').value || null,
-            kidneyLiverFunction: document.getElementById('edit-mcu-kidney').value || null,
             napza: document.getElementById('edit-mcu-napza').value || null,
             colorblind: document.getElementById('edit-mcu-colorblind').value || null,
             doctor: doctorId,

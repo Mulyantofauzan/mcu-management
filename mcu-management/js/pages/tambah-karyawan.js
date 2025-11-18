@@ -470,7 +470,6 @@ window.handleAddMCU = async function(event) {
             xray: document.getElementById('mcu-xray').value || null,
             ekg: document.getElementById('mcu-ekg').value || null,
             treadmill: document.getElementById('mcu-treadmill').value || null,
-            kidneyLiverFunction: document.getElementById('mcu-kidney').value || null,
             hbsag: document.getElementById('mcu-hbsag').value || null,
             napza: document.getElementById('mcu-napza').value || null,
             colorblind: document.getElementById('mcu-colorblind').value || null,

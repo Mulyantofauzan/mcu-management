@@ -68,7 +68,6 @@ export function transformMCU(mcu) {
         xray: mcu.xray,
         ekg: mcu.ekg,
         treadmill: mcu.treadmill,
-        kidneyLiverFunction: mcu.kidney_liver_function,
         doctor: mcu.doctor,  // CRITICAL: Doctor ID from referral data
         recipient: mcu.recipient,
         keluhanUtama: mcu.keluhan_utama,

@@ -34,7 +34,6 @@ class MCUService {
       xray: mcuData.xray || null,
       ekg: mcuData.ekg || null,
       treadmill: mcuData.treadmill || null,
-      kidneyLiverFunction: mcuData.kidneyLiverFunction || null,
       hbsag: mcuData.hbsag || null,
       napza: mcuData.napza || null,
       colorblind: mcuData.colorblind || null,
@@ -230,7 +229,7 @@ class MCUService {
     const examFields = [
       'bmi', 'bloodPressure', 'respiratoryRate', 'pulse', 'temperature',
       'vision', 'audiometry', 'spirometry',
-      'xray', 'ekg', 'treadmill', 'kidneyLiverFunction', 'hbsag',
+      'xray', 'ekg', 'treadmill', 'hbsag',
       'sgot', 'sgpt', 'cbc', 'napza',
       'doctor', // ✅ FIX: Include doctor field so it gets saved during edit!
       'recipient', 'keluhanUtama', 'diagnosisKerja', 'alasanRujuk'

@@ -53,7 +53,6 @@ const fieldLabels = {
   xray: 'X-Ray',
   ekg: 'EKG',
   treadmill: 'Treadmill',
-  kidneyLiverFunction: 'Fungsi Ginjal & Hati',
   hbsag: 'HBsAg',
   sgot: 'SGOT',
   sgpt: 'SGPT',
@@ -78,7 +77,7 @@ export function getFieldLabel(fieldName) {
  */
 const mcuTrackableFields = [
   'mcuType', 'mcuDate', 'bmi', 'bloodPressure', 'vision', 'audiometry',
-  'spirometry', 'xray', 'ekg', 'treadmill', 'kidneyLiverFunction',
+  'spirometry', 'xray', 'ekg', 'treadmill',
   'hbsag', 'sgot', 'sgpt', 'cbc', 'napza',
   'initialResult', 'initialNotes', 'finalResult', 'finalNotes', 'status'
 ];
