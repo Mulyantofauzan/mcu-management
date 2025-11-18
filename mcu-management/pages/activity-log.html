@@ -468,8 +468,13 @@
             }
         };
 
-        // Initialize on load
-        window.addEventListener('load', init);
+        // Initialize immediately (module script runs after DOM is ready)
+        console.log('🚀 Initializing Activity Log page...');
+        init().catch(err => {
+            console.error('❌ Fatal init error:', err);
+            showToast('Gagal inisialisasi halaman: ' + err.message, 'error');
+            document.body.classList.add('initialized');
+        });
     </script>
 </body>
 </html>
