@@ -28,25 +28,22 @@ class EmployeeService {
 
     await database.add('employees', employee);
 
-    // Log activity with details - fetch department and job title names
+    // Log activity with details
     if (currentUser) {
-      let deptName = 'Unknown';
-      let jobName = 'Unknown';
+      // Note: At this point, we have the IDs stored.
+      // The actual department and job title names are in Supabase as separate fields.
+      // We'll log just the IDs and the system will show proper names from related tables.
+      const details = [
+        `Created employee: ${employee.name}`,
+        `Employee ID: ${employee.employeeId}`,
+        `Department ID: ${employee.departmentId || 'Not Set'}`,
+        `Job Title ID: ${employee.jobTitleId || 'Not Set'}`,
+        `Employment Status: ${employee.employmentStatus}`,
+        `Date of Birth: ${employee.birthDate}`,
+        `Blood Type: ${employee.bloodType || 'Not Set'}`
+      ].join('. ');
 
-      // Fetch department name by ID
-      if (employee.departmentId) {
-        const dept = await database.get('departments', employee.departmentId);
-        deptName = dept?.name || 'Unknown';
-      }
-
-      // Fetch job title name by ID
-      if (employee.jobTitleId) {
-        const job = await database.get('jobTitles', employee.jobTitleId);
-        jobName = job?.name || 'Unknown';
-      }
-
-      await database.logActivity('create', 'Employee', employee.employeeId, currentUser.userId,
-        `Created employee: ${employee.name} (${employee.employeeId}). Department: ${deptName}, Job Title: ${jobName}`);
+      await database.logActivity('create', 'Employee', employee.employeeId, currentUser.userId, details);
     }
 
     return employee;
