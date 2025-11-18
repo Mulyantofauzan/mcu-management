@@ -251,7 +251,7 @@
 
     <!-- Configuration -->
     <script type="module">
-        import { database } from '../js/services/database.js';
+        import databaseAdapter from '../js/services/databaseAdapter.js';
         import { authService } from '../js/services/authService.js';
         import { showToast } from '../js/utils/uiHelpers.js';
         import { ActivityLogService } from '../js/services/activityLogService.js';
@@ -291,8 +291,8 @@
                 if (userRoleEl) userRoleEl.textContent = currentUser?.role || 'Petugas';
                 if (userInitialEl) userInitialEl.textContent = initial;
 
-                // Initialize service
-                activityLogService = new ActivityLogService(database);
+                // Initialize service with database adapter (which has ActivityLog.getFiltered)
+                activityLogService = new ActivityLogService(databaseAdapter);
 
                 // Initialize sidebar
                 await initSidebar();
