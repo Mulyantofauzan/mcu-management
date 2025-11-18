@@ -457,8 +457,8 @@ export async function getMCUFilesWithSignedUrls(mcuId, userId) {
 }
 
 /**
- * Delete file from Supabase storage by storage path
- * @param {string} storagePath - Full path to file in storage (e.g., 'mcu-files/EMP_123/MCU_456/filename.pdf')
+ * Delete file from Cloudflare R2 storage by storage path
+ * @param {string} storagePath - Full path to file in storage (e.g., 'mcu_files/EMP_123/MCU_456/filename.pdf')
  * @returns {Promise<Object>} Deletion result
  */
 export async function deleteFileFromStorage(storagePath) {
@@ -467,25 +467,27 @@ export async function deleteFileFromStorage(storagePath) {
       throw new Error('Missing storagePath');
     }
 
-    const { getSupabaseClient } = await import('../config/supabase.js');
-    const supabase = getSupabaseClient();
+    console.log(`🗑️ Deleting file from Cloudflare R2: ${storagePath}`);
 
-    console.log(`🗑️ Deleting file from storage: ${storagePath}`);
+    // Call backend API to delete from R2 storage
+    // The backend API will handle both R2 deletion and database cleanup
+    const response = await fetch(`/api/hard-delete-file?storagePath=${encodeURIComponent(storagePath)}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
 
-    // Delete from Supabase storage using the storage path
-    const { error } = await supabase
-      .storage
-      .from('mcu-files')
-      .remove([storagePath]);
-
-    if (error) {
-      // Don't throw if file doesn't exist (404-like errors), just log warning
-      console.warn(`⚠️ Could not delete file from storage (may not exist): ${storagePath}`, error);
-      return { success: true, message: 'File already deleted or does not exist' };
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.warn(`⚠️ Could not delete file from R2 (may not exist): ${storagePath}`, errorData);
+      // Return success anyway since we might be deleting a file that doesn't exist
+      return { success: true, message: 'File deletion attempt completed' };
     }
 
-    console.log(`✅ File deleted from storage: ${storagePath}`);
-    return { success: true, message: 'File deleted from storage' };
+    const result = await response.json();
+    console.log(`✅ File deleted from R2: ${storagePath}`);
+    return { success: true, message: result.message || 'File deleted from storage' };
 
   } catch (error) {
     console.error(`❌ Error deleting file from storage: ${error.message}`);

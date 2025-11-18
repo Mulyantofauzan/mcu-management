@@ -103,26 +103,26 @@ async function getEmployeeName(employeeId) {
 
     if (error || !data) {
       console.warn(`⚠️ Could not find employee name for ID: ${employeeId}`);
-      return employeeId; // Fallback to ID if name not found
+      return null; // Return null instead of ID to indicate employee not found
     }
 
-    return data.name || employeeId;
+    return data.name || null;
   } catch (error) {
     console.warn(`⚠️ Error fetching employee name: ${error.message}`);
-    return employeeId; // Fallback to ID
+    return null; // Return null on error
   }
 }
 
 /**
  * Generate folder path for file storage
- * Format: mcu_files/{EmployeeName_EmployeeId}/{MCU-ID}
+ * Format: mcu_files/{EmployeeId}/{MCU-ID} (simple format, avoids double naming)
  */
 async function generateStoragePath(employeeId, mcuId, fileName) {
-  const employeeName = await getEmployeeName(employeeId);
-  // Sanitize employee name (remove special characters, spaces to underscores)
-  const sanitizedName = employeeName.replace(/[^a-zA-Z0-9]/g, '_');
-  const folderPath = `mcu_files/${sanitizedName}_${employeeId}/${mcuId}`;
+  // Use simple format with just employeeId and mcuId to avoid double naming issues
+  // If employee name lookup fails, we don't want to concatenate identifiers
+  const folderPath = `mcu_files/${employeeId}/${mcuId}`;
   const filePath = `${folderPath}/${fileName}`;
+  console.log(`📁 Generated storage path: ${filePath}`);
   return { folderPath, filePath };
 }
 

@@ -39,38 +39,51 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { fileId } = req.query;
+    const { fileId, storagePath: queryStoragePath } = req.query;
 
-    // Validate required parameters
-    if (!fileId) {
+    // Validate required parameters - need either fileId or storagePath
+    if (!fileId && !queryStoragePath) {
       return res.status(400).json({
-        error: 'Missing required parameter: fileId'
+        error: 'Missing required parameter: either fileId or storagePath'
       });
     }
 
     // Step 1: Get file details from database
-    const { data: fileData, error: fetchError } = await supabase
-      .from('mcufiles')
-      .select('*')
-      .eq('fileid', fileId)
-      .single();
+    let query = supabase.from('mcufiles').select('*');
 
-    if (fetchError || !fileData) {
+    if (fileId) {
+      query = query.eq('fileid', fileId);
+    } else if (queryStoragePath) {
+      query = query.eq('supabase_storage_path', queryStoragePath);
+    }
+
+    const { data: fileDataArray, error: fetchError } = await query;
+
+    if (fetchError || !fileDataArray || fileDataArray.length === 0) {
       return res.status(404).json({
         error: 'File not found'
       });
     }
 
+    const fileData = fileDataArray[0];
+
     // Step 2: Delete from R2 storage if storage path exists
-    if (fileData.storage_path) {
+    // Check both field names: supabase_storage_path and storage_path (for backward compatibility)
+    const fileStoragePath = fileData.supabase_storage_path || fileData.storage_path;
+    if (fileStoragePath) {
       try {
+        console.log(`🗑️ Deleting from R2: ${fileStoragePath}`);
         await r2.deleteObject({
           Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME,
-          Key: fileData.storage_path
+          Key: fileStoragePath
         }).promise();
+        console.log(`✅ Successfully deleted from R2: ${fileStoragePath}`);
       } catch (r2Error) {
+        console.warn(`⚠️ Failed to delete from R2 (will continue with DB delete): ${r2Error.message}`);
         // Continue anyway - we'll still delete from database
       }
+    } else {
+      console.warn(`⚠️ No storage path found in file record`);
     }
 
     // Step 3: Hard delete file record from database
