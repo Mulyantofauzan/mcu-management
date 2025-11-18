@@ -312,8 +312,9 @@
                         </div>
 
                         <div>
-                            <label class="label">Status Aktif</label>
-                            <select id="emp-active" class="input">
+                            <label class="label">Status Aktif <span class="text-red-500">*</span></label>
+                            <select id="emp-active" class="input" required>
+                                <option value="">Pilih status</option>
                                 <option value="Active">Active</option>
                                 <option value="Inactive">Inactive</option>
                             </select>
@@ -451,6 +452,66 @@
             </div>
         </div>
     </div>
+
+    <!-- Loading Overlay for uploads -->
+    <div id="upload-loading-overlay" class="hidden" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    ">
+        <div style="
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            max-width: 400px;
+        ">
+            <div style="
+                display: inline-block;
+                width: 40px;
+                height: 40px;
+                margin-bottom: 1rem;
+                border: 4px solid #e5e7eb;
+                border-top-color: #3b82f6;
+                border-radius: 50%;
+                animation: spin 0.8s linear infinite;
+            "></div>
+            <h3 id="upload-loading-title" style="margin: 0.5rem 0; font-size: 16px; color: #1f2937;">Mengunggah File...</h3>
+            <p id="upload-loading-message" style="margin: 0.5rem 0; font-size: 14px; color: #6b7280;">Mohon tunggu</p>
+            <div id="upload-progress-bar" style="
+                margin-top: 1rem;
+                width: 100%;
+                height: 6px;
+                background: #e5e7eb;
+                border-radius: 3px;
+                overflow: hidden;
+            ">
+                <div id="upload-progress-fill" style="
+                    width: 0%;
+                    height: 100%;
+                    background: linear-gradient(90deg, #3b82f6, #2563eb);
+                    transition: width 0.3s ease;
+                "></div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
 
     <script type="module" defer src="../js/pages/tambah-karyawan.js"></script>
 </body>
