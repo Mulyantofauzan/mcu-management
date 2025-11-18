@@ -16,6 +16,7 @@ import { initSuperSearch } from '../components/superSearch.js';  // ✅ NEW: Glo
 import FileUploadWidget from '../components/fileUploadWidget.js';
 import { uploadBatchFiles } from '../services/supabaseStorageService.js';  // ✅ NEW: File upload to Supabase
 import { tempFileStorage } from '../services/tempFileStorage.js';  // ✅ NEW: Temp file management
+import { createLabResultWidget } from '../components/labResultWidget.js';  // ✅ NEW: Lab result widget
 
 let followUpList = [];
 let filteredList = [];
@@ -27,6 +28,7 @@ let doctors = [];
 let currentMCU = null;
 let currentPage = 1;
 const itemsPerPage = 10;
+let labResultWidgetUpdate = null;  // Lab result widget for update modal
 
 // Download Surat Rujukan PDF from table action button
 window.downloadRujukanPDFAction = async function(mcuId) {
@@ -571,7 +573,6 @@ window.openMCUUpdateModal = async function(mcuId) {
       'update-xray': currentMCU.xray,
       'update-ekg': currentMCU.ekg,
       'update-treadmill': currentMCU.treadmill,
-      'update-kidney': currentMCU.kidneyLiverFunction,
       'update-hbsag': currentMCU.hbsag,
       'update-napza': currentMCU.napza,
       'update-recipient': currentMCU.recipient,
@@ -588,41 +589,17 @@ window.openMCUUpdateModal = async function(mcuId) {
       }
     }
 
-    // Populate Lab Results from database
-    const labContainer = document.getElementById('lab-results-container-update');
-    if (labContainer) {
-      try {
-        const labResults = await labService.getPemeriksaanLabByMcuId(mcuId);
-        if (labResults && labResults.length > 0) {
-          labContainer.innerHTML = labResults.map(lab => `
-            <div class="flex gap-2 items-start p-2 bg-white border border-gray-200 rounded">
-              <input type="hidden" class="lab-result-id" value="${lab.id || ''}" />
-              <input type="hidden" class="lab-test-name" value="${lab.lab_items?.name || ''}" />
-              <input type="hidden" class="lab-result-value" value="${lab.value || ''}" />
-              <div class="flex-1 text-sm text-gray-700">
-                <span class="font-medium">${lab.lab_items?.name || 'Lab Test'}</span>: ${lab.value || '-'} ${lab.unit || ''}
-              </div>
-              <button type="button" class="btn-remove-lab text-red-500 hover:text-red-700 text-sm">Hapus</button>
-            </div>
-          `).join('');
+    // Initialize and populate Lab Results Widget
+    if (!labResultWidgetUpdate) {
+      labResultWidgetUpdate = createLabResultWidget('lab-results-container-update');
+      await labResultWidgetUpdate.init();
+    }
 
-          // Attach remove handlers
-          labContainer.querySelectorAll('.btn-remove-lab').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-              const labResultElement = e.currentTarget.parentElement;
-              const labResultId = labResultElement.querySelector('.lab-result-id')?.value;
-              if (labResultId) {
-                labResultElement.dataset.labResultId = labResultId;
-              }
-              labResultElement.remove();
-            });
-          });
-        } else {
-          labContainer.innerHTML = '';
-        }
-      } catch (error) {
-        labContainer.innerHTML = '';
-      }
+    try {
+      await labResultWidgetUpdate.loadExistingResults(mcuId);
+    } catch (error) {
+      console.error('Error loading lab results:', error);
+      labResultWidgetUpdate.clear();
     }
 
     openModal('mcu-update-modal');
@@ -634,33 +611,11 @@ window.openMCUUpdateModal = async function(mcuId) {
 
 // Add Lab Result item to the update modal
 window.addLabResultToUpdateModal = function() {
-  const testName = prompt('Nama Test Laboratorium:');
-  if (!testName) return;
-
-  const resultValue = prompt('Hasil:');
-  if (resultValue === null) return;
-
-  const labContainer = document.getElementById('lab-results-container-update');
-  if (!labContainer) return;
-
-  const labItem = document.createElement('div');
-  labItem.className = 'flex gap-2 items-start p-2 bg-white border border-gray-200 rounded';
-  labItem.innerHTML = `
-    <input type="hidden" class="lab-test-name" value="${testName}" />
-    <input type="hidden" class="lab-result-value" value="${resultValue}" />
-    <div class="flex-1 text-sm text-gray-700">
-      <span class="font-medium">${testName}</span>: ${resultValue}
-    </div>
-    <button type="button" class="btn-remove-lab text-red-500 hover:text-red-700 text-sm">Hapus</button>
-  `;
-
-  labContainer.appendChild(labItem);
-
-  // Attach remove handler
-  labItem.querySelector('.btn-remove-lab').addEventListener('click', (e) => {
-    e.preventDefault();
-    labItem.remove();
-  });
+  if (!labResultWidgetUpdate) {
+    showToast('Lab widget belum diinisialisasi', 'error');
+    return;
+  }
+  labResultWidgetUpdate.addLabResultForm();
 };
 
 // Toggle Final Result Section visibility when initial result changes
@@ -680,6 +635,9 @@ window.toggleFinalResultSection = function() {
 window.closeMCUUpdateModal = function() {
   closeModal('mcu-update-modal');
   currentMCU = null;
+  if (labResultWidgetUpdate) {
+    labResultWidgetUpdate.clear();
+  }
 };
 
 window.handleMCUUpdate = async function(event) {
@@ -705,7 +663,6 @@ window.handleMCUUpdate = async function(event) {
       'update-xray': 'xray',
       'update-ekg': 'ekg',
       'update-treadmill': 'treadmill',
-      'update-kidney': 'kidneyLiverFunction',
       'update-hbsag': 'hbsag',
       'update-napza': 'napza'
     };
@@ -717,20 +674,14 @@ window.handleMCUUpdate = async function(event) {
       }
     }
 
-    // Collect lab results from the lab container
-    const labContainer = document.getElementById('lab-results-container-update');
-    if (labContainer) {
-      const labItems = labContainer.querySelectorAll('div[class*="flex gap-2"]');
-      if (labItems.length > 0) {
-        updateData.labResults = Array.from(labItems).map(item => ({
-          testName: item.querySelector('.lab-test-name')?.value || '',
-          resultValue: item.querySelector('.lab-result-value')?.value || ''
-        }));
-      }
+    // Get lab results from widget (separate from updateData since they're stored separately)
+    let labResults = [];
+    if (labResultWidgetUpdate) {
+      labResults = labResultWidgetUpdate.getAllLabResults();
     }
 
     // Only update if there are changes
-    if (Object.keys(updateData).length === 0) {
+    if (Object.keys(updateData).length === 0 && labResults.length === 0) {
       showToast('Tidak ada perubahan untuk disimpan', 'info');
       closeMCUUpdateModal();
       await loadFollowUpList();
@@ -738,7 +689,29 @@ window.handleMCUUpdate = async function(event) {
     }
 
     // Update MCU record (this will also create MCUChange entries)
-    await mcuService.updateFollowUp(mcuId, updateData, currentUser);
+    if (Object.keys(updateData).length > 0) {
+      await mcuService.updateFollowUp(mcuId, updateData, currentUser);
+    }
+
+    // Save/update lab results separately
+    if (labResults && labResults.length > 0) {
+      try {
+        await labService.deletePemeriksaanLabByMcuId(mcuId);
+        for (const result of labResults) {
+          await labService.createPemeriksaanLab({
+            mcuId: mcuId,
+            employeeId: currentMCU.employeeId,
+            labItemId: result.labItemId,
+            value: result.value,
+            notes: result.notes
+          }, currentUser);
+        }
+        showToast(`${labResults.length} hasil lab berhasil diupdate`, 'success');
+      } catch (error) {
+        console.error('Error saving lab results:', error);
+        showToast(`Peringatan: Gagal menyimpan hasil lab: ${error.message}`, 'warning');
+      }
+    }
 
     showToast('Detail MCU berhasil diupdate!', 'success');
 
