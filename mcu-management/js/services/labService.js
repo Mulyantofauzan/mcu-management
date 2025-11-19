@@ -251,11 +251,17 @@ class LabService {
         `)
         .eq('mcu_id', mcuId)
         .is('deleted_at', null)
+        .not('lab_item_id', 'is', null) // Exclude rows with null lab_item_id
         .order('created_at', { ascending: true });
 
       if (error) throw error;
 
-      return data || [];
+      // Additional client-side filter to ensure valid data
+      const validData = (data || []).filter(item =>
+        item && item.lab_item_id && item.value !== null && item.value !== undefined && item.value !== ''
+      );
+
+      return validData;
     } catch (error) {
       return [];
     }
