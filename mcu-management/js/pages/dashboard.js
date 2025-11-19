@@ -6,9 +6,11 @@
 // ✅ PERFORMANCE: Register service worker for offline support and caching
 // Must be done on app initialization for best results
 if ('serviceWorker' in navigator) {
-  // Use relative path for flexibility (works regardless of deployment path)
-  const swPath = new URL('../../sw.js', import.meta.url).pathname;
-  const scope = new URL('../..', import.meta.url).pathname || '/';
+  // Determine service worker path based on app location
+  // dashboard.js is at: /js/pages/dashboard.js
+  // sw.js is at: /sw.js (relative to root)
+  const swPath = '/sw.js';
+  const scope = '/';
 
   navigator.serviceWorker.register(swPath, { scope })
     .catch((error) => {
