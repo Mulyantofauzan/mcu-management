@@ -622,10 +622,9 @@ window.openMCUUpdateModal = async function(mcuId) {
     }
 
     // Initialize and populate Lab Results Widget
-    if (!labResultWidgetUpdate) {
-      labResultWidgetUpdate = createLabResultWidget('lab-results-container-update');
-      await labResultWidgetUpdate.init();
-    }
+    // Always reinitialize to clear previous state
+    labResultWidgetUpdate = createLabResultWidget('lab-results-container-update');
+    await labResultWidgetUpdate.init();
 
     try {
       await labResultWidgetUpdate.loadExistingResults(mcuId);
