@@ -13,6 +13,16 @@ let currentTab = 'jobTitles';
 let currentData = [];
 let editingId = null;
 
+// ✅ Initialize window functions immediately (before init() runs)
+// This prevents onclick errors during page load
+window.switchTab = async function(tab) { /* Will be overwritten by actual implementation */ };
+window.openAddModal = function() { /* Will be overwritten by actual implementation */ };
+window.closeCrudModal = function() { /* Will be overwritten by actual implementation */ };
+window.handleSubmit = async function(event) { /* Will be overwritten by actual implementation */ };
+window.editItem = async function(id) { /* Will be overwritten by actual implementation */ };
+window.deleteItem = async function(id) { /* Will be overwritten by actual implementation */ };
+window.handleLogout = function() { /* Will be overwritten by actual implementation */ };
+
 const tabConfig = {
     jobTitles: { title: 'Jabatan', getAll: () => masterDataService.getAllJobTitles(), create: (d) => masterDataService.createJobTitle(d), update: (id, d) => masterDataService.updateJobTitle(id, d), delete: (id) => masterDataService.deleteJobTitle(id) },
     departments: { title: 'Departemen', getAll: () => masterDataService.getAllDepartments(), create: (d) => masterDataService.createDepartment(d), update: (id, d) => masterDataService.updateDepartment(id, d), delete: (id) => masterDataService.deleteDepartment(id) },
@@ -219,10 +229,6 @@ window.editItem = async function(id) {
     const item = currentData.find(i => i.id === id);
 
     if (!item) {
-            searchId: id,
-            currentTab: currentTab,
-            allItems: currentData.map(i => ({ id: i.id, name: i.name }))
-        });
         showToast('Data tidak ditemukan', 'error');
         return;
     }
