@@ -256,7 +256,7 @@ class LabService {
 
       if (error) throw error;
 
-      console.log('[labService] Raw data from Supabase for MCU', mcuId, ':', data);
+      console.log('[labService] Raw data from Supabase for MCU', mcuId, ':', JSON.stringify(data, null, 2));
 
       // AGGRESSIVE client-side filter to ensure valid data
       // Reject ANY row with zero, null, undefined, or invalid numeric values
@@ -273,14 +273,24 @@ class LabService {
           return;
         }
         if (item.value === null || item.value === undefined || item.value === '') {
-          invalidData.push({item, reason: `Value is ${item.value}`});
+          invalidData.push({item, reason: `Value is empty/null: '${item.value}' (type: ${typeof item.value})`});
           return;
         }
 
-        // Convert to number and reject if not a valid positive number
-        const numValue = parseFloat(item.value);
+        // Trim and handle comma decimal separator (Indonesian format: 99,5 -> 99.5)
+        let valueStr = String(item.value).trim();
+        console.log(`[labService] Processing item: lab_item_id=${item.lab_item_id}, raw_value='${item.value}' (type: ${typeof item.value}), trimmed='${valueStr}'`);
+
+        // Replace comma with dot for European decimal format
+        valueStr = valueStr.replace(',', '.');
+
+        // Convert to number
+        const numValue = parseFloat(valueStr);
+
+        console.log(`[labService] After parse: '${valueStr}' -> ${numValue}, isNaN=${isNaN(numValue)}, numValue <= 0=${numValue <= 0}`);
+
         if (isNaN(numValue) || numValue <= 0) {
-          invalidData.push({item, reason: `Invalid numeric: ${item.value} -> ${numValue}`});
+          invalidData.push({item, reason: `Invalid numeric: '${item.value}' (trimmed: '${valueStr}') -> ${numValue}`});
           return;
         }
 
