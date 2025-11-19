@@ -220,11 +220,17 @@ class LabResultWidget {
             const value = element.querySelector('.lab-value-input').value;
             const notes = element.querySelector('.lab-notes-input').value;
 
-            // Only include jika lab item dipilih
+            // Only include jika lab item dipilih DAN value adalah angka valid (bukan 0, kosong, atau NaN)
             if (labItemId && value) {
+                const numValue = parseFloat(value);
+                // Skip invalid numeric values (0, NaN, or empty)
+                if (isNaN(numValue) || numValue === 0) {
+                    return; // Skip this row
+                }
+
                 results.push({
                     labItemId: parseInt(labItemId),
-                    value: parseFloat(value),
+                    value: numValue,
                     notes: notes || null
                 });
             }
@@ -245,24 +251,32 @@ class LabResultWidget {
 
     /**
      * Load existing results (untuk edit MCU)
+     * AGGRESSIVE FILTERING: Only load results with valid numeric values > 0
      */
     async loadExistingResults(mcuId) {
         try {
             const existing = await labService.getPemeriksaanLabByMcuId(mcuId);
+            // CRITICAL: Always clear first to prevent ghost rows
             this.clear();
 
-            // Filter out empty/invalid results before adding
+            // AGGRESSIVE filter: Only include valid, non-zero numeric values
             const validResults = existing.filter(result => {
+                // Check basic structure
                 if (!result || !result.lab_item_id) return false;
+
+                // Check value exists and is not null/undefined/empty string
                 if (result.value === null || result.value === undefined || result.value === '') return false;
 
-                // Parse and check numeric value
+                // Parse and validate numeric value
                 const numValue = parseFloat(result.value);
-                if (isNaN(numValue) || numValue === 0) return false;
+
+                // CRITICAL: Reject NaN, 0, or negative values
+                if (isNaN(numValue) || numValue <= 0) return false;
 
                 return true;
             });
 
+            // Load only valid results
             validResults.forEach(result => {
                 this.addLabResultForm({
                     lab_item_id: result.lab_item_id,
@@ -271,6 +285,8 @@ class LabResultWidget {
                 });
             });
         } catch (error) {
+            // On error, ensure container is cleared to prevent stale rows
+            this.clear();
         }
     }
 }

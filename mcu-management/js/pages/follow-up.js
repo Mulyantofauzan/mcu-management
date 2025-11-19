@@ -626,6 +626,13 @@ window.openMCUUpdateModal = async function(mcuId) {
     labResultWidgetUpdate = createLabResultWidget('lab-results-container-update');
     await labResultWidgetUpdate.init();
 
+    // NUCLEAR: Clean up any phantom lab records with invalid values before loading
+    try {
+      const cleanupResult = await labService.cleanupPhantomLabRecords();
+    } catch (error) {
+      // Ignore cleanup errors and continue
+    }
+
     try {
       await labResultWidgetUpdate.loadExistingResults(mcuId);
     } catch (error) {

@@ -256,15 +256,16 @@ class LabService {
 
       if (error) throw error;
 
-      // Additional client-side filter to ensure valid data
+      // AGGRESSIVE client-side filter to ensure valid data
+      // Reject ANY row with zero, null, undefined, or invalid numeric values
       const validData = (data || []).filter(item => {
         if (!item) return false;
         if (!item.lab_item_id) return false;
         if (item.value === null || item.value === undefined || item.value === '') return false;
 
-        // Convert to number and check for zero
+        // Convert to number and reject if not a valid positive number
         const numValue = parseFloat(item.value);
-        if (isNaN(numValue) || numValue === 0) return false;
+        if (isNaN(numValue) || numValue <= 0) return false;
 
         return true;
       });
@@ -351,6 +352,53 @@ class LabService {
     if (numValue < numMin) return 'low';
     if (numValue > numMax) return 'high';
     return 'normal';
+  }
+
+  /**
+   * NUCLEAR OPTION: Clean up phantom/orphaned lab records with invalid values
+   * Soft deletes any pemeriksaan_lab record with value <= 0, null, or NaN
+   * Called when importing or when user reports phantom rows
+   */
+  async cleanupPhantomLabRecords() {
+    try {
+      await supabaseReady;
+
+      if (!isSupabaseEnabled()) {
+        throw new Error('Supabase not enabled');
+      }
+
+      // Get all lab records (including those with invalid values)
+      const { data: allRecords, error: fetchError } = await supabase
+        .from('pemeriksaan_lab')
+        .select('id, value')
+        .is('deleted_at', null);
+
+      if (fetchError) throw fetchError;
+
+      // Identify records with invalid values
+      const phantomIds = (allRecords || [])
+        .filter(record => {
+          const numValue = parseFloat(record.value);
+          return isNaN(numValue) || numValue <= 0 || record.value === null || record.value === '';
+        })
+        .map(record => record.id);
+
+      // Soft delete phantom records
+      if (phantomIds.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('pemeriksaan_lab')
+          .update({ deleted_at: new Date().toISOString() })
+          .in('id', phantomIds);
+
+        if (deleteError) throw deleteError;
+
+        return { success: true, deletedCount: phantomIds.length };
+      }
+
+      return { success: true, deletedCount: 0 };
+    } catch (error) {
+      return { success: false, error: error.message, deletedCount: 0 };
+    }
   }
 }
 
