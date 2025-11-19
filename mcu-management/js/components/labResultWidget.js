@@ -251,7 +251,18 @@ class LabResultWidget {
             const existing = await labService.getPemeriksaanLabByMcuId(mcuId);
             this.clear();
 
-            existing.forEach(result => {
+            // Filter out empty/invalid results before adding
+            const validResults = existing.filter(result =>
+                result &&
+                result.lab_item_id &&
+                result.value !== null &&
+                result.value !== undefined &&
+                result.value !== '' &&
+                result.value !== 0 && // Exclude zero values which are likely placeholders
+                result.value !== '0.00' // Exclude '0.00' string
+            );
+
+            validResults.forEach(result => {
                 this.addLabResultForm({
                     lab_item_id: result.lab_item_id,
                     value: result.value,
