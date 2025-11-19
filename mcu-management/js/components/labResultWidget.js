@@ -256,25 +256,43 @@ class LabResultWidget {
     async loadExistingResults(mcuId) {
         try {
             const existing = await labService.getPemeriksaanLabByMcuId(mcuId);
+            console.log('[LabWidget] Raw data from DB:', existing);
+
             // CRITICAL: Always clear first to prevent ghost rows
             this.clear();
 
+            // Separate valid and invalid for debugging
+            const validResults = [];
+            const invalidResults = [];
+
             // AGGRESSIVE filter: Only include valid, non-zero numeric values
-            const validResults = existing.filter(result => {
+            existing.forEach(result => {
                 // Check basic structure
-                if (!result || !result.lab_item_id) return false;
+                if (!result || !result.lab_item_id) {
+                    invalidResults.push({result, reason: 'Missing result or lab_item_id'});
+                    return;
+                }
 
                 // Check value exists and is not null/undefined/empty string
-                if (result.value === null || result.value === undefined || result.value === '') return false;
+                if (result.value === null || result.value === undefined || result.value === '') {
+                    invalidResults.push({result, reason: `Value is ${result.value}`});
+                    return;
+                }
 
                 // Parse and validate numeric value
                 const numValue = parseFloat(result.value);
 
                 // CRITICAL: Reject NaN, 0, or negative values
-                if (isNaN(numValue) || numValue <= 0) return false;
+                if (isNaN(numValue) || numValue <= 0) {
+                    invalidResults.push({result, reason: `Invalid numeric value: ${result.value} (parsed as ${numValue})`});
+                    return;
+                }
 
-                return true;
+                validResults.push(result);
             });
+
+            console.log('[LabWidget] Valid results:', validResults.length);
+            console.log('[LabWidget] Invalid results:', invalidResults.length, invalidResults);
 
             // Load only valid results
             validResults.forEach(result => {
@@ -285,6 +303,7 @@ class LabResultWidget {
                 });
             });
         } catch (error) {
+            console.error('[LabWidget] Error loading existing results:', error);
             // On error, ensure container is cleared to prevent stale rows
             this.clear();
         }

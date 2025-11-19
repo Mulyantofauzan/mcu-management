@@ -256,19 +256,41 @@ class LabService {
 
       if (error) throw error;
 
+      console.log('[labService] Raw data from Supabase for MCU', mcuId, ':', data);
+
       // AGGRESSIVE client-side filter to ensure valid data
       // Reject ANY row with zero, null, undefined, or invalid numeric values
-      const validData = (data || []).filter(item => {
-        if (!item) return false;
-        if (!item.lab_item_id) return false;
-        if (item.value === null || item.value === undefined || item.value === '') return false;
+      const validData = [];
+      const invalidData = [];
+
+      (data || []).forEach(item => {
+        if (!item) {
+          invalidData.push({item, reason: 'Item is null'});
+          return;
+        }
+        if (!item.lab_item_id) {
+          invalidData.push({item, reason: 'Missing lab_item_id'});
+          return;
+        }
+        if (item.value === null || item.value === undefined || item.value === '') {
+          invalidData.push({item, reason: `Value is ${item.value}`});
+          return;
+        }
 
         // Convert to number and reject if not a valid positive number
         const numValue = parseFloat(item.value);
-        if (isNaN(numValue) || numValue <= 0) return false;
+        if (isNaN(numValue) || numValue <= 0) {
+          invalidData.push({item, reason: `Invalid numeric: ${item.value} -> ${numValue}`});
+          return;
+        }
 
-        return true;
+        validData.push(item);
       });
+
+      console.log('[labService] Valid:', validData.length, 'Invalid:', invalidData.length);
+      if (invalidData.length > 0) {
+        console.log('[labService] Invalid data reasons:', invalidData);
+      }
 
       return validData;
     } catch (error) {
