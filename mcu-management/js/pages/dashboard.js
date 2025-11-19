@@ -6,11 +6,14 @@
 // ✅ PERFORMANCE: Register service worker for offline support and caching
 // Must be done on app initialization for best results
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/mcu-management/sw.js', { scope: '/mcu-management/' })
-    .then((reg) => {
-    })
+  // Use relative path for flexibility (works regardless of deployment path)
+  const swPath = new URL('../../sw.js', import.meta.url).pathname;
+  const scope = new URL('../..', import.meta.url).pathname || '/';
+
+  navigator.serviceWorker.register(swPath, { scope })
     .catch((error) => {
-    // Removed console statement
+      // Service worker registration failed (may be due to 404 or other issues)
+      // App will still work, just without offline support
     });
 }
 
