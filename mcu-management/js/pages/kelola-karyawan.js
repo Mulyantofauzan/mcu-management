@@ -932,13 +932,6 @@ window.viewMCUDetail = async function(mcuId) {
             return;
         }
 
-            mcuId: mcu.mcuId,
-            bmi: mcu.bmi,
-            bp: mcu.bloodPressure,
-            vision: mcu.vision,
-            hbsag: mcu.hbsag
-        }, null, 2));
-
         const emp = employees.find(e => e.employeeId === mcu.employeeId);
         // ✅ FIX: Match by NAME not ID (employees stores names, not IDs!)
         // Normalize comparison: trim whitespace and case-insensitive as fallback
