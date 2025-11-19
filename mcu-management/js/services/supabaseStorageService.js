@@ -159,9 +159,6 @@ export async function uploadFilesToSupabase(
 
       uploadedSize += file.size;
       results.push(result);
-
-        `✅ Uploaded: ${(result.originalSize / 1024).toFixed(1)}KB`
-      );
     } catch (error) {
       results.push({
         success: false,
