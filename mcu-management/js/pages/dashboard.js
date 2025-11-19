@@ -980,8 +980,15 @@ async function updateActivityList() {
 
         if (action === 'create') {
           activityText = `<strong>${userName}</strong> baru saja menambahkan MCU: <strong>${employeeName || 'Karyawan'}</strong>`;
-        } else if (action === 'follow-up') {
-          activityText = `<strong>${userName}</strong> baru saja melakukan Follow-Up: <strong>${employeeName || 'Karyawan'}</strong>`;
+        } else if (action === 'update') {
+          // Update can be either follow-up or other MCU updates
+          // Check if details mention follow-up
+          const details = activity?.details || '';
+          if (details.toLowerCase().includes('follow-up')) {
+            activityText = `<strong>${userName}</strong> baru saja melakukan Follow-Up: <strong>${employeeName || 'Karyawan'}</strong>`;
+          } else {
+            activityText = `<strong>${userName}</strong> baru saja memperbarui MCU: <strong>${employeeName || 'Karyawan'}</strong>`;
+          }
         } else if (action === 'delete') {
           activityText = `<strong>${userName}</strong> baru saja menghapus MCU: <strong>${employeeName || 'Karyawan'}</strong>`;
         } else {
