@@ -803,18 +803,40 @@ window.handleMCUUpdate = async function(event) {
       }
     }
 
-    // Save/update lab results separately
-    if (labResults && labResults.length > 0) {
+    // Save/update lab results separately - SMART update (only update changed items)
+    if (labResults !== undefined && labResults !== null) {
       try {
-        await labService.deletePemeriksaanLabByMcuId(mcuId);
+        const existingLabResults = await labService.getPemeriksaanLabByMcuId(mcuId);
+
+        // Process NEW lab results (not in existing)
         for (const result of labResults) {
-          await labService.createPemeriksaanLab({
-            mcuId: mcuId,
-            employeeId: currentMCU.employeeId,
-            labItemId: result.labItemId,
-            value: result.value,
-            notes: result.notes
-          }, currentUser);
+          const existing = existingLabResults.find(lab => lab.lab_item_id === result.labItemId);
+          if (!existing) {
+            // NEW - insert
+            await labService.createPemeriksaanLab({
+              mcuId: mcuId,
+              employeeId: currentMCU.employeeId,
+              labItemId: result.labItemId,
+              value: result.value,
+              notes: result.notes
+            }, currentUser);
+          } else if (existing.value !== result.value || existing.notes !== result.notes) {
+            // MODIFIED - update only if value or notes changed
+            await labService.updatePemeriksaanLab(existing.id, {
+              value: result.value,
+              notes: result.notes
+            }, currentUser);
+          }
+          // UNCHANGED - do nothing
+        }
+
+        // Process DELETED lab results (in existing but not in current)
+        for (const existing of existingLabResults) {
+          const stillExists = labResults.find(lab => lab.labItemId === existing.lab_item_id);
+          if (!stillExists) {
+            // DELETED - soft delete
+            await labService.deletePemeriksaanLab(existing.id);
+          }
         }
       } catch (error) {
         showToast(`Peringatan: Gagal menyimpan hasil lab: ${error.message}`, 'warning');
