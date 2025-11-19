@@ -257,9 +257,17 @@ class LabService {
       if (error) throw error;
 
       // Additional client-side filter to ensure valid data
-      const validData = (data || []).filter(item =>
-        item && item.lab_item_id && item.value !== null && item.value !== undefined && item.value !== ''
-      );
+      const validData = (data || []).filter(item => {
+        if (!item) return false;
+        if (!item.lab_item_id) return false;
+        if (item.value === null || item.value === undefined || item.value === '') return false;
+
+        // Convert to number and check for zero
+        const numValue = parseFloat(item.value);
+        if (isNaN(numValue) || numValue === 0) return false;
+
+        return true;
+      });
 
       return validData;
     } catch (error) {

@@ -252,15 +252,16 @@ class LabResultWidget {
             this.clear();
 
             // Filter out empty/invalid results before adding
-            const validResults = existing.filter(result =>
-                result &&
-                result.lab_item_id &&
-                result.value !== null &&
-                result.value !== undefined &&
-                result.value !== '' &&
-                result.value !== 0 && // Exclude zero values which are likely placeholders
-                result.value !== '0.00' // Exclude '0.00' string
-            );
+            const validResults = existing.filter(result => {
+                if (!result || !result.lab_item_id) return false;
+                if (result.value === null || result.value === undefined || result.value === '') return false;
+
+                // Parse and check numeric value
+                const numValue = parseFloat(result.value);
+                if (isNaN(numValue) || numValue === 0) return false;
+
+                return true;
+            });
 
             validResults.forEach(result => {
                 this.addLabResultForm({
