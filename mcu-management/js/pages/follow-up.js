@@ -652,15 +652,6 @@ window.openMCUUpdateModal = async function(mcuId) {
   }
 };
 
-// Add Lab Result item to the update modal
-window.addLabResultToUpdateModal = function() {
-  if (!labResultWidgetUpdate) {
-    showToast('Lab widget belum diinisialisasi', 'error');
-    return;
-  }
-  labResultWidgetUpdate.addLabResultForm();
-};
-
 // Toggle Final Result Section visibility when initial result changes
 window.toggleFinalResultSection = function() {
   const initialResultField = document.getElementById('update-initial-result');
@@ -736,6 +727,14 @@ window.handleMCUUpdate = async function(event) {
     // Get lab results from widget (separate from updateData since they're stored separately)
     let labResults = [];
     if (labResultWidgetUpdate) {
+      // Validate all 14 fields are filled
+      const validationErrors = labResultWidgetUpdate.validateAllFieldsFilled();
+      if (validationErrors.length > 0) {
+        const errorMsg = 'Semua pemeriksaan lab harus diisi:\n' + validationErrors.join('\n');
+        showToast(errorMsg, 'error');
+        throw new Error(errorMsg);
+      }
+
       labResults = labResultWidgetUpdate.getAllLabResults();
     }
 

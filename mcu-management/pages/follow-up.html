@@ -303,11 +303,11 @@
                     </div>
 
                     <!-- Pemeriksaan Lab Section -->
-                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Lab</h4>
-                    <div id="lab-results-container-update" class="space-y-2 mb-3">
-                        <!-- Lab result items akan di-generate secara dinamis dengan JavaScript -->
+                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Lab <span class="text-red-500">*</span></h4>
+                    <p class="text-xs text-gray-600 mb-3">Semua field wajib diisi. Status (Normal/Low/High) otomatis berdasarkan nilai.</p>
+                    <div id="lab-results-container-update">
+                        <!-- Fixed 14-item form akan di-render oleh JavaScript -->
                     </div>
-                    <button type="button" id="add-lab-result-btn-update" class="btn btn-secondary btn-sm mb-3" onclick="window.addLabResultToUpdateModal()">+ Add</button>
 
                     <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Penunjang</h4>
                     <div class="grid grid-cols-1 gap-4 mb-4">

@@ -1,6 +1,7 @@
 /**
- * Lab Result Widget Component
- * Untuk menampilkan dan manage lab results secara dinamis di form MCU
+ * Lab Result Widget Component - Fixed 14-Item Form
+ * Menampilkan form pemeriksaan lab dengan 14 item tetap
+ * Semua field wajib diisi, status otomatis berdasarkan nilai vs range
  */
 
 import { labService } from '../services/labService.js';
@@ -10,351 +11,268 @@ class LabResultWidget {
         this.containerId = containerId;
         this.container = document.getElementById(containerId);
         this.labItems = [];
-        this.results = [];
-        this.resultIdCounter = 0;
+        this.fieldValues = {}; // Store current field values: { labItemId: { value, status, notes } }
     }
 
     /**
-     * Initialize widget - load lab items dari master data
+     * Initialize widget - load 14 lab items dan render form
      */
     async init() {
         try {
             this.labItems = await labService.getAllLabItems();
+
+            if (!this.labItems || this.labItems.length === 0) {
+                console.error('[LabWidget] No lab items found in database');
+                return false;
+            }
+
+            this.renderFixedForm();
             return true;
         } catch (error) {
+            console.error('[LabWidget] Error initializing:', error);
             return false;
         }
     }
 
     /**
-     * Add new lab result form ke container
+     * Render fixed 14-item form dalam grid 4 kolom
      */
-    addLabResultForm(resultData = null) {
+    renderFixedForm() {
         if (!this.container) {
-            console.error('[LabWidget] ERROR: container not found! this.container:', this.container);
+            console.error('[LabWidget] Container not found');
             return;
         }
 
-        const resultId = `lab-result-${++this.resultIdCounter}`;
-        const isEdit = resultData ? true : false;
+        // Create grid container (4 columns)
+        let gridHTML = '<div class="grid grid-cols-4 gap-4 mb-4">';
 
-        // Build dropdown options
-        const labItemOptions = this.labItems
-            .map(item => `<option value="${item.id}" data-unit="${item.unit}" data-min="${item.min_range_reference}" data-max="${item.max_range_reference}">${item.name}</option>`)
-            .join('');
+        // Render each lab item as fixed field
+        this.labItems.forEach(item => {
+            const fieldId = `lab-field-${item.id}`;
+            const valueInputId = `lab-value-${item.id}`;
+            const statusId = `lab-status-${item.id}`;
 
-        const formHTML = `
-            <div id="${resultId}" class="flex flex-wrap items-end gap-2 mb-2 p-2 bg-gray-50 rounded border border-gray-200">
-                <!-- Pemeriksaan Dropdown -->
-                <div class="flex-1 min-w-48">
-                    <label class="label text-xs block mb-1">Pemeriksaan <span class="text-danger">*</span></label>
-                    <select class="input lab-item-select text-sm w-full" data-result-id="${resultId}" required>
-                        <option value="">Pilih...</option>
-                        ${labItemOptions}
-                    </select>
+            // Initialize field value storage
+            this.fieldValues[item.id] = {
+                labItemId: item.id,
+                value: null,
+                status: '',
+                notes: null,
+                min: item.min_range_reference,
+                max: item.max_range_reference,
+                unit: item.unit
+            };
+
+            gridHTML += `
+                <div id="${fieldId}" class="p-3 bg-gray-50 rounded border border-gray-200">
+                    <label class="label text-xs font-semibold block mb-2">${item.name} <span class="text-danger">*</span></label>
+                    <label class="label text-xs block mb-1">Nilai (${item.unit})</label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        id="${valueInputId}"
+                        class="input lab-value-input text-sm w-full mb-2"
+                        placeholder="0.00"
+                        data-item-id="${item.id}"
+                        data-min="${item.min_range_reference || ''}"
+                        data-max="${item.max_range_reference || ''}"
+                        required
+                    />
+                    <label class="label text-xs block mb-1">Status</label>
+                    <input
+                        type="text"
+                        id="${statusId}"
+                        class="input lab-status-display text-sm w-full"
+                        readonly
+                        placeholder="-"
+                    />
+                    <div class="text-xs text-gray-500 mt-1">
+                        Range: ${item.min_range_reference || '-'} - ${item.max_range_reference || '-'}
+                    </div>
                 </div>
-
-                <!-- Nilai -->
-                <div class="w-20">
-                    <label class="label text-xs block mb-1">Nilai <span class="text-danger">*</span></label>
-                    <input type="number" step="0.01" class="input lab-value-input text-sm w-full" data-result-id="${resultId}" placeholder="0.00" required />
-                </div>
-
-                <!-- Satuan (readonly) -->
-                <div class="w-20">
-                    <label class="label text-xs block mb-1">Satuan</label>
-                    <input type="text" class="input lab-unit-display text-sm w-full" data-result-id="${resultId}" readonly />
-                </div>
-
-                <!-- Rentang (readonly) -->
-                <div class="w-24">
-                    <label class="label text-xs block mb-1">Rentang</label>
-                    <input type="text" class="input lab-range-display text-sm w-full" data-result-id="${resultId}" readonly />
-                </div>
-
-                <!-- Catatan (readonly) -->
-                <div class="w-20">
-                    <label class="label text-xs block mb-1">Catatan</label>
-                    <input type="text" class="input lab-notes-input text-sm w-full" data-result-id="${resultId}" readonly />
-                </div>
-
-                <!-- Remove Button -->
-                <div class="w-10">
-                    <button type="button" class="btn btn-danger btn-sm remove-lab-result w-full" data-result-id="${resultId}">-</button>
-                </div>
-            </div>
-        `;
-
-        // Append to container
-        const resultElement = document.createElement('div');
-        resultElement.innerHTML = formHTML;
-        this.container.appendChild(resultElement.firstElementChild);
-
-        // Attach event listeners
-        const labSelect = document.querySelector(`#${resultId} .lab-item-select`);
-        const removeBtn = document.querySelector(`#${resultId} .remove-lab-result`);
-
-        if (labSelect) labSelect.addEventListener('change', (e) => this.handleLabItemChange(e, resultId));
-        if (removeBtn) removeBtn.addEventListener('click', (e) => this.removeLabResult(e, resultId));
-
-        // Populate jika edit
-        if (isEdit && resultData) {
-            this.populateLabResult(resultId, resultData);
-        }
-
-        // Store reference
-        this.results.push({
-            id: resultId,
-            element: document.getElementById(resultId),
-            data: resultData || null
+            `;
         });
+
+        gridHTML += '</div>';
+
+        // Set container HTML
+        this.container.innerHTML = gridHTML;
+
+        // Attach event listeners to all value inputs
+        const valueInputs = this.container.querySelectorAll('.lab-value-input');
+        valueInputs.forEach(input => {
+            input.addEventListener('change', (e) => this.handleValueChange(e));
+            input.addEventListener('input', (e) => this.handleValueChange(e));
+        });
+
+        console.log('[LabWidget] Fixed form rendered with', this.labItems.length, 'items');
     }
 
     /**
-     * Handle lab item selection - auto-fill unit, range, dan update catatan
+     * Handle value input change - calculate status otomatis
      */
-    handleLabItemChange(event, resultId) {
-        const selectedOption = event.target.selectedOptions[0];
-        const unit = selectedOption.dataset.unit || '';
-        const minRange = parseFloat(selectedOption.dataset.min) || null;
-        const maxRange = parseFloat(selectedOption.dataset.max) || null;
+    handleValueChange(event) {
+        const input = event.target;
+        const itemId = parseInt(input.dataset.itemId);
+        const value = parseFloat(input.value);
 
-        // Update display fields
-        const unitDisplay = document.querySelector(`#${resultId} .lab-unit-display`);
-        const rangeDisplay = document.querySelector(`#${resultId} .lab-range-display`);
+        // Find the item
+        const item = this.labItems.find(i => i.id === itemId);
+        if (!item) return;
 
-        if (unitDisplay) unitDisplay.value = unit;
-        if (rangeDisplay) rangeDisplay.value = minRange !== null && maxRange !== null ? `${minRange} - ${maxRange}` : '';
+        // Update stored value
+        this.fieldValues[itemId].value = input.value;
 
-        // Add value input listener untuk auto-update catatan
-        const valueInput = document.querySelector(`#${resultId} .lab-value-input`);
-        if (valueInput) {
-            valueInput.removeEventListener('change', this.autoFillNotes);
-            valueInput.addEventListener('change', () => this.autoFillNotes(resultId, minRange, maxRange));
-            // Also trigger on input event untuk real-time update
-            valueInput.addEventListener('input', () => this.autoFillNotes(resultId, minRange, maxRange));
-        }
-
-        // Trigger initial notes update jika ada nilai
-        this.autoFillNotes(resultId, minRange, maxRange);
-    }
-
-    /**
-     * Auto-fill notes berdasarkan nilai dan rentang rujukan
-     * Normal = dalam rentang, High = > max, Low = < min
-     */
-    autoFillNotes(resultId, minRange, maxRange) {
-        const valueInput = document.querySelector(`#${resultId} .lab-value-input`);
-        const notesInput = document.querySelector(`#${resultId} .lab-notes-input`);
-
-        if (!valueInput || !notesInput) return;
-
-        const value = parseFloat(valueInput.value);
+        // Calculate status
         let status = '';
+        if (!isNaN(value) && input.value.trim() !== '') {
+            const min = parseFloat(item.min_range_reference);
+            const max = parseFloat(item.max_range_reference);
 
-        // Tentukan status berdasarkan nilai
-        if (!isNaN(value) && minRange !== null && maxRange !== null) {
-            if (value < minRange) {
-                status = 'Low';
-            } else if (value > maxRange) {
-                status = 'High';
-            } else {
-                status = 'Normal';
-            }
-        }
-
-        notesInput.value = status;
-    }
-
-    /**
-     * Populate form dengan existing data (untuk edit)
-     * Sets value as placeholder so user can see previous value but can edit it
-     */
-    populateLabResult(resultId, resultData) {
-        const container = document.getElementById(resultId);
-        if (!container) return;
-
-        // Set dropdown value
-        const select = container.querySelector('.lab-item-select');
-        if (select && resultData.lab_item_id) {
-            select.value = resultData.lab_item_id;
-            // Trigger change event untuk auto-fill fields
-            select.dispatchEvent(new Event('change'));
-        }
-
-        // Set nilai with actual value
-        const valueInput = container.querySelector('.lab-value-input');
-        if (valueInput && resultData.value) {
-            valueInput.value = resultData.value;
-        }
-
-        // Set catatan with actual value
-        const notesInput = container.querySelector('.lab-notes-input');
-        if (notesInput && resultData.notes) {
-            notesInput.value = resultData.notes;
-        }
-    }
-
-    /**
-     * Remove lab result form
-     */
-    removeLabResult(event, resultId) {
-        event.preventDefault();
-        const element = document.getElementById(resultId);
-        if (element) {
-            element.remove();
-            // Remove from results array
-            this.results = this.results.filter(r => r.id !== resultId);
-        }
-    }
-
-    /**
-     * Get all lab results dari form
-     * CRITICAL: Validate that element still exists in DOM (not stale reference)
-     */
-    getAllLabResults() {
-        const results = [];
-
-        this.results.forEach(result => {
-            const element = result.element;
-            if (!element) {
-                return;
-            }
-
-            // CRITICAL: Check if element is still in the DOM
-            if (!document.body.contains(element)) {
-                return;
-            }
-
-            const labItemId = element.querySelector('.lab-item-select')?.value;
-            const value = element.querySelector('.lab-value-input')?.value;
-            const notes = element.querySelector('.lab-notes-input')?.value;
-
-            // Only include jika lab item dipilih DAN value adalah angka valid (bukan 0, kosong, atau NaN)
-            if (labItemId && value) {
-                const numValue = parseFloat(value);
-                // Skip invalid numeric values (0, NaN, or empty)
-                if (isNaN(numValue) || numValue === 0) {
-                    return; // Skip this row
+            if (!isNaN(min) && !isNaN(max)) {
+                if (value < min) {
+                    status = 'Low';
+                } else if (value > max) {
+                    status = 'High';
+                } else {
+                    status = 'Normal';
                 }
-
-                results.push({
-                    labItemId: parseInt(labItemId),
-                    value: numValue,
-                    notes: notes || null
-                });
             }
-        });
-
-        console.log('[LabWidget] getAllLabResults - Total stored:', this.results.length, '| Valid results to save:', results.length);
-        return results;
-    }
-
-    /**
-     * Clear all lab results
-     * AGGRESSIVE: Clear both DOM and internal state
-     */
-    clear() {
-        // Clear each element individually to ensure complete removal
-        this.results.forEach(result => {
-            if (result.element && document.body.contains(result.element)) {
-                result.element.remove();
-            }
-        });
-
-        // Also clear container HTML as fallback
-        if (this.container) {
-            this.container.innerHTML = '';
         }
 
-        // Reset internal state
-        this.results = [];
+        this.fieldValues[itemId].status = status;
+        this.fieldValues[itemId].notes = status;
+
+        // Update status display
+        const statusField = document.getElementById(`lab-status-${itemId}`);
+        if (statusField) {
+            statusField.value = status;
+        }
+
+        console.log(`[LabWidget] Item ${itemId} updated: value=${input.value}, status=${status}`);
     }
 
     /**
-     * Load existing results (untuk edit MCU)
-     * AGGRESSIVE FILTERING: Only load results with valid numeric values > 0
+     * Load existing lab results dan populate ke fields
      */
     async loadExistingResults(mcuId) {
         try {
             if (!mcuId) {
-                throw new Error('mcuId is required to load existing results');
+                throw new Error('mcuId is required');
             }
 
             const existing = await labService.getPemeriksaanLabByMcuId(mcuId);
 
-            // CRITICAL: Always clear first to prevent ghost rows
-            this.clear();
-
-            // Check if we got valid data
-            if (!existing || !Array.isArray(existing)) {
-                return;
+            // Create map of existing results by lab_item_id
+            const existingMap = {};
+            if (existing && Array.isArray(existing)) {
+                existing.forEach(result => {
+                    existingMap[result.lab_item_id] = result;
+                });
             }
 
-            // DEBUG: Log if data exists but is empty
-            if (existing.length === 0) {
-                console.warn('[LabWidget] No lab results found in database for MCU:', mcuId);
-                return;
-            }
+            // Populate fields dengan existing data
+            this.labItems.forEach(item => {
+                const input = document.getElementById(`lab-value-${item.id}`);
+                if (input && existingMap[item.id]) {
+                    const existingValue = existingMap[item.id].value;
+                    input.value = existingValue;
 
-            // Separate valid and invalid for filtering
-            const validResults = [];
-            const invalidResults = [];
-
-            // AGGRESSIVE filter: Only include valid, non-zero numeric values
-            existing.forEach((result, index) => {
-                // Check basic structure
-                if (!result || !result.lab_item_id) {
-                    invalidResults.push({index, result, reason: 'Missing result or lab_item_id'});
-                    return;
-                }
-
-                // Check value exists and is not null/undefined/empty string
-                if (result.value === null || result.value === undefined || result.value === '') {
-                    invalidResults.push({index, result, reason: `Value is ${result.value}`});
-                    return;
-                }
-
-                // Parse and validate numeric value
-                const numValue = parseFloat(result.value);
-
-                // CRITICAL: Reject NaN, 0, or negative values
-                if (isNaN(numValue) || numValue <= 0) {
-                    invalidResults.push({index, result, reason: `Invalid numeric value: ${result.value} (parsed as ${numValue})`});
-                    return;
-                }
-
-                validResults.push(result);
-            });
-
-            // DEBUG: Show filtering results
-            if (invalidResults.length > 0) {
-                console.warn(`[LabWidget] WARNING: ${invalidResults.length} lab results were filtered out:`, invalidResults);
-            }
-
-            // Load only valid results
-            validResults.forEach((result, index) => {
-                try {
-                    this.addLabResultForm({
-                        lab_item_id: result.lab_item_id,
-                        value: result.value,
-                        notes: result.notes
-                    });
-                } catch (addError) {
-                    console.error(`[LabWidget] Error adding lab result at index ${index}:`, addError);
+                    // Trigger change event to calculate status
+                    input.dispatchEvent(new Event('change'));
                 }
             });
 
-            if (validResults.length > 0) {
-                console.log(`[LabWidget] Successfully loaded ${validResults.length} lab results`);
-            }
+            console.log('[LabWidget] Existing results loaded for MCU:', mcuId);
         } catch (error) {
-            console.error('[LabWidget] CRITICAL ERROR loading existing results:', error);
-            // On error, ensure container is cleared to prevent stale rows
-            this.clear();
-            // Re-throw so caller knows there was an error
+            console.error('[LabWidget] Error loading existing results:', error);
             throw error;
         }
+    }
+
+    /**
+     * Validate bahwa semua fields terisi dengan nilai > 0
+     */
+    validateAllFieldsFilled() {
+        const errors = [];
+
+        for (const itemId in this.fieldValues) {
+            const field = this.fieldValues[itemId];
+            const input = document.getElementById(`lab-value-${itemId}`);
+
+            if (!input) {
+                errors.push(`Field untuk item ${itemId} tidak ditemukan di DOM`);
+                continue;
+            }
+
+            const value = input.value.trim();
+
+            // Check if empty
+            if (!value) {
+                const item = this.labItems.find(i => i.id === parseInt(itemId));
+                const itemName = item ? item.name : `Item ${itemId}`;
+                errors.push(`${itemName} harus diisi`);
+                continue;
+            }
+
+            // Check if valid number
+            const numValue = parseFloat(value);
+            if (isNaN(numValue)) {
+                const item = this.labItems.find(i => i.id === parseInt(itemId));
+                const itemName = item ? item.name : `Item ${itemId}`;
+                errors.push(`${itemName} harus berupa angka`);
+                continue;
+            }
+
+            // Check if > 0
+            if (numValue <= 0) {
+                const item = this.labItems.find(i => i.id === parseInt(itemId));
+                const itemName = item ? item.name : `Item ${itemId}`;
+                errors.push(`${itemName} harus lebih besar dari 0`);
+            }
+        }
+
+        return errors;
+    }
+
+    /**
+     * Get all lab results dari form - dengan validasi semua terisi
+     */
+    getAllLabResults() {
+        const results = [];
+
+        for (const itemId in this.fieldValues) {
+            const field = this.fieldValues[itemId];
+            const input = document.getElementById(`lab-value-${itemId}`);
+
+            if (!input) continue;
+
+            const value = input.value.trim();
+            if (!value) continue;
+
+            const numValue = parseFloat(value);
+            if (isNaN(numValue) || numValue <= 0) continue;
+
+            results.push({
+                labItemId: parseInt(itemId),
+                value: numValue,
+                notes: field.status || null
+            });
+        }
+
+        console.log('[LabWidget] getAllLabResults - Collected:', results.length, 'items');
+        return results;
+    }
+
+    /**
+     * Clear form
+     */
+    clear() {
+        if (this.container) {
+            this.container.innerHTML = '';
+        }
+        this.fieldValues = {};
+        this.labItems = [];
     }
 }
 
