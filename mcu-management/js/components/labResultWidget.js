@@ -35,7 +35,7 @@ class LabResultWidget {
     }
 
     /**
-     * Render fixed 14-item form dalam grid 4 kolom
+     * Render fixed 14-item form dalam grid 4 kolom (compact)
      */
     renderFixedForm() {
         if (!this.container) {
@@ -43,10 +43,10 @@ class LabResultWidget {
             return;
         }
 
-        // Create grid container (4 columns)
-        let gridHTML = '<div class="grid grid-cols-4 gap-4 mb-4">';
+        // Create grid container (3 columns untuk desktop, lebih hemat tempat)
+        let gridHTML = '<div class="grid grid-cols-3 gap-3 mb-4">';
 
-        // Render each lab item as fixed field
+        // Render each lab item as fixed field (compact version)
         this.labItems.forEach(item => {
             const fieldId = `lab-field-${item.id}`;
             const valueInputId = `lab-value-${item.id}`;
@@ -64,30 +64,33 @@ class LabResultWidget {
             };
 
             gridHTML += `
-                <div id="${fieldId}" class="p-3 bg-gray-50 rounded border border-gray-200">
-                    <label class="label text-xs font-semibold block mb-2">${item.name} <span class="text-danger">*</span></label>
-                    <label class="label text-xs block mb-1">Nilai (${item.unit})</label>
+                <div id="${fieldId}" class="p-2 bg-gray-50 rounded border border-gray-200">
+                    <label class="label text-xs font-semibold block mb-1">${item.name} <span class="text-danger">*</span></label>
                     <input
                         type="number"
                         step="0.01"
                         id="${valueInputId}"
-                        class="input lab-value-input text-sm w-full mb-2"
+                        class="input lab-value-input text-xs w-full mb-1"
                         placeholder="0.00"
                         data-item-id="${item.id}"
                         data-min="${item.min_range_reference || ''}"
                         data-max="${item.max_range_reference || ''}"
                         required
                     />
-                    <label class="label text-xs block mb-1">Status</label>
-                    <input
-                        type="text"
-                        id="${statusId}"
-                        class="input lab-status-display text-sm w-full"
-                        readonly
-                        placeholder="-"
-                    />
-                    <div class="text-xs text-gray-500 mt-1">
-                        Range: ${item.min_range_reference || '-'} - ${item.max_range_reference || '-'}
+                    <div class="flex gap-1 mb-1">
+                        <div class="flex-1">
+                            <label class="label text-xs block mb-0.5">Status</label>
+                            <input
+                                type="text"
+                                id="${statusId}"
+                                class="input lab-status-display text-xs w-full"
+                                readonly
+                                placeholder="-"
+                            />
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        ${item.unit} | ${item.min_range_reference || '-'}-${item.max_range_reference || '-'}
                     </div>
                 </div>
             `;
