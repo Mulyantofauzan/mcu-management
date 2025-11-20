@@ -387,11 +387,11 @@ class LabService {
   }
 
   /**
-   * NUCLEAR OPTION: Clean up phantom/orphaned lab records with invalid values
-   * Soft deletes any pemeriksaan_lab record with value <= 0, null, or NaN
-   * Called when importing or when user reports phantom rows
+   * NUCLEAR OPTION: Clean up phantom/orphaned lab records with invalid values FOR SPECIFIC MCU
+   * Soft deletes any pemeriksaan_lab record for given MCU with value <= 0, null, or NaN
+   * Called when user opens MCU edit modal to clean only that MCU's data
    */
-  async cleanupPhantomLabRecords() {
+  async cleanupPhantomLabRecords(mcuId) {
     try {
       await supabaseReady;
 
@@ -399,10 +399,15 @@ class LabService {
         throw new Error('Supabase not enabled');
       }
 
-      // Get all lab records (including those with invalid values)
+      if (!mcuId) {
+        throw new Error('mcuId is required for cleanup');
+      }
+
+      // Get lab records for THIS MCU ONLY (including those with invalid values)
       const { data: allRecords, error: fetchError } = await supabase
         .from('pemeriksaan_lab')
-        .select('id, value')
+        .select('id, value, mcu_id')
+        .eq('mcu_id', mcuId)
         .is('deleted_at', null);
 
       if (fetchError) throw fetchError;
@@ -417,6 +422,7 @@ class LabService {
 
       // Soft delete phantom records
       if (phantomIds.length > 0) {
+        console.log(`[labService] Cleaning up ${phantomIds.length} phantom records for MCU ${mcuId}`);
         const { error: deleteError } = await supabase
           .from('pemeriksaan_lab')
           .update({ deleted_at: new Date().toISOString() })
@@ -424,12 +430,12 @@ class LabService {
 
         if (deleteError) throw deleteError;
 
-        return { success: true, deletedCount: phantomIds.length };
+        return { success: true, deletedCount: phantomIds.length, mcuId };
       }
 
-      return { success: true, deletedCount: 0 };
+      return { success: true, deletedCount: 0, mcuId };
     } catch (error) {
-      return { success: false, error: error.message, deletedCount: 0 };
+      return { success: false, error: error.message, deletedCount: 0, mcuId };
     }
   }
 }
