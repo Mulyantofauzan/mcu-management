@@ -623,18 +623,14 @@ window.openMCUUpdateModal = async function(mcuId) {
 
     // Initialize and populate Lab Results Widget
     // Always reinitialize to clear previous state
-// [log removed]
     labResultWidgetUpdate = createLabResultWidget('lab-results-container-update');
     await labResultWidgetUpdate.init();
-// [log removed]
 
     // NUCLEAR: Clean up any phantom lab records with invalid values for THIS MCU ONLY before loading
     try {
-// [log removed]
       const cleanupResult = await labService.cleanupPhantomLabRecords(mcuId);
-// [log removed]
       if (cleanupResult.deletedCount > 0) {
-// [log removed]
+        console.log('[follow-up] Cleaned up phantom records:', cleanupResult.deletedCount);
       }
     } catch (error) {
       console.error('[follow-up] Cleanup error:', error);
@@ -642,14 +638,13 @@ window.openMCUUpdateModal = async function(mcuId) {
     }
 
     try {
-// [log removed]
+      console.log('[follow-up] Loading existing lab results for MCU:', mcuId);
       await labResultWidgetUpdate.loadExistingResults(mcuId);
-// [log removed]
+      console.log('[follow-up] Lab results loaded successfully');
     } catch (error) {
       console.error('[follow-up] Error loading existing results:', error);
       labResultWidgetUpdate.clear();
     }
-// [log removed]
     openModal('mcu-update-modal');
   } catch (error) {
 

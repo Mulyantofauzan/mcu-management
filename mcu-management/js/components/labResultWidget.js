@@ -246,6 +246,7 @@ class LabResultWidget {
             }
         });
 
+        console.log('[LabWidget] getAllLabResults - Total stored:', this.results.length, '| Valid results to save:', results.length);
         return results;
     }
 
