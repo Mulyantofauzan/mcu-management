@@ -38,6 +38,28 @@ function sanitizeInput(input) {
         .substring(0, 200); // Limit length
 }
 
+/**
+ * Show save loading overlay
+ */
+function showSaveLoading(message = 'Menyimpan...') {
+    const overlay = document.getElementById('save-loading-overlay');
+    const title = document.getElementById('save-loading-title');
+    if (overlay) {
+        overlay.classList.remove('hidden');
+        if (title) title.textContent = message;
+    }
+}
+
+/**
+ * Hide save loading overlay
+ */
+function hideSaveLoading() {
+    const overlay = document.getElementById('save-loading-overlay');
+    if (overlay) {
+        overlay.classList.add('hidden');
+    }
+}
+
 async function init() {
     try {
         // Check auth - only Admin can access
@@ -206,10 +228,13 @@ window.handleAddUser = async function(event) {
     }
 
     try {
+        showSaveLoading('Menambah user...');
+
         // Check if username already exists
         const allUsers = await database.getAll('users');
         const existingUser = allUsers.find(u => u.username === username);
         if (existingUser) {
+            hideSaveLoading();
             showToast('Username sudah digunakan', 'error');
             return;
         }
@@ -229,12 +254,13 @@ window.handleAddUser = async function(event) {
 
         await database.add('users', newUser);
 
+        hideSaveLoading();
         showToast('User berhasil ditambahkan', 'success');
         window.closeAddUserModal();
         await loadUsers();
 
     } catch (error) {
-
+        hideSaveLoading();
         showToast('Gagal menambahkan user: ' + error.message, 'error');
     }
 };
@@ -295,10 +321,13 @@ window.handleEditUser = async function(event) {
     const changePassword = document.getElementById('edit-change-password').checked;
 
     try {
+        showSaveLoading('Mengupdate user...');
+
         // Check if username is taken by another user
         const allUsers = await database.getAll('users');
         const existingUser = allUsers.find(u => u.username === username);
         if (existingUser && existingUser.userId !== userId) {
+            hideSaveLoading();
             showToast('Username sudah digunakan oleh user lain', 'error');
             return;
         }
@@ -316,11 +345,13 @@ window.handleEditUser = async function(event) {
             const passwordConfirm = document.getElementById('edit-password-confirm').value;
 
             if (password !== passwordConfirm) {
+                hideSaveLoading();
                 showToast('Password dan konfirmasi password tidak sama', 'error');
                 return;
             }
 
             if (password.length < 6) {
+                hideSaveLoading();
                 showToast('Password minimal 6 karakter', 'error');
                 return;
             }
@@ -330,6 +361,7 @@ window.handleEditUser = async function(event) {
 
         await database.update('users', userId, updateData);
 
+        hideSaveLoading();
         showToast('User berhasil diupdate', 'success');
         window.closeEditUserModal();
         await loadUsers();
@@ -343,7 +375,7 @@ window.handleEditUser = async function(event) {
         }
 
     } catch (error) {
-
+        hideSaveLoading();
         showToast('Gagal mengupdate user: ' + error.message, 'error');
     }
 };

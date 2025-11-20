@@ -77,6 +77,28 @@ function hideUploadLoading() {
     }
 }
 
+/**
+ * Show save loading overlay
+ */
+function showSaveLoading(message = 'Menyimpan...') {
+    const overlay = document.getElementById('save-loading-overlay');
+    const title = document.getElementById('save-loading-title');
+    if (overlay) {
+        overlay.classList.remove('hidden');
+        if (title) title.textContent = message;
+    }
+}
+
+/**
+ * Hide save loading overlay
+ */
+function hideSaveLoading() {
+    const overlay = document.getElementById('save-loading-overlay');
+    if (overlay) {
+        overlay.classList.add('hidden');
+    }
+}
+
 async function init() {
     try {
         if (!authService.isAuthenticated()) {
@@ -354,6 +376,8 @@ window.handleAddEmployee = async function(event) {
 
     try {
         const currentUser = authService.getCurrentUser();
+        showSaveLoading('Menambah karyawan...');
+
         const employeeData = {
             name: sanitizeInput(document.getElementById('emp-name').value),  // Sanitize critical field
             jobTitleId: document.getElementById('emp-job-id').value,  // Use hidden field with ID
@@ -369,6 +393,7 @@ window.handleAddEmployee = async function(event) {
 
         const newEmployee = await employeeService.create(employeeData, currentUser);
 
+        hideSaveLoading();
         showToast('Karyawan berhasil ditambahkan!', 'success');
 
         // Auto-close modal
@@ -380,7 +405,7 @@ window.handleAddEmployee = async function(event) {
         }, 300);
 
     } catch (error) {
-
+        hideSaveLoading();
         showToast('Gagal menambah karyawan: ' + error.message, 'error');
     }
 };
@@ -470,6 +495,7 @@ window.handleAddMCU = async function(event) {
 
     try {
         const currentUser = authService.getCurrentUser();
+        showSaveLoading('Menyimpan MCU...');
 
         // ✅ FIX: Get doctor ID and convert to integer
         const doctorSelect = document.getElementById('mcu-doctor');
@@ -478,6 +504,7 @@ window.handleAddMCU = async function(event) {
 
         // Debug: Log doctor selection
         if (!doctorValue) {
+            hideSaveLoading();
             showToast('❌ Harap pilih dokter pemeriksa sebelum menyimpan', 'error');
             return; // Stop form submission if doctor is not selected
         }
@@ -570,6 +597,7 @@ window.handleAddMCU = async function(event) {
             }
         }
 
+        hideSaveLoading();
         showToast('MCU berhasil ditambahkan!', 'success');
 
         // Make form read-only after successful save
@@ -588,7 +616,7 @@ window.handleAddMCU = async function(event) {
         }
 
     } catch (error) {
-
+        hideSaveLoading();
         showToast('Gagal menambah MCU: ' + error.message, 'error');
     }
 };

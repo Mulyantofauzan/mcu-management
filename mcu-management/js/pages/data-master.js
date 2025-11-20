@@ -23,6 +23,28 @@ window.editItem = async function(id) { /* Will be overwritten by actual implemen
 window.deleteItem = async function(id) { /* Will be overwritten by actual implementation */ };
 window.handleLogout = function() { /* Will be overwritten by actual implementation */ };
 
+/**
+ * Show save loading overlay
+ */
+function showSaveLoading(message = 'Menyimpan...') {
+    const overlay = document.getElementById('save-loading-overlay');
+    const title = document.getElementById('save-loading-title');
+    if (overlay) {
+        overlay.classList.remove('hidden');
+        if (title) title.textContent = message;
+    }
+}
+
+/**
+ * Hide save loading overlay
+ */
+function hideSaveLoading() {
+    const overlay = document.getElementById('save-loading-overlay');
+    if (overlay) {
+        overlay.classList.add('hidden');
+    }
+}
+
 const tabConfig = {
     jobTitles: { title: 'Jabatan', getAll: () => masterDataService.getAllJobTitles(), create: (d) => masterDataService.createJobTitle(d), update: (id, d) => masterDataService.updateJobTitle(id, d), delete: (id) => masterDataService.deleteJobTitle(id) },
     departments: { title: 'Departemen', getAll: () => masterDataService.getAllDepartments(), create: (d) => masterDataService.createDepartment(d), update: (id, d) => masterDataService.updateDepartment(id, d), delete: (id) => masterDataService.deleteDepartment(id) },
@@ -282,21 +304,24 @@ window.handleSubmit = async function(event) {
 
     try {
         const currentUser = authService.getCurrentUser();
+        showSaveLoading('Menyimpan data...');
 
         if (editingId) {
             // Update
             await config.update(editingId, formData, currentUser);
+            hideSaveLoading();
             showToast('Data berhasil diupdate', 'success');
         } else {
             // Create
             await config.create(formData, currentUser);
+            hideSaveLoading();
             showToast('Data berhasil ditambahkan', 'success');
         }
 
         window.closeCrudModal();
         await loadData();
     } catch (error) {
-
+        hideSaveLoading();
         showToast('Gagal menyimpan: ' + error.message, 'error');
     }
 };

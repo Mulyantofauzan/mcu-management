@@ -59,6 +59,23 @@ function hideUploadLoading() {
   }
 }
 
+// Save loading overlay functions
+function showSaveLoading(message = 'Menyimpan Data...') {
+  const overlay = document.getElementById('save-loading-overlay');
+  const title = document.getElementById('save-loading-title');
+  if (overlay) {
+    overlay.classList.remove('hidden');
+    if (title) title.textContent = message;
+  }
+}
+
+function hideSaveLoading() {
+  const overlay = document.getElementById('save-loading-overlay');
+  if (overlay) {
+    overlay.classList.add('hidden');
+  }
+}
+
 // Download Surat Rujukan PDF from table action button
 window.downloadRujukanPDFAction = async function(mcuId) {
   try {
@@ -460,6 +477,7 @@ window.handleFollowUpSubmit = async function(event) {
 
   try {
     const currentUser = authService.getCurrentUser();
+    showSaveLoading('Menyimpan follow-up...');
 
     // Prepare update data (hanya final result dan notes dulu)
     const updateData = {
@@ -470,6 +488,7 @@ window.handleFollowUpSubmit = async function(event) {
     // Update follow-up (IMPORTANT: this updates existing MCU, does NOT create new one)
     await mcuService.updateFollowUp(mcuId, updateData, currentUser);
 
+    hideSaveLoading();
     showToast('Hasil akhir berhasil disimpan', 'success');
 
     // ✅ NEW: Upload files if any are pending
@@ -519,7 +538,7 @@ window.handleFollowUpSubmit = async function(event) {
     }, 500);
 
   } catch (error) {
-
+    hideSaveLoading();
     showToast('Gagal menyimpan follow-up: ' + error.message, 'error');
   }
 };

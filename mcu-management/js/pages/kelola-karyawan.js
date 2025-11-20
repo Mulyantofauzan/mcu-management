@@ -876,6 +876,9 @@ window.handleAddMCU = async function(event) {
             return;
         }
 
+        // Show save loading overlay to prevent double-submit
+        showSaveLoading('Menambah MCU...');
+
         // ✅ FIX: Upload temporary files to Cloudflare R2 BEFORE saving MCU data
         const tempFiles = tempFileStorage.getFiles(mcuData.mcuId);
         if (tempFiles && tempFiles.length > 0) {
@@ -920,6 +923,7 @@ window.handleAddMCU = async function(event) {
         // ✅ FIX: NOW save MCU data after files are successfully uploaded to R2 (or if no files)
         await mcuService.create(mcuData, currentUser);
 
+        hideSaveLoading();
         showToast('MCU berhasil ditambahkan!', 'success');
 
         // Close modal and reload data
@@ -927,6 +931,7 @@ window.handleAddMCU = async function(event) {
         await loadData();
 
     } catch (error) {
+        hideSaveLoading();
         showToast('Gagal menambah MCU: ' + error.message, 'error');
         // Note: Temporary files are kept in memory and will be cleared when user reopens the modal or reloads page
     }
