@@ -208,26 +208,38 @@ class LabResultWidget {
 
     /**
      * Get all lab results dari form
+     * CRITICAL: Validate that element still exists in DOM (not stale reference)
      */
     getAllLabResults() {
         const results = [];
 
         this.results.forEach(result => {
             const element = result.element;
-            if (!element) return;
+            if (!element) {
+                console.log('[LabWidget] Skipping result with stale element reference');
+                return;
+            }
 
-            const labItemId = element.querySelector('.lab-item-select').value;
-            const value = element.querySelector('.lab-value-input').value;
-            const notes = element.querySelector('.lab-notes-input').value;
+            // CRITICAL: Check if element is still in the DOM
+            if (!document.body.contains(element)) {
+                console.log('[LabWidget] Skipping result with element not in DOM');
+                return;
+            }
+
+            const labItemId = element.querySelector('.lab-item-select')?.value;
+            const value = element.querySelector('.lab-value-input')?.value;
+            const notes = element.querySelector('.lab-notes-input')?.value;
 
             // Only include jika lab item dipilih DAN value adalah angka valid (bukan 0, kosong, atau NaN)
             if (labItemId && value) {
                 const numValue = parseFloat(value);
                 // Skip invalid numeric values (0, NaN, or empty)
                 if (isNaN(numValue) || numValue === 0) {
+                    console.log(`[LabWidget] Skipping invalid value: labItemId=${labItemId}, value=${value}, numValue=${numValue}`);
                     return; // Skip this row
                 }
 
+                console.log(`[LabWidget] Including result: labItemId=${labItemId}, value=${value}, numValue=${numValue}`);
                 results.push({
                     labItemId: parseInt(labItemId),
                     value: numValue,
@@ -236,17 +248,32 @@ class LabResultWidget {
             }
         });
 
+        console.log('[LabWidget] getAllLabResults() returning', results.length, 'results:', results);
         return results;
     }
 
     /**
      * Clear all lab results
+     * AGGRESSIVE: Clear both DOM and internal state
      */
     clear() {
+        console.log('[LabWidget] Clearing all lab results. Current results count:', this.results.length);
+
+        // Clear each element individually to ensure complete removal
+        this.results.forEach(result => {
+            if (result.element && document.body.contains(result.element)) {
+                result.element.remove();
+            }
+        });
+
+        // Also clear container HTML as fallback
         if (this.container) {
             this.container.innerHTML = '';
         }
+
+        // Reset internal state
         this.results = [];
+        console.log('[LabWidget] Clear complete. Results count:', this.results.length);
     }
 
     /**

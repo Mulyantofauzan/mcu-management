@@ -679,9 +679,11 @@ window.toggleFinalResultSection = function() {
 };
 
 window.closeMCUUpdateModal = function() {
+  console.log('[follow-up] Closing MCU update modal');
   closeModal('mcu-update-modal');
   currentMCU = null;
   if (labResultWidgetUpdate) {
+    console.log('[follow-up] Clearing lab widget before closing modal');
     labResultWidgetUpdate.clear();
   }
 };
