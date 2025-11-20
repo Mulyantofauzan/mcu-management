@@ -439,12 +439,28 @@ class LabService {
   /**
    * Compare old vs new lab results and return change records for audit trail
    * Used to track lab result changes in mcuChanges table
+   * @param {Array} oldResults - Existing lab results from database
+   * @param {Array} newResults - New lab results from form
+   * @param {string} mcuId - MCU ID
+   * @param {Object} currentUser - Current user object
+   * @param {Array} labItems - Optional: lab items for getting names (if not provided, will fetch)
    */
-  getLabResultChanges(oldResults, newResults, mcuId, currentUser) {
+  async getLabResultChanges(oldResults, newResults, mcuId, currentUser, labItems = null) {
     const changes = [];
 
     if (!oldResults) oldResults = [];
     if (!newResults) newResults = [];
+
+    // Get lab items if not provided
+    if (!labItems) {
+      labItems = await this.getAllLabItems();
+    }
+
+    // Create map for quick item name lookup
+    const itemNameMap = {};
+    labItems.forEach(item => {
+      itemNameMap[item.id] = item.name;
+    });
 
     // Create maps for easy lookup
     const oldMap = {};
@@ -462,6 +478,7 @@ class LabService {
     for (const labItemId in newMap) {
       const newResult = newMap[labItemId];
       const oldResult = oldMap[labItemId];
+      const itemName = itemNameMap[labItemId] || `Item ${labItemId}`;
 
       if (!oldResult) {
         // New lab result added
@@ -472,7 +489,7 @@ class LabService {
           changedBy: currentUser?.userId || currentUser?.id || 'system',
           fieldChanged: 'labResult',
           fieldName: 'labResult',
-          fieldLabel: `Lab Result: Item ${labItemId}`,
+          fieldLabel: `Hasil Lab: ${itemName}`,
           oldValue: '-',
           newValue: `${newResult.value} (Status: ${newResult.notes || '-'})`,
           note: 'Lab result added'
@@ -486,7 +503,7 @@ class LabService {
           changedBy: currentUser?.userId || currentUser?.id || 'system',
           fieldChanged: 'labResult',
           fieldName: 'labResult',
-          fieldLabel: `Lab Result: Item ${labItemId}`,
+          fieldLabel: `Hasil Lab: ${itemName}`,
           oldValue: `${oldResult.value} (Status: ${oldResult.notes || '-'})`,
           newValue: `${newResult.value} (Status: ${newResult.notes || '-'})`,
           note: 'Lab result value changed'
@@ -498,6 +515,7 @@ class LabService {
     for (const labItemId in oldMap) {
       if (!newMap[labItemId]) {
         const oldResult = oldMap[labItemId];
+        const itemName = itemNameMap[labItemId] || `Item ${labItemId}`;
         changes.push({
           changeId: `change-${Date.now()}-${Math.random()}`,
           mcuId: mcuId,
@@ -505,7 +523,7 @@ class LabService {
           changedBy: currentUser?.userId || currentUser?.id || 'system',
           fieldChanged: 'labResult',
           fieldName: 'labResult',
-          fieldLabel: `Lab Result: Item ${labItemId}`,
+          fieldLabel: `Hasil Lab: ${itemName}`,
           oldValue: `${oldResult.value}`,
           newValue: '-',
           note: 'Lab result removed'

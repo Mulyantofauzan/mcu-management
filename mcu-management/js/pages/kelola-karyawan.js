@@ -1509,7 +1509,7 @@ window.handleEditMCU = async function(event) {
                 // ✅ IMPORTANT: Save lab changes to mcuChanges table so they appear in change history
                 try {
                     const { database } = await import('../services/database.js');
-                    const labChanges = labService.getLabResultChanges(existingLabResults, newLabResults, mcuId, currentUser);
+                    const labChanges = await labService.getLabResultChanges(existingLabResults, newLabResults, mcuId, currentUser);
                     for (const labChange of labChanges) {
                         await database.add('mcuChanges', {
                             mcuId: mcuId,
