@@ -282,27 +282,39 @@ class LabResultWidget {
      */
     async loadExistingResults(mcuId) {
         try {
+            console.log('[LabWidget] loadExistingResults called for MCU:', mcuId);
+
+            if (!mcuId) {
+                throw new Error('mcuId is required to load existing results');
+            }
+
             const existing = await labService.getPemeriksaanLabByMcuId(mcuId);
-            console.log('[LabWidget] Raw data from DB:', existing);
+            console.log('[LabWidget] Raw data from DB:', existing, 'Count:', existing?.length || 0);
 
             // CRITICAL: Always clear first to prevent ghost rows
             this.clear();
+
+            // Check if we got valid data
+            if (!existing || !Array.isArray(existing)) {
+                console.warn('[LabWidget] Existing data is not an array:', typeof existing, existing);
+                return;
+            }
 
             // Separate valid and invalid for debugging
             const validResults = [];
             const invalidResults = [];
 
             // AGGRESSIVE filter: Only include valid, non-zero numeric values
-            existing.forEach(result => {
+            existing.forEach((result, index) => {
                 // Check basic structure
                 if (!result || !result.lab_item_id) {
-                    invalidResults.push({result, reason: 'Missing result or lab_item_id'});
+                    invalidResults.push({index, result, reason: 'Missing result or lab_item_id'});
                     return;
                 }
 
                 // Check value exists and is not null/undefined/empty string
                 if (result.value === null || result.value === undefined || result.value === '') {
-                    invalidResults.push({result, reason: `Value is ${result.value}`});
+                    invalidResults.push({index, result, reason: `Value is ${result.value}`});
                     return;
                 }
 
@@ -311,28 +323,40 @@ class LabResultWidget {
 
                 // CRITICAL: Reject NaN, 0, or negative values
                 if (isNaN(numValue) || numValue <= 0) {
-                    invalidResults.push({result, reason: `Invalid numeric value: ${result.value} (parsed as ${numValue})`});
+                    invalidResults.push({index, result, reason: `Invalid numeric value: ${result.value} (parsed as ${numValue})`});
                     return;
                 }
 
                 validResults.push(result);
             });
 
-            console.log('[LabWidget] Valid results:', validResults.length);
-            console.log('[LabWidget] Invalid results:', invalidResults.length, invalidResults);
+            console.log('[LabWidget] Filtering complete - Valid results:', validResults.length, 'Invalid results:', invalidResults.length);
+            if (invalidResults.length > 0) {
+                console.warn('[LabWidget] Invalid results details:', invalidResults);
+            }
 
             // Load only valid results
-            validResults.forEach(result => {
-                this.addLabResultForm({
-                    lab_item_id: result.lab_item_id,
-                    value: result.value,
-                    notes: result.notes
-                });
+            validResults.forEach((result, index) => {
+                try {
+                    console.log(`[LabWidget] Loading result ${index + 1}/${validResults.length}: labItemId=${result.lab_item_id}, value=${result.value}`);
+                    this.addLabResultForm({
+                        lab_item_id: result.lab_item_id,
+                        value: result.value,
+                        notes: result.notes
+                    });
+                } catch (addError) {
+                    console.error(`[LabWidget] Error adding lab result at index ${index}:`, addError);
+                }
             });
+
+            console.log('[LabWidget] loadExistingResults completed successfully. Loaded', validResults.length, 'results');
         } catch (error) {
-            console.error('[LabWidget] Error loading existing results:', error);
+            console.error('[LabWidget] CRITICAL ERROR loading existing results:', error);
+            console.error('[LabWidget] Error stack:', error.stack);
             // On error, ensure container is cleared to prevent stale rows
             this.clear();
+            // Re-throw so caller knows there was an error
+            throw error;
         }
     }
 }
