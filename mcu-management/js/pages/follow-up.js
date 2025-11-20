@@ -822,42 +822,95 @@ window.handleMCUUpdate = async function(event) {
     }
 
     // Save/update lab results separately - SMART update (only update changed items)
-    if (labResults !== undefined && labResults !== null) {
+    if (labResults !== undefined && labResults !== null && labResults.length > 0) {
       try {
+        console.log('[follow-up] Saving lab results. Count:', labResults.length, 'Data:', labResults);
+
+        // VALIDATION: Ensure all lab results have valid data
+        for (const result of labResults) {
+          if (!result.labItemId || !result.value) {
+            throw new Error(`Invalid lab result: Missing labItemId or value. Data: ${JSON.stringify(result)}`);
+          }
+          const numValue = parseFloat(result.value);
+          if (isNaN(numValue) || numValue <= 0) {
+            throw new Error(`Invalid lab result value: labItemId=${result.labItemId}, value='${result.value}'. Only positive numbers allowed.`);
+          }
+        }
+
         const existingLabResults = await labService.getPemeriksaanLabByMcuId(mcuId);
+        console.log('[follow-up] Existing lab results. Count:', existingLabResults.length);
+
+        let savedCount = 0;
+        let updatedCount = 0;
+        let deletedCount = 0;
+        let errors = [];
 
         // Process NEW lab results (not in existing)
         for (const result of labResults) {
-          const existing = existingLabResults.find(lab => lab.lab_item_id === result.labItemId);
-          if (!existing) {
-            // NEW - insert
-            await labService.createPemeriksaanLab({
-              mcuId: mcuId,
-              employeeId: currentMCU.employeeId,
-              labItemId: result.labItemId,
-              value: result.value,
-              notes: result.notes
-            }, currentUser);
-          } else if (existing.value !== result.value || existing.notes !== result.notes) {
-            // MODIFIED - update only if value or notes changed
-            await labService.updatePemeriksaanLab(existing.id, {
-              value: result.value,
-              notes: result.notes
-            }, currentUser);
+          try {
+            const existing = existingLabResults.find(lab => lab.lab_item_id === result.labItemId);
+            if (!existing) {
+              // NEW - insert
+              console.log(`[follow-up] Creating new lab result: labItemId=${result.labItemId}, value=${result.value}`);
+              await labService.createPemeriksaanLab({
+                mcuId: mcuId,
+                employeeId: currentMCU.employeeId,
+                labItemId: result.labItemId,
+                value: result.value,
+                notes: result.notes
+              }, currentUser);
+              savedCount++;
+            } else if (existing.value !== result.value || existing.notes !== result.notes) {
+              // MODIFIED - update only if value or notes changed
+              console.log(`[follow-up] Updating lab result: id=${existing.id}, labItemId=${result.labItemId}, oldValue=${existing.value}, newValue=${result.value}`);
+              await labService.updatePemeriksaanLab(existing.id, {
+                value: result.value,
+                notes: result.notes
+              }, currentUser);
+              updatedCount++;
+            }
+            // UNCHANGED - do nothing
+          } catch (resultError) {
+            errors.push(`Failed to save lab result (labItemId=${result.labItemId}): ${resultError.message}`);
           }
-          // UNCHANGED - do nothing
         }
 
         // Process DELETED lab results (in existing but not in current)
         for (const existing of existingLabResults) {
-          const stillExists = labResults.find(lab => lab.labItemId === existing.lab_item_id);
-          if (!stillExists) {
-            // DELETED - soft delete
-            await labService.deletePemeriksaanLab(existing.id);
+          try {
+            const stillExists = labResults.find(lab => lab.labItemId === existing.lab_item_id);
+            if (!stillExists) {
+              // DELETED - soft delete
+              console.log(`[follow-up] Deleting lab result: id=${existing.id}, labItemId=${existing.lab_item_id}`);
+              await labService.deletePemeriksaanLab(existing.id);
+              deletedCount++;
+            }
+          } catch (deleteError) {
+            errors.push(`Failed to delete lab result (labItemId=${existing.lab_item_id}): ${deleteError.message}`);
           }
         }
+
+        console.log(`[follow-up] Lab save complete. Saved: ${savedCount}, Updated: ${updatedCount}, Deleted: ${deletedCount}, Errors: ${errors.length}`);
+
+        // If there were errors, show them to user
+        if (errors.length > 0) {
+          const errorMsg = `Beberapa hasil lab gagal disimpan:\n${errors.join('\n')}`;
+          showToast(errorMsg, 'error');
+          throw new Error(`Lab save had errors: ${errors.join('; ')}`);
+        }
+
+        // Show success message with details
+        if (savedCount > 0 || updatedCount > 0 || deletedCount > 0) {
+          const details = [];
+          if (savedCount > 0) details.push(`${savedCount} ditambah`);
+          if (updatedCount > 0) details.push(`${updatedCount} diupdate`);
+          if (deletedCount > 0) details.push(`${deletedCount} dihapus`);
+          console.log(`[follow-up] Lab results saved successfully: ${details.join(', ')}`);
+        }
       } catch (error) {
-        showToast(`Peringatan: Gagal menyimpan hasil lab: ${error.message}`, 'warning');
+        console.error('[follow-up] CRITICAL ERROR saving lab results:', error);
+        showToast(`ERROR: Gagal menyimpan hasil lab. ${error.message}. Data Anda mungkin belum tersimpan!`, 'error');
+        throw error; // Re-throw to prevent further processing
       }
     }
 
