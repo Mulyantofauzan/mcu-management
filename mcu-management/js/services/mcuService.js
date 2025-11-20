@@ -227,12 +227,14 @@ class MCUService {
 
     // Also update examination fields if provided
     const examFields = [
+      'mcuDate', 'mcuType', // ✅ FIX: Include date and type for change tracking
       'bmi', 'bloodPressure', 'respiratoryRate', 'pulse', 'temperature',
       'vision', 'audiometry', 'spirometry',
       'xray', 'ekg', 'treadmill', 'hbsag',
       'sgot', 'sgpt', 'cbc', 'napza',
       'doctor', // ✅ FIX: Include doctor field so it gets saved during edit!
-      'recipient', 'keluhanUtama', 'diagnosisKerja', 'alasanRujuk'
+      'recipient', 'keluhanUtama', 'diagnosisKerja', 'alasanRujuk',
+      'colorblind', 'initialResult', 'initialNotes' // ✅ FIX: Include initial result fields
     ];
 
     examFields.forEach(field => {

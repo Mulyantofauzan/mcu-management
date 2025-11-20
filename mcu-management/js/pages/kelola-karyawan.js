@@ -1043,8 +1043,13 @@ window.viewMCUDetail = async function(mcuId) {
 
         if (changes && changes.length > 0) {
             const fieldLabels = {
+                'mcuDate': 'Tanggal MCU',
+                'mcuType': 'Jenis MCU',
                 'bmi': 'BMI',
                 'bloodPressure': 'Tekanan Darah',
+                'respiratoryRate': 'RR (Frekuensi Nafas)',
+                'pulse': 'Nadi',
+                'temperature': 'Suhu',
                 'vision': 'Penglihatan',
                 'audiometry': 'Audiometri',
                 'spirometry': 'Spirometri',
@@ -1056,8 +1061,17 @@ window.viewMCUDetail = async function(mcuId) {
                 'sgpt': 'SGPT',
                 'cbc': 'CBC',
                 'napza': 'NAPZA',
+                'colorblind': 'Buta Warna',
+                'doctor': 'Dokter',
+                'recipient': 'Penerima Rujukan',
+                'keluhanUtama': 'Keluhan Utama',
+                'diagnosisKerja': 'Diagnosis Kerja',
+                'alasanRujuk': 'Alasan Rujuk',
+                'initialResult': 'Hasil Awal',
+                'initialNotes': 'Catatan Awal',
                 'finalResult': 'Hasil Akhir',
-                'finalNotes': 'Catatan Akhir'
+                'finalNotes': 'Catatan Akhir',
+                'status': 'Status'
             };
 
             let changeHtml = '<div class="table-container"><table class="table"><thead><tr>';
