@@ -618,56 +618,70 @@ window.handleAddMCU = async function(event) {
         // ✅ CRITICAL: Clear temporary files ONLY after successful R2 upload
         tempFileStorage.clearFiles(mcuData.mcuId);
 
-        // ✅ NOW save MCU data after files are successfully uploaded to R2 (or if no files)
-        const createdMCU = await mcuService.create(mcuData, currentUser);
-
-        // Save lab results jika ada
-        let labSaveFailures = [];
+        // ✅ CRITICAL: COLLECT & VALIDATE LAB DATA FIRST (before MCU save)
+        // This ensures we can fail fast without orphaning MCU records
+        let labResults = [];
         if (labResultWidget) {
-            const labResults = labResultWidget.getAllLabResults();
+            labResults = labResultWidget.getAllLabResults();
             console.log('[DEBUG] Lab results to save:', labResults);
-            console.log('[DEBUG] Created MCU ID:', createdMCU.mcuId);
 
             if (labResults && labResults.length > 0) {
-
+                // Validate all lab results are valid before proceeding
                 for (const result of labResults) {
-                    try {
-                        console.log('[DEBUG] Saving lab result:', { mcuId: createdMCU.mcuId, ...result });
-                        await labService.createPemeriksaanLab({
-                            mcuId: createdMCU.mcuId,
-                            employeeId: mcuData.employeeId,
-                            labItemId: result.labItemId,
-                            value: result.value,
-                            notes: result.notes
-                        }, currentUser);
-                    } catch (error) {
-                        console.error('[ERROR] Failed to save lab result:', error);
-                        labSaveFailures.push({ labItemId: result.labItemId, error: error.message });
+                    if (!result.labItemId || !result.value) {
+                        throw new Error(`Invalid lab result: Missing labItemId or value. Data: ${JSON.stringify(result)}`);
+                    }
+                    const numValue = parseFloat(result.value);
+                    if (isNaN(numValue) || numValue <= 0) {
+                        throw new Error(`Invalid lab result value: labItemId=${result.labItemId}, value='${result.value}'. Only positive numbers allowed.`);
                     }
                 }
+                console.log('[DEBUG] All lab results validated successfully');
+            }
+        }
 
-                // ✅ CRITICAL: Check if ALL lab results saved successfully
-                if (labSaveFailures.length === 0) {
-                    showToast(`✅ ${labResults.length} hasil lab berhasil disimpan`, 'success');
-                } else if (labSaveFailures.length === labResults.length) {
-                    // ALL failed
-                    hideSaveLoading();
-                    const errorMsg = `❌ GAGAL: Semua hasil lab gagal disimpan!\n${labSaveFailures.map(f => `Item ${f.labItemId}: ${f.error}`).join('\n')}\n\nMCU sudah disimpan tapi lab results KOSONG. Hubungi support!`;
-                    showToast(errorMsg, 'error');
-                    throw new Error('Lab results save failed');
-                } else {
-                    // PARTIAL failure
-                    hideSaveLoading();
-                    const successCount = labResults.length - labSaveFailures.length;
-                    const errorMsg = `⚠️ SEBAGIAN GAGAL: ${successCount}/${labResults.length} hasil lab tersimpan.\nYang gagal: ${labSaveFailures.map(f => `Item ${f.labItemId}`).join(', ')}\n\nHubungi support untuk memperbaiki!`;
-                    showToast(errorMsg, 'error');
-                    throw new Error('Partial lab results save failed');
+        // ✅ NOW save MCU data after files are successfully uploaded to R2 (or if no files)
+        const createdMCU = await mcuService.create(mcuData, currentUser);
+        console.log('[DEBUG] Created MCU ID:', createdMCU.mcuId);
+
+        // Save lab results AFTER MCU is created
+        let labSaveFailures = [];
+        if (labResults && labResults.length > 0) {
+            for (const result of labResults) {
+                try {
+                    console.log('[DEBUG] Saving lab result:', { mcuId: createdMCU.mcuId, ...result });
+                    await labService.createPemeriksaanLab({
+                        mcuId: createdMCU.mcuId,
+                        employeeId: mcuData.employeeId,
+                        labItemId: result.labItemId,
+                        value: result.value,
+                        notes: result.notes
+                    }, currentUser);
+                } catch (error) {
+                    console.error('[ERROR] Failed to save lab result:', error);
+                    labSaveFailures.push({ labItemId: result.labItemId, error: error.message });
                 }
+            }
+
+            // ✅ CRITICAL: Check if ALL lab results saved successfully
+            if (labSaveFailures.length === 0) {
+                showToast(`✅ ${labResults.length} hasil lab berhasil disimpan`, 'success');
+            } else if (labSaveFailures.length === labResults.length) {
+                // ALL failed - MCU orphaned
+                hideSaveLoading();
+                const errorMsg = `❌ GAGAL: Semua hasil lab gagal disimpan!\n${labSaveFailures.map(f => `Item ${f.labItemId}: ${f.error}`).join('\n')}\n\nMCU sudah disimpan tapi lab results KOSONG. MCU ID: ${createdMCU.mcuId}. Hubungi support!`;
+                showToast(errorMsg, 'error');
+                throw new Error('Lab results save failed');
             } else {
-                console.log('[DEBUG] No lab results to save');
+                // PARTIAL failure - MCU has incomplete data
+                hideSaveLoading();
+                const successCount = labResults.length - labSaveFailures.length;
+                const errorMsg = `⚠️ SEBAGIAN GAGAL: ${successCount}/${labResults.length} hasil lab tersimpan.\nYang gagal: ${labSaveFailures.map(f => `Item ${f.labItemId}`).join(', ')}\n\nMCU ID: ${createdMCU.mcuId}. Hubungi support untuk memperbaiki!`;
+                showToast(errorMsg, 'error');
+                throw new Error('Partial lab results save failed');
             }
         } else {
-            console.log('[DEBUG] Lab result widget not available');
+            console.log('[DEBUG] No lab results to save');
         }
 
         // ✅ CRITICAL: Clean up phantom lab records immediately after creation

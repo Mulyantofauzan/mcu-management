@@ -952,8 +952,69 @@ window.handleAddMCU = async function(event) {
         // ✅ FIX: NOW save MCU data after files are successfully uploaded to R2 (or if no files)
         const createdMCU = await mcuService.create(mcuData, currentUser);
 
-        // ✅ CRITICAL: Clean up phantom lab records immediately after creation
-        // Phantom records can occur if user tried to submit before all validation ran
+        // ✅ CRITICAL: Save lab results if widget exists - MUST save after MCU creation
+        if (labResultWidget) {
+            try {
+                const labResults = labResultWidget.getAllLabResults();
+                console.log('[DEBUG-ADD-MCU] Lab results to save:', labResults);
+
+                if (labResults && labResults.length > 0) {
+                    // Validate all lab results before saving
+                    for (const result of labResults) {
+                        if (!result.labItemId || !result.value) {
+                            throw new Error(`Invalid lab result: Missing labItemId or value. Data: ${JSON.stringify(result)}`);
+                        }
+                        const numValue = parseFloat(result.value);
+                        if (isNaN(numValue) || numValue <= 0) {
+                            throw new Error(`Invalid lab result value: labItemId=${result.labItemId}, value='${result.value}'. Only positive numbers allowed.`);
+                        }
+                    }
+
+                    // Save each lab result
+                    let labSaveFailures = [];
+                    for (const result of labResults) {
+                        try {
+                            console.log('[DEBUG-ADD-MCU] Saving lab result:', { mcuId: createdMCU.mcuId, ...result });
+                            await labService.createPemeriksaanLab({
+                                mcuId: createdMCU.mcuId,
+                                employeeId: mcuData.employeeId,
+                                labItemId: result.labItemId,
+                                value: result.value,
+                                notes: result.notes
+                            }, currentUser);
+                        } catch (error) {
+                            console.error('[ERROR-ADD-MCU] Failed to save lab result:', error);
+                            labSaveFailures.push({ labItemId: result.labItemId, error: error.message });
+                        }
+                    }
+
+                    // Check lab save results
+                    if (labSaveFailures.length === 0) {
+                        console.log(`[DEBUG-ADD-MCU] All ${labResults.length} lab results saved successfully`);
+                        showToast(`✅ MCU & ${labResults.length} hasil lab berhasil disimpan`, 'success');
+                    } else if (labSaveFailures.length === labResults.length) {
+                        // ALL failed
+                        const errorMsg = `❌ GAGAL: MCU berhasil disimpan tapi SEMUA hasil lab gagal!\n${labSaveFailures.map(f => `Item ${f.labItemId}: ${f.error}`).join('\n')}\n\nMCU ID: ${createdMCU.mcuId}. Hubungi support!`;
+                        showToast(errorMsg, 'error');
+                        throw new Error('Lab results save failed');
+                    } else {
+                        // PARTIAL failure
+                        const successCount = labResults.length - labSaveFailures.length;
+                        const errorMsg = `⚠️ SEBAGIAN GAGAL: ${successCount}/${labResults.length} hasil lab tersimpan.\nYang gagal: ${labSaveFailures.map(f => `Item ${f.labItemId}`).join(', ')}\n\nMCU ID: ${createdMCU.mcuId}. Hubungi support!`;
+                        showToast(errorMsg, 'error');
+                        throw new Error('Partial lab results save failed');
+                    }
+                } else {
+                    console.log('[DEBUG-ADD-MCU] No lab results to save');
+                }
+            } catch (error) {
+                hideSaveLoading();
+                showToast(`ERROR: Gagal menyimpan hasil lab. ${error.message}. MCU ID: ${createdMCU.mcuId}`, 'error');
+                throw error;
+            }
+        }
+
+        // ✅ CRITICAL: Clean up phantom lab records immediately after successful save
         try {
             await labService.cleanupPhantomLabRecords(createdMCU.mcuId);
         } catch (cleanupError) {
