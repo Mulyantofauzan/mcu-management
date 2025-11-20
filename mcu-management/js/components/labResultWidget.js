@@ -124,17 +124,9 @@ class LabResultWidget {
                         data-max="${item.max_range_reference || ''}"
                         required
                     />
-                    <div class="flex gap-1 mb-1">
-                        <div class="flex-1">
-                            <label class="label text-xs block mb-0.5">Status</label>
-                            <input
-                                type="text"
-                                id="${statusId}"
-                                class="input lab-status-display text-xs w-full"
-                                readonly
-                                placeholder="-"
-                            />
-                        </div>
+                    <div class="mb-1">
+                        <label class="label text-xs block mb-0.5">Status</label>
+                        <div id="${statusId}" class="lab-status-display text-xs font-medium text-gray-700 py-1">-</div>
                     </div>
                     <div class="text-xs text-gray-500">
                         ${item.unit} | ${item.min_range_reference || '-'}-${item.max_range_reference || '-'}
@@ -194,7 +186,7 @@ class LabResultWidget {
         // Update status display
         const statusField = document.getElementById(`lab-status-${itemId}`);
         if (statusField) {
-            statusField.value = status;
+            statusField.textContent = status || '-';
         }
     }
 
