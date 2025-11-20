@@ -435,6 +435,86 @@ class LabService {
       return { success: false, error: error.message, deletedCount: 0, mcuId };
     }
   }
+
+  /**
+   * Compare old vs new lab results and return change records for audit trail
+   * Used to track lab result changes in mcuChanges table
+   */
+  getLabResultChanges(oldResults, newResults, mcuId, currentUser) {
+    const changes = [];
+
+    if (!oldResults) oldResults = [];
+    if (!newResults) newResults = [];
+
+    // Create maps for easy lookup
+    const oldMap = {};
+    const newMap = {};
+
+    oldResults.forEach(r => {
+      oldMap[r.lab_item_id] = r;
+    });
+
+    newResults.forEach(r => {
+      newMap[r.labItemId] = r;
+    });
+
+    // Check for changes and new items
+    for (const labItemId in newMap) {
+      const newResult = newMap[labItemId];
+      const oldResult = oldMap[labItemId];
+
+      if (!oldResult) {
+        // New lab result added
+        changes.push({
+          changeId: `change-${Date.now()}-${Math.random()}`,
+          mcuId: mcuId,
+          changedAt: new Date().toISOString(),
+          changedBy: currentUser?.userId || currentUser?.id || 'system',
+          fieldChanged: 'labResult',
+          fieldName: 'labResult',
+          fieldLabel: `Lab Result: Item ${labItemId}`,
+          oldValue: '-',
+          newValue: `${newResult.value} (Status: ${newResult.notes || '-'})`,
+          note: 'Lab result added'
+        });
+      } else if (String(oldResult.value) !== String(newResult.value)) {
+        // Lab result value changed
+        changes.push({
+          changeId: `change-${Date.now()}-${Math.random()}`,
+          mcuId: mcuId,
+          changedAt: new Date().toISOString(),
+          changedBy: currentUser?.userId || currentUser?.id || 'system',
+          fieldChanged: 'labResult',
+          fieldName: 'labResult',
+          fieldLabel: `Lab Result: Item ${labItemId}`,
+          oldValue: `${oldResult.value} (Status: ${oldResult.notes || '-'})`,
+          newValue: `${newResult.value} (Status: ${newResult.notes || '-'})`,
+          note: 'Lab result value changed'
+        });
+      }
+    }
+
+    // Check for deleted lab results
+    for (const labItemId in oldMap) {
+      if (!newMap[labItemId]) {
+        const oldResult = oldMap[labItemId];
+        changes.push({
+          changeId: `change-${Date.now()}-${Math.random()}`,
+          mcuId: mcuId,
+          changedAt: new Date().toISOString(),
+          changedBy: currentUser?.userId || currentUser?.id || 'system',
+          fieldChanged: 'labResult',
+          fieldName: 'labResult',
+          fieldLabel: `Lab Result: Item ${labItemId}`,
+          oldValue: `${oldResult.value}`,
+          newValue: '-',
+          note: 'Lab result removed'
+        });
+      }
+    }
+
+    return changes;
+  }
 }
 
 export const labService = new LabService();

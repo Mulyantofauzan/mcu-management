@@ -1071,7 +1071,8 @@ window.viewMCUDetail = async function(mcuId) {
                 'initialNotes': 'Catatan Awal',
                 'finalResult': 'Hasil Akhir',
                 'finalNotes': 'Catatan Akhir',
-                'status': 'Status'
+                'status': 'Status',
+                'labResult': 'Hasil Lab'
             };
 
             let changeHtml = '<div class="table-container"><table class="table"><thead><tr>';
@@ -1503,6 +1504,26 @@ window.handleEditMCU = async function(event) {
                     if (updatedCount > 0) details.push(`${updatedCount} diupdate`);
                     if (deletedCount > 0) details.push(`${deletedCount} dihapus`);
                     showToast(`Hasil lab berhasil disimpan: ${details.join(', ')}`, 'success');
+                }
+
+                // ✅ IMPORTANT: Save lab changes to mcuChanges table so they appear in change history
+                try {
+                    const { database } = await import('../services/database.js');
+                    const labChanges = labService.getLabResultChanges(existingLabResults, newLabResults, mcuId, currentUser);
+                    for (const labChange of labChanges) {
+                        await database.add('mcuChanges', {
+                            mcuId: mcuId,
+                            fieldName: labChange.fieldLabel,
+                            fieldChanged: labChange.fieldChanged,
+                            oldValue: labChange.oldValue,
+                            newValue: labChange.newValue,
+                            changedBy: currentUser?.userId || currentUser?.id,
+                            changedAt: labChange.changedAt
+                        });
+                    }
+                } catch (labChangeError) {
+                    // Log but don't throw - lab save succeeded but change tracking failed
+                    console.error('[kelola-karyawan] Failed to track lab changes:', labChangeError);
                 }
             } catch (error) {
                 showToast(`ERROR: Gagal menyimpan hasil lab. ${error.message}. Data Anda mungkin belum tersimpan!`, 'error');
