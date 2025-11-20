@@ -11,6 +11,7 @@ class LabResultWidget {
         this.container = document.getElementById(containerId);
         this.labItems = [];
         this.results = [];
+        this.resultIdCounter = 0;
     }
 
     /**
@@ -30,10 +31,11 @@ class LabResultWidget {
      */
     addLabResultForm(resultData = null) {
         if (!this.container) {
+            console.error('[LabWidget] ERROR: container not found! this.container:', this.container);
             return;
         }
 
-        const resultId = `lab-result-${Date.now()}`;
+        const resultId = `lab-result-${++this.resultIdCounter}`;
         const isEdit = resultData ? true : false;
 
         // Build dropdown options
