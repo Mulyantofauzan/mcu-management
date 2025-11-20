@@ -66,6 +66,23 @@ function hideUploadLoading() {
   }
 }
 
+// Save loading overlay functions
+function showSaveLoading(message = 'Menyimpan Data...') {
+  const overlay = document.getElementById('save-loading-overlay');
+  const title = document.getElementById('save-loading-title');
+  if (overlay) {
+    overlay.classList.remove('hidden');
+    if (title) title.textContent = message;
+  }
+}
+
+function hideSaveLoading() {
+  const overlay = document.getElementById('save-loading-overlay');
+  if (overlay) {
+    overlay.classList.add('hidden');
+  }
+}
+
 async function init() {
     try {
         if (!authService.isAuthenticated()) {
@@ -678,6 +695,9 @@ window.handleEditEmployee = async function(event) {
         const employeeId = document.getElementById('edit-emp-id').value;
         const currentUser = authService.getCurrentUser();
 
+        // Show save loading overlay to prevent double-submit
+        showSaveLoading('Menyimpan data karyawan...');
+
         const updateData = {
             name: document.getElementById('edit-emp-name').value,
             jobTitleId: document.getElementById('edit-emp-job').value,
@@ -700,11 +720,12 @@ window.handleEditEmployee = async function(event) {
 
         await employeeService.update(employeeId, updateData);
 
+        hideSaveLoading();
         showToast('Data karyawan berhasil diupdate', 'success');
         closeEditEmployeeModal();
         await loadData();
     } catch (error) {
-
+        hideSaveLoading();
         showToast('Gagal mengupdate karyawan: ' + error.message, 'error');
     }
 };
@@ -1345,6 +1366,9 @@ window.handleEditMCU = async function(event) {
             return; // Stop form submission if doctor is not selected
         }
 
+        // Show save loading overlay to prevent double-submit
+        showSaveLoading('Menyimpan data MCU...');
+
         const updateData = {
             mcuType: document.getElementById('edit-mcu-type').value,
             mcuDate: document.getElementById('edit-mcu-date').value,
@@ -1533,6 +1557,7 @@ window.handleEditMCU = async function(event) {
 
         await mcuService.updateFollowUp(mcuId, updateData, currentUser);
 
+        hideSaveLoading();
         showToast('Data MCU berhasil diupdate', 'success');
         closeEditMCUModal();
 
@@ -1541,7 +1566,7 @@ window.handleEditMCU = async function(event) {
             await viewMCUDetail(mcuId);
         }
     } catch (error) {
-
+        hideSaveLoading();
         showToast('Gagal mengupdate MCU: ' + error.message, 'error');
     }
 };
