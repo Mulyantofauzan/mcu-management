@@ -216,13 +216,11 @@ class LabResultWidget {
         this.results.forEach(result => {
             const element = result.element;
             if (!element) {
-                console.log('[LabWidget] Skipping result with stale element reference');
                 return;
             }
 
             // CRITICAL: Check if element is still in the DOM
             if (!document.body.contains(element)) {
-                console.log('[LabWidget] Skipping result with element not in DOM');
                 return;
             }
 
@@ -235,11 +233,9 @@ class LabResultWidget {
                 const numValue = parseFloat(value);
                 // Skip invalid numeric values (0, NaN, or empty)
                 if (isNaN(numValue) || numValue === 0) {
-                    console.log(`[LabWidget] Skipping invalid value: labItemId=${labItemId}, value=${value}, numValue=${numValue}`);
                     return; // Skip this row
                 }
 
-                console.log(`[LabWidget] Including result: labItemId=${labItemId}, value=${value}, numValue=${numValue}`);
                 results.push({
                     labItemId: parseInt(labItemId),
                     value: numValue,
@@ -248,7 +244,6 @@ class LabResultWidget {
             }
         });
 
-        console.log('[LabWidget] getAllLabResults() returning', results.length, 'results:', results);
         return results;
     }
 
@@ -257,8 +252,6 @@ class LabResultWidget {
      * AGGRESSIVE: Clear both DOM and internal state
      */
     clear() {
-        console.log('[LabWidget] Clearing all lab results. Current results count:', this.results.length);
-
         // Clear each element individually to ensure complete removal
         this.results.forEach(result => {
             if (result.element && document.body.contains(result.element)) {
@@ -273,7 +266,6 @@ class LabResultWidget {
 
         // Reset internal state
         this.results = [];
-        console.log('[LabWidget] Clear complete. Results count:', this.results.length);
     }
 
     /**
