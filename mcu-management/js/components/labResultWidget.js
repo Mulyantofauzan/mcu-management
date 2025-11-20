@@ -27,12 +27,58 @@ class LabResultWidget {
                 return false;
             }
 
+            // Sort items sesuai custom order
+            this.sortLabItems();
+
             this.renderFixedForm();
             return true;
         } catch (error) {
             console.error('[LabWidget] Error initializing:', error);
             return false;
         }
+    }
+
+    /**
+     * Sort lab items sesuai urutan yang diinginkan
+     */
+    sortLabItems() {
+        const desiredOrder = [
+            'Leukosit',
+            'Trombosit',
+            'Hemoglobin',
+            'Gula Darah Puasa',
+            'Gula Darah 2 JPP',
+            'Kolestrol Total',
+            'HDL',
+            'LDL',
+            'Trigliserida',
+            'Asam Urat',
+            'Ureum',
+            'Creatinin',
+            'SGOT',
+            'SGPT'
+        ];
+
+        this.labItems.sort((a, b) => {
+            const indexA = desiredOrder.findIndex(name =>
+                a.name.toLowerCase().includes(name.toLowerCase()) ||
+                name.toLowerCase().includes(a.name.toLowerCase())
+            );
+            const indexB = desiredOrder.findIndex(name =>
+                b.name.toLowerCase().includes(name.toLowerCase()) ||
+                name.toLowerCase().includes(b.name.toLowerCase())
+            );
+
+            // If found in desired order, use that order
+            if (indexA !== -1 && indexB !== -1) {
+                return indexA - indexB;
+            }
+            // If only one is found, put it first
+            if (indexA !== -1) return -1;
+            if (indexB !== -1) return 1;
+            // If neither found, keep original order
+            return 0;
+        });
     }
 
     /**
