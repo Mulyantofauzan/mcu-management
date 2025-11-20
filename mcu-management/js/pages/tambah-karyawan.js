@@ -7,6 +7,7 @@ import { authService } from '../services/authService.js';
 import { employeeService } from '../services/employeeService.js';
 import { mcuService } from '../services/mcuService.js';
 import { labService } from '../services/labService.js';
+import { mcuBatchService } from '../services/mcuBatchService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
@@ -618,83 +619,40 @@ window.handleAddMCU = async function(event) {
         // ✅ CRITICAL: Clear temporary files ONLY after successful R2 upload
         tempFileStorage.clearFiles(mcuData.mcuId);
 
-        // ✅ CRITICAL: COLLECT & VALIDATE LAB DATA FIRST (before MCU save)
-        // This ensures we can fail fast without orphaning MCU records
+        // ✅ CRITICAL: Collect lab results for batch processing
         let labResults = [];
         if (labResultWidget) {
-            labResults = labResultWidget.getAllLabResults();
-            console.log('[DEBUG] Lab results to save:', labResults);
-
-            if (labResults && labResults.length > 0) {
-                // Validate all lab results are valid before proceeding
-                for (const result of labResults) {
-                    if (!result.labItemId || !result.value) {
-                        throw new Error(`Invalid lab result: Missing labItemId or value. Data: ${JSON.stringify(result)}`);
-                    }
-                    const numValue = parseFloat(result.value);
-                    if (isNaN(numValue) || numValue <= 0) {
-                        throw new Error(`Invalid lab result value: labItemId=${result.labItemId}, value='${result.value}'. Only positive numbers allowed.`);
-                    }
-                }
-                console.log('[DEBUG] All lab results validated successfully');
-            }
+            labResults = labResultWidget.getAllLabResults() || [];
+            console.log('[DEBUG] Lab results for batch save:', labResults);
         }
 
-        // ✅ NOW save MCU data after files are successfully uploaded to R2 (or if no files)
-        const createdMCU = await mcuService.create(mcuData, currentUser);
-        console.log('[DEBUG] Created MCU ID:', createdMCU.mcuId);
+        // ✅ BATCH SAVE: Use MCU batch service to atomically save MCU + lab results
+        // This prevents race conditions and orphaned records on sequential MCU operations
+        console.log('[DEBUG] Starting batch save for MCU:', mcuData.mcuId);
+        const batchResult = await mcuBatchService.saveMCUWithLabResults(mcuData, labResults, currentUser);
 
-        // Save lab results AFTER MCU is created
-        let labSaveFailures = [];
-        if (labResults && labResults.length > 0) {
-            for (const result of labResults) {
-                try {
-                    console.log('[DEBUG] Saving lab result:', { mcuId: createdMCU.mcuId, ...result });
-                    await labService.createPemeriksaanLab({
-                        mcuId: createdMCU.mcuId,
-                        employeeId: mcuData.employeeId,
-                        labItemId: result.labItemId,
-                        value: result.value,
-                        notes: result.notes
-                    }, currentUser);
-                } catch (error) {
-                    console.error('[ERROR] Failed to save lab result:', error);
-                    labSaveFailures.push({ labItemId: result.labItemId, error: error.message });
-                }
-            }
+        if (!batchResult.success) {
+            hideSaveLoading();
+            const errorMsg = `⚠️ SEBAGIAN GAGAL atau ERROR:\n${batchResult.errors.join('\n')}\n\nMCU ID: ${batchResult.data.mcu?.mcuId || 'Unknown'}. Hubungi support!`;
+            showToast(errorMsg, 'error');
+            throw new Error(batchResult.errors[0] || 'Batch save failed');
+        }
 
-            // ✅ CRITICAL: Check if ALL lab results saved successfully
-            if (labSaveFailures.length === 0) {
-                showToast(`✅ ${labResults.length} hasil lab berhasil disimpan`, 'success');
-            } else if (labSaveFailures.length === labResults.length) {
-                // ALL failed - MCU orphaned
-                hideSaveLoading();
-                const errorMsg = `❌ GAGAL: Semua hasil lab gagal disimpan!\n${labSaveFailures.map(f => `Item ${f.labItemId}: ${f.error}`).join('\n')}\n\nMCU sudah disimpan tapi lab results KOSONG. MCU ID: ${createdMCU.mcuId}. Hubungi support!`;
-                showToast(errorMsg, 'error');
-                throw new Error('Lab results save failed');
-            } else {
-                // PARTIAL failure - MCU has incomplete data
-                hideSaveLoading();
-                const successCount = labResults.length - labSaveFailures.length;
-                const errorMsg = `⚠️ SEBAGIAN GAGAL: ${successCount}/${labResults.length} hasil lab tersimpan.\nYang gagal: ${labSaveFailures.map(f => `Item ${f.labItemId}`).join(', ')}\n\nMCU ID: ${createdMCU.mcuId}. Hubungi support untuk memperbaiki!`;
-                showToast(errorMsg, 'error');
-                throw new Error('Partial lab results save failed');
-            }
+        // Success - show detailed result
+        const createdMCU = batchResult.data.mcu;
+        const labSaved = batchResult.data.labSaved.length;
+        const labFailed = batchResult.data.labFailed.length;
+
+        if (labFailed > 0) {
+            console.warn(`[DEBUG] Batch save partial success: ${labSaved} lab items saved, ${labFailed} failed`);
+            showToast(`✅ MCU berhasil! Lab: ${labSaved}/${labSaved + labFailed} tersimpan (${labFailed} gagal).`, 'warning');
         } else {
-            console.log('[DEBUG] No lab results to save');
-        }
-
-        // ✅ CRITICAL: Clean up phantom lab records immediately after creation
-        // Phantom records can occur if user tried to submit before all validation ran
-        try {
-            await labService.cleanupPhantomLabRecords(createdMCU.mcuId);
-        } catch (cleanupError) {
-            console.error('[tambah-karyawan] Phantom record cleanup failed (non-critical):', cleanupError);
-            // Don't throw - cleanup is preventive, not critical
+            console.log(`[DEBUG] Batch save complete success: MCU + ${labSaved} lab items`);
+            const labMsg = labSaved > 0 ? ` & ${labSaved} hasil lab` : '';
+            showToast(`✅ MCU${labMsg} berhasil disimpan!`, 'success');
         }
 
         hideSaveLoading();
-        showToast('MCU berhasil ditambahkan!', 'success');
 
         // Make form read-only after successful save
         disableMCUForm();
