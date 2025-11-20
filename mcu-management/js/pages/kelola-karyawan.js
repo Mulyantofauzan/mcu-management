@@ -815,6 +815,12 @@ window.addMCUForEmployee = async function(employeeId) {
 
         openModal('add-mcu-modal');
 
+        // ✅ CRITICAL: Clear old form state before initializing new widget
+        const labContainer = document.getElementById('lab-results-container-add-karyawan');
+        if (labContainer) {
+            labContainer.innerHTML = ''; // Clear old form
+        }
+
         // Initialize lab result widget with fixed 14-item form
         labResultWidget = createLabResultWidget('lab-results-container-add-karyawan');
         if (labResultWidget) {
@@ -828,6 +834,29 @@ window.addMCUForEmployee = async function(employeeId) {
 
 window.closeAddMCUModal = function() {
     closeModal('add-mcu-modal');
+
+    // ✅ CRITICAL: Clear lab widget state to prevent residual data
+    if (labResultWidget) {
+        labResultWidget.clear();
+        labResultWidget = null;
+    }
+
+    // Clear container
+    const labContainer = document.getElementById('lab-results-container-add-karyawan');
+    if (labContainer) {
+        labContainer.innerHTML = '';
+    }
+
+    // Reset form elements
+    const mcuForm = document.getElementById('mcu-form');
+    if (mcuForm) {
+        mcuForm.reset();
+        // Remove MCU ID display div if it exists
+        const mcuIdDiv = mcuForm.querySelector('.bg-green-50');
+        if (mcuIdDiv) {
+            mcuIdDiv.remove();
+        }
+    }
 };
 
 window.handleAddMCU = async function(event) {
@@ -1225,6 +1254,12 @@ window.editMCU = async function() {
         // Open the modal FIRST so DOM elements are visible
         openModal('edit-mcu-modal');
 
+        // ✅ CRITICAL: Clear old form state before initializing new widget
+        const labContainer = document.getElementById('lab-results-container-edit');
+        if (labContainer) {
+            labContainer.innerHTML = ''; // Clear old form
+        }
+
         // Initialize lab result widget for edit modal
         labResultWidget = createLabResultWidget('lab-results-container-edit');
         if (labResultWidget) {
@@ -1350,6 +1385,18 @@ window.editMCU = async function() {
 
 window.closeEditMCUModal = function() {
     closeModal('edit-mcu-modal');
+
+    // ✅ CRITICAL: Clear lab widget state to prevent residual data
+    if (labResultWidget) {
+        labResultWidget.clear();
+        labResultWidget = null;
+    }
+
+    // Clear container
+    const labContainer = document.getElementById('lab-results-container-edit');
+    if (labContainer) {
+        labContainer.innerHTML = '';
+    }
 };
 
 window.handleEditMCU = async function(event) {
