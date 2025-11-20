@@ -36,7 +36,6 @@ let fileUploadWidget = null;
 let addFileUploadWidget = null;
 let generatedMCUIdForAdd = null;  // Store generated MCU ID for the add modal
 let labResultWidget = null;  // Lab result widget instance for edit modal
-let labResultWidgetDetail = null;  // Lab result widget instance for detail modal
 
 // Upload loading overlay functions
 function showUploadLoading(message = 'Mengunggah File...') {
@@ -1107,27 +1106,7 @@ window.viewMCUDetail = async function(mcuId) {
         // Store current MCU ID for edit
         window.currentMCUId = mcuId;
 
-        // Initialize lab result widget for detail modal (read-only display - user must click Edit MCU to modify)
-        try {
-            labResultWidgetDetail = createLabResultWidget('lab-results-container-detail');
-            if (labResultWidgetDetail) {
-                await labResultWidgetDetail.init();
-                // Load existing lab results into the form
-                await labResultWidgetDetail.loadExistingResults(mcuId);
-
-                // Make all inputs read-only in detail view
-                const allInputs = document.querySelectorAll('#lab-results-container-detail input');
-                allInputs.forEach(input => {
-                    input.setAttribute('disabled', 'disabled');
-                    input.style.opacity = '0.6';
-                    input.style.cursor = 'not-allowed';
-                });
-            }
-        } catch (error) {
-            console.error('[kelola-karyawan] Failed to initialize lab widget in detail modal:', error);
-        }
-
-        // Load and display lab results (as reference/history)
+        // Load and display lab results
         try {
             const labResults = await labService.getPemeriksaanLabByMcuId(mcuId);
             const labResultsBody = document.getElementById('mcu-detail-lab-results-body');
