@@ -288,6 +288,12 @@ class LabResultWidget {
                 return;
             }
 
+            // DEBUG: Log if data exists but is empty
+            if (existing.length === 0) {
+                console.warn('[LabWidget] No lab results found in database for MCU:', mcuId);
+                return;
+            }
+
             // Separate valid and invalid for filtering
             const validResults = [];
             const invalidResults = [];
@@ -318,6 +324,11 @@ class LabResultWidget {
                 validResults.push(result);
             });
 
+            // DEBUG: Show filtering results
+            if (invalidResults.length > 0) {
+                console.warn(`[LabWidget] WARNING: ${invalidResults.length} lab results were filtered out:`, invalidResults);
+            }
+
             // Load only valid results
             validResults.forEach((result, index) => {
                 try {
@@ -330,6 +341,10 @@ class LabResultWidget {
                     console.error(`[LabWidget] Error adding lab result at index ${index}:`, addError);
                 }
             });
+
+            if (validResults.length > 0) {
+                console.log(`[LabWidget] Successfully loaded ${validResults.length} lab results`);
+            }
         } catch (error) {
             console.error('[LabWidget] CRITICAL ERROR loading existing results:', error);
             // On error, ensure container is cleared to prevent stale rows
