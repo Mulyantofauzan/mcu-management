@@ -1527,14 +1527,15 @@ window.handleEditMCU = async function(event) {
 
                 // Show errors if any
                 if (errors.length > 0) {
-                    const errorMsg = `Beberapa hasil lab gagal disimpan:\n${errors.join('\n')}`;
+                    const errorMsg = `❌ Beberapa hasil lab gagal disimpan:\n${errors.join('\n')}`;
                     showToast(errorMsg, 'error');
+                    throw new Error(errorMsg); // ✅ CRITICAL: Prevent success if there are failures
                 } else if (savedCount > 0 || updatedCount > 0 || deletedCount > 0) {
                     const details = [];
                     if (savedCount > 0) details.push(`${savedCount} ditambah`);
                     if (updatedCount > 0) details.push(`${updatedCount} diupdate`);
                     if (deletedCount > 0) details.push(`${deletedCount} dihapus`);
-                    showToast(`Hasil lab berhasil disimpan: ${details.join(', ')}`, 'success');
+                    showToast(`✅ Hasil lab berhasil disimpan: ${details.join(', ')}`, 'success');
                 }
 
                 // ✅ IMPORTANT: Save lab changes to mcuChanges table so they appear in change history
