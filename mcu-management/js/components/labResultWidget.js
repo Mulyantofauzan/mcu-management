@@ -12,6 +12,7 @@ class LabResultWidget {
         this.container = document.getElementById(containerId);
         this.labItems = [];
         this.fieldValues = {}; // Store current field values: { labItemId: { value, status, notes } }
+        this.originalValues = {}; // Store original values loaded from DB untuk detect changes
     }
 
     /**
@@ -170,15 +171,21 @@ class LabResultWidget {
                 });
             }
 
-            // Populate fields dengan existing data
+            // Populate fields dengan existing data dan store original values
             this.labItems.forEach(item => {
                 const input = document.getElementById(`lab-value-${item.id}`);
                 if (input && existingMap[item.id]) {
                     const existingValue = existingMap[item.id].value;
                     input.value = existingValue;
 
+                    // Store original value untuk detect changes later
+                    this.originalValues[item.id] = String(existingValue);
+
                     // Trigger change event to calculate status
                     input.dispatchEvent(new Event('change'));
+                } else if (input) {
+                    // No existing value for this item
+                    this.originalValues[item.id] = '';
                 }
             });
         } catch (error) {
@@ -188,7 +195,24 @@ class LabResultWidget {
     }
 
     /**
+     * Check apakah user telah membuat perubahan pada lab items
+     * Return true jika ada perubahan, false jika belum ada perubahan
+     */
+    hasChanges() {
+        for (const itemId in this.fieldValues) {
+            const currentValue = document.getElementById(`lab-value-${itemId}`)?.value?.trim() || '';
+            const originalValue = this.originalValues[itemId] || '';
+
+            if (String(currentValue) !== String(originalValue)) {
+                return true; // Ada perubahan
+            }
+        }
+        return false; // Tidak ada perubahan
+    }
+
+    /**
      * Validate bahwa semua fields terisi dengan nilai > 0
+     * HANYA jalankan jika user telah membuat perubahan pada lab items
      */
     validateAllFieldsFilled() {
         const errors = [];

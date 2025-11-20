@@ -722,12 +722,15 @@ window.handleMCUUpdate = async function(event) {
     // Get lab results from widget (separate from updateData since they're stored separately)
     let labResults = [];
     if (labResultWidgetUpdate) {
-      // Validate all 14 fields are filled
-      const validationErrors = labResultWidgetUpdate.validateAllFieldsFilled();
-      if (validationErrors.length > 0) {
-        const errorMsg = 'Semua pemeriksaan lab harus diisi:\n' + validationErrors.join('\n');
-        showToast(errorMsg, 'error');
-        throw new Error(errorMsg);
+      // ONLY validate if user has made changes to lab items
+      // If user just editing other fields (e.g., tanggal), skip lab validation
+      if (labResultWidgetUpdate.hasChanges()) {
+        const validationErrors = labResultWidgetUpdate.validateAllFieldsFilled();
+        if (validationErrors.length > 0) {
+          const errorMsg = 'Semua pemeriksaan lab harus diisi:\n' + validationErrors.join('\n');
+          showToast(errorMsg, 'error');
+          throw new Error(errorMsg);
+        }
       }
 
       labResults = labResultWidgetUpdate.getAllLabResults();

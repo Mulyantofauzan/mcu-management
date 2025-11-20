@@ -1406,16 +1406,18 @@ window.handleEditMCU = async function(event) {
         // Save/update lab results if widget exists - using SMART UPDATE pattern
         if (labResultWidget) {
             try {
-                // VALIDATION: Ensure all 14 fields are filled
-                const validationErrors = labResultWidget.validateAllFieldsFilled();
-                if (validationErrors.length > 0) {
-                    const errorMsg = 'Semua pemeriksaan lab harus diisi:\n' + validationErrors.join('\n');
-                    showToast(errorMsg, 'error');
-                    throw new Error(errorMsg);
-                }
-
-                // Get current lab results from form
+                // VALIDATION: Only validate if user has made changes to lab items
+                // If user just editing other fields, skip lab validation
                 const newLabResults = labResultWidget.getAllLabResults();
+
+                if (labResultWidget.hasChanges()) {
+                    const validationErrors = labResultWidget.validateAllFieldsFilled();
+                    if (validationErrors.length > 0) {
+                        const errorMsg = 'Semua pemeriksaan lab harus diisi:\n' + validationErrors.join('\n');
+                        showToast(errorMsg, 'error');
+                        throw new Error(errorMsg);
+                    }
+                }
 
                 // VALIDATION: Ensure all lab results have valid data
                 for (const result of newLabResults) {
