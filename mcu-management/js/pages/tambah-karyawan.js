@@ -449,6 +449,7 @@ window.openAddMCUForEmployee = async function(employeeId) {
 
         // Generate MCU ID upfront for file uploads
         generatedMCUIdForAdd = generateMCUId();
+        console.log('[DEBUG] Generated MCU ID for new MCU:', generatedMCUIdForAdd);
         // ✅ Populate doctor dropdown
         populateDoctorDropdown('mcu-doctor');
 
@@ -468,6 +469,12 @@ window.openAddMCUForEmployee = async function(employeeId) {
             }
         });
 
+        // ✅ CRITICAL: Clear old form state before initializing new widget
+        const labContainer = document.getElementById('lab-results-container-add');
+        if (labContainer) {
+            labContainer.innerHTML = ''; // Clear old form
+        }
+
         // Initialize lab result widget
         labResultWidget = createLabResultWidget('lab-results-container-add');
         if (labResultWidget) {
@@ -480,6 +487,9 @@ window.openAddMCUForEmployee = async function(employeeId) {
                     labResultWidget.addLabResultForm();
                 };
             }
+        } else {
+            showToast('Gagal menginisialisasi form lab', 'error');
+            return;
         }
     } catch (error) {
 
@@ -490,6 +500,29 @@ window.openAddMCUForEmployee = async function(employeeId) {
 window.closeAddMCUModal = function() {
     closeModal('add-mcu-modal');
     currentEmployee = null;
+
+    // ✅ CRITICAL: Clear lab widget state to prevent residual data
+    if (labResultWidget) {
+        labResultWidget.clear();
+        labResultWidget = null;
+    }
+
+    // Clear container
+    const labContainer = document.getElementById('lab-results-container-add');
+    if (labContainer) {
+        labContainer.innerHTML = '';
+    }
+
+    // Reset form elements
+    const mcuForm = document.getElementById('mcu-form');
+    if (mcuForm) {
+        mcuForm.reset();
+        // Remove MCU ID display div if it exists
+        const mcuIdDiv = mcuForm.querySelector('.bg-green-50');
+        if (mcuIdDiv) {
+            mcuIdDiv.remove();
+        }
+    }
 };
 
 window.handleAddMCU = async function(event) {
