@@ -950,7 +950,16 @@ window.handleAddMCU = async function(event) {
         tempFileStorage.clearFiles(mcuData.mcuId);
 
         // ✅ FIX: NOW save MCU data after files are successfully uploaded to R2 (or if no files)
-        await mcuService.create(mcuData, currentUser);
+        const createdMCU = await mcuService.create(mcuData, currentUser);
+
+        // ✅ CRITICAL: Clean up phantom lab records immediately after creation
+        // Phantom records can occur if user tried to submit before all validation ran
+        try {
+            await labService.cleanupPhantomLabRecords(createdMCU.mcuId);
+        } catch (cleanupError) {
+            console.error('[kelola-karyawan] Phantom record cleanup failed (non-critical):', cleanupError);
+            // Don't throw - cleanup is preventive, not critical
+        }
 
         hideSaveLoading();
         showToast('MCU berhasil ditambahkan!', 'success');
@@ -1611,6 +1620,14 @@ window.handleEditMCU = async function(event) {
         }
 
         await mcuService.updateFollowUp(mcuId, updateData, currentUser);
+
+        // ✅ CRITICAL: Clean up phantom lab records immediately after update
+        try {
+            await labService.cleanupPhantomLabRecords(mcuId);
+        } catch (cleanupError) {
+            console.error('[kelola-karyawan] Phantom record cleanup failed (non-critical):', cleanupError);
+            // Don't throw - cleanup is preventive, not critical
+        }
 
         hideSaveLoading();
         showToast('Data MCU berhasil diupdate', 'success');

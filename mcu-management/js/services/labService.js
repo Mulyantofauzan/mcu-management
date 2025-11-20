@@ -215,6 +215,9 @@ class LabService {
 
       if (error) throw error;
 
+      // ✅ CRITICAL: Invalidate cache for this MCU since data changed
+      cacheManager.clear(`labResults:${data.mcuId}`);
+
       return { success: true, data: result[0] };
     } catch (error) {
       return { success: false, error: error.message };
@@ -231,6 +234,14 @@ class LabService {
 
       if (!isSupabaseEnabled()) {
         return [];
+      }
+
+      // ✅ CRITICAL: Check cache first to reduce repeated queries
+      const cacheKey = `labResults:${mcuId}`;
+      const cached = cacheManager.get(cacheKey);
+      if (cached) {
+        console.log(`[LabService] Cache HIT for MCU ${mcuId}: ${cached.length} results`);
+        return cached;
       }
 
       const { data, error } = await supabase
@@ -252,7 +263,8 @@ class LabService {
         .eq('mcu_id', mcuId)
         .is('deleted_at', null)
         .not('lab_item_id', 'is', null) // Exclude rows with null lab_item_id
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true })
+        .limit(50); // ✅ CRITICAL: Limit to 50 per MCU (max 14 expected) to prevent bloat
 
       if (error) throw error;
 // [log removed]
@@ -299,6 +311,10 @@ class LabService {
 // [log removed]
       }
 
+      // ✅ CRITICAL: Cache the valid results to avoid repeated queries
+      cacheManager.set(cacheKey, validData);
+      console.log(`[LabService] Cached MCU ${mcuId}: ${validData.length} valid results`);
+
       return validData;
     } catch (error) {
       return [];
@@ -323,6 +339,11 @@ class LabService {
 
       if (error) throw error;
 
+      // ✅ CRITICAL: Invalidate cache for this MCU since data changed
+      if (result && result[0] && result[0].mcu_id) {
+        cacheManager.clear(`labResults:${result[0].mcu_id}`);
+      }
+
       return { success: true, data: result[0] };
     } catch (error) {
       return { success: false, error: error.message };
@@ -334,12 +355,24 @@ class LabService {
    */
   async deletePemeriksaanLab(id) {
     try {
+      // Get the MCU ID first so we can invalidate cache
+      const { data: labRecord } = await supabase
+        .from('pemeriksaan_lab')
+        .select('mcu_id')
+        .eq('id', id)
+        .single();
+
       const { error } = await supabase
         .from('pemeriksaan_lab')
         .update({ deleted_at: new Date().toISOString() })
         .eq('id', id);
 
       if (error) throw error;
+
+      // ✅ CRITICAL: Invalidate cache for this MCU since data changed
+      if (labRecord && labRecord.mcu_id) {
+        cacheManager.clear(`labResults:${labRecord.mcu_id}`);
+      }
 
       return { success: true };
     } catch (error) {
@@ -359,6 +392,9 @@ class LabService {
         .is('deleted_at', null);
 
       if (error) throw error;
+
+      // ✅ CRITICAL: Invalidate cache for this MCU since data changed
+      cacheManager.clear(`labResults:${mcuId}`);
 
       return { success: true };
     } catch (error) {

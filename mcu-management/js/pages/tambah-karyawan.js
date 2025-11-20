@@ -670,6 +670,15 @@ window.handleAddMCU = async function(event) {
             console.log('[DEBUG] Lab result widget not available');
         }
 
+        // ✅ CRITICAL: Clean up phantom lab records immediately after creation
+        // Phantom records can occur if user tried to submit before all validation ran
+        try {
+            await labService.cleanupPhantomLabRecords(createdMCU.mcuId);
+        } catch (cleanupError) {
+            console.error('[tambah-karyawan] Phantom record cleanup failed (non-critical):', cleanupError);
+            // Don't throw - cleanup is preventive, not critical
+        }
+
         hideSaveLoading();
         showToast('MCU berhasil ditambahkan!', 'success');
 

@@ -103,7 +103,8 @@ export const DATABASE = {
     CACHE_DURATION: 5 * 60 * 1000, // 5 minutes
 
     // Request timeout (ms)
-    REQUEST_TIMEOUT: 30000, // 30 seconds
+    // ✅ CRITICAL: Increased from 30s to 60s to accommodate lab-heavy queries with 700+ results
+    REQUEST_TIMEOUT: 60000, // 60 seconds
 
     // Retry attempts
     MAX_RETRIES: 3,
