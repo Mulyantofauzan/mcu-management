@@ -255,8 +255,7 @@ class LabService {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-
-      console.log('[labService] Raw data from Supabase for MCU', mcuId, ':', JSON.stringify(data, null, 2));
+// [log removed]
 
       // AGGRESSIVE client-side filter to ensure valid data
       // Reject ANY row with zero, null, undefined, or invalid numeric values
@@ -279,15 +278,14 @@ class LabService {
 
         // Trim and handle comma decimal separator (Indonesian format: 99,5 -> 99.5)
         let valueStr = String(item.value).trim();
-        console.log(`[labService] Processing item: lab_item_id=${item.lab_item_id}, raw_value='${item.value}' (type: ${typeof item.value}), trimmed='${valueStr}'`);
+// [log removed]
 
         // Replace comma with dot for European decimal format
         valueStr = valueStr.replace(',', '.');
 
         // Convert to number
         const numValue = parseFloat(valueStr);
-
-        console.log(`[labService] After parse: '${valueStr}' -> ${numValue}, isNaN=${isNaN(numValue)}, numValue <= 0=${numValue <= 0}`);
+// [log removed]
 
         if (isNaN(numValue) || numValue <= 0) {
           invalidData.push({item, reason: `Invalid numeric: '${item.value}' (trimmed: '${valueStr}') -> ${numValue}`});
@@ -296,10 +294,9 @@ class LabService {
 
         validData.push(item);
       });
-
-      console.log('[labService] Valid:', validData.length, 'Invalid:', invalidData.length);
+// [log removed]
       if (invalidData.length > 0) {
-        console.log('[labService] Invalid data reasons:', invalidData);
+// [log removed]
       }
 
       return validData;
@@ -422,7 +419,7 @@ class LabService {
 
       // Soft delete phantom records
       if (phantomIds.length > 0) {
-        console.log(`[labService] Cleaning up ${phantomIds.length} phantom records for MCU ${mcuId}`);
+// [log removed]
         const { error: deleteError } = await supabase
           .from('pemeriksaan_lab')
           .update({ deleted_at: new Date().toISOString() })

@@ -623,18 +623,18 @@ window.openMCUUpdateModal = async function(mcuId) {
 
     // Initialize and populate Lab Results Widget
     // Always reinitialize to clear previous state
-    console.log('[follow-up] Initializing lab widget for MCU:', mcuId);
+// [log removed]
     labResultWidgetUpdate = createLabResultWidget('lab-results-container-update');
     await labResultWidgetUpdate.init();
-    console.log('[follow-up] Lab widget initialized');
+// [log removed]
 
     // NUCLEAR: Clean up any phantom lab records with invalid values for THIS MCU ONLY before loading
     try {
-      console.log('[follow-up] Running cleanup for phantom records for MCU:', mcuId);
+// [log removed]
       const cleanupResult = await labService.cleanupPhantomLabRecords(mcuId);
-      console.log('[follow-up] Cleanup result:', cleanupResult);
+// [log removed]
       if (cleanupResult.deletedCount > 0) {
-        console.warn(`[follow-up] WARNING: Cleaned up ${cleanupResult.deletedCount} phantom records for MCU ${mcuId}`);
+// [log removed]
       }
     } catch (error) {
       console.error('[follow-up] Cleanup error:', error);
@@ -642,15 +642,14 @@ window.openMCUUpdateModal = async function(mcuId) {
     }
 
     try {
-      console.log('[follow-up] Loading existing results for MCU:', mcuId);
+// [log removed]
       await labResultWidgetUpdate.loadExistingResults(mcuId);
-      console.log('[follow-up] Existing results loaded');
+// [log removed]
     } catch (error) {
       console.error('[follow-up] Error loading existing results:', error);
       labResultWidgetUpdate.clear();
     }
-
-    console.log('[follow-up] Opening modal');
+// [log removed]
     openModal('mcu-update-modal');
   } catch (error) {
 
@@ -682,11 +681,11 @@ window.toggleFinalResultSection = function() {
 };
 
 window.closeMCUUpdateModal = function() {
-  console.log('[follow-up] Closing MCU update modal');
+// [log removed]
   closeModal('mcu-update-modal');
   currentMCU = null;
   if (labResultWidgetUpdate) {
-    console.log('[follow-up] Clearing lab widget before closing modal');
+// [log removed]
     labResultWidgetUpdate.clear();
   }
 };
@@ -827,7 +826,7 @@ window.handleMCUUpdate = async function(event) {
     // Save/update lab results separately - SMART update (only update changed items)
     if (labResults !== undefined && labResults !== null && labResults.length > 0) {
       try {
-        console.log('[follow-up] Saving lab results. Count:', labResults.length, 'Data:', labResults);
+// [log removed]
 
         // VALIDATION: Ensure all lab results have valid data
         for (const result of labResults) {
@@ -841,7 +840,7 @@ window.handleMCUUpdate = async function(event) {
         }
 
         const existingLabResults = await labService.getPemeriksaanLabByMcuId(mcuId);
-        console.log('[follow-up] Existing lab results. Count:', existingLabResults.length);
+// [log removed]
 
         let savedCount = 0;
         let updatedCount = 0;
@@ -854,7 +853,7 @@ window.handleMCUUpdate = async function(event) {
             const existing = existingLabResults.find(lab => lab.lab_item_id === result.labItemId);
             if (!existing) {
               // NEW - insert
-              console.log(`[follow-up] Creating new lab result: labItemId=${result.labItemId}, value=${result.value}`);
+// [log removed]
               await labService.createPemeriksaanLab({
                 mcuId: mcuId,
                 employeeId: currentMCU.employeeId,
@@ -865,7 +864,7 @@ window.handleMCUUpdate = async function(event) {
               savedCount++;
             } else if (existing.value !== result.value || existing.notes !== result.notes) {
               // MODIFIED - update only if value or notes changed
-              console.log(`[follow-up] Updating lab result: id=${existing.id}, labItemId=${result.labItemId}, oldValue=${existing.value}, newValue=${result.value}`);
+// [log removed]
               await labService.updatePemeriksaanLab(existing.id, {
                 value: result.value,
                 notes: result.notes
@@ -884,7 +883,7 @@ window.handleMCUUpdate = async function(event) {
             const stillExists = labResults.find(lab => lab.labItemId === existing.lab_item_id);
             if (!stillExists) {
               // DELETED - soft delete
-              console.log(`[follow-up] Deleting lab result: id=${existing.id}, labItemId=${existing.lab_item_id}`);
+// [log removed]
               await labService.deletePemeriksaanLab(existing.id);
               deletedCount++;
             }
@@ -892,8 +891,7 @@ window.handleMCUUpdate = async function(event) {
             errors.push(`Failed to delete lab result (labItemId=${existing.lab_item_id}): ${deleteError.message}`);
           }
         }
-
-        console.log(`[follow-up] Lab save complete. Saved: ${savedCount}, Updated: ${updatedCount}, Deleted: ${deletedCount}, Errors: ${errors.length}`);
+// [log removed]
 
         // If there were errors, show them to user
         if (errors.length > 0) {
@@ -908,7 +906,7 @@ window.handleMCUUpdate = async function(event) {
           if (savedCount > 0) details.push(`${savedCount} ditambah`);
           if (updatedCount > 0) details.push(`${updatedCount} diupdate`);
           if (deletedCount > 0) details.push(`${deletedCount} dihapus`);
-          console.log(`[follow-up] Lab results saved successfully: ${details.join(', ')}`);
+// [log removed]
         }
       } catch (error) {
         console.error('[follow-up] CRITICAL ERROR saving lab results:', error);
