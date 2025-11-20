@@ -499,6 +499,18 @@ window.handleAddMCU = async function(event) {
         const currentUser = authService.getCurrentUser();
         showSaveLoading('Menyimpan MCU...');
 
+        // ✅ CRITICAL: Validate lab results BEFORE saving MCU
+        // Lab inputs are generated via JavaScript, not HTML form, so required attribute doesn't work
+        if (labResultWidget) {
+            const labValidationErrors = labResultWidget.validateAllFieldsFilled();
+            if (labValidationErrors.length > 0) {
+                hideSaveLoading();
+                const errorMsg = 'Semua pemeriksaan lab harus diisi:\n' + labValidationErrors.join('\n');
+                showToast(errorMsg, 'error');
+                return; // Stop form submission if lab validation fails
+            }
+        }
+
         // ✅ FIX: Get doctor ID and convert to integer
         const doctorSelect = document.getElementById('mcu-doctor');
         const doctorValue = doctorSelect.value;
