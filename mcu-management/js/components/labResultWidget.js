@@ -107,8 +107,6 @@ class LabResultWidget {
             input.addEventListener('change', (e) => this.handleValueChange(e));
             input.addEventListener('input', (e) => this.handleValueChange(e));
         });
-
-        console.log('[LabWidget] Fixed form rendered with', this.labItems.length, 'items');
     }
 
     /**
@@ -151,8 +149,6 @@ class LabResultWidget {
         if (statusField) {
             statusField.value = status;
         }
-
-        console.log(`[LabWidget] Item ${itemId} updated: value=${input.value}, status=${status}`);
     }
 
     /**
@@ -185,8 +181,6 @@ class LabResultWidget {
                     input.dispatchEvent(new Event('change'));
                 }
             });
-
-            console.log('[LabWidget] Existing results loaded for MCU:', mcuId);
         } catch (error) {
             console.error('[LabWidget] Error loading existing results:', error);
             throw error;
@@ -263,7 +257,6 @@ class LabResultWidget {
             });
         }
 
-        console.log('[LabWidget] getAllLabResults - Collected:', results.length, 'items');
         return results;
     }
 

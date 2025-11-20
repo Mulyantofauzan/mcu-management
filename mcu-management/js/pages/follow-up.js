@@ -628,19 +628,14 @@ window.openMCUUpdateModal = async function(mcuId) {
 
     // NUCLEAR: Clean up any phantom lab records with invalid values for THIS MCU ONLY before loading
     try {
-      const cleanupResult = await labService.cleanupPhantomLabRecords(mcuId);
-      if (cleanupResult.deletedCount > 0) {
-        console.log('[follow-up] Cleaned up phantom records:', cleanupResult.deletedCount);
-      }
+      await labService.cleanupPhantomLabRecords(mcuId);
     } catch (error) {
       console.error('[follow-up] Cleanup error:', error);
       // Ignore cleanup errors and continue
     }
 
     try {
-      console.log('[follow-up] Loading existing lab results for MCU:', mcuId);
       await labResultWidgetUpdate.loadExistingResults(mcuId);
-      console.log('[follow-up] Lab results loaded successfully');
     } catch (error) {
       console.error('[follow-up] Error loading existing results:', error);
       labResultWidgetUpdate.clear();
