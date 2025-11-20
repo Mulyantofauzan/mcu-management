@@ -1524,130 +1524,86 @@ window.handleEditMCU = async function(event) {
         // ✅ CRITICAL: Clear temporary files ONLY after upload attempt
         tempFileStorage.clearFiles(mcuId);
 
-        // Save/update lab results if widget exists - using SMART UPDATE pattern
+        // Collect lab results if widget exists
+        let labResults = [];
         if (labResultWidget) {
-            try {
-                // VALIDATION: Only validate if user has made changes to lab items
-                // If user just editing other fields, skip lab validation
-                const newLabResults = labResultWidget.getAllLabResults();
-                console.log('[DEBUG-EDIT] New lab results:', newLabResults);
-                console.log('[DEBUG-EDIT] MCU ID:', mcuId);
-
-                if (labResultWidget.hasChanges()) {
-                    const validationErrors = labResultWidget.validateAllFieldsFilled();
-                    if (validationErrors.length > 0) {
-                        const errorMsg = 'Semua pemeriksaan lab harus diisi:\n' + validationErrors.join('\n');
-                        showToast(errorMsg, 'error');
-                        throw new Error(errorMsg);
-                    }
-                }
-
-                // VALIDATION: Ensure all lab results have valid data
-                for (const result of newLabResults) {
-                    if (!result.labItemId || !result.value) {
-                        throw new Error(`Invalid lab result: Missing labItemId or value. Data: ${JSON.stringify(result)}`);
-                    }
-                    const numValue = parseFloat(result.value);
-                    if (isNaN(numValue) || numValue <= 0) {
-                        throw new Error(`Invalid lab result value: labItemId=${result.labItemId}, value='${result.value}'. Only positive numbers allowed.`);
-                    }
-                }
-
-                // Get existing lab results from database
-                const existingLabResults = await labService.getPemeriksaanLabByMcuId(mcuId);
-
-                let savedCount = 0;
-                let updatedCount = 0;
-                let deletedCount = 0;
-                let errors = [];
-
-                // Process NEW lab results (not in existing)
-                for (const result of newLabResults) {
-                    try {
-                        const existing = existingLabResults.find(lab => lab.lab_item_id === result.labItemId);
-                        if (!existing) {
-                            // NEW - insert
-                            await labService.createPemeriksaanLab({
-                                mcuId: mcuId,
-                                employeeId: updateData.employeeId || (await mcuService.getById(mcuId)).employeeId,
-                                labItemId: result.labItemId,
-                                value: result.value,
-                                notes: result.notes
-                            }, currentUser);
-                            savedCount++;
-                        } else if (existing.value !== result.value || existing.notes !== result.notes) {
-                            // MODIFIED - update only if changed
-                            await labService.updatePemeriksaanLab(existing.id, {
-                                value: result.value,
-                                notes: result.notes
-                            }, currentUser);
-                            updatedCount++;
-                        }
-                    } catch (resultError) {
-                        errors.push(`Failed to save lab result (labItemId=${result.labItemId}): ${resultError.message}`);
-                    }
-                }
-
-                // Process DELETED lab results (in existing but not in current)
-                for (const existing of existingLabResults) {
-                    try {
-                        const stillExists = newLabResults.find(lab => lab.labItemId === existing.lab_item_id);
-                        if (!stillExists) {
-                            // DELETED - soft delete
-                            await labService.deletePemeriksaanLab(existing.id);
-                            deletedCount++;
-                        }
-                    } catch (deleteError) {
-                        errors.push(`Failed to delete lab result (labItemId=${existing.lab_item_id}): ${deleteError.message}`);
-                    }
-                }
-
-                // Show errors if any
-                if (errors.length > 0) {
-                    const errorMsg = `❌ Beberapa hasil lab gagal disimpan:\n${errors.join('\n')}`;
+            // VALIDATION: Only validate if user has made changes to lab items
+            if (labResultWidget.hasChanges()) {
+                const validationErrors = labResultWidget.validateAllFieldsFilled();
+                if (validationErrors.length > 0) {
+                    hideSaveLoading();
+                    const errorMsg = 'Semua pemeriksaan lab harus diisi:\n' + validationErrors.join('\n');
                     showToast(errorMsg, 'error');
-                    throw new Error(errorMsg); // ✅ CRITICAL: Prevent success if there are failures
-                } else if (savedCount > 0 || updatedCount > 0 || deletedCount > 0) {
-                    const details = [];
-                    if (savedCount > 0) details.push(`${savedCount} ditambah`);
-                    if (updatedCount > 0) details.push(`${updatedCount} diupdate`);
-                    if (deletedCount > 0) details.push(`${deletedCount} dihapus`);
-                    showToast(`✅ Hasil lab berhasil disimpan: ${details.join(', ')}`, 'success');
+                    throw new Error(errorMsg);
                 }
-
-                // ✅ IMPORTANT: Save lab changes to mcuChanges table so they appear in change history
-                try {
-                    const { database } = await import('../services/database.js');
-                    const labChanges = await labService.getLabResultChanges(existingLabResults, newLabResults, mcuId, currentUser);
-                    for (const labChange of labChanges) {
-                        await database.add('mcuChanges', {
-                            mcuId: mcuId,
-                            fieldName: labChange.fieldLabel,
-                            fieldChanged: labChange.fieldChanged,
-                            oldValue: labChange.oldValue,
-                            newValue: labChange.newValue,
-                            changedBy: currentUser?.userId || currentUser?.id,
-                            changedAt: labChange.changedAt
-                        });
-                    }
-                } catch (labChangeError) {
-                    // Log but don't throw - lab save succeeded but change tracking failed
-                    console.error('[kelola-karyawan] Failed to track lab changes:', labChangeError);
-                }
-            } catch (error) {
-                showToast(`ERROR: Gagal menyimpan hasil lab. ${error.message}. Data Anda mungkin belum tersimpan!`, 'error');
-                throw error; // Re-throw to prevent further processing
             }
+
+            labResults = labResultWidget.getAllLabResults();
         }
 
-        await mcuService.updateFollowUp(mcuId, updateData, currentUser);
+        // ✅ BATCH UPDATE: Use batch service for atomic MCU + lab update
+        console.log('[handleEditMCU] Using batch service for atomic update');
+        const batchResult = await mcuBatchService.updateMCUWithLabResults(mcuId, updateData, labResults, currentUser);
 
-        // ✅ CRITICAL: Clean up phantom lab records immediately after update
+        // ✅ IMPORTANT: Save lab changes to mcuChanges table so they appear in change history
         try {
-            await labService.cleanupPhantomLabRecords(mcuId);
-        } catch (cleanupError) {
-            console.error('[kelola-karyawan] Phantom record cleanup failed (non-critical):', cleanupError);
-            // Don't throw - cleanup is preventive, not critical
+            const { database } = await import('../services/database.js');
+            let labChanges = [];
+
+            if (batchResult.data.labSaved.length > 0) {
+                for (const saved of batchResult.data.labSaved) {
+                    labChanges.push({
+                        fieldLabel: `Hasil Lab (Baru): Item ${saved.labItemId}`,
+                        fieldChanged: 'labResults',
+                        oldValue: '-',
+                        newValue: `${saved.value}`
+                    });
+                }
+            }
+
+            if (batchResult.data.labUpdated.length > 0) {
+                for (const updated of batchResult.data.labUpdated) {
+                    labChanges.push({
+                        fieldLabel: `Hasil Lab (Update): Item ${updated.labItemId}`,
+                        fieldChanged: 'labResults',
+                        oldValue: `${updated.oldValue}`,
+                        newValue: `${updated.newValue}`
+                    });
+                }
+            }
+
+            if (batchResult.data.labDeleted.length > 0) {
+                for (const deleted of batchResult.data.labDeleted) {
+                    labChanges.push({
+                        fieldLabel: `Hasil Lab (Dihapus): Item ${deleted.labItemId}`,
+                        fieldChanged: 'labResults',
+                        oldValue: `${deleted.oldValue}`,
+                        newValue: '-'
+                    });
+                }
+            }
+
+            for (const labChange of labChanges) {
+                await database.add('mcuChanges', {
+                    mcuId: mcuId,
+                    fieldName: labChange.fieldLabel,
+                    fieldChanged: labChange.fieldChanged,
+                    oldValue: labChange.oldValue,
+                    newValue: labChange.newValue,
+                    changedBy: currentUser?.userId || currentUser?.id,
+                    changedAt: new Date().toISOString()
+                });
+            }
+        } catch (labChangeError) {
+            // Log but don't throw - lab save succeeded but change tracking failed
+            console.error('[kelola-karyawan] Failed to track lab changes:', labChangeError);
+        }
+
+        // Show errors if any occurred
+        if (batchResult.errors.length > 0) {
+            console.warn('[handleEditMCU] Batch update had errors:', batchResult.errors);
+            const errorMsg = `⚠️ Beberapa operasi gagal:\n${batchResult.errors.join('\n')}`;
+            showToast(errorMsg, 'warning');
         }
 
         hideSaveLoading();

@@ -8,6 +8,7 @@ import { employeeService } from '../services/employeeService.js';
 import { mcuService } from '../services/mcuService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { labService } from '../services/labService.js';
+import { mcuBatchService } from '../services/mcuBatchService.js';  // ✅ NEW: Batch service for atomic updates
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
 import { generateRujukanPDF, generateRujukanBalikPDF } from '../utils/rujukanPDFGenerator.js';
@@ -697,10 +698,11 @@ window.handleMCUUpdate = async function(event) {
 
   try {
     const currentUser = authService.getCurrentUser();
+    showSaveLoading('Menyimpan perubahan MCU dan hasil lab...');
 
     // Collect new values - only include editable fields
     const updateData = {};
-    let changes = [];  // Track all changes for history display (use let instead of const for reassignment)
+    let changes = [];  // Track all changes for history display
     const fieldLabels = {
       'update-bmi': { label: 'BMI', dataKey: 'bmi' },
       'update-bp': { label: 'Tekanan Darah', dataKey: 'bloodPressure' },
@@ -746,6 +748,7 @@ window.handleMCUUpdate = async function(event) {
       if (labResultWidgetUpdate.hasChanges()) {
         const validationErrors = labResultWidgetUpdate.validateAllFieldsFilled();
         if (validationErrors.length > 0) {
+          hideSaveLoading();
           const errorMsg = 'Semua pemeriksaan lab harus diisi:\n' + validationErrors.join('\n');
           showToast(errorMsg, 'error');
           throw new Error(errorMsg);
@@ -755,69 +758,56 @@ window.handleMCUUpdate = async function(event) {
       labResults = labResultWidgetUpdate.getAllLabResults();
     }
 
-    // Compare lab results with existing ones to track changes
-    let labChanges = [];
-    try {
-      const existingLabResults = await labService.getPemeriksaanLabByMcuId(mcuId);
-
-      if (existingLabResults && existingLabResults.length > 0) {
-        // Check for modified lab results
-        for (const newLab of labResults) {
-          const existingLab = existingLabResults.find(lab => lab.lab_item_id === newLab.labItemId);
-          if (existingLab) {
-            // If value changed, track it
-            if (String(existingLab.value) !== String(newLab.value)) {
-              labChanges.push({
-                itemName: `Hasil Lab: ${existingLab.lab_items?.name || 'Unknown'}`,
-                oldValue: `${existingLab.value} ${existingLab.unit || ''}`,
-                newValue: `${newLab.value} ${existingLab.unit || ''}`,
-                changed: true
-              });
-            }
-          }
-        }
-
-        // Check for deleted lab results
-        for (const existingLab of existingLabResults) {
-          const stillExists = labResults.find(lab => lab.labItemId === existingLab.lab_item_id);
-          if (!stillExists) {
-            labChanges.push({
-              itemName: `Hasil Lab: ${existingLab.lab_items?.name || 'Unknown'} (Dihapus)`,
-              oldValue: `${existingLab.value} ${existingLab.unit || ''}`,
-              newValue: '-',
-              changed: true
-            });
-          }
-        }
-      } else if (labResults.length > 0) {
-        // New lab results added
-        for (const newLab of labResults) {
-          labChanges.push({
-            itemName: `Hasil Lab: ${newLab.labItemName || 'Unknown'} (Baru)`,
-            oldValue: '-',
-            newValue: `${newLab.value}`,
-            changed: true
-          });
-        }
-      }
-    } catch (err) {
-    }
-
-    // Merge lab changes with other changes
-    changes = [...changes, ...labChanges];
-
     // Only update if there are changes
     if (Object.keys(updateData).length === 0 && labResults.length === 0) {
+      hideSaveLoading();
       showToast('Tidak ada perubahan untuk disimpan', 'info');
       closeMCUUpdateModal();
       await loadFollowUpList();
       return;
     }
 
-    // Update MCU record (this will also create MCUChange entries for MCU fields)
-    if (Object.keys(updateData).length > 0) {
-      await mcuService.updateFollowUp(mcuId, updateData, currentUser);
+    // ✅ BATCH UPDATE: Use batch service for atomic MCU + lab update
+    console.log('[handleMCUUpdate] Using batch service for atomic update');
+    const batchResult = await mcuBatchService.updateMCUWithLabResults(mcuId, updateData, labResults, currentUser);
+
+    // Track lab changes for change history
+    let labChanges = [];
+    if (batchResult.data.labSaved.length > 0) {
+      for (const saved of batchResult.data.labSaved) {
+        labChanges.push({
+          itemName: `Hasil Lab (Baru): Item ${saved.labItemId}`,
+          oldValue: '-',
+          newValue: `${saved.value}`,
+          changed: true
+        });
+      }
     }
+
+    if (batchResult.data.labUpdated.length > 0) {
+      for (const updated of batchResult.data.labUpdated) {
+        labChanges.push({
+          itemName: `Hasil Lab (Update): Item ${updated.labItemId}`,
+          oldValue: `${updated.oldValue}`,
+          newValue: `${updated.newValue}`,
+          changed: true
+        });
+      }
+    }
+
+    if (batchResult.data.labDeleted.length > 0) {
+      for (const deleted of batchResult.data.labDeleted) {
+        labChanges.push({
+          itemName: `Hasil Lab (Dihapus): Item ${deleted.labItemId}`,
+          oldValue: `${deleted.oldValue}`,
+          newValue: '-',
+          changed: true
+        });
+      }
+    }
+
+    // Merge lab changes with other changes
+    changes = [...changes, ...labChanges];
 
     // ✅ IMPORTANT: Save lab changes to mcuChanges table so they appear in change history
     if (labChanges.length > 0) {
@@ -834,97 +824,14 @@ window.handleMCUUpdate = async function(event) {
       }
     }
 
-    // Save/update lab results separately - SMART update (only update changed items)
-    if (labResults !== undefined && labResults !== null && labResults.length > 0) {
-      try {
-// [log removed]
-
-        // VALIDATION: Ensure all lab results have valid data
-        for (const result of labResults) {
-          if (!result.labItemId || !result.value) {
-            throw new Error(`Invalid lab result: Missing labItemId or value. Data: ${JSON.stringify(result)}`);
-          }
-          const numValue = parseFloat(result.value);
-          if (isNaN(numValue) || numValue <= 0) {
-            throw new Error(`Invalid lab result value: labItemId=${result.labItemId}, value='${result.value}'. Only positive numbers allowed.`);
-          }
-        }
-
-        const existingLabResults = await labService.getPemeriksaanLabByMcuId(mcuId);
-// [log removed]
-
-        let savedCount = 0;
-        let updatedCount = 0;
-        let deletedCount = 0;
-        let errors = [];
-
-        // Process NEW lab results (not in existing)
-        for (const result of labResults) {
-          try {
-            const existing = existingLabResults.find(lab => lab.lab_item_id === result.labItemId);
-            if (!existing) {
-              // NEW - insert
-// [log removed]
-              await labService.createPemeriksaanLab({
-                mcuId: mcuId,
-                employeeId: currentMCU.employeeId,
-                labItemId: result.labItemId,
-                value: result.value,
-                notes: result.notes
-              }, currentUser);
-              savedCount++;
-            } else if (existing.value !== result.value || existing.notes !== result.notes) {
-              // MODIFIED - update only if value or notes changed
-// [log removed]
-              await labService.updatePemeriksaanLab(existing.id, {
-                value: result.value,
-                notes: result.notes
-              }, currentUser);
-              updatedCount++;
-            }
-            // UNCHANGED - do nothing
-          } catch (resultError) {
-            errors.push(`Failed to save lab result (labItemId=${result.labItemId}): ${resultError.message}`);
-          }
-        }
-
-        // Process DELETED lab results (in existing but not in current)
-        for (const existing of existingLabResults) {
-          try {
-            const stillExists = labResults.find(lab => lab.labItemId === existing.lab_item_id);
-            if (!stillExists) {
-              // DELETED - soft delete
-// [log removed]
-              await labService.deletePemeriksaanLab(existing.id);
-              deletedCount++;
-            }
-          } catch (deleteError) {
-            errors.push(`Failed to delete lab result (labItemId=${existing.lab_item_id}): ${deleteError.message}`);
-          }
-        }
-// [log removed]
-
-        // If there were errors, show them to user
-        if (errors.length > 0) {
-          const errorMsg = `Beberapa hasil lab gagal disimpan:\n${errors.join('\n')}`;
-          showToast(errorMsg, 'error');
-          throw new Error(`Lab save had errors: ${errors.join('; ')}`);
-        }
-
-        // Show success message with details
-        if (savedCount > 0 || updatedCount > 0 || deletedCount > 0) {
-          const details = [];
-          if (savedCount > 0) details.push(`${savedCount} ditambah`);
-          if (updatedCount > 0) details.push(`${updatedCount} diupdate`);
-          if (deletedCount > 0) details.push(`${deletedCount} dihapus`);
-// [log removed]
-        }
-      } catch (error) {
-        console.error('[follow-up] CRITICAL ERROR saving lab results:', error);
-        showToast(`ERROR: Gagal menyimpan hasil lab. ${error.message}. Data Anda mungkin belum tersimpan!`, 'error');
-        throw error; // Re-throw to prevent further processing
-      }
+    // Show errors if any occurred
+    if (batchResult.errors.length > 0) {
+      console.warn('[handleMCUUpdate] Batch update had errors:', batchResult.errors);
+      const errorMsg = `Beberapa operasi gagal:\n${batchResult.errors.join('\n')}`;
+      showToast(errorMsg, 'warning');
     }
+
+    hideSaveLoading();
 
     // Display change history if there are changes
     if (changes.length > 0) {
@@ -939,6 +846,8 @@ window.handleMCUUpdate = async function(event) {
     }
 
   } catch (error) {
+    hideSaveLoading();
+    console.error('[handleMCUUpdate] Error:', error);
     showToast('Gagal mengupdate MCU: ' + error.message, 'error');
   }
 };
