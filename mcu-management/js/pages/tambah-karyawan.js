@@ -589,6 +589,7 @@ window.handleAddMCU = async function(event) {
         const createdMCU = await mcuService.create(mcuData, currentUser);
 
         // Save lab results jika ada
+        let labSaveFailures = [];
         if (labResultWidget) {
             const labResults = labResultWidget.getAllLabResults();
             console.log('[DEBUG] Lab results to save:', labResults);
@@ -608,11 +609,27 @@ window.handleAddMCU = async function(event) {
                         }, currentUser);
                     } catch (error) {
                         console.error('[ERROR] Failed to save lab result:', error);
-                        showToast(`Peringatan: Gagal menyimpan hasil lab: ${error.message}`, 'warning');
+                        labSaveFailures.push({ labItemId: result.labItemId, error: error.message });
                     }
                 }
 
-                showToast(`✅ ${labResults.length} hasil lab berhasil disimpan`, 'success');
+                // ✅ CRITICAL: Check if ALL lab results saved successfully
+                if (labSaveFailures.length === 0) {
+                    showToast(`✅ ${labResults.length} hasil lab berhasil disimpan`, 'success');
+                } else if (labSaveFailures.length === labResults.length) {
+                    // ALL failed
+                    hideSaveLoading();
+                    const errorMsg = `❌ GAGAL: Semua hasil lab gagal disimpan!\n${labSaveFailures.map(f => `Item ${f.labItemId}: ${f.error}`).join('\n')}\n\nMCU sudah disimpan tapi lab results KOSONG. Hubungi support!`;
+                    showToast(errorMsg, 'error');
+                    throw new Error('Lab results save failed');
+                } else {
+                    // PARTIAL failure
+                    hideSaveLoading();
+                    const successCount = labResults.length - labSaveFailures.length;
+                    const errorMsg = `⚠️ SEBAGIAN GAGAL: ${successCount}/${labResults.length} hasil lab tersimpan.\nYang gagal: ${labSaveFailures.map(f => `Item ${f.labItemId}`).join(', ')}\n\nHubungi support untuk memperbaiki!`;
+                    showToast(errorMsg, 'error');
+                    throw new Error('Partial lab results save failed');
+                }
             } else {
                 console.log('[DEBUG] No lab results to save');
             }
