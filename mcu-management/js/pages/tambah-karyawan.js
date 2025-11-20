@@ -579,10 +579,14 @@ window.handleAddMCU = async function(event) {
         // Save lab results jika ada
         if (labResultWidget) {
             const labResults = labResultWidget.getAllLabResults();
+            console.log('[DEBUG] Lab results to save:', labResults);
+            console.log('[DEBUG] Created MCU ID:', createdMCU.mcuId);
+
             if (labResults && labResults.length > 0) {
 
                 for (const result of labResults) {
                     try {
+                        console.log('[DEBUG] Saving lab result:', { mcuId: createdMCU.mcuId, ...result });
                         await labService.createPemeriksaanLab({
                             mcuId: createdMCU.mcuId,
                             employeeId: mcuData.employeeId,
@@ -591,12 +595,17 @@ window.handleAddMCU = async function(event) {
                             notes: result.notes
                         }, currentUser);
                     } catch (error) {
+                        console.error('[ERROR] Failed to save lab result:', error);
                         showToast(`Peringatan: Gagal menyimpan hasil lab: ${error.message}`, 'warning');
                     }
                 }
 
                 showToast(`✅ ${labResults.length} hasil lab berhasil disimpan`, 'success');
+            } else {
+                console.log('[DEBUG] No lab results to save');
             }
+        } else {
+            console.log('[DEBUG] Lab result widget not available');
         }
 
         hideSaveLoading();

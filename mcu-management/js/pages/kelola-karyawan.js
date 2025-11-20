@@ -1453,6 +1453,8 @@ window.handleEditMCU = async function(event) {
                 // VALIDATION: Only validate if user has made changes to lab items
                 // If user just editing other fields, skip lab validation
                 const newLabResults = labResultWidget.getAllLabResults();
+                console.log('[DEBUG-EDIT] New lab results:', newLabResults);
+                console.log('[DEBUG-EDIT] MCU ID:', mcuId);
 
                 if (labResultWidget.hasChanges()) {
                     const validationErrors = labResultWidget.validateAllFieldsFilled();
