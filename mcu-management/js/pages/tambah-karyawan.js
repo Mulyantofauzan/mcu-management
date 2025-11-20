@@ -171,6 +171,8 @@ async function loadMasterData() {
         jobTitles = await masterDataService.getAllJobTitles();
         departments = await masterDataService.getAllDepartments();
         doctors = await masterDataService.getAllDoctors();
+        // ✅ CRITICAL: Load lab items upfront so labResultWidget can use them
+        await labService.getAllLabItems();
     } catch (error) {
 
         showToast('Gagal memuat data master', 'error');
