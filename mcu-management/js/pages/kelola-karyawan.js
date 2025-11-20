@@ -794,18 +794,10 @@ window.addMCUForEmployee = async function(employeeId) {
 
         openModal('add-mcu-modal');
 
-        // Initialize lab result widget
+        // Initialize lab result widget with fixed 14-item form
         labResultWidget = createLabResultWidget('lab-results-container-add-karyawan');
         if (labResultWidget) {
             await labResultWidget.init();
-
-            // Setup add button handler
-            const addLabBtn = document.getElementById('add-lab-result-btn-karyawan');
-            if (addLabBtn) {
-                addLabBtn.onclick = () => {
-                    labResultWidget.addLabResultForm();
-                };
-            }
         }
     } catch (error) {
 
@@ -1196,14 +1188,6 @@ window.editMCU = async function() {
         labResultWidget = createLabResultWidget('lab-results-container-edit');
         if (labResultWidget) {
             await labResultWidget.init();
-
-            // Setup add button handler
-            const addLabBtn = document.getElementById('add-lab-result-btn-edit');
-            if (addLabBtn) {
-                addLabBtn.onclick = () => {
-                    labResultWidget.addLabResultForm();
-                };
-            }
         }
 
         // Initialize file upload widget for edit modal
