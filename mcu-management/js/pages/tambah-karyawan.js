@@ -456,6 +456,9 @@ window.openAddMCUForEmployee = async function(employeeId) {
 
         openModal('add-mcu-modal');
 
+        // ✅ CRITICAL: Wait for modal to be fully visible and DOM ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         // Initialize file upload widget for this MCU
         const currentUser = authService.getCurrentUser();
         fileUploadWidget = new FileUploadWidget('mcu-file-upload-container', {
@@ -479,7 +482,10 @@ window.openAddMCUForEmployee = async function(employeeId) {
         // Initialize lab result widget
         labResultWidget = createLabResultWidget('lab-results-container-add');
         if (labResultWidget) {
-            await labResultWidget.init();
+            const initSuccess = await labResultWidget.init();
+            if (!initSuccess) {
+                showToast('Gagal memuat form lab results', 'warning');
+            }
 
             // Setup add button handler
             const addLabBtn = document.getElementById('add-lab-result-btn');

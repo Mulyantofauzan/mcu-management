@@ -816,6 +816,9 @@ window.addMCUForEmployee = async function(employeeId) {
 
         openModal('add-mcu-modal');
 
+        // ✅ CRITICAL: Wait for modal to be fully visible and DOM ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         // ✅ CRITICAL: Clear old form state before initializing new widget
         const labContainer = document.getElementById('lab-results-container-add-karyawan');
         if (labContainer) {
@@ -825,7 +828,10 @@ window.addMCUForEmployee = async function(employeeId) {
         // Initialize lab result widget with fixed 14-item form
         labResultWidget = createLabResultWidget('lab-results-container-add-karyawan');
         if (labResultWidget) {
-            await labResultWidget.init();
+            const initSuccess = await labResultWidget.init();
+            if (!initSuccess) {
+                showToast('Gagal memuat form lab results', 'warning');
+            }
         }
     } catch (error) {
 
@@ -1284,6 +1290,9 @@ window.editMCU = async function() {
         // Open the modal FIRST so DOM elements are visible
         openModal('edit-mcu-modal');
 
+        // ✅ CRITICAL: Wait for modal to be fully visible and DOM ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         // ✅ CRITICAL: Clear old form state before initializing new widget
         const labContainer = document.getElementById('lab-results-container-edit');
         if (labContainer) {
@@ -1293,7 +1302,10 @@ window.editMCU = async function() {
         // Initialize lab result widget for edit modal
         labResultWidget = createLabResultWidget('lab-results-container-edit');
         if (labResultWidget) {
-            await labResultWidget.init();
+            const initSuccess = await labResultWidget.init();
+            if (!initSuccess) {
+                showToast('Gagal memuat form lab results', 'warning');
+            }
         }
 
         // Initialize file upload widget for edit modal
