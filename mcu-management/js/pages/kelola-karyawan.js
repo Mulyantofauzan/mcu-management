@@ -816,12 +816,11 @@ window.addMCUForEmployee = async function(employeeId) {
 
         openModal('add-mcu-modal');
 
-        // ✅ CRITICAL: Wait for modal to be fully visible and DOM ready
-        // Increased from 100ms to 300ms to ensure Bootstrap modal transition completes
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        // Initialize static lab form (no rendering needed, just state management)
-        labResultWidget = new StaticLabForm('lab-results-container-add-karyawan');
+        // ✅ Initialize static lab form ONCE on first use (reuse on subsequent opens)
+        if (!labResultWidget) {
+            console.log('[addMCUForEmployee] First time: Initializing StaticLabForm for add modal');
+            labResultWidget = new StaticLabForm('lab-results-container-add-karyawan');
+        }
     } catch (error) {
 
         showToast('Gagal membuka form MCU: ' + error.message, 'error');
@@ -1276,13 +1275,11 @@ window.editMCU = async function() {
         // Open the modal FIRST so DOM elements are visible
         openModal('edit-mcu-modal');
 
-        // ✅ CRITICAL: Wait for modal to be fully visible and DOM ready
-        // Increased from 100ms to 300ms to ensure Bootstrap modal transition completes
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        // ✅ Initialize static lab form (no rendering needed, already in HTML)
-        console.log('[editMCU] Initializing StaticLabForm for edit modal');
-        labResultWidget = new StaticLabForm('lab-results-container-edit');
+        // ✅ Initialize static lab form ONCE on first use (reuse on subsequent opens)
+        if (!labResultWidget) {
+            console.log('[editMCU] First time: Initializing StaticLabForm for edit modal');
+            labResultWidget = new StaticLabForm('lab-results-container-edit');
+        }
 
         // Initialize file upload widget for edit modal
         const currentUser = authService.getCurrentUser();

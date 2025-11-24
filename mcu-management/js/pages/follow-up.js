@@ -644,12 +644,11 @@ window.openMCUUpdateModal = async function(mcuId) {
     // Open modal FIRST to ensure DOM container is visible
     openModal('mcu-update-modal');
 
-    // Initialize and populate Lab Results Widget AFTER modal is visible
-    // Add significant delay to ensure Bootstrap modal transition is complete
-    await new Promise(resolve => setTimeout(resolve, 300));
-
-    // Initialize static lab form (no rendering needed, just state management)
-    labResultWidgetUpdate = new StaticLabForm('lab-results-container-update');
+    // Initialize static lab form ONCE on first use (reuse on subsequent opens)
+    if (!labResultWidgetUpdate) {
+      console.log('[openMCUUpdateModal] First time: Initializing StaticLabForm for follow-up modal');
+      labResultWidgetUpdate = new StaticLabForm('lab-results-container-update');
+    }
 
     // NUCLEAR: Clean up any phantom lab records with invalid values for THIS MCU ONLY before loading
     try {
