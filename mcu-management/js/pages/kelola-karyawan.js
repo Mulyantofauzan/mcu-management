@@ -36,7 +36,10 @@ let showInactiveEmployees = false;
 let fileUploadWidget = null;
 let addFileUploadWidget = null;
 let generatedMCUIdForAdd = null;  // Store generated MCU ID for the add modal
-let labResultWidget = null;  // Lab result widget instance for edit modal
+
+// Lab form instances - initialized once on page load
+let labResultWidgetEdit = null;
+let labResultWidgetAdd = null;
 
 // Upload loading overlay functions
 function showUploadLoading(message = 'Mengunggah File...') {
@@ -84,6 +87,28 @@ function hideSaveLoading() {
   }
 }
 
+async function initLabForms() {
+    /**
+     * Initialize all lab forms ONCE on page load
+     * Forms are permanent like other form fields - no re-rendering needed
+     */
+    try {
+        // Edit modal lab form (lab-results-container-edit)
+        if (!labResultWidgetEdit) {
+            labResultWidgetEdit = new StaticLabForm('lab-results-container-edit');
+            console.log('[Page Init] Lab form initialized for edit modal');
+        }
+
+        // Add modal lab form (lab-results-container-add-karyawan)
+        if (!labResultWidgetAdd) {
+            labResultWidgetAdd = new StaticLabForm('lab-results-container-add-karyawan');
+            console.log('[Page Init] Lab form initialized for add modal');
+        }
+    } catch (error) {
+        console.error('[Page Init] Error initializing lab forms:', error);
+    }
+}
+
 async function init() {
     try {
         if (!authService.isAuthenticated()) {
@@ -94,6 +119,10 @@ async function init() {
         // Wait for sidebar to load before updating user info
 
         updateUserInfo();
+
+        // ✅ Initialize lab forms ONCE on page load (truly permanent, like other form fields)
+        await initLabForms();
+
         await loadData();
 
         // ✅ NEW: Setup toggle for inactive employees (if button exists)
@@ -816,13 +845,10 @@ window.addMCUForEmployee = async function(employeeId) {
 
         openModal('add-mcu-modal');
 
-        // ✅ Initialize static lab form ONCE on first use (reuse on subsequent opens)
-        if (!labResultWidget) {
-            console.log('[addMCUForEmployee] First time: Initializing StaticLabForm for add modal');
-            labResultWidget = new StaticLabForm('lab-results-container-add-karyawan');
-        } else {
-            // Reinitialize to find inputs that may not have been present on first init
-            await labResultWidget.reinit();
+        // ✅ Use pre-initialized lab form (initialized once on page load)
+        // No need to reinit - form is permanent like other form fields
+        if (labResultWidgetAdd) {
+            console.log('[addMCUForEmployee] Using pre-initialized lab form for add modal');
         }
     } catch (error) {
 
@@ -833,10 +859,9 @@ window.addMCUForEmployee = async function(employeeId) {
 window.closeAddMCUModal = function() {
     closeModal('add-mcu-modal');
 
-    // ✅ CRITICAL: Clear lab widget state to prevent residual data
-    if (labResultWidget) {
-        labResultWidget.clear();
-        labResultWidget = null;
+    // ✅ Clear lab widget state to prevent residual data
+    if (labResultWidgetAdd) {
+        labResultWidgetAdd.clear();
     }
 
     // ✅ NOTE: Do NOT clear container innerHTML - static form HTML is permanent in the modal
@@ -946,8 +971,8 @@ window.handleAddMCU = async function(event) {
 
         // ✅ CRITICAL: Collect lab results for batch processing
         let labResults = [];
-        if (labResultWidget) {
-            labResults = labResultWidget.getAllLabResults() || [];
+        if (labResultWidgetAdd) {
+            labResults = labResultWidgetAdd.getAllLabResults() || [];
             console.log('[DEBUG-ADD-MCU] Lab results for batch save:', labResults);
         }
 
@@ -1278,14 +1303,8 @@ window.editMCU = async function() {
         // Open the modal FIRST so DOM elements are visible
         openModal('edit-mcu-modal');
 
-        // ✅ Initialize static lab form ONCE on first use (reuse on subsequent opens)
-        if (!labResultWidget) {
-            console.log('[editMCU] First time: Initializing StaticLabForm for edit modal');
-            labResultWidget = new StaticLabForm('lab-results-container-edit');
-        } else {
-            // Reinitialize to find inputs that may not have been present on first init
-            await labResultWidget.reinit();
-        }
+        // ✅ Use pre-initialized lab form (initialized once on page load)
+        // No need to reinit - form is permanent like other form fields
 
         // Initialize file upload widget for edit modal
         const currentUser = authService.getCurrentUser();
@@ -1322,10 +1341,10 @@ window.editMCU = async function() {
                 });
 
                 // Load existing lab results from database and populate form
-                if (labResultWidget) {
+                if (labResultWidgetEdit) {
                     try {
                         const existingLabResults = await labService.getPemeriksaanLabByMcuId(window.currentMCUId);
-                        labResultWidget.loadExistingResults(existingLabResults);
+                        labResultWidgetEdit.loadExistingResults(existingLabResults);
                     } catch (labError) {
                         console.warn('[editMCU] Error loading existing lab results:', labError);
                         // Continue even if lab results fail to load
@@ -1413,10 +1432,9 @@ window.editMCU = async function() {
 window.closeEditMCUModal = function() {
     closeModal('edit-mcu-modal');
 
-    // ✅ CRITICAL: Clear lab widget state to prevent residual data
-    if (labResultWidget) {
-        labResultWidget.clear();
-        labResultWidget = null;
+    // ✅ Clear lab widget state to prevent residual data
+    if (labResultWidgetEdit) {
+        labResultWidgetEdit.clear();
     }
 
     // ✅ NOTE: Do NOT clear container innerHTML - static form HTML is permanent in the modal
@@ -1520,10 +1538,10 @@ window.handleEditMCU = async function(event) {
 
         // Collect lab results if widget exists
         let labResults = [];
-        if (labResultWidget) {
+        if (labResultWidgetEdit) {
             // VALIDATION: Only validate if user has made changes to lab items
-            if (labResultWidget.hasChanges()) {
-                const validationErrors = labResultWidget.validateAllFieldsFilled();
+            if (labResultWidgetEdit.hasChanges()) {
+                const validationErrors = labResultWidgetEdit.validateAllFieldsFilled();
                 if (validationErrors.length > 0) {
                     hideSaveLoading();
                     const errorMsg = 'Semua pemeriksaan lab harus diisi:\n' + validationErrors.join('\n');
@@ -1532,7 +1550,7 @@ window.handleEditMCU = async function(event) {
                 }
             }
 
-            labResults = labResultWidget.getAllLabResults();
+            labResults = labResultWidgetEdit.getAllLabResults();
         }
 
         // ✅ BATCH UPDATE: Use batch service for atomic MCU + lab update

@@ -145,6 +145,22 @@ window.downloadRujukanBalikAction = function(employeeId) {
   }
 };
 
+async function initLabForms() {
+  /**
+   * Initialize lab form ONCE on page load
+   * Form is permanent like other form fields - no re-rendering needed
+   */
+  try {
+    // Update modal lab form (lab-results-container-update)
+    if (!labResultWidgetUpdate) {
+      labResultWidgetUpdate = new StaticLabForm('lab-results-container-update');
+      console.log('[Page Init] Lab form initialized for update modal');
+    }
+  } catch (error) {
+    console.error('[Page Init] Error initializing lab form:', error);
+  }
+}
+
 async function init() {
   try {
     // Check auth
@@ -156,6 +172,10 @@ async function init() {
     // Wait for sidebar to load before updating user info
 
     updateUserInfo();
+
+    // ✅ Initialize lab form ONCE on page load (truly permanent, like other form fields)
+    await initLabForms();
+
     await loadMasterData();
     await loadFollowUpList();
 
@@ -644,13 +664,10 @@ window.openMCUUpdateModal = async function(mcuId) {
     // Open modal FIRST to ensure DOM container is visible
     openModal('mcu-update-modal');
 
-    // Initialize static lab form ONCE on first use (reuse on subsequent opens)
-    if (!labResultWidgetUpdate) {
-      console.log('[openMCUUpdateModal] First time: Initializing StaticLabForm for follow-up modal');
-      labResultWidgetUpdate = new StaticLabForm('lab-results-container-update');
-    } else {
-      // Reinitialize to find inputs that may not have been present on first init
-      await labResultWidgetUpdate.reinit();
+    // ✅ Use pre-initialized lab form (initialized once on page load)
+    // No need to reinit - form is permanent like other form fields
+    if (labResultWidgetUpdate) {
+      console.log('[openMCUUpdateModal] Using pre-initialized lab form for update modal');
     }
 
     // NUCLEAR: Clean up any phantom lab records with invalid values for THIS MCU ONLY before loading
