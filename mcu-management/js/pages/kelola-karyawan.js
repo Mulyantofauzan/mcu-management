@@ -1325,7 +1325,7 @@ window.editMCU = async function() {
         });
 
         // Use setTimeout to ensure DOM is ready before setting values
-        setTimeout(() => {
+        setTimeout(async () => {
             try {
                 // ✅ FIX: Don't reset form (would clear lab-results-container)
                 // Instead, only clear specific input fields manually
@@ -1346,7 +1346,7 @@ window.editMCU = async function() {
 
                 // Load existing lab results
                 if (labResultWidget) {
-                    labResultWidget.loadExistingResults(window.currentMCUId);
+                    await labResultWidget.loadExistingResults(window.currentMCUId);
                 }
 
                 // Fill edit MCU form with current values
