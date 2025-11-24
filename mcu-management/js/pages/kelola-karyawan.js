@@ -822,7 +822,7 @@ window.addMCUForEmployee = async function(employeeId) {
             labResultWidget = new StaticLabForm('lab-results-container-add-karyawan');
         } else {
             // Reinitialize to find inputs that may not have been present on first init
-            labResultWidget.reinit();
+            await labResultWidget.reinit();
         }
     } catch (error) {
 
@@ -1284,7 +1284,7 @@ window.editMCU = async function() {
             labResultWidget = new StaticLabForm('lab-results-container-edit');
         } else {
             // Reinitialize to find inputs that may not have been present on first init
-            labResultWidget.reinit();
+            await labResultWidget.reinit();
         }
 
         // Initialize file upload widget for edit modal

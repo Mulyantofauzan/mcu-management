@@ -650,7 +650,7 @@ window.openMCUUpdateModal = async function(mcuId) {
       labResultWidgetUpdate = new StaticLabForm('lab-results-container-update');
     } else {
       // Reinitialize to find inputs that may not have been present on first init
-      labResultWidgetUpdate.reinit();
+      await labResultWidgetUpdate.reinit();
     }
 
     // NUCLEAR: Clean up any phantom lab records with invalid values for THIS MCU ONLY before loading

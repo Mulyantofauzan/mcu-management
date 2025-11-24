@@ -27,11 +27,13 @@ class StaticLabForm {
     /**
      * Reinitialize form after modal opens (container now has elements)
      */
-    reinit() {
-        console.log('[StaticLabForm] Reinitializing...');
+    async reinit() {
+        console.log('[StaticLabForm] Reinitializing after modal open...');
         // Reset map and re-scan for inputs
         this.labItemsMap = {};
         if (this.container) {
+            // Wait a bit for DOM to settle
+            await new Promise(resolve => setTimeout(resolve, 100));
             this._setupInputListeners();
             console.log('[StaticLabForm] Reinitialized with', Object.keys(this.labItemsMap).length, 'fields');
         }
