@@ -820,6 +820,9 @@ window.addMCUForEmployee = async function(employeeId) {
         if (!labResultWidget) {
             console.log('[addMCUForEmployee] First time: Initializing StaticLabForm for add modal');
             labResultWidget = new StaticLabForm('lab-results-container-add-karyawan');
+        } else {
+            // Reinitialize to find inputs that may not have been present on first init
+            labResultWidget.reinit();
         }
     } catch (error) {
 
@@ -1279,6 +1282,9 @@ window.editMCU = async function() {
         if (!labResultWidget) {
             console.log('[editMCU] First time: Initializing StaticLabForm for edit modal');
             labResultWidget = new StaticLabForm('lab-results-container-edit');
+        } else {
+            // Reinitialize to find inputs that may not have been present on first init
+            labResultWidget.reinit();
         }
 
         // Initialize file upload widget for edit modal

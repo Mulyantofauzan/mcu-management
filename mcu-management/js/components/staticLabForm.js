@@ -20,6 +20,27 @@ class StaticLabForm {
             return;
         }
 
+        this._setupInputListeners();
+        console.log('[StaticLabForm] Initialized with', Object.keys(this.labItemsMap).length, 'fields');
+    }
+
+    /**
+     * Reinitialize form after modal opens (container now has elements)
+     */
+    reinit() {
+        console.log('[StaticLabForm] Reinitializing...');
+        // Reset map and re-scan for inputs
+        this.labItemsMap = {};
+        if (this.container) {
+            this._setupInputListeners();
+            console.log('[StaticLabForm] Reinitialized with', Object.keys(this.labItemsMap).length, 'fields');
+        }
+    }
+
+    /**
+     * Setup input listeners - called by init() and reinit()
+     */
+    _setupInputListeners() {
         const inputs = this.container.querySelectorAll('.lab-value-input');
         inputs.forEach(input => {
             const labId = input.dataset.labId;
@@ -40,8 +61,6 @@ class StaticLabForm {
             input.addEventListener('input', (e) => this.handleValueChange(e));
             input.addEventListener('change', (e) => this.handleValueChange(e));
         });
-
-        console.log('[StaticLabForm] Initialized with', Object.keys(this.labItemsMap).length, 'fields');
     }
 
     /**
