@@ -20,7 +20,12 @@ class StaticLabForm {
             return;
         }
 
+        console.log('[StaticLabForm] Container element:', this.container);
+        console.log('[StaticLabForm] Container HTML:', this.container.innerHTML.substring(0, 200));
+
         const inputs = this.container.querySelectorAll('.lab-value-input');
+        console.log('[StaticLabForm] Found inputs count:', inputs.length);
+
         inputs.forEach(input => {
             const labId = input.dataset.labId;
             const labName = input.dataset.labName;

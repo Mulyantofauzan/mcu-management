@@ -837,11 +837,8 @@ window.closeAddMCUModal = function() {
         labResultWidget = null;
     }
 
-    // Clear container
-    const labContainer = document.getElementById('lab-results-container-add-karyawan');
-    if (labContainer) {
-        labContainer.innerHTML = '';
-    }
+    // ✅ NOTE: Do NOT clear container innerHTML - static form HTML is permanent in the modal
+    // Just clear the input values via the widget.clear() call above
 
     // Reset form elements
     const mcuForm = document.getElementById('mcu-form');
@@ -1281,9 +1278,10 @@ window.editMCU = async function() {
 
         // ✅ CRITICAL: Wait for modal to be fully visible and DOM ready
         // Increased from 100ms to 300ms to ensure Bootstrap modal transition completes
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         // ✅ Initialize static lab form (no rendering needed, already in HTML)
+        console.log('[editMCU] Initializing StaticLabForm for edit modal');
         labResultWidget = new StaticLabForm('lab-results-container-edit');
 
         // Initialize file upload widget for edit modal
@@ -1418,11 +1416,8 @@ window.closeEditMCUModal = function() {
         labResultWidget = null;
     }
 
-    // Clear container
-    const labContainer = document.getElementById('lab-results-container-edit');
-    if (labContainer) {
-        labContainer.innerHTML = '';
-    }
+    // ✅ NOTE: Do NOT clear container innerHTML - static form HTML is permanent in the modal
+    // Just clear the input values via the widget.clear() call above
 };
 
 window.handleEditMCU = async function(event) {
