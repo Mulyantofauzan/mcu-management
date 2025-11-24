@@ -817,7 +817,8 @@ window.addMCUForEmployee = async function(employeeId) {
         openModal('add-mcu-modal');
 
         // ✅ CRITICAL: Wait for modal to be fully visible and DOM ready
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Increased from 100ms to 300ms to ensure Bootstrap modal transition completes
+        await new Promise(resolve => setTimeout(resolve, 300));
 
         // ✅ CRITICAL: Clear old form state before initializing new widget
         const labContainer = document.getElementById('lab-results-container-add-karyawan');
@@ -1291,7 +1292,8 @@ window.editMCU = async function() {
         openModal('edit-mcu-modal');
 
         // ✅ CRITICAL: Wait for modal to be fully visible and DOM ready
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Increased from 100ms to 300ms to ensure Bootstrap modal transition completes
+        await new Promise(resolve => setTimeout(resolve, 300));
 
         // ✅ CRITICAL: Clear old form state before initializing new widget
         const labContainer = document.getElementById('lab-results-container-edit');

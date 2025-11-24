@@ -450,14 +450,14 @@ window.openAddMCUForEmployee = async function(employeeId) {
 
         // Generate MCU ID upfront for file uploads
         generatedMCUIdForAdd = generateMCUId();
-        console.log('[DEBUG] Generated MCU ID for new MCU:', generatedMCUIdForAdd);
         // ✅ Populate doctor dropdown
         populateDoctorDropdown('mcu-doctor');
 
         openModal('add-mcu-modal');
 
         // ✅ CRITICAL: Wait for modal to be fully visible and DOM ready
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Increased from 100ms to 300ms to ensure Bootstrap modal transition completes
+        await new Promise(resolve => setTimeout(resolve, 300));
 
         // Initialize file upload widget for this MCU
         const currentUser = authService.getCurrentUser();

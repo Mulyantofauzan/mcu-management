@@ -641,7 +641,13 @@ window.openMCUUpdateModal = async function(mcuId) {
       }
     }
 
-    // Initialize and populate Lab Results Widget
+    // Open modal FIRST to ensure DOM container is visible
+    openModal('mcu-update-modal');
+
+    // Initialize and populate Lab Results Widget AFTER modal is visible
+    // Add significant delay to ensure Bootstrap modal transition is complete
+    await new Promise(resolve => setTimeout(resolve, 300));
+
     // Always reinitialize to clear previous state
     labResultWidgetUpdate = createLabResultWidget('lab-results-container-update');
     await labResultWidgetUpdate.init();
@@ -660,7 +666,6 @@ window.openMCUUpdateModal = async function(mcuId) {
       console.error('[follow-up] Error loading existing results:', error);
       labResultWidgetUpdate.clear();
     }
-    openModal('mcu-update-modal');
   } catch (error) {
 
     showToast('Gagal membuka modal: ' + error.message, 'error');
