@@ -17,7 +17,7 @@ import { initSuperSearch } from '../components/superSearch.js';  // ✅ NEW: Glo
 import FileUploadWidget from '../components/fileUploadWidget.js';
 import { uploadBatchFiles } from '../services/supabaseStorageService.js';  // ✅ NEW: File upload to Supabase
 import { tempFileStorage } from '../services/tempFileStorage.js';  // ✅ NEW: Temp file management
-import { createLabResultWidget } from '../components/labResultWidget.js';  // ✅ NEW: Lab result widget
+import { StaticLabForm } from '../components/staticLabForm.js';
 
 let followUpList = [];
 let filteredList = [];
@@ -648,9 +648,8 @@ window.openMCUUpdateModal = async function(mcuId) {
     // Add significant delay to ensure Bootstrap modal transition is complete
     await new Promise(resolve => setTimeout(resolve, 300));
 
-    // Always reinitialize to clear previous state
-    labResultWidgetUpdate = createLabResultWidget('lab-results-container-update');
-    await labResultWidgetUpdate.init();
+    // Initialize static lab form (no rendering needed, just state management)
+    labResultWidgetUpdate = new StaticLabForm('lab-results-container-update');
 
     // NUCLEAR: Clean up any phantom lab records with invalid values for THIS MCU ONLY before loading
     try {
@@ -661,7 +660,8 @@ window.openMCUUpdateModal = async function(mcuId) {
     }
 
     try {
-      await labResultWidgetUpdate.loadExistingResults(mcuId);
+      const existingLabResults = await labService.getPemeriksaanLabByMcuId(mcuId);
+      labResultWidgetUpdate.loadExistingResults(existingLabResults);
     } catch (error) {
       console.error('[follow-up] Error loading existing results:', error);
       labResultWidgetUpdate.clear();

@@ -23,7 +23,6 @@ import FileUploadWidget from '../components/fileUploadWidget.js';
 import FileListViewer from '../components/fileListViewer.js';
 import { deleteOrphanedFiles } from '../services/supabaseStorageService.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';
-import { createLabResultWidget } from '../components/labResultWidget.js';
 import { StaticLabForm } from '../components/staticLabForm.js';
 
 let employees = [];
@@ -821,20 +820,8 @@ window.addMCUForEmployee = async function(employeeId) {
         // Increased from 100ms to 300ms to ensure Bootstrap modal transition completes
         await new Promise(resolve => setTimeout(resolve, 300));
 
-        // ✅ CRITICAL: Clear old form state before initializing new widget
-        const labContainer = document.getElementById('lab-results-container-add-karyawan');
-        if (labContainer) {
-            labContainer.innerHTML = ''; // Clear old form
-        }
-
-        // Initialize lab result widget with fixed 14-item form
-        labResultWidget = createLabResultWidget('lab-results-container-add-karyawan');
-        if (labResultWidget) {
-            const initSuccess = await labResultWidget.init();
-            if (!initSuccess) {
-                showToast('Gagal memuat form lab results', 'warning');
-            }
-        }
+        // Initialize static lab form (no rendering needed, just state management)
+        labResultWidget = new StaticLabForm('lab-results-container-add-karyawan');
     } catch (error) {
 
         showToast('Gagal membuka form MCU: ' + error.message, 'error');
