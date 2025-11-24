@@ -24,6 +24,7 @@ import FileListViewer from '../components/fileListViewer.js';
 import { deleteOrphanedFiles } from '../services/supabaseStorageService.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';
 import { createLabResultWidget } from '../components/labResultWidget.js';
+import { StaticLabForm } from '../components/staticLabForm.js';
 
 let employees = [];
 let filteredEmployees = [];
@@ -1295,20 +1296,8 @@ window.editMCU = async function() {
         // Increased from 100ms to 300ms to ensure Bootstrap modal transition completes
         await new Promise(resolve => setTimeout(resolve, 300));
 
-        // ✅ CRITICAL: Clear old form state before initializing new widget
-        const labContainer = document.getElementById('lab-results-container-edit');
-        if (labContainer) {
-            labContainer.innerHTML = ''; // Clear old form
-        }
-
-        // Initialize lab result widget for edit modal
-        labResultWidget = createLabResultWidget('lab-results-container-edit');
-        if (labResultWidget) {
-            const initSuccess = await labResultWidget.init();
-            if (!initSuccess) {
-                showToast('Gagal memuat form lab results', 'warning');
-            }
-        }
+        // ✅ Initialize static lab form (no rendering needed, already in HTML)
+        labResultWidget = new StaticLabForm('lab-results-container-edit');
 
         // Initialize file upload widget for edit modal
         const currentUser = authService.getCurrentUser();
@@ -1344,9 +1333,15 @@ window.editMCU = async function() {
                     if (el) el.value = '';
                 });
 
-                // Load existing lab results
+                // Load existing lab results from database and populate form
                 if (labResultWidget) {
-                    await labResultWidget.loadExistingResults(window.currentMCUId);
+                    try {
+                        const existingLabResults = await labService.getPemeriksaanLabByMcuId(window.currentMCUId);
+                        labResultWidget.loadExistingResults(existingLabResults);
+                    } catch (labError) {
+                        console.warn('[editMCU] Error loading existing lab results:', labError);
+                        // Continue even if lab results fail to load
+                    }
                 }
 
                 // Fill edit MCU form with current values
