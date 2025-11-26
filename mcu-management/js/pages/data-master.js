@@ -24,24 +24,162 @@ window.deleteItem = async function(id) { /* Will be overwritten by actual implem
 window.handleLogout = function() { /* Will be overwritten by actual implementation */ };
 
 /**
- * Show save loading overlay
+ * Show unified loading overlay
  */
-function showSaveLoading(message = 'Menyimpan...') {
-    const overlay = document.getElementById('save-loading-overlay');
-    const title = document.getElementById('save-loading-title');
+function showUnifiedLoading(title = 'Memproses...', message = 'Mohon tunggu') {
+    const overlay = document.getElementById('unified-loading-overlay');
+    const titleEl = document.getElementById('unified-loading-title');
+    const messageEl = document.getElementById('unified-loading-message');
+
     if (overlay) {
         overlay.classList.remove('hidden');
-        if (title) title.textContent = message;
+        if (titleEl) titleEl.textContent = title;
+        if (messageEl) messageEl.textContent = message;
+    }
+
+    // Reset all steps to pending state
+    resetLoadingSteps();
+}
+
+/**
+ * Hide unified loading overlay
+ */
+function hideUnifiedLoading() {
+    const overlay = document.getElementById('unified-loading-overlay');
+    if (overlay) {
+        overlay.classList.add('hidden');
     }
 }
 
 /**
- * Hide save loading overlay
+ * Reset loading steps
  */
-function hideSaveLoading() {
-    const overlay = document.getElementById('save-loading-overlay');
-    if (overlay) {
-        overlay.classList.add('hidden');
+function resetLoadingSteps() {
+    // Reset upload step
+    const uploadIcon = document.getElementById('step-upload-icon');
+    const uploadLabel = document.getElementById('step-upload-label');
+    const uploadProgressBar = document.getElementById('upload-progress-bar');
+    const uploadProgressText = document.getElementById('upload-progress-text');
+
+    if (uploadIcon) {
+        uploadIcon.textContent = '⏳';
+        uploadIcon.style.background = '#e5e7eb';
+        uploadIcon.style.color = '#6b7280';
+    }
+    if (uploadLabel) {
+        uploadLabel.style.color = '#6b7280';
+    }
+    if (uploadProgressBar) {
+        uploadProgressBar.style.display = 'none';
+    }
+    if (uploadProgressText) {
+        uploadProgressText.style.display = 'none';
+    }
+
+    // Reset save step
+    const saveIcon = document.getElementById('step-save-icon');
+    const saveLabel = document.getElementById('step-save-label');
+
+    if (saveIcon) {
+        saveIcon.textContent = '⏳';
+        saveIcon.style.background = '#e5e7eb';
+        saveIcon.style.color = '#6b7280';
+    }
+    if (saveLabel) {
+        saveLabel.style.color = '#6b7280';
+    }
+}
+
+/**
+ * Start upload step
+ */
+function startUploadStep(fileCount) {
+    const uploadIcon = document.getElementById('step-upload-icon');
+    const uploadLabel = document.getElementById('step-upload-label');
+    const uploadProgressBar = document.getElementById('upload-progress-bar');
+    const uploadProgressText = document.getElementById('upload-progress-text');
+
+    if (uploadIcon) {
+        uploadIcon.textContent = '⏳';
+        uploadIcon.style.background = '#fbbf24';
+        uploadIcon.style.color = '#92400e';
+    }
+    if (uploadLabel) {
+        uploadLabel.style.color = '#1f2937';
+    }
+    if (uploadProgressBar && fileCount > 0) {
+        uploadProgressBar.style.display = 'block';
+    }
+    if (uploadProgressText && fileCount > 0) {
+        uploadProgressText.style.display = 'block';
+        uploadProgressText.textContent = `0 dari ${fileCount} file`;
+    }
+}
+
+/**
+ * Update upload progress
+ */
+function updateUploadProgress(current, total) {
+    const progressFill = document.getElementById('upload-progress-fill');
+    const progressText = document.getElementById('upload-progress-text');
+
+    if (progressFill) {
+        const percentage = (current / total) * 100;
+        progressFill.style.width = percentage + '%';
+    }
+    if (progressText) {
+        progressText.textContent = `${current} dari ${total} file`;
+    }
+}
+
+/**
+ * Complete upload step
+ */
+function completeUploadStep() {
+    const uploadIcon = document.getElementById('step-upload-icon');
+    const uploadLabel = document.getElementById('step-upload-label');
+
+    if (uploadIcon) {
+        uploadIcon.textContent = '✓';
+        uploadIcon.style.background = '#d1fae5';
+        uploadIcon.style.color = '#059669';
+    }
+    if (uploadLabel) {
+        uploadLabel.style.color = '#059669';
+    }
+}
+
+/**
+ * Start save step
+ */
+function startSaveStep() {
+    const saveIcon = document.getElementById('step-save-icon');
+    const saveLabel = document.getElementById('step-save-label');
+
+    if (saveIcon) {
+        saveIcon.textContent = '⏳';
+        saveIcon.style.background = '#fbbf24';
+        saveIcon.style.color = '#92400e';
+    }
+    if (saveLabel) {
+        saveLabel.style.color = '#1f2937';
+    }
+}
+
+/**
+ * Complete save step
+ */
+function completeSaveStep() {
+    const saveIcon = document.getElementById('step-save-icon');
+    const saveLabel = document.getElementById('step-save-label');
+
+    if (saveIcon) {
+        saveIcon.textContent = '✓';
+        saveIcon.style.background = '#d1fae5';
+        saveIcon.style.color = '#059669';
+    }
+    if (saveLabel) {
+        saveLabel.style.color = '#059669';
     }
 }
 
@@ -304,24 +442,27 @@ window.handleSubmit = async function(event) {
 
     try {
         const currentUser = authService.getCurrentUser();
-        showSaveLoading('Menyimpan data...');
+        showUnifiedLoading('Menyimpan data...', 'Mohon tunggu');
+        startSaveStep();
 
         if (editingId) {
             // Update
             await config.update(editingId, formData, currentUser);
-            hideSaveLoading();
+            completeSaveStep();
+            hideUnifiedLoading();
             showToast('Data berhasil diupdate', 'success');
         } else {
             // Create
             await config.create(formData, currentUser);
-            hideSaveLoading();
+            completeSaveStep();
+            hideUnifiedLoading();
             showToast('Data berhasil ditambahkan', 'success');
         }
 
         window.closeCrudModal();
         await loadData();
     } catch (error) {
-        hideSaveLoading();
+        hideUnifiedLoading();
         showToast('Gagal menyimpan: ' + error.message, 'error');
     }
 };
