@@ -108,7 +108,7 @@
   }
 
   .modal-body {
-    @apply p-6;
+    @apply p-4;
   }
 
   .modal-footer {
