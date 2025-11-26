@@ -108,7 +108,7 @@
   }
 
   .modal-body {
-    @apply p-2;
+    @apply py-2 px-1;
   }
 
   .modal-footer {
