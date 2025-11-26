@@ -604,13 +604,13 @@ window.openAddMCUForEmployee = async function(employeeId) {
         });
 
         // ✅ CRITICAL: Clear old form state before initializing new widget
-        const labContainer = document.getElementById('lab-results-container-add');
+        const labContainer = document.getElementById('lab-results-container-add-karyawan');
         if (labContainer) {
             labContainer.innerHTML = ''; // Clear old form
         }
 
         // Initialize lab result widget
-        labResultWidget = createLabResultWidget('lab-results-container-add');
+        labResultWidget = createLabResultWidget('lab-results-container-add-karyawan');
         if (labResultWidget) {
             const initSuccess = await labResultWidget.init();
             if (!initSuccess) {
@@ -645,7 +645,7 @@ window.closeAddMCUModal = function() {
     }
 
     // Clear container
-    const labContainer = document.getElementById('lab-results-container-add');
+    const labContainer = document.getElementById('lab-results-container-add-karyawan');
     if (labContainer) {
         labContainer.innerHTML = '';
     }
