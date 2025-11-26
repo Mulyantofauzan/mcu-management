@@ -41,50 +41,159 @@ let generatedMCUIdForAdd = null;  // Store generated MCU ID for the add modal
 let labResultWidgetEdit = null;
 let labResultWidgetAdd = null;
 
-// Upload loading overlay functions
-function showUploadLoading(message = 'Mengunggah File...') {
-  const overlay = document.getElementById('upload-loading-overlay');
-  const title = document.getElementById('upload-loading-title');
+// Unified loading overlay functions
+function showUnifiedLoading(title = 'Memproses...', message = 'Mohon tunggu') {
+  const overlay = document.getElementById('unified-loading-overlay');
+  const titleEl = document.getElementById('unified-loading-title');
+  const messageEl = document.getElementById('unified-loading-message');
+
   if (overlay) {
     overlay.classList.remove('hidden');
-    if (title) title.textContent = message;
+    if (titleEl) titleEl.textContent = title;
+    if (messageEl) messageEl.textContent = message;
+  }
+
+  // Reset all steps to pending state
+  resetLoadingSteps();
+}
+
+function hideUnifiedLoading() {
+  const overlay = document.getElementById('unified-loading-overlay');
+  if (overlay) {
+    overlay.classList.add('hidden');
+  }
+}
+
+function resetLoadingSteps() {
+  // Reset upload step
+  const uploadIcon = document.getElementById('step-upload-icon');
+  const uploadLabel = document.getElementById('step-upload-label');
+  const uploadProgressBar = document.getElementById('upload-progress-bar');
+  const uploadProgressText = document.getElementById('upload-progress-text');
+
+  if (uploadIcon) {
+    uploadIcon.textContent = '⏳';
+    uploadIcon.style.background = '#e5e7eb';
+    uploadIcon.style.color = '#6b7280';
+  }
+  if (uploadLabel) {
+    uploadLabel.style.color = '#6b7280';
+  }
+  if (uploadProgressBar) {
+    uploadProgressBar.style.display = 'none';
+  }
+  if (uploadProgressText) {
+    uploadProgressText.style.display = 'none';
+  }
+
+  // Reset save step
+  const saveIcon = document.getElementById('step-save-icon');
+  const saveLabel = document.getElementById('step-save-label');
+
+  if (saveIcon) {
+    saveIcon.textContent = '⏳';
+    saveIcon.style.background = '#e5e7eb';
+    saveIcon.style.color = '#6b7280';
+  }
+  if (saveLabel) {
+    saveLabel.style.color = '#6b7280';
+  }
+}
+
+function startUploadStep(fileCount) {
+  const uploadIcon = document.getElementById('step-upload-icon');
+  const uploadLabel = document.getElementById('step-upload-label');
+  const uploadProgressBar = document.getElementById('upload-progress-bar');
+  const uploadProgressText = document.getElementById('upload-progress-text');
+
+  if (uploadIcon) {
+    uploadIcon.textContent = '⏳';
+    uploadIcon.style.background = '#fbbf24';
+    uploadIcon.style.color = '#92400e';
+  }
+  if (uploadLabel) {
+    uploadLabel.style.color = '#1f2937';
+  }
+  if (uploadProgressBar && fileCount > 0) {
+    uploadProgressBar.style.display = 'block';
+  }
+  if (uploadProgressText && fileCount > 0) {
+    uploadProgressText.style.display = 'block';
+    uploadProgressText.textContent = `0 dari ${fileCount} file`;
   }
 }
 
 function updateUploadProgress(current, total) {
   const progressFill = document.getElementById('upload-progress-fill');
-  const message = document.getElementById('upload-loading-message');
+  const progressText = document.getElementById('upload-progress-text');
+
   if (progressFill) {
     const percentage = (current / total) * 100;
     progressFill.style.width = percentage + '%';
   }
-  if (message) {
-    message.textContent = `${current} dari ${total} file`;
+  if (progressText) {
+    progressText.textContent = `${current} dari ${total} file`;
   }
 }
 
-function hideUploadLoading() {
-  const overlay = document.getElementById('upload-loading-overlay');
-  if (overlay) {
-    overlay.classList.add('hidden');
+function completeUploadStep() {
+  const uploadIcon = document.getElementById('step-upload-icon');
+  const uploadLabel = document.getElementById('step-upload-label');
+
+  if (uploadIcon) {
+    uploadIcon.textContent = '✓';
+    uploadIcon.style.background = '#d1fae5';
+    uploadIcon.style.color = '#059669';
+  }
+  if (uploadLabel) {
+    uploadLabel.style.color = '#059669';
   }
 }
 
-// Save loading overlay functions
+function startSaveStep() {
+  const saveIcon = document.getElementById('step-save-icon');
+  const saveLabel = document.getElementById('step-save-label');
+
+  if (saveIcon) {
+    saveIcon.textContent = '⏳';
+    saveIcon.style.background = '#fbbf24';
+    saveIcon.style.color = '#92400e';
+  }
+  if (saveLabel) {
+    saveLabel.style.color = '#1f2937';
+  }
+}
+
+function completeSaveStep() {
+  const saveIcon = document.getElementById('step-save-icon');
+  const saveLabel = document.getElementById('step-save-label');
+
+  if (saveIcon) {
+    saveIcon.textContent = '✓';
+    saveIcon.style.background = '#d1fae5';
+    saveIcon.style.color = '#059669';
+  }
+  if (saveLabel) {
+    saveLabel.style.color = '#059669';
+  }
+}
+
+// Deprecated functions - for backward compatibility
 function showSaveLoading(message = 'Menyimpan Data...') {
-  const overlay = document.getElementById('save-loading-overlay');
-  const title = document.getElementById('save-loading-title');
-  if (overlay) {
-    overlay.classList.remove('hidden');
-    if (title) title.textContent = message;
-  }
+  showUnifiedLoading('Memproses...', message);
 }
 
 function hideSaveLoading() {
-  const overlay = document.getElementById('save-loading-overlay');
-  if (overlay) {
-    overlay.classList.add('hidden');
-  }
+  hideUnifiedLoading();
+}
+
+function showUploadLoading(message = 'Mengunggah File...') {
+  showUnifiedLoading('Memproses...', message);
+  startUploadStep(0);
+}
+
+function hideUploadLoading() {
+  completeUploadStep();
 }
 
 async function initLabForms() {
@@ -925,14 +1034,13 @@ window.handleAddMCU = async function(event) {
             return;
         }
 
-        // Show save loading overlay to prevent double-submit
-        showSaveLoading('Menambah MCU...');
+        // Show unified loading with step tracking
+        const tempFiles = tempFileStorage.getFiles(mcuData.mcuId);
+        showUnifiedLoading('Memproses...', 'Mengunggah file dan menyimpan data');
 
         // ✅ FIX: Upload temporary files to Cloudflare R2 BEFORE saving MCU data
-        const tempFiles = tempFileStorage.getFiles(mcuData.mcuId);
         if (tempFiles && tempFiles.length > 0) {
-
-            showUploadLoading(`Mengunggah ${tempFiles.length} file...`);
+            startUploadStep(tempFiles.length);
 
             try {
                 const { uploadBatchFiles } = await import('../services/supabaseStorageService.js');
@@ -942,32 +1050,37 @@ window.handleAddMCU = async function(event) {
                     mcuData.mcuId,
                     currentUser.id,
                     // Progress callback
-                    (current, total, message) => {
+                    (current, total) => {
                         updateUploadProgress(current, total);
                     }
                 );
 
                 if (!uploadResult.success && uploadResult.uploadedCount === 0) {
                     // All uploads failed - don't proceed with MCU creation
-                    hideUploadLoading();
+                    hideUnifiedLoading();
                     showToast(`❌ File upload ke R2 gagal: ${uploadResult.error}`, 'error');
                     return;
                 } else if (uploadResult.failedCount > 0) {
                     // Some uploads failed - warn user but continue
-                    hideUploadLoading();
                     showToast(`⚠️ ${uploadResult.failedCount} file gagal diunggah, tapi MCU akan disimpan`, 'warning');
                 }
             } catch (error) {
-                hideUploadLoading();
+                hideUnifiedLoading();
                 showToast(`❌ Upload error: ${error.message}`, 'error');
                 return;
             }
 
-            hideUploadLoading();
+            completeUploadStep();
+        } else {
+            // No files to upload, skip upload step
+            completeUploadStep();
         }
 
         // ✅ CRITICAL: Clear temporary files ONLY after successful R2 upload
         tempFileStorage.clearFiles(mcuData.mcuId);
+
+        // Start save step
+        startSaveStep();
 
         // ✅ CRITICAL: Collect lab results for batch processing
         let labResults = [];
@@ -982,11 +1095,13 @@ window.handleAddMCU = async function(event) {
         const batchResult = await mcuBatchService.saveMCUWithLabResults(mcuData, labResults, currentUser);
 
         if (!batchResult.success) {
-            hideSaveLoading();
+            hideUnifiedLoading();
             const errorMsg = `⚠️ SEBAGIAN GAGAL atau ERROR:\n${batchResult.errors.join('\n')}\n\nMCU ID: ${batchResult.data.mcu?.mcuId || 'Unknown'}. Hubungi support!`;
             showToast(errorMsg, 'error');
             throw new Error(batchResult.errors[0] || 'Batch save failed');
         }
+
+        completeSaveStep();
 
         // Success - show detailed result
         const createdMCU = batchResult.data.mcu;
@@ -1002,14 +1117,17 @@ window.handleAddMCU = async function(event) {
             showToast(`✅ MCU${labMsg} berhasil disimpan!`, 'success');
         }
 
-        hideSaveLoading();
+        // Hide loading after a brief delay to show completion
+        setTimeout(() => {
+            hideUnifiedLoading();
+        }, 500);
 
         // Close modal and reload data
         closeAddMCUModal();
         await loadData();
 
     } catch (error) {
-        hideSaveLoading();
+        hideUnifiedLoading();
         showToast('Gagal menambah MCU: ' + error.message, 'error');
         // Note: Temporary files are kept in memory and will be cleared when user reopens the modal or reloads page
     }
@@ -1460,9 +1578,6 @@ window.handleEditMCU = async function(event) {
             return; // Stop form submission if doctor is not selected
         }
 
-        // Show save loading overlay to prevent double-submit
-        showSaveLoading('Menyimpan data MCU...');
-
         const updateData = {
             mcuType: document.getElementById('edit-mcu-type').value,
             mcuDate: document.getElementById('edit-mcu-date').value,
@@ -1496,11 +1611,13 @@ window.handleEditMCU = async function(event) {
             updateData.finalNotes = document.getElementById('edit-mcu-final-notes').value || null;
         }
 
-        // ✅ FIX: Upload temporary files to Cloudflare R2 BEFORE clearing from storage
+        // Show unified loading with step tracking
         const tempFiles = tempFileStorage.getFiles(mcuId);
-        if (tempFiles && tempFiles.length > 0) {
+        showUnifiedLoading('Memproses...', 'Mengunggah file dan menyimpan data');
 
-            showUploadLoading(`Mengunggah ${tempFiles.length} file...`);
+        // ✅ FIX: Upload temporary files to Cloudflare R2 BEFORE clearing from storage
+        if (tempFiles && tempFiles.length > 0) {
+            startUploadStep(tempFiles.length);
 
             try {
                 const { uploadBatchFiles } = await import('../services/supabaseStorageService.js');
@@ -1510,31 +1627,35 @@ window.handleEditMCU = async function(event) {
                     mcuId,
                     currentUser.id,
                     // Progress callback
-                    (current, total, message) => {
+                    (current, total) => {
                         updateUploadProgress(current, total);
                     }
                 );
 
                 if (!uploadResult.success && uploadResult.uploadedCount === 0) {
                     // All uploads failed - warn but continue with MCU update
-                    hideUploadLoading();
                     showToast(`⚠️ File upload ke R2 gagal: ${uploadResult.error}`, 'warning');
                 } else if (uploadResult.failedCount > 0) {
                     // Some uploads failed
-                    hideUploadLoading();
                     showToast(`⚠️ ${uploadResult.failedCount} file gagal diunggah`, 'warning');
                 }
             } catch (error) {
-                hideUploadLoading();
+                hideUnifiedLoading();
                 showToast(`❌ Upload error: ${error.message}`, 'error');
                 return;
             }
 
-            hideUploadLoading();
+            completeUploadStep();
+        } else {
+            // No files to upload, skip upload step
+            completeUploadStep();
         }
 
         // ✅ CRITICAL: Clear temporary files ONLY after upload attempt
         tempFileStorage.clearFiles(mcuId);
+
+        // Start save step
+        startSaveStep();
 
         // Collect lab results if widget exists
         let labResults = [];
@@ -1543,7 +1664,7 @@ window.handleEditMCU = async function(event) {
             if (labResultWidgetEdit.hasChanges()) {
                 const validationErrors = labResultWidgetEdit.validateAllFieldsFilled();
                 if (validationErrors.length > 0) {
-                    hideSaveLoading();
+                    hideUnifiedLoading();
                     const errorMsg = 'Semua pemeriksaan lab harus diisi:\n' + validationErrors.join('\n');
                     showToast(errorMsg, 'error');
                     throw new Error(errorMsg);
@@ -1611,6 +1732,8 @@ window.handleEditMCU = async function(event) {
             console.error('[kelola-karyawan] Failed to track lab changes:', labChangeError);
         }
 
+        completeSaveStep();
+
         // Show errors if any occurred
         if (batchResult.errors.length > 0) {
             console.warn('[handleEditMCU] Batch update had errors:', batchResult.errors);
@@ -1618,7 +1741,11 @@ window.handleEditMCU = async function(event) {
             showToast(errorMsg, 'warning');
         }
 
-        hideSaveLoading();
+        // Hide loading after a brief delay to show completion
+        setTimeout(() => {
+            hideUnifiedLoading();
+        }, 500);
+
         showToast('Data MCU berhasil diupdate', 'success');
         closeEditMCUModal();
 
@@ -1627,7 +1754,7 @@ window.handleEditMCU = async function(event) {
             await viewMCUDetail(mcuId);
         }
     } catch (error) {
-        hideSaveLoading();
+        hideUnifiedLoading();
         showToast('Gagal mengupdate MCU: ' + error.message, 'error');
     }
 };
