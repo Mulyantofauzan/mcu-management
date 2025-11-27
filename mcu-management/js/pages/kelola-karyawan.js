@@ -1814,10 +1814,6 @@ window.handleDeleteMCU = async function() {
 
                 // Verify MCU was actually soft-deleted
                 const deletedMCU = await mcuService.getById(mcuId);
-                    id: deletedMCU?.mcuId,
-                    deletedAt: deletedMCU?.deletedAt,
-                    found: !!deletedMCU
-                });
 
                 if (!deletedMCU?.deletedAt) {
                     throw new Error('MCU tidak berhasil dipindahkan ke Data Terhapus');
