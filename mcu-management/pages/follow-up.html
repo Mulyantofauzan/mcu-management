@@ -261,7 +261,7 @@
 
                 <p class="text-sm text-gray-600 mb-4">📝 Silakan update detail pemeriksaan MCU. Nilai di bawah menunjukkan nilai sebelumnya.</p>
 
-                <form id="mcu-update-form" onsubmit="window.handleMCUUpdate(event)">
+                <form id="mcu-update-form" onsubmit="window.handleDetailMCUUpdate(event)">
                     <input type="hidden" id="update-mcu-id" />
 
                     <div class="grid grid-cols-3 gap-4 mb-4">
@@ -391,7 +391,7 @@
 
                     <div class="modal-footer">
                         <button type="button" onclick="closeMCUUpdateModal()" class="btn btn-secondary">Batal</button>
-                        <button type="submit" class="btn btn-primary">Simpan Perubahan MCU</button>
+                        <button type="submit" class="btn btn-primary">Selesai & Simpan Semua Data</button>
                     </div>
                 </form>
             </div>

@@ -31,6 +31,14 @@ let currentPage = 1;
 const itemsPerPage = 10;
 let labResultWidgetUpdate = null;  // Lab result widget for update modal
 
+// ✅ NEW: Temp state object for multi-step modal flow
+let pendingChanges = {
+  followUpData: null,      // Follow-Up Result + Notes (Step 1)
+  detailData: null,        // MCU Detail fields (Step 2)
+  labResults: null,        // Lab results (Step 2)
+  mcuId: null              // Current MCU ID being processed
+};
+
 // Unified loading overlay functions
 function showUnifiedLoading(title = 'Memproses...', message = 'Mohon tunggu') {
   const overlay = document.getElementById('unified-loading-overlay');
@@ -591,6 +599,7 @@ window.closeFollowUpModal = function() {
   currentMCU = null;
 };
 
+// ✅ NEW: Step 1 - Save follow-up data to memory ONLY (not database yet)
 window.handleFollowUpSubmit = async function(event) {
   event.preventDefault();
 
@@ -605,25 +614,19 @@ window.handleFollowUpSubmit = async function(event) {
 
   try {
     const currentUser = authService.getCurrentUser();
-    showSaveLoading('Menyimpan follow-up...');
+    showSaveLoading('Mempersiapkan update follow-up...');
 
-    // Prepare update data (hanya final result dan notes dulu)
-    const updateData = {
+    // ✅ STEP 1: Save follow-up data to MEMORY (not database)
+    pendingChanges.mcuId = mcuId;
+    pendingChanges.followUpData = {
       finalResult: finalResult,
-      finalNotes: finalNotes
+      finalNotes: finalNotes,
+      currentUser: currentUser
     };
 
-    // Update follow-up (IMPORTANT: this updates existing MCU, does NOT create new one)
-    await mcuService.updateFollowUp(mcuId, updateData, currentUser);
-
-    hideSaveLoading();
-    showToast('Hasil akhir berhasil disimpan', 'success');
-
-    // ✅ NEW: Upload files if any are pending
+    // Upload files if any are pending
     const pendingFiles = tempFileStorage.getFiles(mcuId);
     if (pendingFiles && pendingFiles.length > 0) {
-
-      // Show loading overlay
       showUploadLoading(`Mengunggah ${pendingFiles.length} file...`);
 
       try {
@@ -639,17 +642,17 @@ window.handleFollowUpSubmit = async function(event) {
         );
 
         if (uploadResult.success) {
-          if (uploadResult.uploadedCount > 0) {
-          }
           // Clear temporary files after successful upload
           tempFileStorage.clearFiles(mcuId);
         } else {
           hideUploadLoading();
+          hideSaveLoading();
           showToast(`❌ File upload error: ${uploadResult.error}`, 'error');
           return; // Don't proceed if file upload failed
         }
       } catch (error) {
         hideUploadLoading();
+        hideSaveLoading();
         showToast(`❌ Upload error: ${error.message}`, 'error');
         return;
       }
@@ -657,17 +660,20 @@ window.handleFollowUpSubmit = async function(event) {
       hideUploadLoading();
     }
 
+    hideSaveLoading();
+    showToast('Follow-up data tersimpan sementara. Lanjutkan dengan update detail MCU.', 'info');
+
     // Close first modal
     closeFollowUpModal();
 
-    // TAMBAHAN: Buka modal untuk update detail MCU dengan placeholder values
+    // STEP 2: Buka modal untuk update detail MCU
     setTimeout(() => {
       openMCUUpdateModal(mcuId);
     }, 500);
 
   } catch (error) {
     hideSaveLoading();
-    showToast('Gagal menyimpan follow-up: ' + error.message, 'error');
+    showToast('Gagal mempersiapkan follow-up: ' + error.message, 'error');
   }
 };
 
@@ -819,18 +825,17 @@ window.closeMCUUpdateModal = function() {
   }
 };
 
-window.handleMCUUpdate = async function(event) {
+// ✅ NEW: Step 2 - Collect detail MCU data to memory (not database yet)
+window.handleDetailMCUUpdate = async function(event) {
   event.preventDefault();
 
   const mcuId = document.getElementById('update-mcu-id').value;
 
   try {
-    const currentUser = authService.getCurrentUser();
-    showSaveLoading('Menyimpan perubahan MCU dan hasil lab...');
+    showSaveLoading('Mempersiapkan update detail MCU dan hasil lab...');
 
     // Collect new values - only include editable fields
     const updateData = {};
-    let changes = [];  // Track all changes for history display
     const fieldLabels = {
       'update-bmi': { label: 'BMI', dataKey: 'bmi' },
       'update-bp': { label: 'Tekanan Darah', dataKey: 'bloodPressure' },
@@ -851,20 +856,9 @@ window.handleMCUUpdate = async function(event) {
     for (const [fieldId, fieldInfo] of Object.entries(fieldLabels)) {
       const input = document.getElementById(fieldId);
       const newValue = input?.value?.trim() || '';
-      const oldValue = currentMCU[fieldInfo.dataKey] || '';
 
       if (newValue !== '') {
         updateData[fieldInfo.dataKey] = newValue;
-
-        // Track this as a change if value actually changed
-        if (String(oldValue) !== String(newValue)) {
-          changes.push({
-            itemName: fieldInfo.label,
-            oldValue: oldValue || '-',
-            newValue: newValue,
-            changed: true
-          });
-        }
       }
     }
 
@@ -886,17 +880,112 @@ window.handleMCUUpdate = async function(event) {
       labResults = labResultWidgetUpdate.getAllLabResults();
     }
 
-    // Only update if there are changes
-    if (Object.keys(updateData).length === 0 && labResults.length === 0) {
-      hideSaveLoading();
-      showToast('Tidak ada perubahan untuk disimpan', 'info');
-      closeMCUUpdateModal();
-      await loadFollowUpList();
+    // ✅ STEP 2: Save detail data to MEMORY (not database)
+    pendingChanges.detailData = updateData;
+    pendingChanges.labResults = labResults;
+
+    hideSaveLoading();
+    showToast('Data detail MCU tersimpan sementara. Finalisasi penyimpanan...', 'info');
+
+    // Close detail modal
+    closeMCUUpdateModal();
+
+    // STEP 3: Do final atomic save with all data (follow-up + detail + lab)
+    setTimeout(() => {
+      finalizeFollowUpUpdate();
+    }, 500);
+
+  } catch (error) {
+    hideSaveLoading();
+    showToast('Gagal mempersiapkan update detail: ' + error.message, 'error');
+  }
+};
+
+// ✅ NEW: Step 3 - Final atomic save of ALL data together (Follow-Up + Detail MCU + Lab Results)
+async function finalizeFollowUpUpdate() {
+  try {
+    // Validate that we have all required data
+    if (!pendingChanges.mcuId || !pendingChanges.followUpData) {
+      showToast('Data follow-up tidak lengkap. Silakan coba lagi.', 'error');
       return;
     }
 
-    // ✅ BATCH UPDATE: Use batch service for atomic MCU + lab update
-    const batchResult = await mcuBatchService.updateMCUWithLabResults(mcuId, updateData, labResults, currentUser);
+    const mcuId = pendingChanges.mcuId;
+    const followUpData = pendingChanges.followUpData;
+    const detailData = pendingChanges.detailData || {};
+    const labResults = pendingChanges.labResults || [];
+    const currentUser = followUpData.currentUser;
+
+    showSaveLoading('Menyimpan semua perubahan (atomic transaction)...');
+
+    // ✅ MERGE all data: Follow-Up (Final Result + Notes) + Detail (All exam fields)
+    const mergedUpdateData = {
+      ...detailData,
+      finalResult: followUpData.finalResult,
+      finalNotes: followUpData.finalNotes
+    };
+
+    // ✅ ATOMIC SAVE: Use batch service to save ALL data together
+    // This ensures if ANY part fails, entire operation fails (no partial saves)
+    const batchResult = await mcuBatchService.updateMCUWithLabResults(
+      mcuId,
+      mergedUpdateData,
+      labResults,
+      currentUser
+    );
+
+    // Track all changes for change history display
+    let changes = [];
+
+    // Track detail changes
+    for (const [key, value] of Object.entries(detailData)) {
+      const fieldInfo = {
+        'bmi': 'BMI',
+        'bloodPressure': 'Tekanan Darah',
+        'respiratoryRate': 'RR (Frekuensi Nafas)',
+        'pulse': 'Nadi',
+        'temperature': 'Suhu',
+        'vision': 'Penglihatan',
+        'audiometry': 'Audiometri',
+        'spirometry': 'Spirometri',
+        'xray': 'X-Ray',
+        'ekg': 'EKG',
+        'treadmill': 'Treadmill',
+        'hbsag': 'HBsAg',
+        'napza': 'NAPZA'
+      };
+
+      const oldValue = currentMCU[key] || '';
+      if (String(oldValue) !== String(value)) {
+        changes.push({
+          itemName: fieldInfo[key] || key,
+          oldValue: oldValue || '-',
+          newValue: value,
+          changed: true
+        });
+      }
+    }
+
+    // Track follow-up changes
+    const oldFinalResult = currentMCU.finalResult || '';
+    if (String(oldFinalResult) !== String(followUpData.finalResult)) {
+      changes.push({
+        itemName: 'Hasil Akhir',
+        oldValue: oldFinalResult || '-',
+        newValue: followUpData.finalResult,
+        changed: true
+      });
+    }
+
+    const oldFinalNotes = currentMCU.finalNotes || '';
+    if (String(oldFinalNotes) !== String(followUpData.finalNotes)) {
+      changes.push({
+        itemName: 'Catatan Akhir',
+        oldValue: oldFinalNotes || '-',
+        newValue: followUpData.finalNotes,
+        changed: true
+      });
+    }
 
     // Track lab changes for change history
     let labChanges = [];
@@ -933,10 +1022,10 @@ window.handleMCUUpdate = async function(event) {
       }
     }
 
-    // Merge lab changes with other changes
+    // Merge all changes
     changes = [...changes, ...labChanges];
 
-    // ✅ IMPORTANT: Save lab changes to mcuChanges table so they appear in change history
+    // ✅ IMPORTANT: Save all changes to mcuChanges table so they appear in change history
     if (labChanges.length > 0) {
       const { database } = await import('../services/database.js');
       for (const labChange of labChanges) {
@@ -959,23 +1048,34 @@ window.handleMCUUpdate = async function(event) {
 
     hideSaveLoading();
 
+    // Clear pending changes
+    pendingChanges = {
+      followUpData: null,
+      detailData: null,
+      labResults: null,
+      mcuId: null
+    };
+
     // Display change history if there are changes
     if (changes.length > 0) {
       displayChangeHistory(changes);
     } else {
-      showToast('Detail MCU berhasil diupdate!', 'success');
-      // Auto-close modal after save
+      showToast('Follow-up dan detail MCU berhasil diupdate!', 'success');
+      // Auto-reload data
       setTimeout(() => {
-        closeMCUUpdateModal();
-        loadFollowUpList();
+        window.loadFollowUpList();
       }, 800);
     }
 
   } catch (error) {
     hideSaveLoading();
-    showToast('Gagal mengupdate MCU: ' + error.message, 'error');
+    showToast('Gagal menyimpan perubahan: ' + error.message, 'error');
   }
-};
+}
+
+// ✅ DEPRECATED: Old handleMCUUpdate function (replaced by handleDetailMCUUpdate + finalizeFollowUpUpdate)
+// Kept for reference - can be removed after testing
+// window.handleMCUUpdate = async function(event) { ... }
 
 // Display change history in modal
 function displayChangeHistory(changes) {
