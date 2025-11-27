@@ -6,6 +6,7 @@
 
 import { mcuService } from './mcuService.js';
 import { labService } from './labService.js';
+import { isValidLabItemId, validateLabResult, getExpectedLabItemCount } from '../data/labItemsMapping.js';
 
 class MCUBatchService {
   /**
@@ -115,6 +116,7 @@ class MCUBatchService {
 
   /**
    * Validate and normalize lab results
+   * Uses whitelist validation to ensure only valid lab_item_id values are saved
    */
   _validateAndNormalizeLabResults(labResults) {
     if (!Array.isArray(labResults)) {
@@ -124,25 +126,38 @@ class MCUBatchService {
     const normalized = [];
     for (const lab of labResults) {
       // Check required fields
-      if (!lab.labItemId) {
-        throw new Error('Lab result missing labItemId');
+      if (!lab.labItemId && !lab.lab_item_id) {
+        throw new Error('Lab result missing labItemId or lab_item_id');
+      }
+
+      const labItemId = parseInt(lab.labItemId || lab.lab_item_id, 10);
+
+      // CRITICAL: Validate lab_item_id against whitelist
+      if (!isValidLabItemId(labItemId)) {
+        throw new Error(`Invalid lab_item_id: ${labItemId}. Only valid IDs accepted.`);
       }
 
       // Validate value
       const numValue = parseFloat(lab.value);
       if (isNaN(numValue)) {
-        throw new Error(`Lab item ${lab.labItemId}: Invalid numeric value '${lab.value}'`);
+        throw new Error(`Lab item ${labItemId}: Invalid numeric value '${lab.value}'`);
       }
 
       if (numValue <= 0) {
-        throw new Error(`Lab item ${lab.labItemId}: Value must be positive (got ${numValue})`);
+        throw new Error(`Lab item ${labItemId}: Value must be positive (got ${numValue})`);
       }
 
       normalized.push({
-        labItemId: lab.labItemId,
+        labItemId: labItemId,
         value: numValue,
         notes: lab.notes || null
       });
+    }
+
+    // Warn if count doesn't match expected
+    const expectedCount = getExpectedLabItemCount();
+    if (normalized.length !== expectedCount) {
+      console.warn(`[MCUBatchService] Expected ${expectedCount} lab items, got ${normalized.length}`);
     }
 
     return normalized;
