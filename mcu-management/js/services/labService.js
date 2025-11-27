@@ -191,9 +191,13 @@ class LabService {
         throw new Error('Supabase not enabled');
       }
 
-      const labItem = await this.getLabItemById(data.labItemId);
-      if (!labItem) {
-        throw new Error('Lab item tidak ditemukan');
+      // ✅ CRITICAL FIX: Use labItemsMapping as source of truth for min/max ranges
+      // This prevents mismatched min/max values caused by data corruption
+      const { getLabItemInfo } = await import('../data/labItemsMapping.js');
+      const labItemInfo = getLabItemInfo(data.labItemId);
+
+      if (!labItemInfo) {
+        throw new Error(`Lab item ${data.labItemId} tidak ditemukan atau invalid`);
       }
 
       const { data: result, error } = await supabase
@@ -204,9 +208,11 @@ class LabService {
             employee_id: data.employeeId,
             lab_item_id: data.labItemId,
             value: parseFloat(data.value),
-            unit: labItem.unit,
-            min_range_reference: labItem.min_range_reference,
-            max_range_reference: labItem.max_range_reference,
+            unit: labItemInfo.unit,
+            // ✅ CRITICAL: Use labItemsMapping as AUTHORITATIVE source for ranges
+            // This overrides any corrupted data in lab_items table
+            min_range_reference: labItemInfo.min,
+            max_range_reference: labItemInfo.max,
             notes: data.notes || null,
             created_by: currentUser?.userId || currentUser?.user_id || null
           }
