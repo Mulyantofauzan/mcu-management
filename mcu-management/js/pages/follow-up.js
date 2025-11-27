@@ -909,7 +909,7 @@ window.handleMCUUpdate = async function(event) {
     if (batchResult.data.labSaved.length > 0) {
       for (const saved of batchResult.data.labSaved) {
         labChanges.push({
-          itemName: `Hasil Lab (Baru): Item ${saved.labItemId}`,
+          itemName: `Hasil Lab (Baru): ${saved.labItemName}`,
           oldValue: '-',
           newValue: `${saved.value}`,
           changed: true
@@ -920,7 +920,7 @@ window.handleMCUUpdate = async function(event) {
     if (batchResult.data.labUpdated.length > 0) {
       for (const updated of batchResult.data.labUpdated) {
         labChanges.push({
-          itemName: `Hasil Lab (Update): Item ${updated.labItemId}`,
+          itemName: `Hasil Lab (Update): ${updated.labItemName}`,
           oldValue: `${updated.oldValue}`,
           newValue: `${updated.newValue}`,
           changed: true
@@ -931,7 +931,7 @@ window.handleMCUUpdate = async function(event) {
     if (batchResult.data.labDeleted.length > 0) {
       for (const deleted of batchResult.data.labDeleted) {
         labChanges.push({
-          itemName: `Hasil Lab (Dihapus): Item ${deleted.labItemId}`,
+          itemName: `Hasil Lab (Dihapus): ${deleted.labItemName}`,
           oldValue: `${deleted.oldValue}`,
           newValue: '-',
           changed: true

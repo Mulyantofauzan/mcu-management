@@ -6,7 +6,7 @@
 
 import { mcuService } from './mcuService.js';
 import { labService } from './labService.js';
-import { isValidLabItemId, validateLabResult, getExpectedLabItemCount } from '../data/labItemsMapping.js';
+import { isValidLabItemId, validateLabResult, getExpectedLabItemCount, LAB_ITEMS_MAPPING } from '../data/labItemsMapping.js';
 
 class MCUBatchService {
   /**
@@ -66,8 +66,11 @@ class MCUBatchService {
 
             console.log('[mcuBatchService] Saving lab item', labResult.labItemId);
             const savedLab = await labService.createPemeriksaanLab(labPayload, currentUser);
+            const labItemName = LAB_ITEMS_MAPPING[labResult.labItemId]?.name || `Item ${labResult.labItemId}`;
             result.data.labSaved.push({
               labItemId: labResult.labItemId,
+              labItemName: labItemName,
+              value: labResult.value,
               data: savedLab
             });
             console.log('[mcuBatchService] ✅ Lab item', labResult.labItemId, 'saved');
@@ -254,6 +257,8 @@ class MCUBatchService {
             }
 
             const existing = existingMap[labResult.labItemId];
+            const labItemName = LAB_ITEMS_MAPPING[labResult.labItemId]?.name || `Item ${labResult.labItemId}`;
+
             if (!existing) {
               // NEW - Insert
               await labService.createPemeriksaanLab({
@@ -265,6 +270,7 @@ class MCUBatchService {
               }, currentUser);
               result.data.labSaved.push({
                 labItemId: labResult.labItemId,
+                labItemName: labItemName,
                 value: numValue
               });
             } else if (existing.value !== numValue || existing.notes !== labResult.notes) {
@@ -275,6 +281,7 @@ class MCUBatchService {
               }, currentUser);
               result.data.labUpdated.push({
                 labItemId: labResult.labItemId,
+                labItemName: labItemName,
                 oldValue: existing.value,
                 newValue: numValue
               });
@@ -296,9 +303,13 @@ class MCUBatchService {
             const stillExists = labResults.find(lab => lab.labItemId === parseInt(labItemId));
             if (!stillExists) {
               // DELETED - soft delete
+              const labItemIdInt = parseInt(labItemId);
+              const labItemName = LAB_ITEMS_MAPPING[labItemIdInt]?.name || `Item ${labItemIdInt}`;
+
               await labService.deletePemeriksaanLab(existing.id);
               result.data.labDeleted.push({
-                labItemId: parseInt(labItemId),
+                labItemId: labItemIdInt,
+                labItemName: labItemName,
                 oldValue: existing.value
               });
             }
