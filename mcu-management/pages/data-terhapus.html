@@ -86,10 +86,13 @@
             <div class="card">
                 <div class="flex border-b border-gray-200 mb-4">
                     <button onclick="window.switchTab('employees')" id="tab-employees" class="px-4 py-2 font-medium text-primary-600 border-b-2 border-primary-600">Karyawan</button>
+                    <button onclick="window.switchTab('mcu')" id="tab-mcu" class="px-4 py-2 font-medium text-gray-600 hover:text-primary-600 border-b-2 border-transparent">MCU</button>
                 </div>
 
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-semibold">Daftar Karyawan Terhapus</h3>
+                <!-- Employees Tab Content -->
+                <div id="employees-tab" class="tab-content">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-semibold">Daftar Karyawan Terhapus</h3>
                     <div class="flex gap-2 items-center">
                         <div class="text-sm text-gray-600">Total: <span id="total-count">0</span> | Dipilih: <span id="selected-count">0</span></div>
                         <button onclick="window.bulkRestore()" id="bulk-restore-btn" class="btn btn-sm btn-success" disabled>↻ Restore Terpilih</button>
@@ -97,7 +100,21 @@
                     </div>
                 </div>
 
-                <div id="deleted-table"></div>
+                    <div id="deleted-table"></div>
+                </div>
+
+                <!-- MCU Tab Content -->
+                <div id="mcu-tab" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-semibold">Daftar MCU Terhapus</h3>
+                        <div class="flex gap-2 items-center">
+                            <div class="text-sm text-gray-600">Total: <span id="mcu-total-count">0</span> | Dipilih: <span id="mcu-selected-count">0</span></div>
+                            <button onclick="window.bulkRestoreMCU()" id="mcu-bulk-restore-btn" class="btn btn-sm btn-success" disabled>↻ Restore Terpilih</button>
+                            <button onclick="window.bulkDeleteMCU()" id="mcu-bulk-delete-btn" class="btn btn-sm btn-danger" disabled>🗑 Hapus Permanen Terpilih</button>
+                        </div>
+                    </div>
+                    <div id="mcu-table"></div>
+                </div>
             </div>
         </main>
     </div>

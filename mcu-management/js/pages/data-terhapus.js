@@ -4,6 +4,7 @@
 
 import { authService } from '../services/authService.js';
 import { employeeService } from '../services/employeeService.js';
+import { mcuService } from '../services/mcuService.js';  // ✅ NEW: MCU service for deleted MCU
 import { masterDataService } from '../services/masterDataService.js';
 import { formatDateDisplay } from '../utils/dateHelpers.js';
 import { showToast, confirmDialog } from '../utils/uiHelpers.js';
@@ -11,9 +12,11 @@ import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Sup
 import { initSuperSearch } from '../components/superSearch.js';  // ✅ NEW: Global search
 
 let deletedEmployees = [];
+let deletedMCU = [];  // ✅ NEW: Deleted MCU records
 let jobTitles = [];
 let departments = [];
 let selectedEmployees = new Set();
+let selectedMCU = new Set();  // ✅ NEW: Selected deleted MCU
 
 async function init() {
     try {
@@ -84,6 +87,7 @@ function updateUserInfo() {
 async function loadData() {
     try {
         deletedEmployees = await employeeService.getDeleted();
+        deletedMCU = await mcuService.getDeleted();  // ✅ NEW: Load deleted MCU
         jobTitles = await masterDataService.getAllJobTitles();
         departments = await masterDataService.getAllDepartments();
 
@@ -95,6 +99,7 @@ async function loadData() {
         deletedEmployees = deletedEmployees.map(emp => enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap));
 
         document.getElementById('total-count').textContent = deletedEmployees.length;
+        document.getElementById('mcu-total-count').textContent = deletedMCU.length;  // ✅ NEW: Update MCU count
         renderTable();
     } catch (error) {
 
@@ -220,7 +225,30 @@ function updateBulkButtons() {
 }
 
 window.switchTab = function(tab) {
-    // Future: add MCU tab if needed
+    // ✅ NEW: Handle tab switching between employees and MCU
+    const employeeTab = document.getElementById('employees-tab');
+    const mcuTab = document.getElementById('mcu-tab');
+    const tabEmployeesBtn = document.getElementById('tab-employees');
+    const tabMcuBtn = document.getElementById('tab-mcu');
+
+    if (tab === 'employees') {
+        employeeTab.classList.remove('hidden');
+        mcuTab.classList.add('hidden');
+        tabEmployeesBtn.classList.add('text-primary-600', 'border-b-2', 'border-primary-600');
+        tabEmployeesBtn.classList.remove('text-gray-600', 'border-transparent');
+        tabMcuBtn.classList.remove('text-primary-600', 'border-b-2', 'border-primary-600');
+        tabMcuBtn.classList.add('text-gray-600', 'border-transparent');
+        selectedEmployees.clear();
+    } else if (tab === 'mcu') {
+        employeeTab.classList.add('hidden');
+        mcuTab.classList.remove('hidden');
+        tabEmployeesBtn.classList.remove('text-primary-600', 'border-b-2', 'border-primary-600');
+        tabEmployeesBtn.classList.add('text-gray-600', 'border-transparent');
+        tabMcuBtn.classList.add('text-primary-600', 'border-b-2', 'border-primary-600');
+        tabMcuBtn.classList.remove('text-gray-600', 'border-transparent');
+        renderMCUTable();
+        selectedMCU.clear();
+    }
 };
 
 window.restoreEmployee = function(employeeId) {
@@ -335,6 +363,215 @@ window.bulkDelete = function() {
                         }
                     } catch (error) {
 
+                        showToast('Gagal menghapus: ' + error.message, 'error');
+                    }
+                }
+            );
+        }
+    );
+};
+
+/**
+ * ✅ NEW: Render MCU table
+ */
+function renderMCUTable() {
+    if (!deletedMCU || deletedMCU.length === 0) {
+        document.getElementById('mcu-table').innerHTML = '<p class="text-gray-500 py-4">Tidak ada MCU terhapus</p>';
+        return;
+    }
+
+    let html = '<table class="w-full"><thead><tr class="border-b border-gray-200"><th class="text-left p-3"><input type="checkbox" id="mcu-select-all" onchange="window.toggleMCUSelectAll()"></th><th class="text-left p-3">MCU ID</th><th class="text-left p-3">Tanggal</th><th class="text-left p-3">Tipe</th><th class="text-left p-3">Tanggal Hapus</th><th class="text-right p-3">Aksi</th></tr></thead><tbody>';
+
+    deletedMCU.forEach(mcu => {
+        const mcuDate = mcu.mcuDate ? formatDateDisplay(mcu.mcuDate) : '-';
+        const deletedAt = mcu.deletedAt ? formatDateDisplay(mcu.deletedAt) : '-';
+        const isChecked = selectedMCU.has(mcu.mcuId) ? 'checked' : '';
+
+        html += `
+            <tr class="border-b border-gray-200 hover:bg-gray-50">
+                <td class="p-3"><input type="checkbox" value="${mcu.mcuId}" ${isChecked} onchange="window.toggleMCUSelect(this)"></td>
+                <td class="p-3 font-mono text-sm">${mcu.mcuId}</td>
+                <td class="p-3">${mcuDate}</td>
+                <td class="p-3">${mcu.mcuType || '-'}</td>
+                <td class="p-3 text-gray-500 text-sm">${deletedAt}</td>
+                <td class="p-3 text-right">
+                    <button onclick="window.restoreMCU('${mcu.mcuId}')" class="text-blue-600 hover:text-blue-700 font-medium text-sm">Restore</button>
+                    <button onclick="window.deleteMCUPermanent('${mcu.mcuId}')" class="text-red-600 hover:text-red-700 font-medium text-sm ml-2">Hapus</button>
+                </td>
+            </tr>
+        `;
+    });
+
+    html += '</tbody></table>';
+    document.getElementById('mcu-table').innerHTML = html;
+}
+
+/**
+ * ✅ NEW: Toggle MCU selection
+ */
+window.toggleMCUSelect = function(checkbox) {
+    const mcuId = checkbox.value;
+    if (checkbox.checked) {
+        selectedMCU.add(mcuId);
+    } else {
+        selectedMCU.delete(mcuId);
+    }
+    updateMCUButtonStates();
+};
+
+/**
+ * ✅ NEW: Toggle select all MCU
+ */
+window.toggleMCUSelectAll = function() {
+    const selectAll = document.getElementById('mcu-select-all');
+    const checkboxes = document.querySelectorAll('#mcu-table input[type="checkbox"][value]');
+
+    if (selectAll.checked) {
+        checkboxes.forEach(cb => {
+            cb.checked = true;
+            selectedMCU.add(cb.value);
+        });
+    } else {
+        checkboxes.forEach(cb => {
+            cb.checked = false;
+            selectedMCU.delete(cb.value);
+        });
+    }
+    updateMCUButtonStates();
+};
+
+/**
+ * ✅ NEW: Update MCU button states
+ */
+function updateMCUButtonStates() {
+    const bulkRestoreBtn = document.getElementById('mcu-bulk-restore-btn');
+    const bulkDeleteBtn = document.getElementById('mcu-bulk-delete-btn');
+    const selectedCountEl = document.getElementById('mcu-selected-count');
+
+    const hasSelected = selectedMCU.size > 0;
+    bulkRestoreBtn.disabled = !hasSelected;
+    bulkDeleteBtn.disabled = !hasSelected;
+    selectedCountEl.textContent = selectedMCU.size;
+}
+
+/**
+ * ✅ NEW: Restore single MCU
+ */
+window.restoreMCU = function(mcuId) {
+    confirmDialog(
+        'Restore MCU ini? Semua data terkait akan di-restore.',
+        async () => {
+            try {
+                await mcuService.restore(mcuId);
+                showToast('MCU berhasil di-restore', 'success');
+                await loadData();
+                window.switchTab('mcu');
+            } catch (error) {
+                showToast('Gagal restore: ' + error.message, 'error');
+            }
+        }
+    );
+};
+
+/**
+ * ✅ NEW: Delete MCU permanently
+ */
+window.deleteMCUPermanent = function(mcuId) {
+    confirmDialog(
+        '⚠️ PERINGATAN: Hapus permanen tidak dapat dibatalkan! MCU dan semua datanya akan hilang selamanya. Lanjutkan?',
+        () => {
+            confirmDialog(
+                '⚠️ Konfirmasi kedua: Anda yakin ingin menghapus permanen?',
+                async () => {
+                    try {
+                        const currentUser = authService.getCurrentUser();
+                        await mcuService.permanentDelete(mcuId, currentUser);
+                        showToast('MCU berhasil dihapus permanen', 'success');
+                        await loadData();
+                        window.switchTab('mcu');
+                    } catch (error) {
+                        showToast('Gagal menghapus: ' + error.message, 'error');
+                    }
+                }
+            );
+        }
+    );
+};
+
+/**
+ * ✅ NEW: Bulk restore MCU
+ */
+window.bulkRestoreMCU = function() {
+    const count = selectedMCU.size;
+    if (count === 0) return;
+
+    confirmDialog(
+        `Restore ${count} MCU terpilih?`,
+        async () => {
+            try {
+                let successCount = 0;
+                let failCount = 0;
+
+                for (const mcuId of selectedMCU) {
+                    try {
+                        await mcuService.restore(mcuId);
+                        successCount++;
+                    } catch (error) {
+                        failCount++;
+                    }
+                }
+
+                selectedMCU.clear();
+                await loadData();
+
+                if (failCount === 0) {
+                    showToast(`${successCount} MCU berhasil di-restore`, 'success');
+                } else {
+                    showToast(`${successCount} berhasil, ${failCount} gagal di-restore`, 'warning');
+                }
+            } catch (error) {
+                showToast('Gagal restore: ' + error.message, 'error');
+            }
+        }
+    );
+};
+
+/**
+ * ✅ NEW: Bulk delete MCU permanently
+ */
+window.bulkDeleteMCU = function() {
+    const count = selectedMCU.size;
+    if (count === 0) return;
+
+    confirmDialog(
+        `⚠️ PERINGATAN: Hapus permanen ${count} MCU tidak dapat dibatalkan! Lanjutkan?`,
+        () => {
+            confirmDialog(
+                '⚠️ Konfirmasi kedua: Anda yakin?',
+                async () => {
+                    try {
+                        const currentUser = authService.getCurrentUser();
+                        let successCount = 0;
+                        let failCount = 0;
+
+                        for (const mcuId of selectedMCU) {
+                            try {
+                                await mcuService.permanentDelete(mcuId, currentUser);
+                                successCount++;
+                            } catch (error) {
+                                failCount++;
+                            }
+                        }
+
+                        selectedMCU.clear();
+                        await loadData();
+
+                        if (failCount === 0) {
+                            showToast(`${successCount} MCU berhasil dihapus permanen`, 'success');
+                        } else {
+                            showToast(`${successCount} berhasil, ${failCount} gagal dihapus`, 'warning');
+                        }
+                    } catch (error) {
                         showToast('Gagal menghapus: ' + error.message, 'error');
                     }
                 }
