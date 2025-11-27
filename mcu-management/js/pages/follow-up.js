@@ -263,10 +263,8 @@ async function initLabForms() {
     // Update modal lab form (lab-results-container-update)
     if (!labResultWidgetUpdate) {
       labResultWidgetUpdate = new StaticLabForm('lab-results-container-update');
-      console.log('[Page Init] Lab form initialized for update modal');
     }
   } catch (error) {
-    console.error('[Page Init] Error initializing lab form:', error);
   }
 }
 
@@ -776,14 +774,12 @@ window.openMCUUpdateModal = async function(mcuId) {
     // ✅ Use pre-initialized lab form (initialized once on page load)
     // No need to reinit - form is permanent like other form fields
     if (labResultWidgetUpdate) {
-      console.log('[openMCUUpdateModal] Using pre-initialized lab form for update modal');
     }
 
     // NUCLEAR: Clean up any phantom lab records with invalid values for THIS MCU ONLY before loading
     try {
       await labService.cleanupPhantomLabRecords(mcuId);
     } catch (error) {
-      console.error('[follow-up] Cleanup error:', error);
       // Ignore cleanup errors and continue
     }
 
@@ -791,7 +787,6 @@ window.openMCUUpdateModal = async function(mcuId) {
       const existingLabResults = await labService.getPemeriksaanLabByMcuId(mcuId);
       labResultWidgetUpdate.loadExistingResults(existingLabResults);
     } catch (error) {
-      console.error('[follow-up] Error loading existing results:', error);
       labResultWidgetUpdate.clear();
     }
   } catch (error) {
@@ -901,7 +896,6 @@ window.handleMCUUpdate = async function(event) {
     }
 
     // ✅ BATCH UPDATE: Use batch service for atomic MCU + lab update
-    console.log('[handleMCUUpdate] Using batch service for atomic update');
     const batchResult = await mcuBatchService.updateMCUWithLabResults(mcuId, updateData, labResults, currentUser);
 
     // Track lab changes for change history
@@ -959,7 +953,6 @@ window.handleMCUUpdate = async function(event) {
 
     // Show errors if any occurred
     if (batchResult.errors.length > 0) {
-      console.warn('[handleMCUUpdate] Batch update had errors:', batchResult.errors);
       const errorMsg = `Beberapa operasi gagal:\n${batchResult.errors.join('\n')}`;
       showToast(errorMsg, 'warning');
     }
@@ -980,7 +973,6 @@ window.handleMCUUpdate = async function(event) {
 
   } catch (error) {
     hideSaveLoading();
-    console.error('[handleMCUUpdate] Error:', error);
     showToast('Gagal mengupdate MCU: ' + error.message, 'error');
   }
 };

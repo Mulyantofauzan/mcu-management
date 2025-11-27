@@ -19,12 +19,10 @@ class StaticLabForm {
      */
     init() {
         if (!this.container) {
-            console.error('[StaticLabForm] Container not found:', this.containerId);
             return;
         }
 
         this._setupInputListeners();
-        console.log('[StaticLabForm] Initialized with', Object.keys(this.labItemsMap).length, 'fields');
     }
 
 
@@ -102,7 +100,6 @@ class StaticLabForm {
      */
     loadExistingResults(existingLabResults) {
         if (!existingLabResults || !Array.isArray(existingLabResults)) {
-            console.warn('[StaticLabForm] No existing results to load');
             return;
         }
 
@@ -129,7 +126,6 @@ class StaticLabForm {
             }
         }
 
-        console.log('[StaticLabForm] Loaded existing results, tracking original values:', this.originalValues);
     }
 
     /**
@@ -140,7 +136,6 @@ class StaticLabForm {
     getAllLabResults() {
         const results = [];
 
-        console.log('[StaticLabForm] Collecting all lab results from form...');
 
         for (const labId in this.labItemsMap) {
             const metadata = this.labItemsMap[labId];
@@ -148,13 +143,11 @@ class StaticLabForm {
 
             // Validate lab_item_id is valid
             if (!isValidLabItemId(labItemId)) {
-                console.warn(`[StaticLabForm] Invalid lab_item_id: ${labItemId}. Skipping.`);
                 continue;
             }
 
             // ✅ CRITICAL: Direct access ke input element (defensive check)
             if (!metadata.input) {
-                console.warn(`[StaticLabForm] No input element for lab ${labItemId}. Skipping.`);
                 continue;
             }
 
@@ -169,9 +162,7 @@ class StaticLabForm {
                         labItemId: labItemId,
                         value: numValue
                     });
-                    console.log(`[StaticLabForm] Collected lab ${labItemId}: value=${numValue}`);
                 } else {
-                    console.warn(`[StaticLabForm] Lab ${labItemId} has invalid number: "${value}"`);
                 }
             }
             // Note: Empty/null values are NOT added here (handled separately in backend)
@@ -180,9 +171,7 @@ class StaticLabForm {
         // Log info about results
         const expectedCount = getExpectedLabItemCount();
         if (results.length === expectedCount) {
-            console.log(`[StaticLabForm] ✅ All ${results.length} lab items collected successfully`);
         } else {
-            console.warn(`[StaticLabForm] ⚠️ Expected ${expectedCount} lab items, got ${results.length}`);
         }
 
         return results;
@@ -200,11 +189,9 @@ class StaticLabForm {
 
             // If current value differs from original, there's a change
             if (currentValue !== originalValue) {
-                console.log(`[StaticLabForm] Detected change in lab ${labId}: "${originalValue}" -> "${currentValue}"`);
                 return true;
             }
         }
-        console.log('[StaticLabForm] No changes detected in lab items');
         return false;
     }
 
@@ -237,7 +224,6 @@ class StaticLabForm {
             errors.push('Minimal satu pemeriksaan lab harus diisi');
         }
 
-        console.log(`[StaticLabForm] Validation: ${filledCount}/${Object.keys(this.labItemsMap).length} fields filled`);
 
         return errors;
     }
@@ -263,7 +249,6 @@ class StaticLabForm {
         }
         // ✅ CRITICAL: Reset original values when clearing form
         this.originalValues = {};
-        console.log('[StaticLabForm] Form cleared, original values reset');
     }
 }
 

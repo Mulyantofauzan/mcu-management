@@ -768,17 +768,14 @@ window.handleAddMCU = async function(event) {
         let labResults = [];
         if (labResultWidget) {
             labResults = labResultWidget.getAllLabResults() || [];
-            console.log('[DEBUG] Lab results for batch save:', labResults);
         }
 
         // ✅ BATCH SAVE: Use MCU batch service to atomically save MCU + lab results
         // This prevents race conditions and orphaned records on sequential MCU operations
-        console.log('[DEBUG] Starting batch save for MCU:', mcuData.mcuId);
         const batchResult = await mcuBatchService.saveMCUWithLabResults(mcuData, labResults, currentUser);
 
         if (!batchResult.success) {
             hideUnifiedLoading();
-            console.error('[tambah-karyawan] Batch save failed:', batchResult.errors);
 
             // Build detailed error message
             const errorDetails = batchResult.errors.map(e => `• ${e}`).join('\n');
@@ -797,10 +794,8 @@ window.handleAddMCU = async function(event) {
         const labFailed = batchResult.data.labFailed.length;
 
         if (labFailed > 0) {
-            console.warn(`[DEBUG] Batch save partial success: ${labSaved} lab items saved, ${labFailed} failed`);
             showToast(`✅ MCU berhasil! Lab: ${labSaved}/${labSaved + labFailed} tersimpan (${labFailed} gagal).`, 'warning');
         } else {
-            console.log(`[DEBUG] Batch save complete success: MCU + ${labSaved} lab items`);
             const labMsg = labSaved > 0 ? ` & ${labSaved} hasil lab` : '';
             showToast(`✅ MCU${labMsg} berhasil disimpan!`, 'success');
         }

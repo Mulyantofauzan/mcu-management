@@ -206,16 +206,13 @@ async function initLabForms() {
         // Edit modal lab form (lab-results-container-edit)
         if (!labResultWidgetEdit) {
             labResultWidgetEdit = new StaticLabForm('lab-results-container-edit');
-            console.log('[Page Init] Lab form initialized for edit modal');
         }
 
         // Add modal lab form (lab-results-container-add-karyawan)
         if (!labResultWidgetAdd) {
             labResultWidgetAdd = new StaticLabForm('lab-results-container-add-karyawan');
-            console.log('[Page Init] Lab form initialized for add modal');
         }
     } catch (error) {
-        console.error('[Page Init] Error initializing lab forms:', error);
     }
 }
 
@@ -958,7 +955,6 @@ window.addMCUForEmployee = async function(employeeId) {
         // ✅ Use pre-initialized lab form (initialized once on page load)
         // No need to reinit - form is permanent like other form fields
         if (labResultWidgetAdd) {
-            console.log('[addMCUForEmployee] Using pre-initialized lab form for add modal');
         }
     } catch (error) {
 
@@ -1087,12 +1083,10 @@ window.handleAddMCU = async function(event) {
         let labResults = [];
         if (labResultWidgetAdd) {
             labResults = labResultWidgetAdd.getAllLabResults() || [];
-            console.log('[DEBUG-ADD-MCU] Lab results for batch save:', labResults);
         }
 
         // ✅ BATCH SAVE: Use MCU batch service to atomically save MCU + lab results
         // This prevents race conditions and orphaned records on sequential MCU operations
-        console.log('[DEBUG] Starting batch save for MCU:', mcuData.mcuId);
         const batchResult = await mcuBatchService.saveMCUWithLabResults(mcuData, labResults, currentUser);
 
         if (!batchResult.success) {
@@ -1110,10 +1104,8 @@ window.handleAddMCU = async function(event) {
         const labFailed = batchResult.data.labFailed.length;
 
         if (labFailed > 0) {
-            console.warn(`[DEBUG] Batch save partial success: ${labSaved} lab items saved, ${labFailed} failed`);
             showToast(`✅ MCU berhasil! Lab: ${labSaved}/${labSaved + labFailed} tersimpan (${labFailed} gagal).`, 'warning');
         } else {
-            console.log(`[DEBUG] Batch save complete success: MCU + ${labSaved} lab items`);
             const labMsg = labSaved > 0 ? ` & ${labSaved} hasil lab` : '';
             showToast(`✅ MCU${labMsg} berhasil disimpan!`, 'success');
         }
@@ -1468,7 +1460,6 @@ window.editMCU = async function() {
                         const existingLabResults = await labService.getPemeriksaanLabByMcuId(window.currentMCUId);
                         labResultWidgetEdit.loadExistingResults(existingLabResults);
                     } catch (labError) {
-                        console.warn('[editMCU] Error loading existing lab results:', labError);
                         // Continue even if lab results fail to load
                     }
                 }
@@ -1807,36 +1798,28 @@ window.handleDeleteMCU = async function() {
                 // Wait for Supabase to be ready
                 await supabaseReady;
 
-                console.log('[MCU Delete] Starting soft delete for MCU:', mcuId);
 
                 // Step 1: Soft delete MCU record (move to trash)
                 showUnifiedLoading('Menghapus MCU...', 'Memindahkan ke Data Terhapus', 1, 2);
 
                 // Get current user from auth (already imported at top)
                 const currentUser = await authService.getCurrentUser();
-                console.log('[MCU Delete] Current user:', currentUser?.userId);
 
                 // Use mcuService.softDelete (soft delete - moves to trash/Data Terhapus)
-                console.log('[MCU Delete] Calling mcuService.softDelete...');
                 const result = await mcuService.softDelete(mcuId, currentUser);
-                console.log('[MCU Delete] softDelete result:', result);
 
                 if (!result) {
                     throw new Error('Gagal menghapus MCU - softDelete returned false');
                 }
 
                 // Verify MCU was actually soft-deleted
-                console.log('[MCU Delete] Verifying MCU was soft-deleted...');
                 const deletedMCU = await mcuService.getById(mcuId);
-                console.log('[MCU Delete] MCU after soft-delete:', {
                     id: deletedMCU?.mcuId,
                     deletedAt: deletedMCU?.deletedAt,
                     found: !!deletedMCU
                 });
 
                 if (!deletedMCU?.deletedAt) {
-                    console.warn('[MCU Delete] WARNING: MCU deletedAt timestamp is not set!');
-                    console.log('[MCU Delete] Full MCU object:', deletedMCU);
                     throw new Error('MCU tidak berhasil dipindahkan ke Data Terhapus');
                 }
 
@@ -1847,15 +1830,11 @@ window.handleDeleteMCU = async function() {
                 showToast('MCU berhasil dihapus', 'success');
 
                 // Close detail modal and reload data
-                console.log('[MCU Delete] Closing modal and reloading data...');
                 window.closeMCUDetailModal();
                 await loadData();
-                console.log('[MCU Delete] Delete completed successfully');
 
             } catch (error) {
                 hideUnifiedLoading();
-                console.error('[MCU Delete Error]:', error);
-                console.error('[MCU Delete Error] Full error:', error.stack);
                 showToast('Gagal menghapus MCU: ' + error.message, 'error');
             }
         }

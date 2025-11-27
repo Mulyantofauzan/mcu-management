@@ -24,7 +24,6 @@ class LabResultWidget {
             this.labItems = await labService.getAllLabItems();
 
             if (!this.labItems || this.labItems.length === 0) {
-                console.error('[LabWidget] No lab items found in database');
                 return false;
             }
 
@@ -34,7 +33,6 @@ class LabResultWidget {
             this.renderFixedForm();
             return true;
         } catch (error) {
-            console.error('[LabWidget] Error initializing:', error);
             return false;
         }
     }
@@ -70,7 +68,6 @@ class LabResultWidget {
      */
     renderFixedForm() {
         if (!this.container) {
-            console.error('[LabWidget] Container not found');
             return;
         }
 
@@ -142,7 +139,6 @@ class LabResultWidget {
 
         // Validate item ID
         if (!isValidLabItemId(itemId)) {
-            console.warn(`[LabWidget] Invalid lab_item_id in handleValueChange: ${itemId}`);
             return;
         }
 
@@ -217,7 +213,6 @@ class LabResultWidget {
                 }
             });
         } catch (error) {
-            console.error('[LabWidget] Error loading existing results:', error);
             throw error;
         }
     }
@@ -300,7 +295,6 @@ class LabResultWidget {
         const results = [];
 
         // ✅ STEP 1: Sync fieldValues dari DOM DULU untuk memastikan data terbaru
-        console.log('[LabWidget] Syncing fieldValues from DOM before collecting results...');
         for (const itemId in this.fieldValues) {
             const input = document.getElementById(`lab-value-${itemId}`);
             if (input) {
@@ -309,7 +303,6 @@ class LabResultWidget {
 
                 // Update fieldValues dengan nilai dari DOM jika berbeda
                 if (domValue !== currentFieldValue) {
-                    console.log(`[LabWidget] Syncing lab ${itemId}: fieldValue="${currentFieldValue}" -> DOM="${domValue}"`);
                     this.fieldValues[itemId].value = domValue;
                 }
             }
@@ -322,7 +315,6 @@ class LabResultWidget {
 
             // Validate item ID exists in database
             if (!isValidLabItemId(labItemId)) {
-                console.warn(`[LabWidget] Invalid lab_item_id in getAllLabResults: ${labItemId}. Skipping.`);
                 continue;
             }
 
@@ -339,15 +331,12 @@ class LabResultWidget {
                 notes: field.status || null
             });
 
-            console.log(`[LabWidget] Collected lab result: ID=${labItemId}, Value=${numValue}, Status=${field.status}`);
         }
 
         // Log warning if number of results doesn't match expected count
         const expectedCount = getExpectedLabItemCount();
         if (results.length !== expectedCount) {
-            console.warn(`[LabWidget] Expected ${expectedCount} lab items, got ${results.length}`);
         } else {
-            console.log(`[LabWidget] ✅ All ${results.length} lab items collected successfully`);
         }
 
         return results;
