@@ -24,7 +24,7 @@ import FileListViewer from '../components/fileListViewer.js';
 import { deleteOrphanedFiles } from '../services/supabaseStorageService.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';
 import { StaticLabForm } from '../components/staticLabForm.js';
-import { LAB_ITEMS_MAPPING } from '../data/labItemsMapping.js';
+import { LAB_ITEMS_MAPPING, sortLabResultsByDisplayOrder } from '../data/labItemsMapping.js';
 
 let employees = [];
 let filteredEmployees = [];
@@ -1331,10 +1331,13 @@ window.viewMCUDetail = async function(mcuId) {
 
         // Load and display lab results
         try {
-            const labResults = await labService.getPemeriksaanLabByMcuId(mcuId);
+            let labResults = await labService.getPemeriksaanLabByMcuId(mcuId);
             const labResultsBody = document.getElementById('mcu-detail-lab-results-body');
 
             if (labResults && labResults.length > 0) {
+                // Sort lab results by desired display order (Asam Urat → Glukosa Puasa → ... → Ureum)
+                labResults = sortLabResultsByDisplayOrder(labResults);
+
                 let html = '';
                 labResults.forEach(result => {
                     // Determine status based on value and range

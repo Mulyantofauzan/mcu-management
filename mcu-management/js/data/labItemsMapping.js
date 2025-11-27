@@ -130,4 +130,29 @@ export function getExpectedLabItemCount() {
     return Object.keys(LAB_ITEMS_MAPPING).length;
 }
 
+/**
+ * Sort lab results by desired display order
+ * Orders items as they appear in the form (Asam Urat → Glukosa Puasa → ... → Ureum)
+ * @param {array} labResults - Array of lab result objects (from database)
+ * @returns {array} Sorted lab results in display order
+ */
+export function sortLabResultsByDisplayOrder(labResults) {
+    // Define the desired order (IDs only, in display order)
+    const desiredOrder = [32, 7, 31, 10, 3, 8, 13, 11, 5, 1, 2, 9, 6, 12];
+
+    // Create a map for quick lookup of order index
+    const orderMap = {};
+    desiredOrder.forEach((id, index) => {
+        orderMap[id] = index;
+    });
+
+    // Sort the results based on desired order
+    // Items not in desired order go to the end
+    return [...labResults].sort((a, b) => {
+        const aOrder = orderMap[a.lab_item_id] !== undefined ? orderMap[a.lab_item_id] : 999;
+        const bOrder = orderMap[b.lab_item_id] !== undefined ? orderMap[b.lab_item_id] : 999;
+        return aOrder - bOrder;
+    });
+}
+
 export default LAB_ITEMS_MAPPING;
