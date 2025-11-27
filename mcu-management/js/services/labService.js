@@ -200,26 +200,37 @@ class LabService {
         throw new Error(`Lab item ${data.labItemId} tidak ditemukan atau invalid`);
       }
 
+      const insertPayload = {
+        mcu_id: data.mcuId,
+        employee_id: data.employeeId,
+        lab_item_id: data.labItemId,
+        value: parseFloat(data.value),
+        unit: labItemInfo.unit,
+        // ✅ CRITICAL: Use labItemsMapping as AUTHORITATIVE source for ranges
+        // This overrides any corrupted data in lab_items table
+        min_range_reference: labItemInfo.min,
+        max_range_reference: labItemInfo.max,
+        notes: data.notes || null,
+        created_by: currentUser?.userId || currentUser?.user_id || null
+      };
+
+      console.log(`[LabService] Creating lab result with payload:`, insertPayload);
+
       const { data: result, error } = await supabase
         .from('pemeriksaan_lab')
-        .insert([
-          {
-            mcu_id: data.mcuId,
-            employee_id: data.employeeId,
-            lab_item_id: data.labItemId,
-            value: parseFloat(data.value),
-            unit: labItemInfo.unit,
-            // ✅ CRITICAL: Use labItemsMapping as AUTHORITATIVE source for ranges
-            // This overrides any corrupted data in lab_items table
-            min_range_reference: labItemInfo.min,
-            max_range_reference: labItemInfo.max,
-            notes: data.notes || null,
-            created_by: currentUser?.userId || currentUser?.user_id || null
-          }
-        ])
+        .insert([insertPayload])
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error(`[LabService] INSERT ERROR for lab_item_id ${data.labItemId}:`, {
+          error: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          payload: insertPayload
+        });
+        throw error;
+      }
 
       // ✅ CRITICAL: Invalidate cache for this MCU since data changed
       cacheManager.clear(`labResults:${data.mcuId}`);
