@@ -486,11 +486,31 @@ export const MCUs = {
                 .from('mcus')
                 .update(updateData)
                 .eq('mcu_id', mcuId)
-                .select()
-                .single();
+                .select();
 
-            if (error) throw error;
-            return transformMCU(data);
+            if (error) {
+                console.error('[databaseAdapter.MCUs.update] Supabase error:', error);
+                throw error;
+            }
+
+            if (!data || data.length === 0) {
+                console.warn('[databaseAdapter.MCUs.update] No data returned from update, attempting to fetch MCU');
+                // If update didn't return data, fetch it directly
+                const { data: fetchedData, error: fetchError } = await supabase
+                    .from('mcus')
+                    .select()
+                    .eq('mcu_id', mcuId)
+                    .single();
+
+                if (fetchError) {
+                    console.error('[databaseAdapter.MCUs.update] Failed to fetch updated MCU:', fetchError);
+                    throw fetchError;
+                }
+
+                return transformMCU(fetchedData);
+            }
+
+            return transformMCU(data[0]);
         }
         return await indexedDB.db.mcus.where('mcuId').equals(mcuId).modify(updates);
     },

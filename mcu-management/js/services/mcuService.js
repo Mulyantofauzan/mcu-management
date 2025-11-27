@@ -269,19 +269,38 @@ class MCUService {
     // Get MCU info before soft delete for audit trail
     const mcu = await this.getById(mcuId);
 
-    await database.update('mcus', mcuId, {
+    if (!mcu) {
+      throw new Error(`MCU not found: ${mcuId}`);
+    }
+
+    console.log('[mcuService.softDelete] Starting soft delete for MCU:', mcuId);
+
+    // Update with deleted timestamp
+    const updateResult = await database.update('mcus', mcuId, {
       deletedAt: getCurrentTimestamp()
     });
+
+    console.log('[mcuService.softDelete] Update result:', updateResult);
+
+    // Verify update was successful by fetching the updated MCU
+    const updatedMCU = await this.getById(mcuId);
+    console.log('[mcuService.softDelete] Verification - Updated MCU deletedAt:', updatedMCU?.deletedAt);
+
+    if (!updatedMCU?.deletedAt) {
+      throw new Error(`Failed to soft delete MCU: deletedAt timestamp not set`);
+    }
 
     // ✅ FIX: Log activity for MCU soft delete with details
     if (currentUser) {
       const employeeId = mcu?.employeeId;
       const employee = employeeId ? await database.get('employees', employeeId) : null;
       const employeeName = employee?.name || 'Unknown';
+      console.log('[mcuService.softDelete] Logging activity for MCU delete');
       await database.logActivity('delete', 'MCU', mcuId, currentUser.userId,
         `Moved MCU to trash: ${mcuId}. Date: ${mcu?.mcuDate}, Employee: ${employeeName}`);
     }
 
+    console.log('[mcuService.softDelete] Soft delete completed successfully for MCU:', mcuId);
     return true;
   }
 
