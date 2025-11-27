@@ -11,22 +11,23 @@
 export const LAB_ITEMS_MAPPING = {
     // Based on ACTUAL database entries from Supabase
     // IDs come from: SELECT id, name FROM lab_items ORDER BY id
-    1: { name: 'SGOT', unit: 'IU/L', min: 5, max: 40 },
-    2: { name: 'SGPT', unit: 'IU/L', min: 4, max: 44 },
-    3: { name: 'Hemoglobin', unit: 'g/dL', min: 11, max: 16 },
+    // Updated values from database lab_items table (2025-11-19)
+    1: { name: 'SGOT', unit: 'IU/L', min: 5, max: 34 },
+    2: { name: 'SGPT', unit: 'IU/L', min: 4, max: 36 },
+    3: { name: 'Hemoglobin', unit: 'g/dL', min: 11, max: 17 },
     // ID 4 is MISSING in this database
-    5: { name: 'Leukosit', unit: '10^3/μL', min: 4, max: 11 },
+    5: { name: 'Leukosit', unit: '10^3/μL', min: 4, max: 10 },
     6: { name: 'Trombosit', unit: '10^3/μL', min: 150, max: 400 },
-    7: { name: 'Gula Darah Puasa', unit: 'mg/dL', min: 70, max: 100 },
+    7: { name: 'Gula Darah Puasa', unit: 'mg/dL', min: 70, max: 110 },
     8: { name: 'Kolesterol Total', unit: 'mg/dL', min: 1, max: 200 },
-    9: { name: 'Trigliserida', unit: 'mg/dL', min: 1, max: 150 },
-    10: { name: 'HDL Kolestrol', unit: 'mg/dL', min: 30, max: 999 },
-    11: { name: 'LDL Kolestrol', unit: 'mg/dL', min: 66, max: 999 },
-    12: { name: 'Ureum', unit: 'mg/dL', min: 4, max: 50 },
-    13: { name: 'Kreatinin', unit: 'mg/dL', min: 0.6, max: 1.2 },
+    9: { name: 'Trigliserida', unit: 'mg/dL', min: 1, max: 160 },
+    10: { name: 'HDL Kolestrol', unit: 'mg/dL', min: 30, max: 200 },
+    11: { name: 'LDL Kolestrol', unit: 'mg/dL', min: 66, max: 159 },
+    12: { name: 'Ureum', unit: 'mg/dL', min: 4, max: 44.1 },
+    13: { name: 'Kreatinin', unit: 'mg/dL', min: 0.6, max: 1.3 },
     // IDs 14-30 are MISSING
-    31: { name: 'Gula Darah 2 JPP', unit: 'mg/dL', min: 1, max: 999 },
-    32: { name: 'Asam Urat', unit: 'mg/dl', min: 2, max: 999 }
+    31: { name: 'Gula Darah 2 JPP', unit: 'mg/dL', min: 1, max: 187 },
+    32: { name: 'Asam Urat', unit: 'mg/dl', min: 2, max: 7 }
 };
 
 /**
