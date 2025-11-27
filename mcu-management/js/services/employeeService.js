@@ -139,7 +139,9 @@ class EmployeeService {
     });
 
     // Also soft delete all associated MCU records
-    const mcus = await database.query('mcus', mcu => mcu.employeeId === employeeId && !mcu.deletedAt);
+    // ✅ FIX: Use getAll instead of query to avoid Supabase syntax errors
+    const allMCUs = await database.getAll('mcus', true); // Include deleted
+    const mcus = allMCUs.filter(mcu => mcu.employeeId === employeeId && !mcu.deletedAt);
     let filesDeletedCount = 0;
 
     for (const mcu of mcus) {
