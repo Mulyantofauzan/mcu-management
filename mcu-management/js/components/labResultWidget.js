@@ -41,36 +41,19 @@ class LabResultWidget {
 
     /**
      * Sort lab items sesuai urutan yang diinginkan
+     * Uses lab_item_id for reliable ordering (tidak tergantung nama string)
      */
     sortLabItems() {
-        const desiredOrder = [
-            'Leukosit',
-            'Trombosit',
-            'Hemoglobin',
-            'Gula Darah Puasa',
-            'Gula Darah 2 JPP',
-            'Kolestrol Total',
-            'HDL',
-            'LDL',
-            'Trigliserida',
-            'Asam Urat',
-            'Ureum',
-            'Creatinin',
-            'SGOT',
-            'SGPT'
-        ];
+        // Define desired order by lab_item_id (5, 6, 3, 7, 31, 8, 10, 11, 9, 32, 12, 13, 1, 2)
+        // Leukosit, Trombosit, Hemoglobin, Gula Darah Puasa, Gula Darah 2 JPP,
+        // Kolesterol Total, HDL, LDL, Trigliserida, Asam Urat, Ureum, Kreatinin, SGOT, SGPT
+        const desiredOrder = [5, 6, 3, 7, 31, 8, 10, 11, 9, 32, 12, 13, 1, 2];
 
         this.labItems.sort((a, b) => {
-            const indexA = desiredOrder.findIndex(name =>
-                a.name.toLowerCase().includes(name.toLowerCase()) ||
-                name.toLowerCase().includes(a.name.toLowerCase())
-            );
-            const indexB = desiredOrder.findIndex(name =>
-                b.name.toLowerCase().includes(name.toLowerCase()) ||
-                name.toLowerCase().includes(b.name.toLowerCase())
-            );
+            const indexA = desiredOrder.indexOf(a.id);
+            const indexB = desiredOrder.indexOf(b.id);
 
-            // If found in desired order, use that order
+            // If both found in desired order, use that order
             if (indexA !== -1 && indexB !== -1) {
                 return indexA - indexB;
             }
