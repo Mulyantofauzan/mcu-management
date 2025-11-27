@@ -1694,11 +1694,9 @@ window.handleEditMCU = async function(event) {
                 employeeId: employeeId
             }));
 
-            console.log(`[handleEditMCU] Enriched ${labResults.length} lab results with employeeId: ${employeeId}`);
         }
 
         // ✅ BATCH UPDATE: Use batch service for atomic MCU + lab update
-        console.log('[handleEditMCU] Using batch service for atomic update');
         const batchResult = await mcuBatchService.updateMCUWithLabResults(mcuId, updateData, labResults, currentUser);
 
         // ✅ IMPORTANT: Save lab changes to mcuChanges table so they appear in change history
@@ -1725,12 +1723,15 @@ window.handleEditMCU = async function(event) {
 
             if (batchResult.data.labUpdated.length > 0) {
                 for (const updated of batchResult.data.labUpdated) {
-                    labChanges.push({
-                        fieldLabel: `Hasil Lab (Update): ${getLabItemName(updated.labItemId)}`,
-                        fieldChanged: 'labResults',
-                        oldValue: `${updated.oldValue}`,
-                        newValue: `${updated.newValue}`
-                    });
+                    // ✅ ONLY record if value actually changed (not identical)
+                    if (updated.oldValue !== updated.newValue) {
+                        labChanges.push({
+                            fieldLabel: `Hasil Lab (Update): ${getLabItemName(updated.labItemId)}`,
+                            fieldChanged: 'labResults',
+                            oldValue: `${updated.oldValue}`,
+                            newValue: `${updated.newValue}`
+                        });
+                    }
                 }
             }
 
@@ -1757,15 +1758,13 @@ window.handleEditMCU = async function(event) {
                 });
             }
         } catch (labChangeError) {
-            // Log but don't throw - lab save succeeded but change tracking failed
-            console.error('[kelola-karyawan] Failed to track lab changes:', labChangeError);
+            // Silently fail - lab save succeeded but change tracking failed (non-critical)
         }
 
         completeSaveStep();
 
         // Show errors if any occurred
         if (batchResult.errors.length > 0) {
-            console.warn('[handleEditMCU] Batch update had errors:', batchResult.errors);
             const errorMsg = `⚠️ Beberapa operasi gagal:\n${batchResult.errors.join('\n')}`;
             showToast(errorMsg, 'warning');
         }

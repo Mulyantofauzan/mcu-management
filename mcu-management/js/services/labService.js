@@ -214,8 +214,6 @@ class LabService {
         created_by: currentUser?.userId || currentUser?.user_id || null
       };
 
-      console.log(`[LabService] Creating lab result with payload:`, insertPayload);
-
       const { data: result, error } = await supabase
         .from('pemeriksaan_lab')
         .insert([insertPayload])
@@ -326,14 +324,8 @@ class LabService {
         validData.push(item);
       });
 
-      // Log summary (only if there are invalid items)
-      if (invalidData.length > 0) {
-        console.warn(`[LabService] Filtered ${invalidData.length} invalid records, kept ${validData.length}/${(data || []).length}`);
-      }
-
       // ✅ CRITICAL: Cache the valid results to avoid repeated queries
       cacheManager.set(cacheKey, validData);
-      console.log(`[LabService] Cached MCU ${mcuId}: ${validData.length} valid results`);
 
       return validData;
     } catch (error) {
