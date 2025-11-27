@@ -1787,6 +1787,85 @@ window.handleEditMCU = async function(event) {
     }
 };
 
+/**
+ * Delete MCU with soft delete
+ * Also handles file cleanup in Cloudflare and Supabase
+ */
+window.handleDeleteMCU = async function() {
+    const mcuId = window.currentMCUId;
+    if (!mcuId) {
+        showToast('MCU ID tidak ditemukan', 'error');
+        return;
+    }
+
+    confirmDialog(
+        'Apakah Anda yakin ingin menghapus MCU ini? Data dapat di-restore dari "Data Terhapus".',
+        async () => {
+            showUnifiedLoading('Menghapus MCU...', 'Mohon tunggu');
+
+            try {
+                // ✅ Import services
+                const { supabase, supabaseReady } = await import('../services/supabaseClient.js');
+                const { mcuService } = await import('../services/mcuService.js');
+                const { fileService } = await import('../services/fileService.js');
+
+                await supabaseReady;
+
+                // Step 1: Get MCU data to find associated files
+                showUnifiedLoading('Menghapus MCU...', 'Mengambil data MCU', 1, 3);
+                const { data: mcuData, error: fetchError } = await supabase
+                    .from('mcu_records')
+                    .select('id, files')
+                    .eq('id', mcuId)
+                    .single();
+
+                if (fetchError && fetchError.code !== 'PGRST116') {
+                    throw fetchError;
+                }
+
+                // Step 2: Delete files from Cloudflare and Supabase
+                if (mcuData && mcuData.files) {
+                    showUnifiedLoading('Menghapus MCU...', 'Menghapus berkas dari Cloudflare', 2, 3);
+
+                    const fileIds = Array.isArray(mcuData.files) ? mcuData.files : [];
+                    for (const fileId of fileIds) {
+                        try {
+                            await fileService.deleteFile(fileId);
+                        } catch (err) {
+                            console.warn(`[MCU Delete] File deletion warning:`, err.message);
+                        }
+                    }
+                }
+
+                // Step 3: Soft delete MCU record
+                showUnifiedLoading('Menghapus MCU...', 'Soft delete MCU record', 3, 3);
+
+                // Get current user from auth
+                const { authService } = await import('../services/authService.js');
+                const currentUser = await authService.getCurrentUser();
+
+                const result = await mcuService.softDelete(mcuId, currentUser);
+
+                if (!result) {
+                    throw new Error('Gagal menghapus MCU');
+                }
+
+                hideUnifiedLoading();
+                showToast('MCU berhasil dihapus', 'success');
+
+                // Close detail modal and reload data
+                window.closeMCUDetailModal();
+                await loadData();
+
+            } catch (error) {
+                hideUnifiedLoading();
+                console.error('[MCU Delete Error]:', error);
+                showToast('Gagal menghapus MCU: ' + error.message, 'error');
+            }
+        }
+    );
+};
+
 window.deleteEmployee = function(employeeId) {
     confirmDialog(
         'Apakah Anda yakin ingin menghapus karyawan ini? Data akan dipindahkan ke Data Terhapus.',

@@ -583,41 +583,38 @@
             display: none !important;
         }
 
-        /* Fix modal layout for lab results container */
+        /* Fix modal layout for lab results container - FULL WIDTH */
         #add-mcu-modal .modal {
-            width: 95vw !important;
-            max-width: 1400px !important;
+            width: calc(100vw - 40px) !important;
+            max-width: calc(100vw - 40px) !important;
+            max-height: 95vh !important;
         }
 
         #add-mcu-modal .modal-body {
             padding: 1.5rem;
-            max-height: calc(90vh - 150px);
+            max-height: calc(95vh - 140px);
             overflow-y: auto;
         }
 
-        /* Override grid-cols-3 with 4 columns for better display */
+        /* Override grid-cols-3 with auto-fill for responsive layout */
         #add-mcu-modal #lab-results-container-add-karyawan {
             display: grid !important;
-            grid-template-columns: repeat(4, 1fr) !important;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
             gap: 0.75rem !important;
-        }
-
-        /* Responsive: 3 columns on medium screens, 2 columns on small screens */
-        @media (max-width: 1200px) {
-            #add-mcu-modal #lab-results-container-add-karyawan {
-                grid-template-columns: repeat(3, 1fr) !important;
-            }
-        }
-
-        @media (max-width: 768px) {
-            #add-mcu-modal #lab-results-container-add-karyawan {
-                grid-template-columns: repeat(2, 1fr) !important;
-            }
+            width: 100%;
         }
 
         /* Ensure lab items display properly */
         #add-mcu-modal .lab-value-input {
-            font-size: 0.875rem;
+            font-size: 0.75rem;
+        }
+
+        #add-mcu-modal .p-2 {
+            padding: 0.5rem !important;
+        }
+
+        #add-mcu-modal .lab-status {
+            font-size: 0.65rem !important;
         }
     </style>
 
