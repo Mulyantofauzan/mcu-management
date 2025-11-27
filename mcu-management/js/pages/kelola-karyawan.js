@@ -24,6 +24,7 @@ import FileListViewer from '../components/fileListViewer.js';
 import { deleteOrphanedFiles } from '../services/supabaseStorageService.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';
 import { StaticLabForm } from '../components/staticLabForm.js';
+import { LAB_ITEMS_MAPPING } from '../data/labItemsMapping.js';
 
 let employees = [];
 let filteredEmployees = [];
@@ -1683,10 +1684,16 @@ window.handleEditMCU = async function(event) {
             const { database } = await import('../services/database.js');
             let labChanges = [];
 
+            // Helper to get lab item name from ID
+            const getLabItemName = (labItemId) => {
+                const item = LAB_ITEMS_MAPPING[labItemId];
+                return item ? item.name : `Item ${labItemId}`;
+            };
+
             if (batchResult.data.labSaved.length > 0) {
                 for (const saved of batchResult.data.labSaved) {
                     labChanges.push({
-                        fieldLabel: `Hasil Lab (Baru): Item ${saved.labItemId}`,
+                        fieldLabel: `Hasil Lab (Baru): ${getLabItemName(saved.labItemId)}`,
                         fieldChanged: 'labResults',
                         oldValue: '-',
                         newValue: `${saved.value}`
@@ -1697,7 +1704,7 @@ window.handleEditMCU = async function(event) {
             if (batchResult.data.labUpdated.length > 0) {
                 for (const updated of batchResult.data.labUpdated) {
                     labChanges.push({
-                        fieldLabel: `Hasil Lab (Update): Item ${updated.labItemId}`,
+                        fieldLabel: `Hasil Lab (Update): ${getLabItemName(updated.labItemId)}`,
                         fieldChanged: 'labResults',
                         oldValue: `${updated.oldValue}`,
                         newValue: `${updated.newValue}`
@@ -1708,7 +1715,7 @@ window.handleEditMCU = async function(event) {
             if (batchResult.data.labDeleted.length > 0) {
                 for (const deleted of batchResult.data.labDeleted) {
                     labChanges.push({
-                        fieldLabel: `Hasil Lab (Dihapus): Item ${deleted.labItemId}`,
+                        fieldLabel: `Hasil Lab (Dihapus): ${getLabItemName(deleted.labItemId)}`,
                         fieldChanged: 'labResults',
                         oldValue: `${deleted.oldValue}`,
                         newValue: '-'
