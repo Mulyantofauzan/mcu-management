@@ -132,25 +132,41 @@ class EmployeeService {
     const employee = await this.getById(employeeId);
     const employeeName = employee?.name || 'Unknown';
 
+    console.log('[employeeService.softDelete] Starting soft delete for employee:', employeeId);
+
     await database.update('employees', employeeId, {
       deletedAt: getCurrentTimestamp()
     });
 
     // Also soft delete all associated MCU records
     const mcus = await database.query('mcus', mcu => mcu.employeeId === employeeId && !mcu.deletedAt);
+    let filesDeletedCount = 0;
+
     for (const mcu of mcus) {
+      console.log('[employeeService.softDelete] Soft-deleting MCU:', mcu.mcuId);
       await database.update('mcus', mcu.mcuId, {
         deletedAt: getCurrentTimestamp()
       });
+
+      // Also soft delete all files associated with this MCU
+      const mcuFiles = await database.query('mcufiles', file => file.mcuid === mcu.mcuId && !file.deletedat);
+      for (const file of mcuFiles) {
+        console.log('[employeeService.softDelete] Soft-deleting file:', file.fileid);
+        await database.update('mcufiles', file.fileid, {
+          deletedat: getCurrentTimestamp()
+        });
+        filesDeletedCount++;
+      }
     }
 
     // Log activity with details
     const currentUser = window.authService?.getCurrentUser();
     if (currentUser?.userId) {
       await database.logActivity('delete', 'Employee', employeeId, currentUser.userId,
-        `Moved to trash: ${employeeName} (${employeeId}). Associated ${mcus.length} MCU records also moved.`);
+        `Moved to trash: ${employeeName} (${employeeId}). Associated ${mcus.length} MCU records and ${filesDeletedCount} files also moved to trash.`);
     }
 
+    console.log('[employeeService.softDelete] Soft delete completed for employee:', employeeId);
     return true;
   }
 
@@ -170,18 +186,30 @@ class EmployeeService {
     const allMCUs = await database.getAll('mcus', true); // true = includeDeleted
     const deletedMCUs = allMCUs.filter(mcu => mcu.employeeId === employeeId && mcu.deletedAt);
 
+    let filesRestoredCount = 0;
+
     for (const mcu of deletedMCUs) {
       await database.update('mcus', mcu.mcuId, {
         deletedAt: null,
         updatedAt: getCurrentTimestamp()
       });
+
+      // Also restore all files associated with this MCU
+      const allMCUFiles = await database.getAll('mcufiles', true); // true = includeDeleted
+      const deletedFiles = allMCUFiles.filter(file => file.mcuid === mcu.mcuId && file.deletedat);
+      for (const file of deletedFiles) {
+        await database.update('mcufiles', file.fileid, {
+          deletedat: null
+        });
+        filesRestoredCount++;
+      }
     }
 
     // Log activity with details
     const currentUser = window.authService?.getCurrentUser();
     if (currentUser?.userId) {
       await database.logActivity('update', 'Employee', employeeId, currentUser.userId,
-        `Restored from trash: ${employeeName} (${employeeId}). Associated ${deletedMCUs.length} MCU records also restored.`);
+        `Restored from trash: ${employeeName} (${employeeId}). Associated ${deletedMCUs.length} MCU records and ${filesRestoredCount} files also restored.`);
     }
 
     return true;
