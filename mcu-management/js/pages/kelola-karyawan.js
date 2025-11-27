@@ -1475,6 +1475,8 @@ window.editMCU = async function() {
 
                 // Fill edit MCU form with current values
                 document.getElementById('edit-mcu-id').value = mcu.mcuId || '';
+                // ✅ CRITICAL: Store employeeId for use in handleEditMCU (needed for lab results)
+                document.getElementById('edit-mcu-id').dataset.employeeId = mcu.employeeId || '';
                 document.getElementById('edit-mcu-type').value = mcu.mcuType || '';
                 document.getElementById('edit-mcu-date').value = mcu.mcuDate || '';
 
@@ -1661,12 +1663,13 @@ window.handleEditMCU = async function(event) {
         // Start save step
         startSaveStep();
 
-        // ✅ CRITICAL FIX: Load MCU to get employeeId for lab results
-        const existingMCU = await mcuService.getById(mcuId);
-        if (!existingMCU) {
+        // ✅ CRITICAL FIX: Get employeeId from hidden data attribute (stored when modal was populated)
+        const employeeIdElement = document.getElementById('edit-mcu-id');
+        const employeeId = employeeIdElement?.dataset?.employeeId;
+        if (!employeeId) {
             hideUnifiedLoading();
-            showToast('MCU tidak ditemukan', 'error');
-            throw new Error(`MCU ${mcuId} not found`);
+            showToast('Employee ID tidak ditemukan. Silakan reload halaman.', 'error');
+            throw new Error('Employee ID not found in edit form');
         }
 
         // Collect lab results if widget exists
@@ -1688,10 +1691,10 @@ window.handleEditMCU = async function(event) {
             // ✅ CRITICAL: Add employeeId to each lab result (required for database INSERT)
             labResults = rawLabResults.map(lab => ({
                 ...lab,
-                employeeId: existingMCU.employeeId
+                employeeId: employeeId
             }));
 
-            console.log(`[handleEditMCU] Enriched ${labResults.length} lab results with employeeId: ${existingMCU.employeeId}`);
+            console.log(`[handleEditMCU] Enriched ${labResults.length} lab results with employeeId: ${employeeId}`);
         }
 
         // ✅ BATCH UPDATE: Use batch service for atomic MCU + lab update
