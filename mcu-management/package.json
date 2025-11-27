@@ -9,18 +9,25 @@
     "build:css": "npx tailwindcss -i ./css/input.css -o ./css/output.css --minify",
     "build:dev": "npx tailwindcss -i ./css/input.css -o ./css/output.css"
   },
-  "keywords": ["mcu", "medical", "checkup", "management"],
+  "keywords": [
+    "mcu",
+    "medical",
+    "checkup",
+    "management"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "tailwindcss": "^3.4.0",
     "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.32"
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.4.0"
   },
   "dependencies": {
-    "dexie": "^3.2.4",
+    "@supabase/supabase-js": "^2.86.0",
     "chart.js": "^4.4.0",
     "chartjs-plugin-datalabels": "^2.2.0",
+    "dexie": "^3.2.4",
+    "dotenv": "^17.2.3",
     "pako": "^2.1.0"
   }
 }
