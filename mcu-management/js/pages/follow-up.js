@@ -925,26 +925,46 @@ async function finalizeFollowUpUpdate() {
 
     showSaveLoading('Menyimpan semua perubahan (atomic transaction)...');
 
-    // ✅ MERGE all data: Follow-Up (Final Result + Notes) + Detail (All exam fields)
-    const mergedUpdateData = {
-      ...detailData,
-      finalResult: followUpData.finalResult,
-      finalNotes: followUpData.finalNotes
-    };
+    // ✅ OPTIMIZATION: Only include fields that actually changed
+    const mergedUpdateData = {};
+
+    // Add detail data only if changed
+    for (const [key, value] of Object.entries(detailData)) {
+      const oldValue = originalMCU[key] || '';
+      if (String(oldValue) !== String(value)) {
+        mergedUpdateData[key] = value;
+      }
+    }
+
+    // Add follow-up data only if changed
+    const oldFinalResult = originalMCU.finalResult || '';
+    if (String(oldFinalResult) !== String(followUpData.finalResult)) {
+      mergedUpdateData.finalResult = followUpData.finalResult;
+    }
+
+    const oldFinalNotes = originalMCU.finalNotes || '';
+    if (String(oldFinalNotes) !== String(followUpData.finalNotes)) {
+      mergedUpdateData.finalNotes = followUpData.finalNotes;
+    }
+
+    // ✅ Check if there are any actual changes to save
+    const hasDetailChanges = Object.keys(mergedUpdateData).length > 0;
+    const hasLabChanges = labResults.length > 0;
 
     // ✅ ATOMIC SAVE: Use batch service to save ALL data together
     // This ensures if ANY part fails, entire operation fails (no partial saves)
     const batchResult = await mcuBatchService.updateMCUWithLabResults(
       mcuId,
-      mergedUpdateData,
-      labResults,
+      hasDetailChanges ? mergedUpdateData : {},
+      hasLabChanges ? labResults : [],
       currentUser
     );
 
     // Track all changes for change history display
     let changes = [];
 
-    // Track detail changes
+    // ✅ OPTIMIZATION: Only track and save changes for fields that ACTUALLY changed
+    // Track detail changes (only if value differs from original)
     for (const [key, value] of Object.entries(detailData)) {
       const fieldInfo = {
         'bmi': 'BMI',
@@ -963,6 +983,7 @@ async function finalizeFollowUpUpdate() {
       };
 
       const oldValue = originalMCU[key] || '';
+      // ✅ ONLY track if value actually changed
       if (String(oldValue) !== String(value)) {
         changes.push({
           itemName: fieldInfo[key] || key,
@@ -973,22 +994,21 @@ async function finalizeFollowUpUpdate() {
       }
     }
 
-    // Track follow-up changes
-    const oldFinalResult = originalMCU.finalResult || '';
-    if (String(oldFinalResult) !== String(followUpData.finalResult)) {
+    // ✅ Note: oldFinalResult and oldFinalNotes already compared in mergedUpdateData building above
+    // Track follow-up changes only if they were added to mergedUpdateData
+    if ('finalResult' in mergedUpdateData) {
       changes.push({
         itemName: 'Hasil Akhir',
-        oldValue: oldFinalResult || '-',
+        oldValue: originalMCU.finalResult || '-',
         newValue: followUpData.finalResult,
         changed: true
       });
     }
 
-    const oldFinalNotes = originalMCU.finalNotes || '';
-    if (String(oldFinalNotes) !== String(followUpData.finalNotes)) {
+    if ('finalNotes' in mergedUpdateData) {
       changes.push({
         itemName: 'Catatan Akhir',
-        oldValue: oldFinalNotes || '-',
+        oldValue: originalMCU.finalNotes || '-',
         newValue: followUpData.finalNotes,
         changed: true
       });
