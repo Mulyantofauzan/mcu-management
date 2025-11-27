@@ -1807,46 +1807,8 @@ window.handleDeleteMCU = async function() {
                 // Wait for Supabase to be ready
                 await supabaseReady;
 
-                // Import supabase and deleteFile - these cannot be at top level for browser usage
-                // Using dynamic import with proper error handling
-                const supabaseModule = await import('../services/supabaseClient.js').catch(() => null);
-                const storageModule = await import('../services/supabaseStorageService.js').catch(() => null);
-
-                if (!supabaseModule || !storageModule) {
-                    throw new Error('Tidak dapat memuat modul layanan');
-                }
-
-                const { supabase } = supabaseModule;
-                const { deleteFile } = storageModule;
-
-                // Step 1: Get MCU data to find associated files
-                showUnifiedLoading('Menghapus MCU...', 'Mengambil data MCU', 1, 3);
-                const { data: mcuData, error: fetchError } = await supabase
-                    .from('mcu_records')
-                    .select('id, files')
-                    .eq('id', mcuId)
-                    .single();
-
-                if (fetchError && fetchError.code !== 'PGRST116') {
-                    throw fetchError;
-                }
-
-                // Step 2: Delete files from Cloudflare and Supabase
-                if (mcuData && mcuData.files) {
-                    showUnifiedLoading('Menghapus MCU...', 'Menghapus berkas dari Cloudflare', 2, 3);
-
-                    const fileIds = Array.isArray(mcuData.files) ? mcuData.files : [];
-                    for (const fileId of fileIds) {
-                        try {
-                            await deleteFile(fileId);
-                        } catch (err) {
-                            console.warn(`[MCU Delete] File deletion warning:`, err.message);
-                        }
-                    }
-                }
-
-                // Step 3: Soft delete MCU record
-                showUnifiedLoading('Menghapus MCU...', 'Soft delete MCU record', 3, 3);
+                // Step 1: Soft delete MCU record (primary action)
+                showUnifiedLoading('Menghapus MCU...', 'Menghapus data MCU', 1, 3);
 
                 // Get current user from auth (already imported at top)
                 const currentUser = await authService.getCurrentUser();
@@ -1857,6 +1819,30 @@ window.handleDeleteMCU = async function() {
                 if (!result) {
                     throw new Error('Gagal menghapus MCU');
                 }
+
+                // Step 2: Delete associated files from storage via API endpoint
+                // Use API endpoint instead of dynamic import to avoid module resolution issues
+                showUnifiedLoading('Menghapus MCU...', 'Menghapus berkas', 2, 3);
+
+                try {
+                    // Call API to delete files associated with this MCU
+                    const filesDeleteResponse = await fetch(`/api/delete-mcu-files?mcuId=${encodeURIComponent(mcuId)}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (!filesDeleteResponse.ok) {
+                        console.warn(`[MCU Delete] File deletion returned status ${filesDeleteResponse.status}, continuing...`);
+                    }
+                } catch (fileDeleteError) {
+                    console.warn(`[MCU Delete] File deletion warning:`, fileDeleteError.message);
+                    // Don't throw - file deletion is secondary to MCU deletion
+                }
+
+                // Step 3: Complete
+                showUnifiedLoading('Menghapus MCU...', 'Selesai', 3, 3);
 
                 hideUnifiedLoading();
                 showToast('MCU berhasil dihapus', 'success');
