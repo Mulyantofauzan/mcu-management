@@ -10,6 +10,7 @@ class StaticLabForm {
         this.containerId = containerId;
         this.container = document.getElementById(containerId);
         this.labItemsMap = {};
+        this.originalValues = {}; // ✅ Track original values to detect actual changes
         this.init();
     }
 
@@ -111,17 +112,24 @@ class StaticLabForm {
             existingMap[result.lab_item_id] = result;
         });
 
-        // Load values into inputs
+        // Load values into inputs and store original values
         for (const labId in this.labItemsMap) {
             const metadata = this.labItemsMap[labId];
             const existing = existingMap[labId];
 
             if (existing && existing.value) {
                 metadata.input.value = existing.value;
+                // ✅ CRITICAL: Store original value to detect actual changes later
+                this.originalValues[labId] = String(existing.value);
                 // Trigger change event to update status
                 metadata.input.dispatchEvent(new Event('change'));
+            } else {
+                // ✅ Track empty values as original too
+                this.originalValues[labId] = '';
             }
         }
+
+        console.log('[StaticLabForm] Loaded existing results, tracking original values:', this.originalValues);
     }
 
     /**
@@ -165,14 +173,21 @@ class StaticLabForm {
 
     /**
      * Check if user has made changes to lab items
+     * ✅ FIXED: Now properly compares current values with original values
      */
     hasChanges() {
         for (const labId in this.labItemsMap) {
             const metadata = this.labItemsMap[labId];
-            if (metadata.input.value.trim() !== '') {
+            const currentValue = String(metadata.input.value.trim());
+            const originalValue = this.originalValues[labId] || '';
+
+            // If current value differs from original, there's a change
+            if (currentValue !== originalValue) {
+                console.log(`[StaticLabForm] Detected change in lab ${labId}: "${originalValue}" -> "${currentValue}"`);
                 return true;
             }
         }
+        console.log('[StaticLabForm] No changes detected in lab items');
         return false;
     }
 
@@ -229,6 +244,9 @@ class StaticLabForm {
                 metadata.statusDisplay.className = 'lab-status text-xs font-medium text-gray-700 mt-1';
             }
         }
+        // ✅ CRITICAL: Reset original values when clearing form
+        this.originalValues = {};
+        console.log('[StaticLabForm] Form cleared, original values reset');
     }
 }
 
