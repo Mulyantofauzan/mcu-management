@@ -292,21 +292,32 @@ class LabResultWidget {
     }
 
     /**
-     * Get all lab results dari form - dengan validasi semua terisi
+     * Get all lab results dari form - dengan sync dari DOM langsung
+     * ✅ CRITICAL FIX: Sync fieldValues dari DOM sebelum collect results
+     * Ini memastikan tidak ada data yang terlewat karena timing issues
      */
     getAllLabResults() {
         const results = [];
 
+        // ✅ STEP 1: Sync fieldValues dari DOM DULU untuk memastikan data terbaru
+        console.log('[LabWidget] Syncing fieldValues from DOM before collecting results...');
+        for (const itemId in this.fieldValues) {
+            const input = document.getElementById(`lab-value-${itemId}`);
+            if (input) {
+                const domValue = input.value.trim();
+                const currentFieldValue = this.fieldValues[itemId].value;
+
+                // Update fieldValues dengan nilai dari DOM jika berbeda
+                if (domValue !== currentFieldValue) {
+                    console.log(`[LabWidget] Syncing lab ${itemId}: fieldValue="${currentFieldValue}" -> DOM="${domValue}"`);
+                    this.fieldValues[itemId].value = domValue;
+                }
+            }
+        }
+
+        // ✅ STEP 2: Collect results dari fieldValues yang sudah ter-sync
         for (const itemId in this.fieldValues) {
             const field = this.fieldValues[itemId];
-            const input = document.getElementById(`lab-value-${itemId}`);
-
-            if (!input) continue;
-
-            const value = input.value.trim();
-            if (!value) continue;
-
-            const numValue = parseFloat(value);
             const labItemId = parseInt(itemId, 10);
 
             // Validate item ID exists in database
@@ -315,6 +326,11 @@ class LabResultWidget {
                 continue;
             }
 
+            // Get synced value
+            const value = field.value || '';
+            if (!value) continue;
+
+            const numValue = parseFloat(value);
             if (isNaN(numValue) || numValue <= 0) continue;
 
             results.push({
@@ -322,12 +338,16 @@ class LabResultWidget {
                 value: numValue,
                 notes: field.status || null
             });
+
+            console.log(`[LabWidget] Collected lab result: ID=${labItemId}, Value=${numValue}, Status=${field.status}`);
         }
 
         // Log warning if number of results doesn't match expected count
         const expectedCount = getExpectedLabItemCount();
         if (results.length !== expectedCount) {
             console.warn(`[LabWidget] Expected ${expectedCount} lab items, got ${results.length}`);
+        } else {
+            console.log(`[LabWidget] ✅ All ${results.length} lab items collected successfully`);
         }
 
         return results;

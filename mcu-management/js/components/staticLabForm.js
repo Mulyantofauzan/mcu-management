@@ -134,14 +134,16 @@ class StaticLabForm {
 
     /**
      * Get all lab results from form
-     * ✅ FIXED: Now includes ALL 14 items (even empty ones for proper tracking)
+     * ✅ CRITICAL FIX: Direct DOM access dengan defensive checks
+     * Memastikan semua data dari input element ter-capture dengan sempurna
      */
     getAllLabResults() {
         const results = [];
 
+        console.log('[StaticLabForm] Collecting all lab results from form...');
+
         for (const labId in this.labItemsMap) {
             const metadata = this.labItemsMap[labId];
-            const value = metadata.input.value.trim();
             const labItemId = parseInt(labId, 10);
 
             // Validate lab_item_id is valid
@@ -150,8 +152,16 @@ class StaticLabForm {
                 continue;
             }
 
-            // ✅ FIXED: Include ALL items with values, set empty ones as null
-            // This ensures all 14 items are accounted for in the system
+            // ✅ CRITICAL: Direct access ke input element (defensive check)
+            if (!metadata.input) {
+                console.warn(`[StaticLabForm] No input element for lab ${labItemId}. Skipping.`);
+                continue;
+            }
+
+            // ✅ CRITICAL: Get value langsung dari DOM input element
+            const value = metadata.input.value.trim();
+
+            // Include items dengan valid values
             if (value) {
                 const numValue = parseFloat(value);
                 if (!isNaN(numValue) && numValue > 0) {
@@ -159,6 +169,9 @@ class StaticLabForm {
                         labItemId: labItemId,
                         value: numValue
                     });
+                    console.log(`[StaticLabForm] Collected lab ${labItemId}: value=${numValue}`);
+                } else {
+                    console.warn(`[StaticLabForm] Lab ${labItemId} has invalid number: "${value}"`);
                 }
             }
             // Note: Empty/null values are NOT added here (handled separately in backend)
@@ -166,7 +179,11 @@ class StaticLabForm {
 
         // Log info about results
         const expectedCount = getExpectedLabItemCount();
-        console.log(`[StaticLabForm] Collected ${results.length}/${expectedCount} lab items with values`);
+        if (results.length === expectedCount) {
+            console.log(`[StaticLabForm] ✅ All ${results.length} lab items collected successfully`);
+        } else {
+            console.warn(`[StaticLabForm] ⚠️ Expected ${expectedCount} lab items, got ${results.length}`);
+        }
 
         return results;
     }
