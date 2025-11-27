@@ -110,6 +110,7 @@ async function loadData() {
         document.getElementById('total-count').textContent = deletedEmployees.length;
         document.getElementById('mcu-total-count').textContent = deletedMCU.length;  // ✅ NEW: Update MCU count
         renderTable();
+        renderMCUTable();  // ✅ NEW: Also render MCU table after loading data
     } catch (error) {
 
         showToast('Gagal memuat data: ' + error.message, 'error');
