@@ -132,13 +132,14 @@ export function getExpectedLabItemCount() {
 
 /**
  * Sort lab results by desired display order
- * Orders items as they appear in the form (Asam Urat → Glukosa Puasa → ... → Ureum)
+ * Orders items by category: CBC (darah) → Glucose → Cholesterol → Kidney/Liver → Liver Enzymes
  * @param {array} labResults - Array of lab result objects (from database)
  * @returns {array} Sorted lab results in display order
  */
 export function sortLabResultsByDisplayOrder(labResults) {
     // Define the desired order (IDs only, in display order)
-    const desiredOrder = [32, 7, 31, 10, 3, 8, 13, 11, 5, 1, 2, 9, 6, 12];
+    // Order: Leukosit → Trombosit → Hemoglobin → Glukosa Puasa → Gula Darah 2 JPP → Kolesterol Total → HDL → LDL → Trigliserida → Asam Urat → Ureum → Kreatinin → SGOT → SGPT
+    const desiredOrder = [5, 6, 3, 7, 31, 8, 10, 11, 9, 32, 12, 13, 1, 2];
 
     // Create a map for quick lookup of order index
     const orderMap = {};
