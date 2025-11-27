@@ -1804,12 +1804,20 @@ window.handleDeleteMCU = async function() {
             showUnifiedLoading('Menghapus MCU...', 'Mohon tunggu');
 
             try {
-                // ✅ Import services
-                const { supabase, supabaseReady } = await import('../services/supabaseClient.js');
-                const { mcuService } = await import('../services/mcuService.js');
-                const { fileService } = await import('../services/fileService.js');
-
+                // Wait for Supabase to be ready
                 await supabaseReady;
+
+                // Import supabase and deleteFile - these cannot be at top level for browser usage
+                // Using dynamic import with proper error handling
+                const supabaseModule = await import('../services/supabaseClient.js').catch(() => null);
+                const storageModule = await import('../services/supabaseStorageService.js').catch(() => null);
+
+                if (!supabaseModule || !storageModule) {
+                    throw new Error('Tidak dapat memuat modul layanan');
+                }
+
+                const { supabase } = supabaseModule;
+                const { deleteFile } = storageModule;
 
                 // Step 1: Get MCU data to find associated files
                 showUnifiedLoading('Menghapus MCU...', 'Mengambil data MCU', 1, 3);
@@ -1830,7 +1838,7 @@ window.handleDeleteMCU = async function() {
                     const fileIds = Array.isArray(mcuData.files) ? mcuData.files : [];
                     for (const fileId of fileIds) {
                         try {
-                            await fileService.deleteFile(fileId);
+                            await deleteFile(fileId);
                         } catch (err) {
                             console.warn(`[MCU Delete] File deletion warning:`, err.message);
                         }
@@ -1840,10 +1848,10 @@ window.handleDeleteMCU = async function() {
                 // Step 3: Soft delete MCU record
                 showUnifiedLoading('Menghapus MCU...', 'Soft delete MCU record', 3, 3);
 
-                // Get current user from auth
-                const { authService } = await import('../services/authService.js');
+                // Get current user from auth (already imported at top)
                 const currentUser = await authService.getCurrentUser();
 
+                // Use mcuService.softDelete (already imported at top)
                 const result = await mcuService.softDelete(mcuId, currentUser);
 
                 if (!result) {
