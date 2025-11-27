@@ -36,7 +36,8 @@ let pendingChanges = {
   followUpData: null,      // Follow-Up Result + Notes (Step 1)
   detailData: null,        // MCU Detail fields (Step 2)
   labResults: null,        // Lab results (Step 2)
-  mcuId: null              // Current MCU ID being processed
+  mcuId: null,             // Current MCU ID being processed
+  currentMCU: null         // MCU data snapshot for change comparison (saved in Step 2)
 };
 
 // Unified loading overlay functions
@@ -834,6 +835,11 @@ window.handleDetailMCUUpdate = async function(event) {
   try {
     showSaveLoading('Mempersiapkan update detail MCU dan hasil lab...');
 
+    // ✅ FIX: Save currentMCU to pendingChanges BEFORE closing modal (so it's not lost)
+    if (currentMCU) {
+      pendingChanges.currentMCU = currentMCU;
+    }
+
     // Collect new values - only include editable fields
     const updateData = {};
     const fieldLabels = {
@@ -915,6 +921,7 @@ async function finalizeFollowUpUpdate() {
     const detailData = pendingChanges.detailData || {};
     const labResults = pendingChanges.labResults || [];
     const currentUser = followUpData.currentUser;
+    const originalMCU = pendingChanges.currentMCU;  // ✅ FIX: Use saved MCU for comparison
 
     showSaveLoading('Menyimpan semua perubahan (atomic transaction)...');
 
@@ -955,7 +962,7 @@ async function finalizeFollowUpUpdate() {
         'napza': 'NAPZA'
       };
 
-      const oldValue = currentMCU[key] || '';
+      const oldValue = originalMCU[key] || '';
       if (String(oldValue) !== String(value)) {
         changes.push({
           itemName: fieldInfo[key] || key,
@@ -967,7 +974,7 @@ async function finalizeFollowUpUpdate() {
     }
 
     // Track follow-up changes
-    const oldFinalResult = currentMCU.finalResult || '';
+    const oldFinalResult = originalMCU.finalResult || '';
     if (String(oldFinalResult) !== String(followUpData.finalResult)) {
       changes.push({
         itemName: 'Hasil Akhir',
@@ -977,7 +984,7 @@ async function finalizeFollowUpUpdate() {
       });
     }
 
-    const oldFinalNotes = currentMCU.finalNotes || '';
+    const oldFinalNotes = originalMCU.finalNotes || '';
     if (String(oldFinalNotes) !== String(followUpData.finalNotes)) {
       changes.push({
         itemName: 'Catatan Akhir',
@@ -1053,7 +1060,8 @@ async function finalizeFollowUpUpdate() {
       followUpData: null,
       detailData: null,
       labResults: null,
-      mcuId: null
+      mcuId: null,
+      currentMCU: null
     };
 
     // Display change history if there are changes
