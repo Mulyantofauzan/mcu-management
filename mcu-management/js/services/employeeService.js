@@ -149,7 +149,9 @@ class EmployeeService {
       });
 
       // Also soft delete all files associated with this MCU
-      const mcuFiles = await database.query('mcufiles', file => file.mcuid === mcu.mcuId && !file.deletedat);
+      // ✅ FIX: Use getAll(true) to get all files including deleted, then filter
+      const allMCUFiles = await database.getAll('mcufiles', true);
+      const mcuFiles = allMCUFiles.filter(file => file.mcuid === mcu.mcuId && !file.deletedat);
       for (const file of mcuFiles) {
         console.log('[employeeService.softDelete] Soft-deleting file:', file.fileid);
         await database.update('mcufiles', file.fileid, {
@@ -220,16 +222,19 @@ class EmployeeService {
     const employee = await this.getById(employeeId);
     const employeeName = employee?.name || 'Unknown';
 
+    // ✅ FIX: Use getAll instead of query to avoid Supabase syntax errors
     // Delete all associated MCU records (hard delete)
-    const mcus = await database.query('mcus', mcu => mcu.employeeId === employeeId);
+    const allMCUs = await database.getAll('mcus', true); // Include deleted
+    const mcus = allMCUs.filter(mcu => mcu.employeeId === employeeId);
     let totalFilesDeleted = 0;
     let failedDeletions = [];
 
     for (const mcu of mcus) {
       // ✅ CASCADE DELETE: Delete all associated MCU files (database + storage)
       // Check both snake_case and camelCase field names for compatibility
-      const mcuFiles = await database.query('mcufiles', file =>
-        (file.mcu_id === mcu.mcuId) || (file.mcuId === mcu.mcuId)
+      const allMCUFiles = await database.getAll('mcufiles', true); // Include deleted
+      const mcuFiles = allMCUFiles.filter(file =>
+        (file.mcu_id === mcu.mcuId) || (file.mcuId === mcu.mcuId) || (file.mcuid === mcu.mcuId)
       );
       if (mcuFiles && mcuFiles.length > 0) {
         for (const file of mcuFiles) {
@@ -265,7 +270,8 @@ class EmployeeService {
 
       // Delete associated lab results
       try {
-        const labResults = await database.query('pemeriksaan_lab', lab =>
+        const allLabResults = await database.getAll('pemeriksaan_lab', true);
+        const labResults = allLabResults.filter(lab =>
           (lab.mcu_id === mcu.mcuId) || (lab.mcuId === mcu.mcuId)
         );
         if (labResults && labResults.length > 0) {
@@ -277,9 +283,10 @@ class EmployeeService {
       }
 
       // Delete associated change records
-      const changes = await database.query('mcuChanges', change => change.mcuId === mcu.mcuId);
+      const allChanges = await database.getAll('mcuChanges', true);
+      const changes = allChanges.filter(change => change.mcuId === mcu.mcuId);
       for (const change of changes) {
-        await database.hardDelete('mcuChanges', change.changeId || change.id);
+        await database.hardDelete('mcuChanges', change.id);
       }
 
       // Hard delete MCU
