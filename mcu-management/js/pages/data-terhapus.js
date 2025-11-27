@@ -99,7 +99,9 @@ async function loadData() {
         deletedEmployees = deletedEmployees.map(emp => enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap));
 
         // ✅ NEW: Enrich MCU data with employee names
-        const employeeMap = new Map(deletedEmployees.map(emp => [emp.employeeId, emp]));
+        // Load ALL employees (active + deleted) for proper lookup since deleted MCU might belong to active employee
+        const allEmployees = await employeeService.getAll();
+        const employeeMap = new Map(allEmployees.map(emp => [emp.employeeId, emp]));
         deletedMCU = deletedMCU.map(mcu => ({
             ...mcu,
             employeeName: employeeMap.get(mcu.employeeId)?.name || 'Unknown'
