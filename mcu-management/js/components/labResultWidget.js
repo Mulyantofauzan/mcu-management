@@ -5,6 +5,7 @@
  */
 
 import { labService } from '../services/labService.js';
+import { isValidLabItemId, getExpectedLabItemCount } from '../data/labItemsMapping.js';
 
 class LabResultWidget {
     constructor(containerId) {
@@ -153,8 +154,14 @@ class LabResultWidget {
      */
     handleValueChange(event) {
         const input = event.target;
-        const itemId = parseInt(input.dataset.itemId);
+        const itemId = parseInt(input.dataset.itemId, 10);
         const value = parseFloat(input.value);
+
+        // Validate item ID
+        if (!isValidLabItemId(itemId)) {
+            console.warn(`[LabWidget] Invalid lab_item_id in handleValueChange: ${itemId}`);
+            return;
+        }
 
         // Find the item
         const item = this.labItems.find(i => i.id === itemId);
@@ -258,9 +265,16 @@ class LabResultWidget {
         for (const itemId in this.fieldValues) {
             const field = this.fieldValues[itemId];
             const input = document.getElementById(`lab-value-${itemId}`);
+            const numItemId = parseInt(itemId, 10);
 
             if (!input) {
                 errors.push(`Field untuk item ${itemId} tidak ditemukan di DOM`);
+                continue;
+            }
+
+            // Validate item ID
+            if (!isValidLabItemId(numItemId)) {
+                errors.push(`Item ID tidak valid: ${itemId}`);
                 continue;
             }
 
@@ -268,7 +282,7 @@ class LabResultWidget {
 
             // Check if empty
             if (!value) {
-                const item = this.labItems.find(i => i.id === parseInt(itemId));
+                const item = this.labItems.find(i => i.id === numItemId);
                 const itemName = item ? item.name : `Item ${itemId}`;
                 errors.push(`${itemName} harus diisi`);
                 continue;
@@ -277,7 +291,7 @@ class LabResultWidget {
             // Check if valid number
             const numValue = parseFloat(value);
             if (isNaN(numValue)) {
-                const item = this.labItems.find(i => i.id === parseInt(itemId));
+                const item = this.labItems.find(i => i.id === numItemId);
                 const itemName = item ? item.name : `Item ${itemId}`;
                 errors.push(`${itemName} harus berupa angka`);
                 continue;
@@ -285,7 +299,7 @@ class LabResultWidget {
 
             // Check if > 0
             if (numValue <= 0) {
-                const item = this.labItems.find(i => i.id === parseInt(itemId));
+                const item = this.labItems.find(i => i.id === numItemId);
                 const itemName = item ? item.name : `Item ${itemId}`;
                 errors.push(`${itemName} harus lebih besar dari 0`);
             }
@@ -310,13 +324,27 @@ class LabResultWidget {
             if (!value) continue;
 
             const numValue = parseFloat(value);
+            const labItemId = parseInt(itemId, 10);
+
+            // Validate item ID exists in database
+            if (!isValidLabItemId(labItemId)) {
+                console.warn(`[LabWidget] Invalid lab_item_id in getAllLabResults: ${labItemId}. Skipping.`);
+                continue;
+            }
+
             if (isNaN(numValue) || numValue <= 0) continue;
 
             results.push({
-                labItemId: parseInt(itemId),
+                labItemId: labItemId,
                 value: numValue,
                 notes: field.status || null
             });
+        }
+
+        // Log warning if number of results doesn't match expected count
+        const expectedCount = getExpectedLabItemCount();
+        if (results.length !== expectedCount) {
+            console.warn(`[LabWidget] Expected ${expectedCount} lab items, got ${results.length}`);
         }
 
         return results;

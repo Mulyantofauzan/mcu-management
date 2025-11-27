@@ -3,6 +3,8 @@
  * Manages static 14-item lab form (no rendering, just value/status handling)
  */
 
+import { isValidLabItemId, getExpectedLabItemCount } from '../data/labItemsMapping.js';
+
 class StaticLabForm {
     constructor(containerId) {
         this.containerId = containerId;
@@ -134,13 +136,27 @@ class StaticLabForm {
 
             if (value) {
                 const numValue = parseFloat(value);
+                const labItemId = parseInt(labId, 10);
+
+                // Validate lab_item_id is valid
+                if (!isValidLabItemId(labItemId)) {
+                    console.warn(`[StaticLabForm] Invalid lab_item_id: ${labItemId}. Skipping.`);
+                    continue;
+                }
+
                 if (!isNaN(numValue) && numValue > 0) {
                     results.push({
-                        labItemId: parseInt(labId),
+                        labItemId: labItemId,
                         value: numValue
                     });
                 }
             }
+        }
+
+        // Log warning if number of results doesn't match expected count
+        const expectedCount = getExpectedLabItemCount();
+        if (results.length !== expectedCount) {
+            console.warn(`[StaticLabForm] Expected ${expectedCount} lab items, got ${results.length}`);
         }
 
         return results;

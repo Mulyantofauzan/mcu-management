@@ -58,9 +58,76 @@ export function getLabItemIdByName(labName) {
  */
 export function getAllLabItems() {
     return Object.entries(LAB_ITEMS_MAPPING).map(([id, info]) => ({
-        id: parseInt(id),
+        id: parseInt(id, 10),
         ...info
     }));
+}
+
+/**
+ * Validate if a lab_item_id exists in the database
+ * @param {number} labId - The lab_item_id to validate
+ * @returns {boolean} True if lab_item_id is valid
+ */
+export function isValidLabItemId(labId) {
+    const id = typeof labId === 'string' ? parseInt(labId, 10) : labId;
+    return id in LAB_ITEMS_MAPPING;
+}
+
+/**
+ * Get all valid lab item IDs
+ * @returns {array} Array of valid lab_item_id values (sorted)
+ */
+export function getValidLabItemIds() {
+    return Object.keys(LAB_ITEMS_MAPPING)
+        .map(id => parseInt(id, 10))
+        .sort((a, b) => a - b);
+}
+
+/**
+ * Validate and sanitize lab result data
+ * Ensures data conforms to database schema before saving
+ * @param {object} labResult - Lab result data to validate
+ * @returns {object|null} Validated result or null if invalid
+ */
+export function validateLabResult(labResult) {
+    if (!labResult || typeof labResult !== 'object') {
+        console.warn('[labItemsMapping] Invalid lab result: not an object');
+        return null;
+    }
+
+    // Support both labItemId and lab_item_id keys
+    const labItemId = parseInt(labResult.labItemId || labResult.lab_item_id, 10);
+    const value = parseFloat(labResult.value);
+
+    // Validate required fields
+    if (!isValidLabItemId(labItemId)) {
+        console.warn(`[labItemsMapping] Invalid lab_item_id: ${labItemId}. Valid IDs: ${getValidLabItemIds().join(', ')}`);
+        return null;
+    }
+
+    if (isNaN(value) || value <= 0) {
+        console.warn(`[labItemsMapping] Invalid value for lab_item_id ${labItemId}: ${labResult.value}`);
+        return null;
+    }
+
+    const itemInfo = LAB_ITEMS_MAPPING[labItemId];
+
+    return {
+        lab_item_id: labItemId,
+        labItemId: labItemId,
+        value: value,
+        unit: itemInfo.unit,
+        min_range_reference: itemInfo.min,
+        max_range_reference: itemInfo.max
+    };
+}
+
+/**
+ * Count expected lab items in the system
+ * @returns {number} Number of expected lab items (14)
+ */
+export function getExpectedLabItemCount() {
+    return Object.keys(LAB_ITEMS_MAPPING).length;
 }
 
 export default LAB_ITEMS_MAPPING;
