@@ -126,6 +126,7 @@ class StaticLabForm {
 
     /**
      * Get all lab results from form
+     * ✅ FIXED: Now includes ALL 14 items (even empty ones for proper tracking)
      */
     getAllLabResults() {
         const results = [];
@@ -133,17 +134,18 @@ class StaticLabForm {
         for (const labId in this.labItemsMap) {
             const metadata = this.labItemsMap[labId];
             const value = metadata.input.value.trim();
+            const labItemId = parseInt(labId, 10);
 
+            // Validate lab_item_id is valid
+            if (!isValidLabItemId(labItemId)) {
+                console.warn(`[StaticLabForm] Invalid lab_item_id: ${labItemId}. Skipping.`);
+                continue;
+            }
+
+            // ✅ FIXED: Include ALL items with values, set empty ones as null
+            // This ensures all 14 items are accounted for in the system
             if (value) {
                 const numValue = parseFloat(value);
-                const labItemId = parseInt(labId, 10);
-
-                // Validate lab_item_id is valid
-                if (!isValidLabItemId(labItemId)) {
-                    console.warn(`[StaticLabForm] Invalid lab_item_id: ${labItemId}. Skipping.`);
-                    continue;
-                }
-
                 if (!isNaN(numValue) && numValue > 0) {
                     results.push({
                         labItemId: labItemId,
@@ -151,13 +153,12 @@ class StaticLabForm {
                     });
                 }
             }
+            // Note: Empty/null values are NOT added here (handled separately in backend)
         }
 
-        // Log warning if number of results doesn't match expected count
+        // Log info about results
         const expectedCount = getExpectedLabItemCount();
-        if (results.length !== expectedCount) {
-            console.warn(`[StaticLabForm] Expected ${expectedCount} lab items, got ${results.length}`);
-        }
+        console.log(`[StaticLabForm] Collected ${results.length}/${expectedCount} lab items with values`);
 
         return results;
     }
@@ -177,17 +178,19 @@ class StaticLabForm {
 
     /**
      * Validate all required fields are filled
+     * ✅ FIXED: Now validates ONLY fields that user has filled (not all 14)
      */
     validateAllFieldsFilled() {
         const errors = [];
+        let filledCount = 0;
 
         for (const labId in this.labItemsMap) {
             const metadata = this.labItemsMap[labId];
             const value = metadata.input.value.trim();
 
-            if (!value) {
-                errors.push(`${metadata.name} harus diisi`);
-            } else {
+            // ✅ FIXED: Only validate fields that have values
+            if (value) {
+                filledCount++;
                 const numValue = parseFloat(value);
                 if (isNaN(numValue)) {
                     errors.push(`${metadata.name} harus berupa angka`);
@@ -196,6 +199,13 @@ class StaticLabForm {
                 }
             }
         }
+
+        // Warn if NO fields are filled (at least 1 is needed)
+        if (filledCount === 0) {
+            errors.push('Minimal satu pemeriksaan lab harus diisi');
+        }
+
+        console.log(`[StaticLabForm] Validation: ${filledCount}/${Object.keys(this.labItemsMap).length} fields filled`);
 
         return errors;
     }

@@ -269,8 +269,8 @@ class LabService {
       if (error) throw error;
 // [log removed]
 
-      // AGGRESSIVE client-side filter to ensure valid data
-      // Reject ANY row with zero, null, undefined, or invalid numeric values
+      // ✅ FIXED: Relaxed filtering - only reject truly invalid data
+      // Accept values > 0 and valid numeric values. Skip empty values instead of rejecting them.
       const validData = [];
       const invalidData = [];
 
@@ -283,32 +283,35 @@ class LabService {
           invalidData.push({item, reason: 'Missing lab_item_id'});
           return;
         }
+
+        // ✅ FIXED: Allow empty/null values (just skip them, don't add to either list)
+        // This allows items to be "not filled" without causing errors
         if (item.value === null || item.value === undefined || item.value === '') {
-          invalidData.push({item, reason: `Value is empty/null: '${item.value}' (type: ${typeof item.value})`});
+          // Don't add to validData OR invalidData - simply skip
           return;
         }
 
         // Trim and handle comma decimal separator (Indonesian format: 99,5 -> 99.5)
         let valueStr = String(item.value).trim();
-// [log removed]
 
         // Replace comma with dot for European decimal format
         valueStr = valueStr.replace(',', '.');
 
         // Convert to number
         const numValue = parseFloat(valueStr);
-// [log removed]
 
+        // ✅ FIXED: Only reject if value is non-numeric or <= 0
         if (isNaN(numValue) || numValue <= 0) {
-          invalidData.push({item, reason: `Invalid numeric: '${item.value}' (trimmed: '${valueStr}') -> ${numValue}`});
+          invalidData.push({item, reason: `Invalid numeric: '${item.value}' -> ${numValue}`});
           return;
         }
 
         validData.push(item);
       });
-// [log removed]
+
+      // Log summary (only if there are invalid items)
       if (invalidData.length > 0) {
-// [log removed]
+        console.warn(`[LabService] Filtered ${invalidData.length} invalid records, kept ${validData.length}/${(data || []).length}`);
       }
 
       // ✅ CRITICAL: Cache the valid results to avoid repeated queries
