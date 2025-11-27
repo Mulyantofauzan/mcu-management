@@ -1661,6 +1661,14 @@ window.handleEditMCU = async function(event) {
         // Start save step
         startSaveStep();
 
+        // ✅ CRITICAL FIX: Load MCU to get employeeId for lab results
+        const existingMCU = await mcuService.getById(mcuId);
+        if (!existingMCU) {
+            hideUnifiedLoading();
+            showToast('MCU tidak ditemukan', 'error');
+            throw new Error(`MCU ${mcuId} not found`);
+        }
+
         // Collect lab results if widget exists
         let labResults = [];
         if (labResultWidgetEdit) {
@@ -1675,7 +1683,15 @@ window.handleEditMCU = async function(event) {
                 }
             }
 
-            labResults = labResultWidgetEdit.getAllLabResults();
+            const rawLabResults = labResultWidgetEdit.getAllLabResults();
+
+            // ✅ CRITICAL: Add employeeId to each lab result (required for database INSERT)
+            labResults = rawLabResults.map(lab => ({
+                ...lab,
+                employeeId: existingMCU.employeeId
+            }));
+
+            console.log(`[handleEditMCU] Enriched ${labResults.length} lab results with employeeId: ${existingMCU.employeeId}`);
         }
 
         // ✅ BATCH UPDATE: Use batch service for atomic MCU + lab update
