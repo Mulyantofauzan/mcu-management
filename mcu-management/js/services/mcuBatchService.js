@@ -29,18 +29,29 @@ class MCUBatchService {
       errors: []
     };
 
+    let createdMCU = null;
+
     try {
-      // ✅ STEP 1: Validate MCU data
+      console.log('[mcuBatchService] Starting transactional MCU + Lab save');
+
+      // ✅ STEP 1: Validate MCU data FIRST (before any save)
+      console.log('[mcuBatchService] Validating MCU data...');
       this._validateMCUData(mcuData);
 
-      // ✅ STEP 2: Validate and normalize lab results
+      // ✅ STEP 2: Validate and normalize lab results FIRST (before any save)
+      console.log('[mcuBatchService] Validating and normalizing lab results...');
       const normalizedLabResults = this._validateAndNormalizeLabResults(labResults);
 
-      // ✅ STEP 3: Save MCU (point of no return)
-      const createdMCU = await mcuService.create(mcuData, currentUser);
+      console.log('[mcuBatchService] ✅ All validation passed. Normalized labs:', normalizedLabResults.length);
+
+      // ✅ STEP 3: ONLY NOW save MCU after all validation is complete
+      console.log('[mcuBatchService] Creating MCU record...');
+      createdMCU = await mcuService.create(mcuData, currentUser);
       result.data.mcu = createdMCU;
+      console.log('[mcuBatchService] ✅ MCU created:', createdMCU.mcuId);
 
       // ✅ STEP 4: Save lab results with individual error handling
+      console.log('[mcuBatchService] Saving', normalizedLabResults.length, 'lab results...');
       if (normalizedLabResults.length > 0) {
         for (const labResult of normalizedLabResults) {
           try {
@@ -53,12 +64,15 @@ class MCUBatchService {
               notes: labResult.notes || null
             };
 
+            console.log('[mcuBatchService] Saving lab item', labResult.labItemId);
             const savedLab = await labService.createPemeriksaanLab(labPayload, currentUser);
             result.data.labSaved.push({
               labItemId: labResult.labItemId,
               data: savedLab
             });
+            console.log('[mcuBatchService] ✅ Lab item', labResult.labItemId, 'saved');
           } catch (labError) {
+            console.warn('[mcuBatchService] ❌ Lab item', labResult.labItemId, 'failed:', labError.message);
             result.data.labFailed.push({
               labItemId: labResult.labItemId,
               error: labError.message
@@ -69,12 +83,15 @@ class MCUBatchService {
       }
 
       // ✅ STEP 5: Verify all lab results were saved
+      console.log('[mcuBatchService] Verifying lab results in database...');
       await this._verifyLabResultsInDatabase(createdMCU.mcuId, normalizedLabResults.length);
 
       // ✅ STEP 6: Clean up phantom records
       try {
+        console.log('[mcuBatchService] Cleaning up phantom records...');
         await labService.cleanupPhantomLabRecords(createdMCU.mcuId);
       } catch (cleanupError) {
+        console.warn('[mcuBatchService] Phantom cleanup warning:', cleanupError.message);
         // Phantom cleanup failed (non-critical)
       }
 
@@ -84,14 +101,38 @@ class MCUBatchService {
 
       if (result.data.labSaved.length > 0 && result.data.labFailed.length === 0) {
         result.success = true; // All saved successfully
+        console.log('[mcuBatchService] ✅ SUCCESS: All data saved - MCU + ', result.data.labSaved.length, 'lab items');
       } else if (result.data.labSaved.length > 0) {
         result.success = true; // Partial success is still considered success
+        console.log('[mcuBatchService] ⚠️ PARTIAL SUCCESS: MCU + ', result.data.labSaved.length, '/', normalizedLabResults.length, 'lab items');
+      } else {
+        console.warn('[mcuBatchService] No lab items to save (empty form)');
+        result.success = true; // MCU created even if no labs
       }
 
       return result;
     } catch (error) {
+      console.error('[mcuBatchService] ❌ TRANSACTION FAILED:', error.message);
       result.success = false;
       result.errors.push(error.message);
+
+      // ⚠️ IMPORTANT: If MCU was already created but something failed after,
+      // we should soft-delete the orphaned MCU record to keep database clean
+      if (createdMCU) {
+        console.error('[mcuBatchService] ❌ CRITICAL: MCU record already created but operation failed!');
+        console.error('[mcuBatchService] Rolling back MCU ID:', createdMCU.mcuId);
+
+        try {
+          // Soft-delete the created MCU to maintain data integrity
+          await mcuService.softDelete(createdMCU.mcuId, currentUser);
+          console.log('[mcuBatchService] ✅ Rollback complete: MCU', createdMCU.mcuId, 'soft-deleted');
+          result.errors.push(`⚠️ Data integrity protected: MCU ${createdMCU.mcuId} was rolled back due to ${error.message}`);
+        } catch (rollbackError) {
+          console.error('[mcuBatchService] ❌ ROLLBACK FAILED:', rollbackError.message);
+          result.errors.push(`🚨 CRITICAL ERROR: Rollback failed! Orphaned MCU ${createdMCU.mcuId}. Contact support immediately.`);
+        }
+      }
+
       throw error;
     }
   }

@@ -778,7 +778,13 @@ window.handleAddMCU = async function(event) {
 
         if (!batchResult.success) {
             hideUnifiedLoading();
-            const errorMsg = `⚠️ SEBAGIAN GAGAL atau ERROR:\n${batchResult.errors.join('\n')}\n\nMCU ID: ${batchResult.data.mcu?.mcuId || 'Unknown'}. Hubungi support!`;
+            console.error('[tambah-karyawan] Batch save failed:', batchResult.errors);
+
+            // Build detailed error message
+            const errorDetails = batchResult.errors.map(e => `• ${e}`).join('\n');
+            const mcuInfo = batchResult.data.mcu ? `\n\nMCU ID: ${batchResult.data.mcu.mcuId}` : '';
+            const errorMsg = `⚠️ GAGAL MENYIMPAN DATA:\n${errorDetails}${mcuInfo}\n\nHubungi support jika diperlukan.`;
+
             showToast(errorMsg, 'error');
             throw new Error(batchResult.errors[0] || 'Batch save failed');
         }
