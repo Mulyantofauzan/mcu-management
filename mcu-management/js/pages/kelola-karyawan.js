@@ -1807,17 +1807,36 @@ window.handleDeleteMCU = async function() {
                 // Wait for Supabase to be ready
                 await supabaseReady;
 
+                console.log('[MCU Delete] Starting delete for MCU:', mcuId);
+
                 // Step 1: Soft delete MCU record (primary action)
                 showUnifiedLoading('Menghapus MCU...', 'Menghapus data MCU', 1, 3);
 
                 // Get current user from auth (already imported at top)
                 const currentUser = await authService.getCurrentUser();
+                console.log('[MCU Delete] Current user:', currentUser?.userId);
 
                 // Use mcuService.softDelete (already imported at top)
+                console.log('[MCU Delete] Calling mcuService.softDelete...');
                 const result = await mcuService.softDelete(mcuId, currentUser);
+                console.log('[MCU Delete] softDelete result:', result);
 
                 if (!result) {
-                    throw new Error('Gagal menghapus MCU');
+                    throw new Error('Gagal menghapus MCU - softDelete returned false');
+                }
+
+                // Verify MCU was actually deleted in database
+                console.log('[MCU Delete] Verifying MCU was deleted...');
+                const deletedMCU = await mcuService.getById(mcuId);
+                console.log('[MCU Delete] MCU after delete:', {
+                    id: deletedMCU?.mcuId,
+                    deletedAt: deletedMCU?.deletedAt,
+                    found: !!deletedMCU
+                });
+
+                if (!deletedMCU?.deletedAt) {
+                    console.warn('[MCU Delete] WARNING: MCU deletedAt timestamp is not set!');
+                    console.log('[MCU Delete] Full MCU object:', deletedMCU);
                 }
 
                 // Step 2: Delete associated files from storage via API endpoint
@@ -1826,11 +1845,19 @@ window.handleDeleteMCU = async function() {
 
                 try {
                     // Call API to delete files associated with this MCU
+                    console.log('[MCU Delete] Calling delete files API...');
                     const filesDeleteResponse = await fetch(`/api/delete-mcu-files?mcuId=${encodeURIComponent(mcuId)}`, {
                         method: 'DELETE',
                         headers: {
                             'Content-Type': 'application/json'
                         }
+                    });
+
+                    const filesDeleteText = await filesDeleteResponse.text();
+                    console.log('[MCU Delete] File API response:', {
+                        status: filesDeleteResponse.status,
+                        ok: filesDeleteResponse.ok,
+                        body: filesDeleteText
                     });
 
                     if (!filesDeleteResponse.ok) {
@@ -1848,12 +1875,15 @@ window.handleDeleteMCU = async function() {
                 showToast('MCU berhasil dihapus', 'success');
 
                 // Close detail modal and reload data
+                console.log('[MCU Delete] Closing modal and reloading data...');
                 window.closeMCUDetailModal();
                 await loadData();
+                console.log('[MCU Delete] Delete completed successfully');
 
             } catch (error) {
                 hideUnifiedLoading();
                 console.error('[MCU Delete Error]:', error);
+                console.error('[MCU Delete Error] Full error:', error.stack);
                 showToast('Gagal menghapus MCU: ' + error.message, 'error');
             }
         }
