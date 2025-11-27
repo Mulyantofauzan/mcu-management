@@ -120,8 +120,6 @@ class StaticLabForm {
                 metadata.input.dispatchEvent(new Event('change'));
             }
         }
-
-        console.log('[StaticLabForm] Loaded', existingLabResults.length, 'existing results');
     }
 
     /**
