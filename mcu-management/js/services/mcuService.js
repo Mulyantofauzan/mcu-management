@@ -319,7 +319,7 @@ class MCUService {
     // Delete all change records
     const changes = await database.query('mcuChanges', change => change.mcuId === mcuId);
     for (const change of changes) {
-      await database.delete('mcuChanges', change.changeId);
+      await database.delete('mcuChanges', change.id);
     }
 
     // Delete MCU
