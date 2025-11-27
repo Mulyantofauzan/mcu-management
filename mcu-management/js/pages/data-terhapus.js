@@ -98,6 +98,13 @@ async function loadData() {
         // Enrich employee data with IDs using O(1) Map lookups (O(n) total instead of O(n²))
         deletedEmployees = deletedEmployees.map(emp => enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap));
 
+        // ✅ NEW: Enrich MCU data with employee names
+        const employeeMap = new Map(deletedEmployees.map(emp => [emp.employeeId, emp]));
+        deletedMCU = deletedMCU.map(mcu => ({
+            ...mcu,
+            employeeName: employeeMap.get(mcu.employeeId)?.name || 'Unknown'
+        }));
+
         document.getElementById('total-count').textContent = deletedEmployees.length;
         document.getElementById('mcu-total-count').textContent = deletedMCU.length;  // ✅ NEW: Update MCU count
         renderTable();
@@ -380,7 +387,7 @@ function renderMCUTable() {
         return;
     }
 
-    let html = '<table class="w-full"><thead><tr class="border-b border-gray-200"><th class="text-left p-3"><input type="checkbox" id="mcu-select-all" onchange="window.toggleMCUSelectAll()"></th><th class="text-left p-3">MCU ID</th><th class="text-left p-3">Tanggal</th><th class="text-left p-3">Tipe</th><th class="text-left p-3">Tanggal Hapus</th><th class="text-right p-3">Aksi</th></tr></thead><tbody>';
+    let html = '<table class="w-full"><thead><tr class="border-b border-gray-200"><th class="text-left p-3"><input type="checkbox" id="mcu-select-all" onchange="window.toggleMCUSelectAll()"></th><th class="text-left p-3">MCU ID</th><th class="text-left p-3">Karyawan</th><th class="text-left p-3">Tanggal</th><th class="text-left p-3">Tipe</th><th class="text-left p-3">Tanggal Hapus</th><th class="text-right p-3">Aksi</th></tr></thead><tbody>';
 
     deletedMCU.forEach(mcu => {
         const mcuDate = mcu.mcuDate ? formatDateDisplay(mcu.mcuDate) : '-';
@@ -391,6 +398,7 @@ function renderMCUTable() {
             <tr class="border-b border-gray-200 hover:bg-gray-50">
                 <td class="p-3"><input type="checkbox" value="${mcu.mcuId}" ${isChecked} onchange="window.toggleMCUSelect(this)"></td>
                 <td class="p-3 font-mono text-sm">${mcu.mcuId}</td>
+                <td class="p-3">${mcu.employeeName || 'Unknown'}</td>
                 <td class="p-3">${mcuDate}</td>
                 <td class="p-3">${mcu.mcuType || '-'}</td>
                 <td class="p-3 text-gray-500 text-sm">${deletedAt}</td>
