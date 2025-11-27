@@ -1807,69 +1807,41 @@ window.handleDeleteMCU = async function() {
                 // Wait for Supabase to be ready
                 await supabaseReady;
 
-                console.log('[MCU Delete] Starting delete for MCU:', mcuId);
+                console.log('[MCU Delete] Starting soft delete for MCU:', mcuId);
 
-                // Step 1: Hard delete MCU record from database
-                showUnifiedLoading('Menghapus MCU...', 'Menghapus data MCU', 1, 3);
+                // Step 1: Soft delete MCU record (move to trash)
+                showUnifiedLoading('Menghapus MCU...', 'Memindahkan ke Data Terhapus', 1, 2);
 
                 // Get current user from auth (already imported at top)
                 const currentUser = await authService.getCurrentUser();
                 console.log('[MCU Delete] Current user:', currentUser?.userId);
 
-                // Use mcuService.permanentDelete (hard delete - removes record completely)
-                console.log('[MCU Delete] Calling mcuService.permanentDelete...');
-                const result = await mcuService.permanentDelete(mcuId, currentUser);
-                console.log('[MCU Delete] permanentDelete result:', result);
+                // Use mcuService.softDelete (soft delete - moves to trash/Data Terhapus)
+                console.log('[MCU Delete] Calling mcuService.softDelete...');
+                const result = await mcuService.softDelete(mcuId, currentUser);
+                console.log('[MCU Delete] softDelete result:', result);
 
                 if (!result) {
-                    throw new Error('Gagal menghapus MCU - permanentDelete returned false');
+                    throw new Error('Gagal menghapus MCU - softDelete returned false');
                 }
 
-                // Verify MCU was actually deleted from database
-                console.log('[MCU Delete] Verifying MCU was hard-deleted...');
+                // Verify MCU was actually soft-deleted
+                console.log('[MCU Delete] Verifying MCU was soft-deleted...');
                 const deletedMCU = await mcuService.getById(mcuId);
-                console.log('[MCU Delete] MCU after hard-delete:', {
+                console.log('[MCU Delete] MCU after soft-delete:', {
                     id: deletedMCU?.mcuId,
+                    deletedAt: deletedMCU?.deletedAt,
                     found: !!deletedMCU
                 });
 
-                if (deletedMCU) {
-                    console.warn('[MCU Delete] WARNING: MCU still exists in database after hard-delete!');
+                if (!deletedMCU?.deletedAt) {
+                    console.warn('[MCU Delete] WARNING: MCU deletedAt timestamp is not set!');
                     console.log('[MCU Delete] Full MCU object:', deletedMCU);
-                    throw new Error('MCU tidak berhasil dihapus dari database');
+                    throw new Error('MCU tidak berhasil dipindahkan ke Data Terhapus');
                 }
 
-                // Step 2: Delete associated files from storage via API endpoint
-                // Use API endpoint instead of dynamic import to avoid module resolution issues
-                showUnifiedLoading('Menghapus MCU...', 'Menghapus berkas', 2, 3);
-
-                try {
-                    // Call API to delete files associated with this MCU
-                    console.log('[MCU Delete] Calling delete files API...');
-                    const filesDeleteResponse = await fetch(`/api/delete-mcu-files?mcuId=${encodeURIComponent(mcuId)}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    });
-
-                    const filesDeleteText = await filesDeleteResponse.text();
-                    console.log('[MCU Delete] File API response:', {
-                        status: filesDeleteResponse.status,
-                        ok: filesDeleteResponse.ok,
-                        body: filesDeleteText
-                    });
-
-                    if (!filesDeleteResponse.ok) {
-                        console.warn(`[MCU Delete] File deletion returned status ${filesDeleteResponse.status}, continuing...`);
-                    }
-                } catch (fileDeleteError) {
-                    console.warn(`[MCU Delete] File deletion warning:`, fileDeleteError.message);
-                    // Don't throw - file deletion is secondary to MCU deletion
-                }
-
-                // Step 3: Complete
-                showUnifiedLoading('Menghapus MCU...', 'Selesai', 3, 3);
+                // Step 2: Complete
+                showUnifiedLoading('Menghapus MCU...', 'Selesai', 2, 2);
 
                 hideUnifiedLoading();
                 showToast('MCU berhasil dihapus', 'success');
