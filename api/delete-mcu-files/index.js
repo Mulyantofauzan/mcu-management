@@ -2,12 +2,13 @@
  * Delete MCU Files API
  * Endpoint: DELETE /api/delete-mcu-files?mcuId=XXX
  *
- * Performs two-step deletion:
+ * Performs permanent deletion of all files associated with an MCU:
  * 1. Hard delete files from Cloudflare R2 storage using storage path
- * 2. Soft delete files in database by setting deleted_at timestamp
+ * 2. Hard delete file records from mcufiles database table
  *
- * Queries mcufiles table for files linked to the MCU, gets their R2 paths,
- * deletes from R2 first, then marks as deleted in database
+ * NOTE: This is called during MCU hard-delete only, so files are permanently deleted
+ * (not soft-deleted for restore). Queries mcufiles table for files linked to the MCU,
+ * gets their R2 paths, deletes from R2 first, then deletes records from database.
  */
 
 const { createClient } = require('@supabase/supabase-js');
@@ -114,18 +115,17 @@ module.exports = async (req, res) => {
             }
           }
 
-          // Soft delete in database
+          // Hard delete from database (permanent delete, not soft delete)
           const { error: deleteError } = await supabase
             .from('mcufiles')
-            .update({ deletedat: now })
-            .eq('fileid', file.fileid)
-            .select();
+            .delete()
+            .eq('fileid', file.fileid);
 
           if (!deleteError) {
             dbDeletedCount++;
-            console.log(`[delete-mcu-files] Successfully soft-deleted in database: ${file.fileid}`);
+            console.log(`[delete-mcu-files] Successfully hard-deleted from database: ${file.fileid}`);
           } else {
-            console.warn(`[delete-mcu-files] Failed to soft-delete in database ${file.fileid}:`, deleteError.message);
+            console.warn(`[delete-mcu-files] Failed to hard-delete from database ${file.fileid}:`, deleteError.message);
           }
         } catch (err) {
           console.warn(`[delete-mcu-files] Exception processing file ${file.fileid}:`, err.message);
@@ -134,14 +134,14 @@ module.exports = async (req, res) => {
     }
 
     // Log final status
-    console.log(`[delete-mcu-files] Deletion complete for MCU ${mcuId}:`);
+    console.log(`[delete-mcu-files] Hard deletion complete for MCU ${mcuId}:`);
     console.log(`  - R2 deleted: ${r2DeletedCount}`);
     console.log(`  - R2 failed: ${r2FailedCount}`);
-    console.log(`  - Database soft-deleted: ${dbDeletedCount}`);
+    console.log(`  - Database hard-deleted: ${dbDeletedCount}`);
 
     return res.status(200).json({
       success: true,
-      message: `Deleted ${dbDeletedCount} file(s) for MCU ${mcuId}`,
+      message: `Permanently deleted ${dbDeletedCount} file(s) for MCU ${mcuId}`,
       deletedCount: dbDeletedCount,
       totalFiles: files ? files.length : 0,
       r2DeletedCount: r2DeletedCount,

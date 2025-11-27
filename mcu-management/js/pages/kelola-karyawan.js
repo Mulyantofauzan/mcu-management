@@ -1809,34 +1809,34 @@ window.handleDeleteMCU = async function() {
 
                 console.log('[MCU Delete] Starting delete for MCU:', mcuId);
 
-                // Step 1: Soft delete MCU record (primary action)
+                // Step 1: Hard delete MCU record from database
                 showUnifiedLoading('Menghapus MCU...', 'Menghapus data MCU', 1, 3);
 
                 // Get current user from auth (already imported at top)
                 const currentUser = await authService.getCurrentUser();
                 console.log('[MCU Delete] Current user:', currentUser?.userId);
 
-                // Use mcuService.softDelete (already imported at top)
-                console.log('[MCU Delete] Calling mcuService.softDelete...');
-                const result = await mcuService.softDelete(mcuId, currentUser);
-                console.log('[MCU Delete] softDelete result:', result);
+                // Use mcuService.permanentDelete (hard delete - removes record completely)
+                console.log('[MCU Delete] Calling mcuService.permanentDelete...');
+                const result = await mcuService.permanentDelete(mcuId, currentUser);
+                console.log('[MCU Delete] permanentDelete result:', result);
 
                 if (!result) {
-                    throw new Error('Gagal menghapus MCU - softDelete returned false');
+                    throw new Error('Gagal menghapus MCU - permanentDelete returned false');
                 }
 
-                // Verify MCU was actually deleted in database
-                console.log('[MCU Delete] Verifying MCU was deleted...');
+                // Verify MCU was actually deleted from database
+                console.log('[MCU Delete] Verifying MCU was hard-deleted...');
                 const deletedMCU = await mcuService.getById(mcuId);
-                console.log('[MCU Delete] MCU after delete:', {
+                console.log('[MCU Delete] MCU after hard-delete:', {
                     id: deletedMCU?.mcuId,
-                    deletedAt: deletedMCU?.deletedAt,
                     found: !!deletedMCU
                 });
 
-                if (!deletedMCU?.deletedAt) {
-                    console.warn('[MCU Delete] WARNING: MCU deletedAt timestamp is not set!');
+                if (deletedMCU) {
+                    console.warn('[MCU Delete] WARNING: MCU still exists in database after hard-delete!');
                     console.log('[MCU Delete] Full MCU object:', deletedMCU);
+                    throw new Error('MCU tidak berhasil dihapus dari database');
                 }
 
                 // Step 2: Delete associated files from storage via API endpoint
