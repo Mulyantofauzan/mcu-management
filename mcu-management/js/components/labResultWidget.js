@@ -295,15 +295,18 @@ class LabResultWidget {
         const results = [];
 
         // ✅ STEP 1: Sync fieldValues dari DOM DULU untuk memastikan data terbaru
+        // ALWAYS update dari DOM - jangan rely pada event handlers yang mungkin missed
         for (const itemId in this.fieldValues) {
             const input = document.getElementById(`lab-value-${itemId}`);
             if (input) {
                 const domValue = input.value.trim();
-                const currentFieldValue = this.fieldValues[itemId].value;
-
-                // Update fieldValues dengan nilai dari DOM jika berbeda
-                if (domValue !== currentFieldValue) {
-                    this.fieldValues[itemId].value = domValue;
+                // ✅ FIX: Always sync from DOM (don't skip if it looks the same)
+                // because field.value might be number/null while domValue is string
+                if (domValue) {
+                    const numValue = parseFloat(domValue);
+                    this.fieldValues[itemId].value = numValue;
+                } else {
+                    this.fieldValues[itemId].value = null;
                 }
             }
         }
@@ -318,17 +321,17 @@ class LabResultWidget {
                 continue;
             }
 
-            // Get synced value
-            const value = field.value || '';
-            if (!value) continue;
+            // Get synced value (should be numeric or null)
+            const value = field.value;
+            if (value === null || value === undefined || value === '') continue;
 
-            const numValue = parseFloat(value);
+            const numValue = typeof value === 'number' ? value : parseFloat(value);
             if (isNaN(numValue) || numValue <= 0) continue;
 
             results.push({
                 labItemId: labItemId,
                 value: numValue,
-                notes: field.status || null
+                notes: field.notes || null  // ✅ FIX: Use field.notes (calculated status like 'Normal', 'Low', 'High')
             });
 
         }
