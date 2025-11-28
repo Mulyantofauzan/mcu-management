@@ -36,6 +36,7 @@ import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Sup
 import { initSuperSearch } from '../components/superSearch.js';
 import storageDiagnostic from '../utils/storageDiagnostic.js';  // ✅ Diagnostic tools for file upload troubleshooting
 import { initVersionManager } from '../utils/versionManager.js';  // ✅ Version update manager
+import { initThemeManager } from '../utils/themeManager.js';  // ✅ Dark mode / Light mode manager
 
 // Initialize environment variables immediately (before other module code runs)
 initializeEnv().then(() => {
@@ -63,6 +64,9 @@ async function init() {
       window.location.href = 'pages/login.html';
       return;
     }
+
+    // ✅ Initialize theme manager (light/dark mode) FIRST before rendering
+    initThemeManager();
 
     // ✅ Check for app updates and show notification if new version available
     await initVersionManager();

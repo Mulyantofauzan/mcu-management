@@ -5,6 +5,8 @@ module.exports = {
     "./pages/**/*.html",
     "./js/**/*.js"
   ],
+  // ✅ Enable dark mode using 'class' strategy (toggle via 'dark' class on html element)
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
