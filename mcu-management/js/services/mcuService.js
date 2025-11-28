@@ -316,22 +316,86 @@ class MCUService {
     // Get MCU info before permanent delete for audit trail
     const mcu = await this.getById(mcuId);
 
-    // Delete all change records
-    const changes = await database.query('mcuChanges', change => change.mcuId === mcuId);
-    for (const change of changes) {
-      await database.delete('mcuChanges', change.id);
+    if (!mcu) {
+      throw new Error(`MCU not found: ${mcuId}`);
     }
 
-    // Delete MCU
-    await database.delete('mcus', mcuId);
+    let filesDeleted = 0;
+    let labResultsDeleted = 0;
+    let changesDeleted = 0;
 
-    // ✅ FIX: Log activity for MCU permanent delete with details
+    // ✅ CASCADE DELETE 1: Delete all MCU files (database records ONLY - R2 cleanup optional)
+    try {
+      const allMCUFiles = await database.getAll('mcufiles', true);
+      const mcuFiles = allMCUFiles.filter(file =>
+        (file.mcu_id === mcuId) || (file.mcuId === mcuId) || (file.mcuid === mcuId)
+      );
+
+      if (mcuFiles && mcuFiles.length > 0) {
+        for (const file of mcuFiles) {
+          const fileId = file.fileid || file.id;
+          try {
+            await database.hardDelete('mcufiles', fileId);
+            filesDeleted++;
+          } catch (err) {
+            console.error(`[mcuService.permanentDelete] Error deleting file ${fileId}:`, err.message);
+          }
+        }
+      }
+    } catch (err) {
+      console.error(`[mcuService.permanentDelete] Error deleting MCU files:`, err.message);
+    }
+
+    // ✅ CASCADE DELETE 2: Delete all lab results
+    try {
+      const allLabResults = await database.getAll('pemeriksaan_lab', true);
+      const labResults = allLabResults.filter(lab =>
+        (lab.mcu_id === mcuId) || (lab.mcuId === mcuId)
+      );
+
+      if (labResults && labResults.length > 0) {
+        for (const lab of labResults) {
+          try {
+            await database.hardDelete('pemeriksaan_lab', lab.id);
+            labResultsDeleted++;
+          } catch (err) {
+            console.error(`[mcuService.permanentDelete] Error deleting lab result ${lab.id}:`, err.message);
+          }
+        }
+      }
+    } catch (err) {
+      console.error(`[mcuService.permanentDelete] Error deleting lab results:`, err.message);
+    }
+
+    // ✅ CASCADE DELETE 3: Delete all change records
+    try {
+      const allChanges = await database.getAll('mcuChanges', true);
+      const changes = allChanges.filter(change => change.mcuId === mcuId);
+
+      if (changes && changes.length > 0) {
+        for (const change of changes) {
+          try {
+            await database.hardDelete('mcuChanges', change.id);
+            changesDeleted++;
+          } catch (err) {
+            console.error(`[mcuService.permanentDelete] Error deleting change record ${change.id}:`, err.message);
+          }
+        }
+      }
+    } catch (err) {
+      console.error(`[mcuService.permanentDelete] Error deleting change records:`, err.message);
+    }
+
+    // ✅ DELETE MCU RECORD
+    await database.hardDelete('mcus', mcuId);
+
+    // ✅ FIX: Log activity for MCU permanent delete with CASCADE delete details
     if (currentUser) {
       const employeeId = mcu?.employeeId;
       const employee = employeeId ? await database.get('employees', employeeId) : null;
       const employeeName = employee?.name || 'Unknown';
       await database.logActivity('delete', 'MCU', mcuId, currentUser.userId,
-        `Permanently deleted MCU: ${mcuId}. Date: ${mcu?.mcuDate}, Employee: ${employeeName}`);
+        `Permanently deleted MCU: ${mcuId}. Date: ${mcu?.mcuDate}, Employee: ${employeeName}. Cascade deleted: ${filesDeleted} file(s), ${labResultsDeleted} lab result(s), ${changesDeleted} change record(s)`);
     }
 
     return true;
