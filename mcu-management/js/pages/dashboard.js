@@ -35,6 +35,7 @@ import { checkAndSeedIfEmpty } from '../seedData.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 import { initSuperSearch } from '../components/superSearch.js';
 import storageDiagnostic from '../utils/storageDiagnostic.js';  // ✅ Diagnostic tools for file upload troubleshooting
+import { initVersionManager } from '../utils/versionManager.js';  // ✅ Version update manager
 
 // Initialize environment variables immediately (before other module code runs)
 initializeEnv().then(() => {
@@ -62,6 +63,9 @@ async function init() {
       window.location.href = 'pages/login.html';
       return;
     }
+
+    // ✅ Check for app updates and show notification if new version available
+    await initVersionManager();
 
     // Wait for sidebar to load before updating user info
 
