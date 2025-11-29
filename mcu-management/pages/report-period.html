@@ -196,6 +196,7 @@
         import { showToast } from '../js/utils/uiHelpers.js';
         import { initSidebar } from '../js/utils/sidebarInit.js';
         import { supabaseReady } from '../js/config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
+        import { reportExportService } from '../js/services/reportExportService.js';  // ✅ NEW: Consolidated export
 
         // Check authentication
         if (!authService.isAuthenticated()) {
@@ -440,118 +441,76 @@
             document.getElementById('stat-unfit-percent').textContent = totalMCU > 0 ? ((unfitCount / totalMCU) * 100).toFixed(1) + '%' : '0%';
         }
 
-        // ✅ FIX: Comprehensive export - all data (employees, MCU, changes)
+        // ✅ NEW: Consolidated export - single file with all data (employee + MCU + lab + notes)
         window.exportToCSV = async function() {
             try {
-                showToast('Memproses export lengkap...', 'info');
+                showToast('Memproses export konsolidasi...', 'info');
 
-                // 1. Export Laporan MCU (filtered data)
-                if (window.reportData.length > 0) {
-                    const headers = ['No', 'ID Karyawan', 'Nama Karyawan', 'Departemen', 'Jabatan', 'Tanggal MCU', 'Tipe MCU', 'Status', 'Hasil Awal', 'Hasil Akhir', 'Catatan'];
-                    const rows = window.reportData.map((row, idx) => [
-                        idx + 1,
-                        row.employeeId,
-                        row.employeeName,
-                        row.department,
-                        row.jobTitle,
-                        row.mcuDate,
-                        row.mcuType,
-                        row.status,
-                        row.initialResult,
-                        row.finalResult,
-                        row.notes
-                    ]);
+                // Get all MCUs in current filter range
+                const startDateStr = document.getElementById('filter-start-date').value;
+                const endDateStr = document.getElementById('filter-end-date').value;
+                const departmentFilterValue = document.getElementById('filter-department').value;
+                const status = document.getElementById('filter-status').value;
 
-                    const csv = [headers, ...rows].map(row =>
-                        row.map(cell => `"${cell.toString().replace(/"/g, '""')}"`).join(',')
-                    ).join('\n');
+                // Load master data
+                const allDepartments = await masterDataService.getAllDepartments();
+                const allJobTitles = await masterDataService.getAllJobTitles();
 
-                    downloadCSV(csv, `laporan-mcu-${new Date().toISOString().split('T')[0]}.csv`);
+                // Get MCUs in date range
+                const startDate = new Date(startDateStr);
+                const endDate = new Date(endDateStr);
+                endDate.setHours(23, 59, 59, 999);
+
+                const allMCUs = await mcuService.getAll();
+                const filteredMCUs = allMCUs.filter(mcu => {
+                    const mcuDate = new Date(mcu.mcuDate);
+                    return mcuDate >= startDate && mcuDate <= endDate;
+                });
+
+                // Get all employees
+                const employees = await employeeService.getAll();
+
+                // Apply filters
+                const finalFilteredMCUs = filteredMCUs.filter(mcu => {
+                    if (mcu.deletedAt) return false;
+
+                    const employee = employees.find(e => e.employeeId === mcu.employeeId);
+                    if (!employee || employee.deletedAt) return false;
+
+                    // Filter by department
+                    if (departmentFilterValue) {
+                        const filterDept = allDepartments.find(d => d.id == departmentFilterValue);
+                        if (filterDept && employee.department !== filterDept.name) return false;
+                    }
+
+                    // Filter by status
+                    if (status && mcu.initialResult !== status) return false;
+
+                    return true;
+                });
+
+                if (finalFilteredMCUs.length === 0) {
+                    showToast('Tidak ada data untuk di-export', 'warning');
+                    return;
                 }
 
-                // 2. Export ALL Employees
-                const allEmployees = await employeeService.getAll();
-                const empHeaders = ['No', 'ID Karyawan', 'Nama', 'Tanggal Lahir', 'Jenis Kelamin', 'Departemen', 'Jabatan', 'Status Employment', 'Status Aktif', 'Golongan Darah'];
-                const empRows = allEmployees.map((emp, idx) => [
-                    idx + 1,
-                    emp.employeeId,
-                    emp.name,
-                    emp.birthDate || '-',
-                    emp.jenisKelamin || '-',
-                    emp.department || '-',
-                    emp.jobTitle || '-',
-                    emp.employmentStatus || '-',
-                    emp.activeStatus || '-',
-                    emp.bloodType || '-'
-                ]);
+                // Export using consolidated service
+                const result = await reportExportService.exportConsolidatedReport(
+                    finalFilteredMCUs,
+                    employees,
+                    allDepartments,
+                    allJobTitles
+                );
 
-                const empCSV = [empHeaders, ...empRows].map(row =>
-                    row.map(cell => `"${cell.toString().replace(/"/g, '""')}"`).join(',')
-                ).join('\n');
-
-                downloadCSV(empCSV, `data-karyawan-${new Date().toISOString().split('T')[0]}.csv`);
-
-                // 3. Export ALL MCU Records
-                const allMCUs = await mcuService.getAll();
-                const mcuHeaders = ['No', 'ID MCU', 'ID Karyawan', 'Tipe MCU', 'Tanggal MCU', 'Umur saat MCU', 'Tekanan Darah', 'Nadi', 'Suhu', 'BMI', 'Hasil Awal', 'Hasil Akhir', 'Status', 'Dokter'];
-                const mcuRows = allMCUs.filter(m => !m.deletedAt).map((mcu, idx) => [
-                    idx + 1,
-                    mcu.mcuId,
-                    mcu.employeeId,
-                    mcu.mcuType || '-',
-                    mcu.mcuDate || '-',
-                    mcu.ageAtMCU || '-',
-                    mcu.bloodPressure || '-',
-                    mcu.pulse || '-',
-                    mcu.temperature || '-',
-                    mcu.bmi || '-',
-                    mcu.initialResult || '-',
-                    mcu.finalResult || '-',
-                    mcu.status || '-',
-                    mcu.doctor || '-'
-                ]);
-
-                const mcuCSV = [mcuHeaders, ...mcuRows].map(row =>
-                    row.map(cell => `"${cell.toString().replace(/"/g, '""')}"`).join(',')
-                ).join('\n');
-
-                downloadCSV(mcuCSV, `data-mcu-${new Date().toISOString().split('T')[0]}.csv`);
-
-                // 4. Export ALL MCU Changes (history)
-                const allChanges = await database.getAll('mcuChanges');
-                const changeHeaders = ['No', 'ID Perubahan', 'ID MCU', 'Field', 'Nilai Lama', 'Nilai Baru', 'Diubah oleh', 'Waktu Perubahan'];
-                const changeRows = allChanges.map((change, idx) => [
-                    idx + 1,
-                    change.changeId || change.id || '-',
-                    change.mcuId || '-',
-                    change.field || '-',
-                    change.oldValue || '-',
-                    change.newValue || '-',
-                    change.changedBy || '-',
-                    change.changedAt ? new Date(change.changedAt).toLocaleDateString('id-ID') + ' ' + new Date(change.changedAt).toLocaleTimeString('id-ID') : '-'
-                ]);
-
-                const changeCSV = [changeHeaders, ...changeRows].map(row =>
-                    row.map(cell => `"${cell.toString().replace(/"/g, '""')}"`).join(',')
-                ).join('\n');
-
-                downloadCSV(changeCSV, `data-perubahan-mcu-${new Date().toISOString().split('T')[0]}.csv`);
-
-                showToast('Export lengkap berhasil! 4 file telah diunduh (Laporan MCU, Data Karyawan, Data MCU, Perubahan MCU)', 'success');
+                if (result.success) {
+                    showToast(`Export berhasil! 1 file diunduh dengan ${result.dataCount} data karyawan`, 'success');
+                } else {
+                    showToast('Gagal export: ' + result.message, 'error');
+                }
             } catch (error) {
                 console.error('Export error:', error);
                 showToast('Gagal export: ' + error.message, 'error');
             }
-        };
-
-        // Helper function to download CSV
-        function downloadCSV(csvContent, filename) {
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', filename);
-            link.click();
         };
 
         // Get status badge class
