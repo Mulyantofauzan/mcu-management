@@ -149,22 +149,15 @@ class ReportExportService {
         catatan_akhir: mcu.finalNotes || '-'
       };
 
-      // Add all lab results with their status
+      // ✅ UPDATED: Add only lab VALUES (no status column)
       for (const labItem of allLabItems) {
         const labResult = labMap[labItem.id];
         const labValue = labResult ? labResult.value : null;
-        const labStatus = this.determineLabStatus(
-          labValue,
-          labResult ? labResult.min_range_reference : labItem.min,
-          labResult ? labResult.max_range_reference : labItem.max
-        );
 
-        // Column names for lab items
+        // Column name only for lab value (no separate status column)
         const colName = `lab_${labItem.name.toLowerCase().replace(/\s+/g, '_')}`;
-        const colStatus = `lab_${labItem.name.toLowerCase().replace(/\s+/g, '_')}_status`;
 
         row[colName] = labValue || '-';
-        row[colStatus] = labStatus;
       }
 
       consolidatedData.push(row);
