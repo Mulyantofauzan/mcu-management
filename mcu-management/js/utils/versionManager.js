@@ -10,10 +10,10 @@
  */
 
 // Current app version (update this when deploying new fixes)
-const CURRENT_VERSION = '1.0.5';
+const CURRENT_VERSION = '1.0.6';
 
 // Service worker cache version (must match sw.js)
-const CURRENT_CACHE_VERSION = 'madis-v5';
+const CURRENT_CACHE_VERSION = 'madis-v6';
 
 // Version history key in localStorage
 const VERSION_HISTORY_KEY = 'madis_version_history';
