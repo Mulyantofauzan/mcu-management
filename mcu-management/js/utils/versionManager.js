@@ -200,23 +200,24 @@ async function applyUpdate() {
  * Called automatically on app startup
  */
 export async function initVersionManager() {
-  console.log(`[versionManager] Checking version... Current: v${CURRENT_VERSION}, Stored: v${getStoredVersion()}`);
+  const storedVersion = getStoredVersion();
+  const isFirstTime = !storedVersion || storedVersion === '0.0.0';
+  const hasUpdate = isUpdateAvailable();
+
+  console.log(`[versionManager] Checking version... Current: v${CURRENT_VERSION}, Stored: v${storedVersion}`);
+  console.log(`[versionManager] First time: ${isFirstTime}, Update available: ${hasUpdate}`);
 
   // Add to version history
   addToVersionHistory(CURRENT_VERSION);
 
-  // Check if this is first time or if update is available
-  if (!getStoredVersion() || isUpdateAvailable()) {
-    console.log('[versionManager] Update available!');
-
-    // Update stored version
-    storeCurrentVersion();
-
-    // Show notification only if not first time
-    if (getStoredVersion() !== CURRENT_VERSION) {
-      showUpdateBanner();
-    }
+  // Show notification only if NOT first time AND update is available
+  if (!isFirstTime && hasUpdate) {
+    console.log('[versionManager] Update available! Showing banner...');
+    showUpdateBanner();
   }
+
+  // Update stored version to current
+  storeCurrentVersion();
 
   // Update last version check timestamp
   localStorage.setItem(LAST_VERSION_CHECK_KEY, new Date().toISOString());
