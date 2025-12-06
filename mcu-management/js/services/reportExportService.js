@@ -156,11 +156,6 @@ class ReportExportService {
           // Keep original value as string or number (no conversion)
           // Important: String() preserves numeric precision better than toString()
           labValue = String(labResult.value).trim();
-
-          // Debug: Log lab values to browser console for verification
-          if (labResult.value && (Math.abs(parseFloat(labResult.value)) > 100 || parseFloat(labResult.value) < 0.1)) {
-            console.log(`[Export] Lab ${labItem.name} (ID ${labItem.id}): raw="${labResult.value}" -> string="${labValue}"`);
-          }
         }
 
         // Column name: lab_[name converted to snake_case]
