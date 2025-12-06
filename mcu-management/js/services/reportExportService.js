@@ -50,13 +50,14 @@ class ReportExportService {
   /**
    * Build consolidated export data for single sheet
    * One row = one employee with all their data
+   * ✅ FIXED: Uses database lab items, not hardcoded mapping
    */
   async buildConsolidatedData(filteredMCUs, employees, allDepartments, allJobTitles) {
     const consolidatedData = [];
     const processedEmployees = new Set();
 
-    // Get all lab items for reference
-    const allLabItems = getAllLabItems();
+    // Get all lab items from database (not hardcoded)
+    const allLabItems = await labService.getAllLabItems(false);
 
     for (const mcu of filteredMCUs) {
       // Skip soft-deleted MCU
@@ -91,9 +92,10 @@ class ReportExportService {
         labMap[lab.lab_item_id] = lab;
       });
 
-      // Build base row
+      // Build base row with fixed column order (important for clean CSV)
+      // ✅ FIXED: Only use columns that exist in database schema
       const row = {
-        // Employee Info
+        // Employee Info (columns 1-6)
         nama_karyawan: employee.name || '-',
         departemen: (dept && dept.name) ? dept.name : empDept || '-',
         jabatan: (jobTitle && jobTitle.name) ? jobTitle.name : empJobTitle || '-',
@@ -101,61 +103,55 @@ class ReportExportService {
         jenis_kelamin: employee.jenisKelamin || '-',
         golongan_darah: employee.bloodType || '-',
 
-        // MCU Info
+        // MCU Info (columns 7-10)
         tanggal_mcu: new Date(mcu.mcuDate).toLocaleDateString('id-ID'),
         tipe_mcu: mcu.mcuType || '-',
-        umur_saat_mcu: mcu.ageAtMCU || '-',
         dokter: mcu.doctor || '-',
 
-        // Physical Exam Results
+        // Vital Signs & Measurements (columns 11-15)
         tekanan_darah: mcu.bloodPressure || '-',
         nadi: mcu.pulse || '-',
         suhu: mcu.temperature || '-',
+        respiratory_rate: mcu.respiratoryRate || '-',
         bmi: mcu.bmi || '-',
-        tinggi_badan: mcu.height || '-',
-        berat_badan: mcu.weight || '-',
 
-        // Physical Examination Categories
-        mata: mcu.mata || '-',
-        gigi: mcu.gigi || '-',
-        telinga: mcu.telinga || '-',
-        tenggorokan: mcu.tenggorokan || '-',
-        jantung: mcu.jantung || '-',
-        paru: mcu.paru || '-',
-        perut: mcu.perut || '-',
-        kulit: mcu.kulit || '-',
-        muskuloskeletal: mcu.muskuloskeletal || '-',
-        neurologi: mcu.neurologi || '-',
+        // Examination Results (columns 16-20)
+        vision: mcu.vision || '-',
+        colorblind: mcu.colorblind || '-',
+        audiometry: mcu.audiometry || '-',
+        spirometry: mcu.spirometry || '-',
+        napza: mcu.napza || '-',
 
-        // EKG
-        ekg: mcu.ekg || '-',
-        ekg_status: mcu.ekgStatus || '-',
-
-        // X-Ray
+        // Investigasi Results (columns 21-23)
+        hbsag: mcu.hbsag || '-',
         xray: mcu.xray || '-',
-        xray_status: mcu.xrayStatus || '-',
+        ekg: mcu.ekg || '-',
+        treadmill: mcu.treadmill || '-',
 
-        // USG
-        usg: mcu.usg || '-',
-        usg_status: mcu.usgStatus || '-',
+        // Clinical Info (columns 24-27)
+        keluhan_utama: mcu.keluhanUtama || '-',
+        diagnosis_kerja: mcu.diagnosisKerja || '-',
+        alasan_rujuk: mcu.alasanRujuk || '-',
+        recipient: mcu.recipient || '-',
 
-        // Overall Status
+        // Overall Status & Notes (columns 28-31)
         status_kesehatan: mcu.initialResult || '-',
         hasil_awal: mcu.initialResult || '-',
         hasil_akhir: mcu.finalResult || '-',
-
-        // Notes
         catatan_awal: mcu.initialNotes || '-',
         catatan_akhir: mcu.finalNotes || '-'
       };
 
-      // ✅ UPDATED: Add only lab VALUES (no status column)
-      for (const labItem of allLabItems) {
+      // ✅ Add lab VALUES in database order (only from actual database items)
+      // Sort by database ID for consistent column order
+      const sortedLabItems = allLabItems.sort((a, b) => a.id - b.id);
+
+      for (const labItem of sortedLabItems) {
         const labResult = labMap[labItem.id];
         const labValue = labResult ? labResult.value : null;
 
-        // Column name only for lab value (no separate status column)
-        const colName = `lab_${labItem.name.toLowerCase().replace(/\s+/g, '_')}`;
+        // Column name: lab_[name converted to snake_case]
+        const colName = `lab_${labItem.name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')}`;
 
         row[colName] = labValue || '-';
       }
@@ -167,20 +163,52 @@ class ReportExportService {
   }
 
   /**
-   * Convert data to CSV format
+   * Convert data to CSV format with consistent column ordering
+   * ✅ FIXED: Maintains consistent column order across all rows
    */
   dataToCSV(dataArray) {
     if (dataArray.length === 0) {
       return '';
     }
 
-    // Get all unique keys (column names) from all rows
+    // Define column order to ensure consistent export format
+    // ✅ FIXED: Only include columns that exist in database schema
+    const columnOrder = [
+      // Employee Info (6 cols)
+      'nama_karyawan', 'departemen', 'jabatan', 'tanggal_lahir', 'jenis_kelamin', 'golongan_darah',
+      // MCU Info (3 cols)
+      'tanggal_mcu', 'tipe_mcu', 'dokter',
+      // Vital Signs & Measurements (5 cols)
+      'tekanan_darah', 'nadi', 'suhu', 'respiratory_rate', 'bmi',
+      // Examination Results (5 cols)
+      'vision', 'colorblind', 'audiometry', 'spirometry', 'napza',
+      // Investigasi Results (4 cols)
+      'hbsag', 'xray', 'ekg', 'treadmill',
+      // Clinical Info (4 cols)
+      'keluhan_utama', 'diagnosis_kerja', 'alasan_rujuk', 'recipient',
+      // Status & Notes (5 cols)
+      'status_kesehatan', 'hasil_awal', 'hasil_akhir', 'catatan_awal', 'catatan_akhir'
+      // Lab items will be added dynamically at the end
+    ];
+
+    // Get all unique keys and extract lab items (any key starting with 'lab_')
     const allKeys = new Set();
+    const labKeys = [];
+
     dataArray.forEach(row => {
-      Object.keys(row).forEach(key => allKeys.add(key));
+      Object.keys(row).forEach(key => {
+        allKeys.add(key);
+        if (key.startsWith('lab_') && !labKeys.includes(key)) {
+          labKeys.push(key);
+        }
+      });
     });
 
-    const keys = Array.from(allKeys);
+    // Sort lab keys alphabetically for consistent order
+    labKeys.sort();
+
+    // Final column order: base columns + lab columns
+    const keys = [...columnOrder, ...labKeys];
 
     // Create header row with proper formatting
     const headerRow = keys.map(key =>
@@ -196,7 +224,9 @@ class ReportExportService {
       }).join(',');
     });
 
-    return [headerRow, ...dataRows].join('\n');
+    // Add UTF-8 BOM for Excel compatibility
+    const bom = '\ufeff';
+    return bom + [headerRow, ...dataRows].join('\n');
   }
 
   /**
