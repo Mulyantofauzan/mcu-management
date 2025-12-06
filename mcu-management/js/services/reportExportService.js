@@ -10,9 +10,7 @@
  * - No ID columns (data anonymization)
  */
 
-import { supabaseReady, isSupabaseEnabled } from '../config/supabase.js';
 import { labService } from './labService.js';
-import { LAB_ITEMS_MAPPING, getAllLabItems } from '../data/labItemsMapping.js';
 
 class ReportExportService {
   /**
@@ -218,7 +216,9 @@ class ReportExportService {
     // Create data rows
     const dataRows = dataArray.map(row => {
       return keys.map(key => {
-        const value = row[key] === null || row[key] === undefined ? '' : String(row[key]);
+        let value = row[key] === null || row[key] === undefined ? '' : String(row[key]);
+        // Clean up: remove newlines and extra whitespace to prevent multi-line cells
+        value = value.replace(/\n/g, ' ').replace(/\r/g, '').trim();
         // Escape quotes and wrap in quotes
         return `"${value.replace(/"/g, '""')}"`;
       }).join(',');
