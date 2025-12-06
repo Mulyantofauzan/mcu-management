@@ -57,6 +57,9 @@ class ReportExportService {
     // Get all lab items from database (not hardcoded)
     const allLabItems = await labService.getAllLabItems(false);
 
+    // Sort lab items ONCE before the loop for consistent order
+    const sortedLabItems = allLabItems.sort((a, b) => a.id - b.id);
+
     for (const mcu of filteredMCUs) {
       // Skip soft-deleted MCU
       if (mcu.deletedAt) continue;
@@ -82,9 +85,11 @@ class ReportExportService {
       );
 
       // Get all lab results for this MCU
+      // Note: labService only returns non-empty values, so we build a map
+      // and treat missing entries as empty/not-filled
       const labResults = await labService.getPemeriksaanLabByMcuId(mcu.mcuId);
 
-      // Build lab results map
+      // Build lab results map - only includes filled values
       const labMap = {};
       labResults.forEach(lab => {
         labMap[lab.lab_item_id] = lab;
@@ -141,9 +146,7 @@ class ReportExportService {
       };
 
       // ✅ Add lab VALUES in database order (only from actual database items)
-      // Sort by database ID for consistent column order
-      const sortedLabItems = allLabItems.sort((a, b) => a.id - b.id);
-
+      // Use sortedLabItems from above for consistent column order
       for (const labItem of sortedLabItems) {
         const labResult = labMap[labItem.id];
         const labValue = labResult ? labResult.value : null;
