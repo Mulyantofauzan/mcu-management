@@ -235,12 +235,16 @@ class ReportExportService {
         // Clean up: remove newlines and extra whitespace to prevent multi-line cells
         value = value.replace(/\n/g, ' ').replace(/\r/g, '').trim();
 
-        // ✅ CRITICAL FIX: Prevent Excel from interpreting numeric lab values as dates
-        // Add apostrophe prefix for lab columns to force text format
-        // This prevents 6.87 -> 0.310416667, 93.7 -> 03/01/1900, etc.
-        if (key.startsWith('lab_') && value !== '' && value !== '-') {
-          // Force text format with apostrophe (won't display in Excel but tells Excel to treat as text)
-          value = `'${value}`;
+        // ✅ CRITICAL FIX: Prevent Excel from auto-converting numeric values to dates/fractions
+        // Add apostrophe prefix to force text format
+        // This prevents: 6.87 -> 0.310416667, 93.7 -> 03/01/1900, etc.
+        // Detect numeric-looking values: contain digits and optionally one dot
+        if (value !== '' && value !== '-') {
+          const isNumericLooking = /^[\d.]+$/.test(value) || /^\d+[\d.,]*$/.test(value);
+          if (isNumericLooking) {
+            // Force text format with apostrophe (won't display in Excel but tells Excel to treat as text)
+            value = `'${value}`;
+          }
         }
 
         // Escape quotes and wrap in quotes
