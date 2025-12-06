@@ -236,14 +236,15 @@ class ReportExportService {
         value = value.replace(/\n/g, ' ').replace(/\r/g, '').trim();
 
         // ✅ CRITICAL FIX: Prevent Excel from auto-converting numeric values to dates/fractions
-        // Add apostrophe prefix to force text format
+        // Add space prefix to numeric values - Excel won't auto-convert values with space prefix
         // This prevents: 6.87 -> 0.310416667, 93.7 -> 03/01/1900, etc.
         // Detect numeric-looking values: contain digits and optionally one dot
         if (value !== '' && value !== '-') {
           const isNumericLooking = /^[\d.]+$/.test(value) || /^\d+[\d.,]*$/.test(value);
           if (isNumericLooking) {
-            // Force text format with apostrophe (won't display in Excel but tells Excel to treat as text)
-            value = `'${value}`;
+            // Add non-breaking space prefix (U+00A0) - invisible but prevents Excel auto-conversion
+            // Excel sees non-breaking space and treats cell as text, not number
+            value = `\u00A0${value}`;  // Non-breaking space prevents Excel auto-conversion
           }
         }
 
