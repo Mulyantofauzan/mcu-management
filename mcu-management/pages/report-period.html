@@ -444,7 +444,9 @@
         // ✅ NEW: Consolidated export - single file with all data (employee + MCU + lab + notes)
         window.exportToCSV = async function() {
             try {
-                showToast('Memproses export konsolidasi...', 'info');
+                // Show loading modal
+                const loadingModal = document.getElementById('export-loading-modal');
+                loadingModal.style.display = 'flex';
 
                 // Get all MCUs in current filter range
                 const startDateStr = document.getElementById('filter-start-date').value;
@@ -490,6 +492,7 @@
                 });
 
                 if (finalFilteredMCUs.length === 0) {
+                    loadingModal.style.display = 'none';
                     showToast('Tidak ada data untuk di-export', 'warning');
                     return;
                 }
@@ -502,6 +505,9 @@
                     allJobTitles
                 );
 
+                // Hide loading modal
+                loadingModal.style.display = 'none';
+
                 if (result.success) {
                     showToast(`Export berhasil! 1 file diunduh dengan ${result.dataCount} data karyawan`, 'success');
                 } else {
@@ -509,6 +515,8 @@
                 }
             } catch (error) {
                 console.error('Export error:', error);
+                const loadingModal = document.getElementById('export-loading-modal');
+                loadingModal.style.display = 'none';
                 showToast('Gagal export: ' + error.message, 'error');
             }
         };
@@ -540,5 +548,38 @@
             init();  // Fallback: still run init even if Supabase fails
         });
     </script>
+
+    <!-- LOADING MODAL untuk Export -->
+    <div id="export-loading-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-lg shadow-xl p-8 max-w-md w-full mx-4">
+            <div class="flex flex-col items-center">
+                <!-- Spinner Animation -->
+                <div class="mb-6">
+                    <svg class="w-16 h-16 animate-spin text-primary-600" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+
+                <!-- Text -->
+                <h3 class="text-lg font-semibold text-gray-900 mb-2 text-center">Memproses Export</h3>
+                <p class="text-sm text-gray-600 text-center mb-4">Mengkonsolidasikan data MCU dan karyawan...</p>
+
+                <!-- Progress Bar (optional) -->
+                <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                    <div class="bg-primary-600 h-full rounded-full" style="animation: pulse 1.5s ease-in-out infinite; width: 30%;"></div>
+                </div>
+
+                <p class="text-xs text-gray-500 mt-4 text-center">Jangan tutup halaman ini. Proses akan dimulai dalam beberapa detik.</p>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes pulse {
+            0%, 100% { width: 30%; }
+            50% { width: 70%; }
+        }
+    </style>
 </body>
 </html>
