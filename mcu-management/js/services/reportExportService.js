@@ -149,12 +149,24 @@ class ReportExportService {
       // Use sortedLabItems from above for consistent column order
       for (const labItem of sortedLabItems) {
         const labResult = labMap[labItem.id];
-        const labValue = labResult ? labResult.value : null;
+
+        // Get value and ensure it's preserved as-is from database
+        let labValue = '-';
+        if (labResult && labResult.value !== null && labResult.value !== undefined && labResult.value !== '') {
+          // Keep original value as string or number (no conversion)
+          // Important: String() preserves numeric precision better than toString()
+          labValue = String(labResult.value).trim();
+
+          // Debug: Log lab values to browser console for verification
+          if (labResult.value && (Math.abs(parseFloat(labResult.value)) > 100 || parseFloat(labResult.value) < 0.1)) {
+            console.log(`[Export] Lab ${labItem.name} (ID ${labItem.id}): raw="${labResult.value}" -> string="${labValue}"`);
+          }
+        }
 
         // Column name: lab_[name converted to snake_case]
         const colName = `lab_${labItem.name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')}`;
 
-        row[colName] = labValue || '-';
+        row[colName] = labValue;
       }
 
       consolidatedData.push(row);
