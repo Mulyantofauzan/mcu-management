@@ -1528,7 +1528,8 @@ window.editMCU = async function() {
                 const fieldsToClear = [
                     'edit-mcu-id', 'edit-mcu-type', 'edit-mcu-date',
                     'edit-mcu-bmi', 'edit-mcu-bp', 'edit-mcu-rr', 'edit-mcu-pulse',
-                    'edit-mcu-temp', 'edit-mcu-vision-distant', 'edit-mcu-vision-near', 'edit-mcu-audio', 'edit-mcu-spiro',
+                    'edit-mcu-temp', 'edit-mcu-smoking-status', 'edit-mcu-exercise-frequency',
+                    'edit-mcu-vision-distant', 'edit-mcu-vision-near', 'edit-mcu-audio', 'edit-mcu-spiro',
                     'edit-mcu-xray', 'edit-mcu-ekg', 'edit-mcu-treadmill',
                     'edit-mcu-napza', 'edit-mcu-colorblind', 'edit-mcu-recipient',
                     'edit-mcu-keluhan', 'edit-mcu-diagnosis', 'edit-mcu-alasan',
@@ -1564,6 +1565,8 @@ window.editMCU = async function() {
                     'edit-mcu-rr': mcu.respiratoryRate,
                     'edit-mcu-pulse': mcu.pulse,
                     'edit-mcu-temp': mcu.temperature,
+                    'edit-mcu-smoking-status': mcu.smokingStatus,
+                    'edit-mcu-exercise-frequency': mcu.exerciseFrequency,
                     'edit-mcu-vision-distant': mcu.visionDistant,
                     'edit-mcu-vision-near': mcu.visionNear,
                     'edit-mcu-audio': mcu.audiometry,
@@ -1621,6 +1624,42 @@ window.editMCU = async function() {
                 } else {
                     document.getElementById('edit-final-result-section').classList.add('hidden');
                 }
+
+                // Handle vision fields with "Lainnya" support
+                const visionFields = [
+                    { id: 'edit-mcu-vision-distant-unaided-left', value: mcu.visionDistantUnaideLeft, otherId: 'edit-mcu-vision-distant-unaided-left-other' },
+                    { id: 'edit-mcu-vision-distant-unaided-right', value: mcu.visionDistantUnaideRight, otherId: 'edit-mcu-vision-distant-unaided-right-other' },
+                    { id: 'edit-mcu-vision-distant-spectacles-left', value: mcu.visionDistantSpectaclesLeft, otherId: 'edit-mcu-vision-distant-spectacles-left-other' },
+                    { id: 'edit-mcu-vision-distant-spectacles-right', value: mcu.visionDistantSpectaclesRight, otherId: 'edit-mcu-vision-distant-spectacles-right-other' },
+                    { id: 'edit-mcu-vision-near-unaided-left', value: mcu.visionNearUnaideLeft, otherId: 'edit-mcu-vision-near-unaided-left-other' },
+                    { id: 'edit-mcu-vision-near-unaided-right', value: mcu.visionNearUnaideRight, otherId: 'edit-mcu-vision-near-unaided-right-other' },
+                    { id: 'edit-mcu-vision-near-spectacles-left', value: mcu.visionNearSpectaclesLeft, otherId: 'edit-mcu-vision-near-spectacles-left-other' },
+                    { id: 'edit-mcu-vision-near-spectacles-right', value: mcu.visionNearSpectaclesRight, otherId: 'edit-mcu-vision-near-spectacles-right-other' }
+                ];
+
+                visionFields.forEach(field => {
+                    if (field.value) {
+                        const selectEl = document.getElementById(field.id);
+                        const otherEl = document.getElementById(field.otherId);
+
+                        // Check if value matches any standard option
+                        const standardOptions = ['', '-', '6/6', '6/9', '6/12', '6/18', '6/24', '6/36', '6/60'];
+                        if (standardOptions.includes(field.value)) {
+                            // Set the standard option
+                            if (selectEl) selectEl.value = field.value;
+                            // Hide the "Lainnya" field
+                            if (otherEl) otherEl.classList.add('hidden');
+                        } else {
+                            // Custom value - set as "Lainnya"
+                            if (selectEl) selectEl.value = 'Lainnya';
+                            // Show and populate the "Lainnya" field
+                            if (otherEl) {
+                                otherEl.classList.remove('hidden');
+                                otherEl.value = field.value;
+                            }
+                        }
+                    }
+                });
 
             } catch (error) {
             }
@@ -1682,6 +1721,8 @@ window.handleEditMCU = async function(event) {
             respiratoryRate: document.getElementById('edit-mcu-rr').value || null,
             pulse: document.getElementById('edit-mcu-pulse').value || null,
             temperature: document.getElementById('edit-mcu-temp').value || null,
+            smokingStatus: document.getElementById('edit-mcu-smoking-status').value || null,
+            exerciseFrequency: document.getElementById('edit-mcu-exercise-frequency').value || null,
             // 8-field vision structure with "Lainnya" support
             visionDistantUnaideLeft: getFieldValue('edit-mcu-vision-distant-unaided-left', 'edit-mcu-vision-distant-unaided-left-other'),
             visionDistantUnaideRight: getFieldValue('edit-mcu-vision-distant-unaided-right', 'edit-mcu-vision-distant-unaided-right-other'),
