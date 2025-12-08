@@ -5,7 +5,7 @@
  * Data source: Latest MCU per employee (from mcus, employees, pemeriksaan_lab tables)
  */
 
-import { supabase } from '../config/supabaseClient.js';
+import { supabase } from '../config/supabase.js';
 import { labService } from './labService.js';
 
 class AnalysisDashboardService {
