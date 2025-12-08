@@ -729,6 +729,8 @@ window.handleAddMCU = async function(event) {
             hbsag: document.getElementById('mcu-hbsag').value || null,
             napza: getFieldValue('mcu-napza', 'mcu-napza-other'),
             colorblind: getFieldValue('mcu-colorblind', 'mcu-colorblind-other'),
+            smokingStatus: document.getElementById('mcu-smoking-status').value || null,
+            exerciseFrequency: document.getElementById('mcu-exercise-frequency').value || null,
             doctor: doctorId,
             recipient: document.getElementById('mcu-recipient').value || null,
             keluhanUtama: document.getElementById('mcu-keluhan').value || null,
