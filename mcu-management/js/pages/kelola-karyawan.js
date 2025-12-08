@@ -1204,7 +1204,9 @@ window.viewMCUDetail = async function(mcuId) {
         // Fill examination results
         document.getElementById('mcu-detail-bmi').textContent = mcu.bmi || '-';
         document.getElementById('mcu-detail-bp').textContent = mcu.bloodPressure || '-';
-        document.getElementById('mcu-detail-vision').textContent = mcu.vision || '-';
+        document.getElementById('mcu-detail-rr').textContent = mcu.respiratoryRate || '-';
+        document.getElementById('mcu-detail-pulse').textContent = mcu.pulse || '-';
+        document.getElementById('mcu-detail-temp').textContent = mcu.temperature || '-';
         document.getElementById('mcu-detail-audio').textContent = mcu.audiometry || '-';
         document.getElementById('mcu-detail-spiro').textContent = mcu.spirometry || '-';
         document.getElementById('mcu-detail-hbsag').textContent = mcu.hbsag || '-';
@@ -1214,10 +1216,15 @@ window.viewMCUDetail = async function(mcuId) {
         document.getElementById('mcu-detail-napza').textContent = mcu.napza || '-';
         document.getElementById('mcu-detail-colorblind').textContent = mcu.colorblind || '-';
 
-        // Fill additional data
-        document.getElementById('mcu-detail-rr').textContent = mcu.respiratoryRate || '-';
-        document.getElementById('mcu-detail-pulse').textContent = mcu.pulse || '-';
-        document.getElementById('mcu-detail-temp').textContent = mcu.temperature || '-';
+        // Fill 8-field vision details
+        document.getElementById('mcu-detail-vision-distant-unaided-left').textContent = mcu.visionDistantUnaideLeft || '-';
+        document.getElementById('mcu-detail-vision-distant-unaided-right').textContent = mcu.visionDistantUnaideRight || '-';
+        document.getElementById('mcu-detail-vision-distant-spectacles-left').textContent = mcu.visionDistantSpectaclesLeft || '-';
+        document.getElementById('mcu-detail-vision-distant-spectacles-right').textContent = mcu.visionDistantSpectaclesRight || '-';
+        document.getElementById('mcu-detail-vision-near-unaided-left').textContent = mcu.visionNearUnaideLeft || '-';
+        document.getElementById('mcu-detail-vision-near-unaided-right').textContent = mcu.visionNearUnaideRight || '-';
+        document.getElementById('mcu-detail-vision-near-spectacles-left').textContent = mcu.visionNearSpectaclesLeft || '-';
+        document.getElementById('mcu-detail-vision-near-spectacles-right').textContent = mcu.visionNearSpectaclesRight || '-';
 
         // Fill doctor data - compare as numbers to handle Supabase numeric IDs
         let doctor = null;

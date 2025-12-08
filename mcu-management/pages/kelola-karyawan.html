@@ -314,7 +314,11 @@
                     <div class="grid grid-cols-3 gap-px bg-gray-200">
                         <div class="bg-white px-4 py-3"><span class="text-xs text-gray-500">BMI</span><p class="font-medium text-sm" id="mcu-detail-bmi">-</p></div>
                         <div class="bg-gray-50 px-4 py-3"><span class="text-xs text-gray-500">Tekanan Darah</span><p class="font-medium text-sm" id="mcu-detail-bp">-</p></div>
-                        <div class="bg-white px-4 py-3"><span class="text-xs text-gray-500">Penglihatan</span><p class="font-medium text-sm" id="mcu-detail-vision">-</p></div>
+                        <div class="bg-white px-4 py-3"><span class="text-xs text-gray-500">RR (Frekuensi Nafas)</span><p class="font-medium text-sm" id="mcu-detail-rr">-</p></div>
+
+                        <div class="bg-gray-50 px-4 py-3"><span class="text-xs text-gray-500">Nadi</span><p class="font-medium text-sm" id="mcu-detail-pulse">-</p></div>
+                        <div class="bg-white px-4 py-3"><span class="text-xs text-gray-500">Suhu</span><p class="font-medium text-sm" id="mcu-detail-temp">-</p></div>
+                        <div class="bg-gray-50 px-4 py-3"><span class="text-xs text-gray-500">-</span><p class="font-medium text-sm">-</p></div>
 
                         <div class="bg-gray-50 px-4 py-3"><span class="text-xs text-gray-500">Audiometri</span><p class="font-medium text-sm" id="mcu-detail-audio">-</p></div>
                         <div class="bg-white px-4 py-3"><span class="text-xs text-gray-500">Spirometri</span><p class="font-medium text-sm" id="mcu-detail-spiro">-</p></div>
@@ -323,16 +327,46 @@
                         <div class="col-span-3 bg-gray-50 px-4 py-3"><span class="text-xs text-gray-500">X-Ray</span><p class="font-medium text-sm" id="mcu-detail-xray">-</p></div>
                         <div class="col-span-3 bg-white px-4 py-3"><span class="text-xs text-gray-500">EKG</span><p class="font-medium text-sm" id="mcu-detail-ekg">-</p></div>
                         <div class="col-span-3 bg-gray-50 px-4 py-3"><span class="text-xs text-gray-500">Treadmill</span><p class="font-medium text-sm" id="mcu-detail-treadmill">-</p></div>
-                        <div class="col-span-3 bg-gray-50 px-4 py-3"><span class="text-xs text-gray-500">NAPZA</span><p class="font-medium text-sm" id="mcu-detail-napza">-</p></div>
-                        <div class="col-span-3 bg-white px-4 py-3"><span class="text-xs text-gray-500">Buta Warna</span><p class="font-medium text-sm" id="mcu-detail-colorblind">-</p></div>
+                        <div class="col-span-3 bg-white px-4 py-3"><span class="text-xs text-gray-500">NAPZA</span><p class="font-medium text-sm" id="mcu-detail-napza">-</p></div>
+                        <div class="col-span-3 bg-gray-50 px-4 py-3"><span class="text-xs text-gray-500">Buta Warna</span><p class="font-medium text-sm" id="mcu-detail-colorblind">-</p></div>
                     </div>
                 </div>
 
-                <h4 class="font-semibold text-gray-900 mb-3">Data Tambahan</h4>
-                <div class="grid grid-cols-3 gap-px bg-gray-200 mb-4 overflow-hidden rounded-lg">
-                    <div class="bg-white px-4 py-3"><span class="text-xs text-gray-500">RR</span><p class="font-medium text-sm" id="mcu-detail-rr">-</p></div>
-                    <div class="bg-gray-50 px-4 py-3"><span class="text-xs text-gray-500">Nadi</span><p class="font-medium text-sm" id="mcu-detail-pulse">-</p></div>
-                    <div class="bg-white px-4 py-3"><span class="text-xs text-gray-500">Suhu</span><p class="font-medium text-sm" id="mcu-detail-temp">-</p></div>
+                <!-- Vision Assessment - Detailed 8-field structure -->
+                <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Penglihatan (Detail)</h4>
+                <div class="bg-blue-50 rounded-lg p-4 mb-4 overflow-x-auto">
+                    <table class="w-full text-xs border-collapse">
+                        <thead>
+                            <tr class="border-b-2 border-blue-200">
+                                <th colspan="1" class="py-2 px-3 text-left font-semibold text-gray-700 border-r border-blue-200">Pemeriksaan</th>
+                                <th colspan="2" class="py-2 px-3 text-center font-semibold text-gray-700 border-r border-blue-200">Tanpa Koreksi</th>
+                                <th colspan="2" class="py-2 px-3 text-center font-semibold text-gray-700">Dengan Kacamata</th>
+                            </tr>
+                            <tr class="border-b border-blue-200">
+                                <th class="py-2 px-3 text-left font-semibold text-gray-700 border-r border-blue-200"></th>
+                                <th class="py-2 px-3 text-center font-semibold text-gray-700 border-r border-blue-200">Mata Kiri</th>
+                                <th class="py-2 px-3 text-center font-semibold text-gray-700 border-r border-blue-200">Mata Kanan</th>
+                                <th class="py-2 px-3 text-center font-semibold text-gray-700 border-r border-blue-200">Mata Kiri</th>
+                                <th class="py-2 px-3 text-center font-semibold text-gray-700">Mata Kanan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-blue-100">
+                                <td class="py-2 px-3 text-gray-700 font-medium border-r border-blue-200">Visus Jauh</td>
+                                <td class="py-2 px-3 border-r border-blue-200"><span class="font-medium" id="mcu-detail-vision-distant-unaided-left">-</span></td>
+                                <td class="py-2 px-3 border-r border-blue-200"><span class="font-medium" id="mcu-detail-vision-distant-unaided-right">-</span></td>
+                                <td class="py-2 px-3 border-r border-blue-200"><span class="font-medium" id="mcu-detail-vision-distant-spectacles-left">-</span></td>
+                                <td class="py-2 px-3"><span class="font-medium" id="mcu-detail-vision-distant-spectacles-right">-</span></td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3 text-gray-700 font-medium border-r border-blue-200">Visus Dekat</td>
+                                <td class="py-2 px-3 border-r border-blue-200"><span class="font-medium" id="mcu-detail-vision-near-unaided-left">-</span></td>
+                                <td class="py-2 px-3 border-r border-blue-200"><span class="font-medium" id="mcu-detail-vision-near-unaided-right">-</span></td>
+                                <td class="py-2 px-3 border-r border-blue-200"><span class="font-medium" id="mcu-detail-vision-near-spectacles-left">-</span></td>
+                                <td class="py-2 px-3"><span class="font-medium" id="mcu-detail-vision-near-spectacles-right">-</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
 
                 <h4 class="font-semibold text-gray-900 mb-3">Hasil Pemeriksaan Lab</h4>
@@ -774,43 +808,6 @@
                         </div>
                     </div>
 
-                    <!-- Vision Assessment - Detailed 8-field structure -->
-                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Penglihatan <span class="text-red-500">*</span></h4>
-                    <div class="bg-blue-50 rounded-lg p-4 mb-4">
-                        <table class="w-full text-xs border-collapse">
-                            <thead>
-                                <tr class="border-b-2 border-blue-200">
-                                    <th colspan="1" class="py-2 px-3 text-left font-semibold text-gray-700 border-r border-blue-200">Pemeriksaan</th>
-                                    <th colspan="2" class="py-2 px-3 text-center font-semibold text-gray-700 border-r border-blue-200">Tanpa Koreksi</th>
-                                    <th colspan="2" class="py-2 px-3 text-center font-semibold text-gray-700">Dengan Kacamata</th>
-                                </tr>
-                                <tr class="border-b border-blue-200">
-                                    <th class="py-2 px-3 text-left font-semibold text-gray-700 border-r border-blue-200"></th>
-                                    <th class="py-2 px-3 text-center font-semibold text-gray-700 border-r border-blue-200">Mata Kiri</th>
-                                    <th class="py-2 px-3 text-center font-semibold text-gray-700 border-r border-blue-200">Mata Kanan</th>
-                                    <th class="py-2 px-3 text-center font-semibold text-gray-700 border-r border-blue-200">Mata Kiri</th>
-                                    <th class="py-2 px-3 text-center font-semibold text-gray-700">Mata Kanan</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="border-b border-blue-100">
-                                    <td class="py-2 px-3 text-gray-700 font-medium border-r border-blue-200">Visus Jauh</td>
-                                    <td class="py-2 px-3 border-r border-blue-200"><select id="edit-mcu-vision-distant-unaided-left" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="edit-mcu-vision-distant-unaided-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
-                                    <td class="py-2 px-3 border-r border-blue-200"><select id="edit-mcu-vision-distant-unaided-right" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="edit-mcu-vision-distant-unaided-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
-                                    <td class="py-2 px-3 border-r border-blue-200"><select id="edit-mcu-vision-distant-spectacles-left" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="edit-mcu-vision-distant-spectacles-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
-                                    <td class="py-2 px-3"><select id="edit-mcu-vision-distant-spectacles-right" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="edit-mcu-vision-distant-spectacles-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
-                                </tr>
-                                <tr>
-                                    <td class="py-2 px-3 text-gray-700 font-medium border-r border-blue-200">Visus Dekat</td>
-                                    <td class="py-2 px-3 border-r border-blue-200"><select id="edit-mcu-vision-near-unaided-left" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="edit-mcu-vision-near-unaided-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
-                                    <td class="py-2 px-3 border-r border-blue-200"><select id="edit-mcu-vision-near-unaided-right" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="edit-mcu-vision-near-unaided-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
-                                    <td class="py-2 px-3 border-r border-blue-200"><select id="edit-mcu-vision-near-spectacles-left" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="edit-mcu-vision-near-spectacles-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
-                                    <td class="py-2 px-3"><select id="edit-mcu-vision-near-spectacles-right" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="edit-mcu-vision-near-spectacles-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
                     <!-- Pemeriksaan Lab Section -->
                     <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Lab <span class="text-red-500">*</span></h4>
                     <p class="text-xs text-gray-600 mb-3">Semua field wajib diisi. Status otomatis berdasarkan nilai vs normal range.</p>
@@ -832,7 +829,7 @@
                     </div>
 
                     <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Penunjang</h4>
-                    <div class="grid grid-cols-1 gap-4 mb-4">
+                    <div class="grid grid-cols-3 gap-4 mb-4">
                         <div>
                             <label class="label">X-Ray <span class="text-red-500">*</span></label>
                             <select id="mcu-xray" class="input" required onchange="handleOtherOptionChange(this, 'mcu-xray-other')">
