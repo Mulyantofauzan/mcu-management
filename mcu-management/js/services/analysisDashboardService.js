@@ -335,7 +335,7 @@ class AnalysisDashboardService {
 
   /**
    * Normalize examination/assessment values
-   * Handles case-sensitivity, whitespace, and common typos
+   * Handles case-sensitivity, whitespace, common typos, and vision field variations
    */
   normalizeValue(value) {
     if (!value) return 'Not Recorded';
@@ -363,6 +363,24 @@ class AnalysisDashboardService {
       'not fit': 'Not Fit',
       'unfit': 'Not Fit'
     };
+
+    // Vision field special normalization
+    // Handle variations like "visus jauh 6/6", "distand vods 6/6" etc.
+    const lowerValue = normalized.toLowerCase();
+    if (lowerValue.includes('6/') || lowerValue.includes('visus') || lowerValue.includes('vods')) {
+      // Extract vision acuity value (6/6, 6/9, 6/12, etc.)
+      const acuityMatch = normalized.match(/6\/\d+/i);
+      if (acuityMatch) {
+        const acuity = acuityMatch[0].toUpperCase();
+        // Check if it's near or far vision
+        if (lowerValue.includes('jauh') || lowerValue.includes('distance') || lowerValue.includes('distand')) {
+          return `${acuity} (Far)`;
+        } else if (lowerValue.includes('dekat') || lowerValue.includes('near')) {
+          return `${acuity} (Near)`;
+        }
+        return acuity;
+      }
+    }
 
     // Apply normalization mapping (case-insensitive)
     const lowerNormalized = normalized.toLowerCase();
