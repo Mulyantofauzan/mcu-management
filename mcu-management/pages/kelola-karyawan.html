@@ -467,105 +467,17 @@
                             <tbody>
                                 <tr class="border-b border-blue-100">
                                     <td class="py-2 px-3 text-gray-700 font-medium border-r border-blue-200">Visus Jauh</td>
-                                    <td class="py-2 px-3 border-r border-blue-200">
-                                        <select id="edit-mcu-vision-distant-unaided-left" class="input text-xs w-full">
-                                            <option value=""></option>
-                                            <option value="6/6">6/6</option>
-                                            <option value="6/9">6/9</option>
-                                            <option value="6/12">6/12</option>
-                                            <option value="6/18">6/18</option>
-                                            <option value="6/24">6/24</option>
-                                            <option value="6/36">6/36</option>
-                                            <option value="6/60">6/60</option>
-                                        </select>
-                                    </td>
-                                    <td class="py-2 px-3 border-r border-blue-200">
-                                        <select id="edit-mcu-vision-distant-unaided-right" class="input text-xs w-full">
-                                            <option value=""></option>
-                                            <option value="6/6">6/6</option>
-                                            <option value="6/9">6/9</option>
-                                            <option value="6/12">6/12</option>
-                                            <option value="6/18">6/18</option>
-                                            <option value="6/24">6/24</option>
-                                            <option value="6/36">6/36</option>
-                                            <option value="6/60">6/60</option>
-                                        </select>
-                                    </td>
-                                    <td class="py-2 px-3 border-r border-blue-200">
-                                        <select id="edit-mcu-vision-distant-spectacles-left" class="input text-xs w-full">
-                                            <option value=""></option>
-                                            <option value="6/6">6/6</option>
-                                            <option value="6/9">6/9</option>
-                                            <option value="6/12">6/12</option>
-                                            <option value="6/18">6/18</option>
-                                            <option value="6/24">6/24</option>
-                                            <option value="6/36">6/36</option>
-                                            <option value="6/60">6/60</option>
-                                        </select>
-                                    </td>
-                                    <td class="py-2 px-3">
-                                        <select id="edit-mcu-vision-distant-spectacles-right" class="input text-xs w-full">
-                                            <option value=""></option>
-                                            <option value="6/6">6/6</option>
-                                            <option value="6/9">6/9</option>
-                                            <option value="6/12">6/12</option>
-                                            <option value="6/18">6/18</option>
-                                            <option value="6/24">6/24</option>
-                                            <option value="6/36">6/36</option>
-                                            <option value="6/60">6/60</option>
-                                        </select>
-                                    </td>
+                                    <td class="py-2 px-3 border-r border-blue-200"><select id="edit-mcu-vision-distant-unaided-left" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="edit-mcu-vision-distant-unaided-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-3 border-r border-blue-200"><select id="edit-mcu-vision-distant-unaided-right" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="edit-mcu-vision-distant-unaided-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-3 border-r border-blue-200"><select id="edit-mcu-vision-distant-spectacles-left" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="edit-mcu-vision-distant-spectacles-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-3"><select id="edit-mcu-vision-distant-spectacles-right" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="edit-mcu-vision-distant-spectacles-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
                                 </tr>
                                 <tr>
                                     <td class="py-2 px-3 text-gray-700 font-medium border-r border-blue-200">Visus Dekat</td>
-                                    <td class="py-2 px-3 border-r border-blue-200">
-                                        <select id="edit-mcu-vision-near-unaided-left" class="input text-xs w-full">
-                                            <option value=""></option>
-                                            <option value="6/6">6/6</option>
-                                            <option value="6/9">6/9</option>
-                                            <option value="6/12">6/12</option>
-                                            <option value="6/18">6/18</option>
-                                            <option value="6/24">6/24</option>
-                                            <option value="6/36">6/36</option>
-                                            <option value="6/60">6/60</option>
-                                        </select>
-                                    </td>
-                                    <td class="py-2 px-3 border-r border-blue-200">
-                                        <select id="edit-mcu-vision-near-unaided-right" class="input text-xs w-full">
-                                            <option value=""></option>
-                                            <option value="6/6">6/6</option>
-                                            <option value="6/9">6/9</option>
-                                            <option value="6/12">6/12</option>
-                                            <option value="6/18">6/18</option>
-                                            <option value="6/24">6/24</option>
-                                            <option value="6/36">6/36</option>
-                                            <option value="6/60">6/60</option>
-                                        </select>
-                                    </td>
-                                    <td class="py-2 px-3 border-r border-blue-200">
-                                        <select id="edit-mcu-vision-near-spectacles-left" class="input text-xs w-full">
-                                            <option value=""></option>
-                                            <option value="6/6">6/6</option>
-                                            <option value="6/9">6/9</option>
-                                            <option value="6/12">6/12</option>
-                                            <option value="6/18">6/18</option>
-                                            <option value="6/24">6/24</option>
-                                            <option value="6/36">6/36</option>
-                                            <option value="6/60">6/60</option>
-                                        </select>
-                                    </td>
-                                    <td class="py-2 px-3">
-                                        <select id="edit-mcu-vision-near-spectacles-right" class="input text-xs w-full">
-                                            <option value=""></option>
-                                            <option value="6/6">6/6</option>
-                                            <option value="6/9">6/9</option>
-                                            <option value="6/12">6/12</option>
-                                            <option value="6/18">6/18</option>
-                                            <option value="6/24">6/24</option>
-                                            <option value="6/36">6/36</option>
-                                            <option value="6/60">6/60</option>
-                                        </select>
-                                    </td>
+                                    <td class="py-2 px-3 border-r border-blue-200"><select id="edit-mcu-vision-near-unaided-left" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="edit-mcu-vision-near-unaided-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-3 border-r border-blue-200"><select id="edit-mcu-vision-near-unaided-right" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="edit-mcu-vision-near-unaided-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-3 border-r border-blue-200"><select id="edit-mcu-vision-near-spectacles-left" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="edit-mcu-vision-near-spectacles-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-3"><select id="edit-mcu-vision-near-spectacles-right" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="edit-mcu-vision-near-spectacles-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -627,7 +539,7 @@
                     </div>
 
                     <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Penunjang</h4>
-                    <div class="grid grid-cols-1 gap-4 mb-4">
+                    <div class="grid grid-cols-3 gap-4 mb-4">
                         <div>
                             <label class="label">X-Ray <span class="text-red-500">*</span></label>
                             <select id="edit-mcu-xray" class="input" required onchange="handleOtherOptionChange(this, 'edit-mcu-xray-other')">
@@ -811,105 +723,17 @@
                             <tbody>
                                 <tr class="border-b border-blue-100">
                                     <td class="py-2 px-3 text-gray-700 font-medium border-r border-blue-200">Visus Jauh</td>
-                                    <td class="py-2 px-3 border-r border-blue-200">
-                                        <select id="mcu-vision-distant-unaided-left" class="input text-xs w-full">
-                                            <option value=""></option>
-                                            <option value="6/6">6/6</option>
-                                            <option value="6/9">6/9</option>
-                                            <option value="6/12">6/12</option>
-                                            <option value="6/18">6/18</option>
-                                            <option value="6/24">6/24</option>
-                                            <option value="6/36">6/36</option>
-                                            <option value="6/60">6/60</option>
-                                        </select>
-                                    </td>
-                                    <td class="py-2 px-3 border-r border-blue-200">
-                                        <select id="mcu-vision-distant-unaided-right" class="input text-xs w-full">
-                                            <option value=""></option>
-                                            <option value="6/6">6/6</option>
-                                            <option value="6/9">6/9</option>
-                                            <option value="6/12">6/12</option>
-                                            <option value="6/18">6/18</option>
-                                            <option value="6/24">6/24</option>
-                                            <option value="6/36">6/36</option>
-                                            <option value="6/60">6/60</option>
-                                        </select>
-                                    </td>
-                                    <td class="py-2 px-3 border-r border-blue-200">
-                                        <select id="mcu-vision-distant-spectacles-left" class="input text-xs w-full">
-                                            <option value=""></option>
-                                            <option value="6/6">6/6</option>
-                                            <option value="6/9">6/9</option>
-                                            <option value="6/12">6/12</option>
-                                            <option value="6/18">6/18</option>
-                                            <option value="6/24">6/24</option>
-                                            <option value="6/36">6/36</option>
-                                            <option value="6/60">6/60</option>
-                                        </select>
-                                    </td>
-                                    <td class="py-2 px-3">
-                                        <select id="mcu-vision-distant-spectacles-right" class="input text-xs w-full">
-                                            <option value=""></option>
-                                            <option value="6/6">6/6</option>
-                                            <option value="6/9">6/9</option>
-                                            <option value="6/12">6/12</option>
-                                            <option value="6/18">6/18</option>
-                                            <option value="6/24">6/24</option>
-                                            <option value="6/36">6/36</option>
-                                            <option value="6/60">6/60</option>
-                                        </select>
-                                    </td>
+                                    <td class="py-2 px-3 border-r border-blue-200"><select id="mcu-vision-distant-unaided-left" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-distant-unaided-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-3 border-r border-blue-200"><select id="mcu-vision-distant-unaided-right" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-distant-unaided-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-3 border-r border-blue-200"><select id="mcu-vision-distant-spectacles-left" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-distant-spectacles-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-3"><select id="mcu-vision-distant-spectacles-right" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-distant-spectacles-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
                                 </tr>
                                 <tr>
                                     <td class="py-2 px-3 text-gray-700 font-medium border-r border-blue-200">Visus Dekat</td>
-                                    <td class="py-2 px-3 border-r border-blue-200">
-                                        <select id="mcu-vision-near-unaided-left" class="input text-xs w-full">
-                                            <option value=""></option>
-                                            <option value="6/6">6/6</option>
-                                            <option value="6/9">6/9</option>
-                                            <option value="6/12">6/12</option>
-                                            <option value="6/18">6/18</option>
-                                            <option value="6/24">6/24</option>
-                                            <option value="6/36">6/36</option>
-                                            <option value="6/60">6/60</option>
-                                        </select>
-                                    </td>
-                                    <td class="py-2 px-3 border-r border-blue-200">
-                                        <select id="mcu-vision-near-unaided-right" class="input text-xs w-full">
-                                            <option value=""></option>
-                                            <option value="6/6">6/6</option>
-                                            <option value="6/9">6/9</option>
-                                            <option value="6/12">6/12</option>
-                                            <option value="6/18">6/18</option>
-                                            <option value="6/24">6/24</option>
-                                            <option value="6/36">6/36</option>
-                                            <option value="6/60">6/60</option>
-                                        </select>
-                                    </td>
-                                    <td class="py-2 px-3 border-r border-blue-200">
-                                        <select id="mcu-vision-near-spectacles-left" class="input text-xs w-full">
-                                            <option value=""></option>
-                                            <option value="6/6">6/6</option>
-                                            <option value="6/9">6/9</option>
-                                            <option value="6/12">6/12</option>
-                                            <option value="6/18">6/18</option>
-                                            <option value="6/24">6/24</option>
-                                            <option value="6/36">6/36</option>
-                                            <option value="6/60">6/60</option>
-                                        </select>
-                                    </td>
-                                    <td class="py-2 px-3">
-                                        <select id="mcu-vision-near-spectacles-right" class="input text-xs w-full">
-                                            <option value=""></option>
-                                            <option value="6/6">6/6</option>
-                                            <option value="6/9">6/9</option>
-                                            <option value="6/12">6/12</option>
-                                            <option value="6/18">6/18</option>
-                                            <option value="6/24">6/24</option>
-                                            <option value="6/36">6/36</option>
-                                            <option value="6/60">6/60</option>
-                                        </select>
-                                    </td>
+                                    <td class="py-2 px-3 border-r border-blue-200"><select id="mcu-vision-near-unaided-left" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-near-unaided-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-3 border-r border-blue-200"><select id="mcu-vision-near-unaided-right" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-near-unaided-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-3 border-r border-blue-200"><select id="mcu-vision-near-spectacles-left" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-near-spectacles-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-3"><select id="mcu-vision-near-spectacles-right" class="input text-xs w-full"><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-near-spectacles-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -972,6 +796,82 @@
 
                     <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Penunjang</h4>
                     <div class="grid grid-cols-1 gap-4 mb-4">
+                        <div>
+                            <label class="label">X-Ray <span class="text-red-500">*</span></label>
+                            <select id="mcu-xray" class="input" required onchange="handleOtherOptionChange(this, 'mcu-xray-other')">
+                                <option value="">Pilih...</option>
+                                <option value="Normal">Normal</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                            <textarea id="mcu-xray-other" class="input mt-1 hidden" rows="2" placeholder="Sebutkan hasil lainnya..."></textarea>
+                        </div>
+                        <div>
+                            <label class="label">EKG <span class="text-red-500">*</span></label>
+                            <select id="mcu-ekg" class="input" required onchange="handleOtherOptionChange(this, 'mcu-ekg-other')">
+                                <option value="">Pilih...</option>
+                                <option value="Normal">Normal</option>
+                                <option value="Normal Resting ECG">Normal Resting ECG</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                            <textarea id="mcu-ekg-other" class="input mt-1 hidden" rows="2" placeholder="Sebutkan hasil lainnya..."></textarea>
+                        </div>
+                        <div>
+                            <label class="label">Treadmill <span class="text-red-500">*</span></label>
+                            <select id="mcu-treadmill" class="input" required onchange="handleOtherOptionChange(this, 'mcu-treadmill-other')">
+                                <option value="">Pilih...</option>
+                                <option value="Normal">Normal</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                            <textarea id="mcu-treadmill-other" class="input mt-1 hidden" rows="2" placeholder="Sebutkan hasil lainnya..."></textarea>
+                        </div>
+                        <div>
+                            <label class="label">NAPZA <span class="text-red-500">*</span></label>
+                            <select id="mcu-napza" class="input" required onchange="handleOtherOptionChange(this, 'mcu-napza-other')">
+                                <option value="">Pilih...</option>
+                                <option value="Negatif">Negatif</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                            <input type="text" id="mcu-napza-other" class="input mt-1 hidden" placeholder="Sebutkan hasil lainnya..." />
+                        </div>
+                        <div>
+                            <label class="label">Buta Warna <span class="text-red-500">*</span></label>
+                            <select id="mcu-colorblind" class="input" required onchange="handleOtherOptionChange(this, 'mcu-colorblind-other')">
+                                <option value="">Pilih...</option>
+                                <option value="Normal">Normal</option>
+                                <option value="Buta Warna Parsial">Buta Warna Parsial</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                            <input type="text" id="mcu-colorblind-other" class="input mt-1 hidden" placeholder="Sebutkan hasil lainnya..." />
+                        </div>
+                    </div>
+
+                    <!-- Framingham Risk Factors -->
+                    <h4 class="font-semibold text-gray-900 mb-3">Faktor Risiko Framingham</h4>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="label">Status Merokok <span class="text-red-500">*</span></label>
+                            <select id="mcu-smoking-status" class="input" required>
+                                <option value="">Pilih...</option>
+                                <option value="Tidak Merokok">Tidak Merokok</option>
+                                <option value="Mantan Perokok">Mantan Perokok</option>
+                                <option value="Perokok">Perokok</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Frekuensi Olahraga <span class="text-red-500">*</span></label>
+                            <select id="mcu-exercise-frequency" class="input" required>
+                                <option value="">Pilih...</option>
+                                <option value=">2x Seminggu">&gt;2x Seminggu</option>
+                                <option value="1-2x Seminggu">1-2x Seminggu</option>
+                                <option value="1-2x Sebulan">1-2x Sebulan</option>
+                                <option value="Tidak Pernah">Tidak Pernah</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Pemeriksaan Penunjang -->
+                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Penunjang</h4>
+                    <div class="grid grid-cols-3 gap-4 mb-4">
                         <div>
                             <label class="label">X-Ray <span class="text-red-500">*</span></label>
                             <select id="mcu-xray" class="input" required onchange="handleOtherOptionChange(this, 'mcu-xray-other')">
