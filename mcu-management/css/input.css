@@ -100,7 +100,7 @@
   }
 
   .modal {
-    @apply bg-white rounded-xl shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto;
+    @apply bg-white rounded-xl shadow-xl max-w-[95%] w-full max-h-[90vh] overflow-y-auto;
   }
 
   .modal-header {

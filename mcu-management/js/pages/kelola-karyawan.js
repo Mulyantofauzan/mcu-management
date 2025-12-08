@@ -1175,16 +1175,28 @@ window.viewMCUDetail = async function(mcuId) {
             (d.name && d.name.trim().toLowerCase() === empDept.toLowerCase())
         );
 
-        // Fill employee info
-        document.getElementById('mcu-detail-emp-name').textContent = emp?.name || '-';
-        document.getElementById('mcu-detail-emp-id').textContent = emp?.employeeId || '-';
-        document.getElementById('mcu-detail-emp-job').textContent = job?.name || empJobTitle || '-';
-        document.getElementById('mcu-detail-emp-dept').textContent = dept?.name || empDept || '-';
+        // Fill employee info with null checks
+        const empNameEl = document.getElementById('mcu-detail-emp-name');
+        if (empNameEl) empNameEl.textContent = emp?.name || '-';
 
-        // Fill MCU info
-        document.getElementById('mcu-detail-id').textContent = mcu.mcuId;
-        document.getElementById('mcu-detail-date').textContent = formatDateDisplay(mcu.mcuDate);
-        document.getElementById('mcu-detail-type').textContent = mcu.mcuType;
+        const empIdEl = document.getElementById('mcu-detail-emp-id');
+        if (empIdEl) empIdEl.textContent = emp?.employeeId || '-';
+
+        const empJobEl = document.getElementById('mcu-detail-emp-job');
+        if (empJobEl) empJobEl.textContent = job?.name || empJobTitle || '-';
+
+        const empDeptEl = document.getElementById('mcu-detail-emp-dept');
+        if (empDeptEl) empDeptEl.textContent = dept?.name || empDept || '-';
+
+        // Fill MCU info with null checks
+        const mcuDetailEl = document.getElementById('mcu-detail-id');
+        if (mcuDetailEl) mcuDetailEl.textContent = mcu.mcuId || '-';
+
+        const mcuDateEl = document.getElementById('mcu-detail-date');
+        if (mcuDateEl) mcuDateEl.textContent = formatDateDisplay(mcu.mcuDate) || '-';
+
+        const mcuTypeEl = document.getElementById('mcu-detail-type');
+        if (mcuTypeEl) mcuTypeEl.textContent = mcu.mcuType || '-';
 
         // Format updatedAt
         if (mcu.updatedAt) {
@@ -1203,22 +1215,30 @@ window.viewMCUDetail = async function(mcuId) {
             document.getElementById('mcu-detail-updated').textContent = '-';
         }
 
-        // Fill examination results
-        document.getElementById('mcu-detail-bmi').textContent = mcu.bmi || '-';
-        document.getElementById('mcu-detail-bp').textContent = mcu.bloodPressure || '-';
-        document.getElementById('mcu-detail-rr').textContent = mcu.respiratoryRate || '-';
-        document.getElementById('mcu-detail-pulse').textContent = mcu.pulse || '-';
-        document.getElementById('mcu-detail-temp').textContent = mcu.temperature || '-';
-        document.getElementById('mcu-detail-audio').textContent = mcu.audiometry || '-';
-        document.getElementById('mcu-detail-spiro').textContent = mcu.spirometry || '-';
-        document.getElementById('mcu-detail-hbsag').textContent = mcu.hbsag || '-';
-        document.getElementById('mcu-detail-smoking-status').textContent = mcu.smokingStatus || '-';
-        document.getElementById('mcu-detail-exercise-frequency').textContent = mcu.exerciseFrequency || '-';
-        document.getElementById('mcu-detail-xray').textContent = mcu.xray || '-';
-        document.getElementById('mcu-detail-ekg').textContent = mcu.ekg || '-';
-        document.getElementById('mcu-detail-treadmill').textContent = mcu.treadmill || '-';
-        document.getElementById('mcu-detail-napza').textContent = mcu.napza || '-';
-        document.getElementById('mcu-detail-colorblind').textContent = mcu.colorblind || '-';
+        // Fill examination results with null checks
+        const examFields = {
+            'mcu-detail-bmi': mcu.bmi,
+            'mcu-detail-bp': mcu.bloodPressure,
+            'mcu-detail-rr': mcu.respiratoryRate,
+            'mcu-detail-pulse': mcu.pulse,
+            'mcu-detail-temp': mcu.temperature,
+            'mcu-detail-audio': mcu.audiometry,
+            'mcu-detail-spiro': mcu.spirometry,
+            'mcu-detail-hbsag': mcu.hbsag,
+            'mcu-detail-smoking-status': mcu.smokingStatus,
+            'mcu-detail-exercise-frequency': mcu.exerciseFrequency,
+            'mcu-detail-xray': mcu.xray,
+            'mcu-detail-ekg': mcu.ekg,
+            'mcu-detail-treadmill': mcu.treadmill,
+            'mcu-detail-napza': mcu.napza,
+            'mcu-detail-colorblind': mcu.colorblind
+        };
+        Object.entries(examFields).forEach(([id, value]) => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.textContent = value || '-';
+            }
+        });
 
         // Fill 8-field vision details with null check
         const visionFields = [
@@ -1261,35 +1281,62 @@ window.viewMCUDetail = async function(mcuId) {
             });
         }
 
-        if (doctor && doctor.name) {
-            document.getElementById('mcu-detail-doctor').textContent = doctor.name;
-        } else if (mcu.doctor) {
-            // Doctor ID is set but not found in list - show ID as fallback
-            if (doctors.length > 0) {
-                const doctorIds = doctors.map(d => `${d.name}(id:${d.id},docId:${d.doctorId})`).join(', ');
+        const doctorEl = document.getElementById('mcu-detail-doctor');
+        if (doctorEl) {
+            if (doctor && doctor.name) {
+                doctorEl.textContent = doctor.name;
+            } else if (mcu.doctor) {
+                // Doctor ID is set but not found in list - show ID as fallback
+                if (doctors.length > 0) {
+                    const doctorIds = doctors.map(d => `${d.name}(id:${d.id},docId:${d.doctorId})`).join(', ');
+                }
+                doctorEl.textContent = `ID: ${mcu.doctor}`;
+            } else {
+                // No doctor assigned
+                doctorEl.textContent = '-';
             }
-            document.getElementById('mcu-detail-doctor').textContent = `ID: ${mcu.doctor}`;
-        } else {
-            // No doctor assigned
-            document.getElementById('mcu-detail-doctor').textContent = '-';
         }
 
-        // Fill referral data
-        document.getElementById('mcu-detail-recipient').textContent = mcu.recipient || '-';
-        document.getElementById('mcu-detail-keluhan').textContent = mcu.keluhanUtama || '-';
-        document.getElementById('mcu-detail-diagnosis').textContent = mcu.diagnosisKerja || '-';
-        document.getElementById('mcu-detail-alasan').textContent = mcu.alasanRujuk || '-';
+        // Fill referral data with null checks
+        const referralFields = {
+            'mcu-detail-recipient': mcu.recipient,
+            'mcu-detail-keluhan': mcu.keluhanUtama,
+            'mcu-detail-diagnosis': mcu.diagnosisKerja,
+            'mcu-detail-alasan': mcu.alasanRujuk
+        };
+        Object.entries(referralFields).forEach(([id, value]) => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.textContent = value || '-';
+            }
+        });
 
-        // Fill results
-        document.getElementById('mcu-detail-initial-result').innerHTML = getStatusBadge(mcu.initialResult);
-        document.getElementById('mcu-detail-initial-notes').textContent = mcu.initialNotes || '-';
+        // Fill results with null checks
+        const initialResultEl = document.getElementById('mcu-detail-initial-result');
+        if (initialResultEl) {
+            initialResultEl.innerHTML = getStatusBadge(mcu.initialResult);
+        }
 
-        if (mcu.finalResult) {
-            document.getElementById('mcu-detail-final-result').innerHTML = getStatusBadge(mcu.finalResult);
-            document.getElementById('mcu-detail-final-notes').textContent = mcu.finalNotes || '-';
-            document.getElementById('final-result-section').classList.remove('hidden');
-        } else {
-            document.getElementById('final-result-section').classList.add('hidden');
+        const initialNotesEl = document.getElementById('mcu-detail-initial-notes');
+        if (initialNotesEl) {
+            initialNotesEl.textContent = mcu.initialNotes || '-';
+        }
+
+        const finalResultSection = document.getElementById('final-result-section');
+        if (finalResultSection) {
+            if (mcu.finalResult) {
+                const finalResultEl = document.getElementById('mcu-detail-final-result');
+                if (finalResultEl) {
+                    finalResultEl.innerHTML = getStatusBadge(mcu.finalResult);
+                }
+                const finalNotesEl = document.getElementById('mcu-detail-final-notes');
+                if (finalNotesEl) {
+                    finalNotesEl.textContent = mcu.finalNotes || '-';
+                }
+                finalResultSection.classList.remove('hidden');
+            } else {
+                finalResultSection.classList.add('hidden');
+            }
         }
 
         // Load change history
