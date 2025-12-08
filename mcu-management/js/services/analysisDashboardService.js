@@ -415,7 +415,7 @@ class AnalysisDashboardService {
   }
 
   /**
-   * 5. Physical Examination Results (8 small pie charts)
+   * 5. Physical Examination Results (8 bar charts)
    */
   renderExaminationCharts() {
     const examinations = [
@@ -439,25 +439,33 @@ class AnalysisDashboardService {
         counts[value] = (counts[value] || 0) + 1;
       });
 
-      const colors = ['#10b981', '#f59e0b', '#ef4444', '#6366f1'];
+      const colors = ['#10b981', '#f59e0b', '#ef4444', '#6366f1', '#8b5cf6', '#ec4899'];
+      const labels = Object.keys(counts);
+      const data = Object.values(counts);
 
       this.destroyChart(exam.id);
       this.charts.set(exam.id, new Chart(ctx, {
-        type: 'pie',
+        type: 'bar',
         data: {
-          labels: Object.keys(counts),
+          labels: labels,
           datasets: [{
-            data: Object.values(counts),
-            backgroundColor: colors.slice(0, Object.keys(counts).length),
-            borderColor: '#fff',
+            label: exam.label,
+            data: data,
+            backgroundColor: colors.slice(0, labels.length),
+            borderColor: colors.slice(0, labels.length),
             borderWidth: 1
           }]
         },
         options: {
+          indexAxis: 'y',
           responsive: true,
           maintainAspectRatio: true,
           plugins: {
-            legend: { position: 'bottom', labels: { font: { size: 10 } } }
+            legend: { display: false }
+          },
+          scales: {
+            x: { beginAtZero: true, ticks: { stepSize: 1 }, max: this.filteredData.length },
+            y: { ticks: { font: { size: 11 } } }
           }
         }
       }));
