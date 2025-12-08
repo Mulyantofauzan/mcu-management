@@ -46,9 +46,9 @@ class MCUService {
       napza: mcuData.napza || null,
       colorblind: mcuData.colorblind || null,
 
-      // Lifestyle fields
-      smokingStatus: mcuData.smokingStatus || null,
-      exerciseFrequency: mcuData.exerciseFrequency || null,
+      // Lifestyle fields (map camelCase to snake_case for database)
+      smoking_status: mcuData.smokingStatus || null,
+      exercise_frequency: mcuData.exerciseFrequency || null,
 
       // Rujukan fields
       doctor: mcuData.doctor || null,  // ✅ FIX: Add doctor field (was missing!)
@@ -249,15 +249,26 @@ class MCUService {
       'audiometry', 'spirometry',
       'xray', 'ekg', 'treadmill', 'hbsag',
       'sgot', 'sgpt', 'cbc', 'napza',
-      'smokingStatus', 'exerciseFrequency', // ✅ FIX: Include lifestyle fields!
+      'smoking_status', 'exercise_frequency', // ✅ FIX: Include lifestyle fields! (snake_case for database)
       'doctor', // ✅ FIX: Include doctor field so it gets saved during edit!
       'recipient', 'keluhanUtama', 'diagnosisKerja', 'alasanRujuk',
       'colorblind', 'initialResult', 'initialNotes' // ✅ FIX: Include initial result fields
     ];
 
     examFields.forEach(field => {
-      if (followUpData[field] !== undefined) {
-        updateData[field] = followUpData[field];
+      // Map camelCase field names to snake_case for database
+      let dbField = field;
+      let dataValue = followUpData[field];
+
+      // Handle camelCase to snake_case conversions
+      if (field === 'smoking_status' && followUpData['smokingStatus'] !== undefined) {
+        dataValue = followUpData['smokingStatus'];
+      } else if (field === 'exercise_frequency' && followUpData['exerciseFrequency'] !== undefined) {
+        dataValue = followUpData['exerciseFrequency'];
+      }
+
+      if (dataValue !== undefined) {
+        updateData[field] = dataValue;
       }
     });
 
