@@ -996,6 +996,18 @@ window.handleAddMCU = async function(event) {
         const doctorValue = doctorSelect.value;
         const doctorId = doctorValue ? parseInt(doctorValue, 10) : null;
 
+        /**
+         * Helper function to get field value or "Lainnya" custom input
+         */
+        const getFieldValue = (fieldId, otherFieldId) => {
+            const value = document.getElementById(fieldId).value;
+            if (value === 'Lainnya') {
+                const otherValue = document.getElementById(otherFieldId).value;
+                return otherValue || null;
+            }
+            return value || null;
+        };
+
         const mcuData = {
             mcuId: generatedMCUIdForAdd, // Use the ID generated when modal opened
             employeeId: document.getElementById('mcu-employee-id').value,
@@ -1006,15 +1018,23 @@ window.handleAddMCU = async function(event) {
             respiratoryRate: document.getElementById('mcu-rr').value || null,
             pulse: document.getElementById('mcu-pulse').value || null,
             temperature: document.getElementById('mcu-temp').value || null,
-            vision: document.getElementById('mcu-vision').value || null,
-            audiometry: document.getElementById('mcu-audio').value || null,
-            spirometry: document.getElementById('mcu-spiro').value || null,
-            xray: document.getElementById('mcu-xray').value || null,
-            ekg: document.getElementById('mcu-ekg').value || null,
-            treadmill: document.getElementById('mcu-treadmill').value || null,
+            // 8-field vision structure
+            visionDistantUnaideLeft: document.getElementById('mcu-vision-distant-unaided-left').value || null,
+            visionDistantUnaideRight: document.getElementById('mcu-vision-distant-unaided-right').value || null,
+            visionDistantSpectaclesLeft: document.getElementById('mcu-vision-distant-spectacles-left').value || null,
+            visionDistantSpectaclesRight: document.getElementById('mcu-vision-distant-spectacles-right').value || null,
+            visionNearUnaideLeft: document.getElementById('mcu-vision-near-unaided-left').value || null,
+            visionNearUnaideRight: document.getElementById('mcu-vision-near-unaided-right').value || null,
+            visionNearSpectaclesLeft: document.getElementById('mcu-vision-near-spectacles-left').value || null,
+            visionNearSpectaclesRight: document.getElementById('mcu-vision-near-spectacles-right').value || null,
+            audiometry: getFieldValue('mcu-audio', 'mcu-audio-other'),
+            spirometry: getFieldValue('mcu-spiro', 'mcu-spiro-other'),
+            xray: getFieldValue('mcu-xray', 'mcu-xray-other'),
+            ekg: getFieldValue('mcu-ekg', 'mcu-ekg-other'),
+            treadmill: getFieldValue('mcu-treadmill', 'mcu-treadmill-other'),
             hbsag: document.getElementById('mcu-hbsag').value || null,
-            napza: document.getElementById('mcu-napza').value || null,
-            colorblind: document.getElementById('mcu-colorblind').value || null,
+            napza: getFieldValue('mcu-napza', 'mcu-napza-other'),
+            colorblind: getFieldValue('mcu-colorblind', 'mcu-colorblind-other'),
             doctor: doctorId,
             recipient: document.getElementById('mcu-recipient').value || null,
             keluhanUtama: document.getElementById('mcu-keluhan').value || null,
@@ -1442,7 +1462,7 @@ window.editMCU = async function() {
                 const fieldsToClear = [
                     'edit-mcu-id', 'edit-mcu-type', 'edit-mcu-date',
                     'edit-mcu-bmi', 'edit-mcu-bp', 'edit-mcu-rr', 'edit-mcu-pulse',
-                    'edit-mcu-temp', 'edit-mcu-vision', 'edit-mcu-audio', 'edit-mcu-spiro',
+                    'edit-mcu-temp', 'edit-mcu-vision-distant', 'edit-mcu-vision-near', 'edit-mcu-audio', 'edit-mcu-spiro',
                     'edit-mcu-xray', 'edit-mcu-ekg', 'edit-mcu-treadmill',
                     'edit-mcu-napza', 'edit-mcu-colorblind', 'edit-mcu-recipient',
                     'edit-mcu-keluhan', 'edit-mcu-diagnosis', 'edit-mcu-alasan',
@@ -1478,7 +1498,8 @@ window.editMCU = async function() {
                     'edit-mcu-rr': mcu.respiratoryRate,
                     'edit-mcu-pulse': mcu.pulse,
                     'edit-mcu-temp': mcu.temperature,
-                    'edit-mcu-vision': mcu.vision,
+                    'edit-mcu-vision-distant': mcu.visionDistant,
+                    'edit-mcu-vision-near': mcu.visionNear,
                     'edit-mcu-audio': mcu.audiometry,
                     'edit-mcu-spiro': mcu.spirometry,
                     'edit-mcu-xray': mcu.xray,
@@ -1575,6 +1596,18 @@ window.handleEditMCU = async function(event) {
             return; // Stop form submission if doctor is not selected
         }
 
+        /**
+         * Helper function to get field value or "Lainnya" custom input
+         */
+        const getFieldValue = (fieldId, otherFieldId) => {
+            const value = document.getElementById(fieldId).value;
+            if (value === 'Lainnya') {
+                const otherValue = document.getElementById(otherFieldId).value;
+                return otherValue || null;
+            }
+            return value || null;
+        };
+
         const updateData = {
             mcuType: document.getElementById('edit-mcu-type').value,
             mcuDate: document.getElementById('edit-mcu-date').value,
@@ -1583,15 +1616,23 @@ window.handleEditMCU = async function(event) {
             respiratoryRate: document.getElementById('edit-mcu-rr').value || null,
             pulse: document.getElementById('edit-mcu-pulse').value || null,
             temperature: document.getElementById('edit-mcu-temp').value || null,
-            vision: document.getElementById('edit-mcu-vision').value || null,
-            audiometry: document.getElementById('edit-mcu-audio').value || null,
-            spirometry: document.getElementById('edit-mcu-spiro').value || null,
+            // 8-field vision structure
+            visionDistantUnaideLeft: document.getElementById('edit-mcu-vision-distant-unaided-left').value || null,
+            visionDistantUnaideRight: document.getElementById('edit-mcu-vision-distant-unaided-right').value || null,
+            visionDistantSpectaclesLeft: document.getElementById('edit-mcu-vision-distant-spectacles-left').value || null,
+            visionDistantSpectaclesRight: document.getElementById('edit-mcu-vision-distant-spectacles-right').value || null,
+            visionNearUnaideLeft: document.getElementById('edit-mcu-vision-near-unaided-left').value || null,
+            visionNearUnaideRight: document.getElementById('edit-mcu-vision-near-unaided-right').value || null,
+            visionNearSpectaclesLeft: document.getElementById('edit-mcu-vision-near-spectacles-left').value || null,
+            visionNearSpectaclesRight: document.getElementById('edit-mcu-vision-near-spectacles-right').value || null,
+            audiometry: getFieldValue('edit-mcu-audio', 'edit-mcu-audio-other'),
+            spirometry: getFieldValue('edit-mcu-spiro', 'edit-mcu-spiro-other'),
             hbsag: document.getElementById('edit-mcu-hbsag').value || null,
-            xray: document.getElementById('edit-mcu-xray').value || null,
-            ekg: document.getElementById('edit-mcu-ekg').value || null,
-            treadmill: document.getElementById('edit-mcu-treadmill').value || null,
-            napza: document.getElementById('edit-mcu-napza').value || null,
-            colorblind: document.getElementById('edit-mcu-colorblind').value || null,
+            xray: getFieldValue('edit-mcu-xray', 'edit-mcu-xray-other'),
+            ekg: getFieldValue('edit-mcu-ekg', 'edit-mcu-ekg-other'),
+            treadmill: getFieldValue('edit-mcu-treadmill', 'edit-mcu-treadmill-other'),
+            napza: getFieldValue('edit-mcu-napza', 'edit-mcu-napza-other'),
+            colorblind: getFieldValue('edit-mcu-colorblind', 'edit-mcu-colorblind-other'),
             doctor: doctorId,
             recipient: document.getElementById('edit-mcu-recipient').value || null,
             keluhanUtama: document.getElementById('edit-mcu-keluhan').value || null,

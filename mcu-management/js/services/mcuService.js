@@ -28,7 +28,15 @@ class MCUService {
       respiratoryRate: mcuData.respiratoryRate || null,
       pulse: mcuData.pulse || null,
       temperature: mcuData.temperature || null,
-      vision: mcuData.vision || null,
+      // 8-field vision structure
+      visionDistantUnaideLeft: mcuData.visionDistantUnaideLeft || null,
+      visionDistantUnaideRight: mcuData.visionDistantUnaideRight || null,
+      visionDistantSpectaclesLeft: mcuData.visionDistantSpectaclesLeft || null,
+      visionDistantSpectaclesRight: mcuData.visionDistantSpectaclesRight || null,
+      visionNearUnaideLeft: mcuData.visionNearUnaideLeft || null,
+      visionNearUnaideRight: mcuData.visionNearUnaideRight || null,
+      visionNearSpectaclesLeft: mcuData.visionNearSpectaclesLeft || null,
+      visionNearSpectaclesRight: mcuData.visionNearSpectaclesRight || null,
       audiometry: mcuData.audiometry || null,
       spirometry: mcuData.spirometry || null,
       xray: mcuData.xray || null,
@@ -229,7 +237,12 @@ class MCUService {
     const examFields = [
       'mcuDate', 'mcuType', // ✅ FIX: Include date and type for change tracking
       'bmi', 'bloodPressure', 'respiratoryRate', 'pulse', 'temperature',
-      'vision', 'audiometry', 'spirometry',
+      // 8-field vision structure
+      'visionDistantUnaideLeft', 'visionDistantUnaideRight',
+      'visionDistantSpectaclesLeft', 'visionDistantSpectaclesRight',
+      'visionNearUnaideLeft', 'visionNearUnaideRight',
+      'visionNearSpectaclesLeft', 'visionNearSpectaclesRight',
+      'audiometry', 'spirometry',
       'xray', 'ekg', 'treadmill', 'hbsag',
       'sgot', 'sgpt', 'cbc', 'napza',
       'doctor', // ✅ FIX: Include doctor field so it gets saved during edit!

@@ -404,7 +404,34 @@ class AnalysisDashboardService {
 
     const visionCounts = {};
     this.filteredData.forEach(item => {
-      const vision = this.normalizeValue(item.mcu.vision);
+      // Handle 8-field vision structure with fallback to old format
+      let vision = 'Not Recorded';
+
+      // If 8-field vision structure exists, use it
+      if (item.mcu.visionDistantUnaideLeft || item.mcu.visionDistantUnaideRight ||
+          item.mcu.visionDistantSpectaclesLeft || item.mcu.visionDistantSpectaclesRight ||
+          item.mcu.visionNearUnaideLeft || item.mcu.visionNearUnaideRight ||
+          item.mcu.visionNearSpectaclesLeft || item.mcu.visionNearSpectaclesRight) {
+        // Build a summary showing all 8 values
+        const distantUnaided = [
+          item.mcu.visionDistantUnaideLeft || 'N/A',
+          item.mcu.visionDistantUnaideRight || 'N/A'
+        ].join(',');
+        const nearUnaided = [
+          item.mcu.visionNearUnaideLeft || 'N/A',
+          item.mcu.visionNearUnaideRight || 'N/A'
+        ].join(',');
+        vision = `D(Unaided): ${distantUnaided} / N(Unaided): ${nearUnaided}`;
+      } else if (item.mcu.visionDistant || item.mcu.visionNear) {
+        // Fallback to old 2-field vision format
+        const distant = item.mcu.visionDistant ? this.normalizeValue(item.mcu.visionDistant) : 'N/A';
+        const near = item.mcu.visionNear ? this.normalizeValue(item.mcu.visionNear) : 'N/A';
+        vision = `D: ${distant} / N: ${near}`;
+      } else if (item.mcu.vision) {
+        // Fallback to old single vision field for backwards compatibility
+        vision = this.normalizeValue(item.mcu.vision);
+      }
+
       visionCounts[vision] = (visionCounts[vision] || 0) + 1;
     });
 
