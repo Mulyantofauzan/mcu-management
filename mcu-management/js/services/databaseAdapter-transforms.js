@@ -54,7 +54,7 @@ export function transformMCU(mcu) {
         employeeId: mcu.employee_id,
         mcuType: mcu.mcu_type,
         mcuDate: mcu.mcu_date,
-        ageAtMCU: mcu.age_at_mcu,
+        // Note: ageAtMCU is calculated on backend, not stored in database
         bmi: mcu.bmi,
         bloodPressure: mcu.blood_pressure,
         respiratoryRate: mcu.respiratory_rate,

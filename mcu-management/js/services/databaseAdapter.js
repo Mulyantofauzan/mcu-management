@@ -394,7 +394,7 @@ export const MCUs = {
                     employee_id: mcu.employeeId,
                     mcu_type: mcu.mcuType,
                     mcu_date: mcu.mcuDate,
-                    age_at_mcu: mcu.ageAtMCU,
+                    // Note: age_at_mcu is calculated on backend, not stored in database
                     // Examination results (vital signs)
                     bmi: mcu.bmi,
                     blood_pressure: mcu.bloodPressure,
@@ -460,7 +460,7 @@ export const MCUs = {
             const fieldMapping = {
                 mcuType: 'mcu_type',
                 mcuDate: 'mcu_date',
-                ageAtMCU: 'age_at_mcu',
+                // Note: ageAtMCU is calculated on backend, not stored in database
                 // Vital signs
                 bmi: 'bmi',
                 bloodPressure: 'blood_pressure',
