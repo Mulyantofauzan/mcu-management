@@ -723,8 +723,6 @@ window.handleAddMCU = async function(event) {
             visionNearSpectaclesRight: getFieldValue('mcu-vision-near-spectacles-right', 'mcu-vision-near-spectacles-right-other'),
             audiometry: getFieldValue('mcu-audio', 'mcu-audio-other'),
             spirometry: getFieldValue('mcu-spiro', 'mcu-spiro-other'),
-            smokingStatus: document.getElementById('mcu-smoking-status').value || null,
-            exerciseFrequency: document.getElementById('mcu-exercise-frequency').value || null,
             xray: getFieldValue('mcu-xray', 'mcu-xray-other'),
             ekg: getFieldValue('mcu-ekg', 'mcu-ekg-other'),
             treadmill: getFieldValue('mcu-treadmill', 'mcu-treadmill-other'),

@@ -385,45 +385,6 @@
                         <div><label class="label">Suhu <span class="text-red-500">*</span></label><input type="text" id="mcu-temp" class="input" placeholder="Contoh: 36.5" required /></div>
                     </div>
 
-                    <!-- Vision Assessment - Detailed 8-field structure -->
-                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Penglihatan <span class="text-red-500">*</span></h4>
-                    <div class="bg-blue-50 rounded-lg p-4 mb-4 overflow-x-auto">
-                        <table class="w-full text-xs border-collapse">
-                            <thead>
-                                <tr class="border-b-2 border-blue-300">
-                                    <th colspan="1" class="text-center py-2 px-2 font-semibold text-gray-700 border-r border-blue-200">Vision</th>
-                                    <th colspan="2" class="text-center py-2 px-2 font-semibold text-gray-700 border-r border-blue-200">Unaided</th>
-                                    <th colspan="2" class="text-center py-2 px-2 font-semibold text-gray-700">With Spectacles</th>
-                                </tr>
-                                <tr class="border-b border-blue-200">
-                                    <th class="text-center py-2 px-2 font-semibold text-gray-700 border-r border-blue-200"></th>
-                                    <th class="text-center py-2 px-2 font-semibold text-gray-700 border-r border-blue-200">Left</th>
-                                    <th class="text-center py-2 px-2 font-semibold text-gray-700 border-r border-blue-200">Right</th>
-                                    <th class="text-center py-2 px-2 font-semibold text-gray-700 border-r border-blue-200">Left</th>
-                                    <th class="text-center py-2 px-2 font-semibold text-gray-700">Right</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Distant Vision Row -->
-                                <tr class="border-b border-blue-100">
-                                    <td class="py-2 px-2 text-gray-700 border-r border-blue-200 font-medium">Distant</td>
-                                    <td class="py-2 px-1 border-r border-blue-200"><select id="mcu-vision-distant-unaided-left" class="input text-xs w-full" required><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-distant-unaided-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
-                                    <td class="py-2 px-1 border-r border-blue-200"><select id="mcu-vision-distant-unaided-right" class="input text-xs w-full" required><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-distant-unaided-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
-                                    <td class="py-2 px-1 border-r border-blue-200"><select id="mcu-vision-distant-spectacles-left" class="input text-xs w-full" required><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-distant-spectacles-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
-                                    <td class="py-2 px-1"><select id="mcu-vision-distant-spectacles-right" class="input text-xs w-full" required><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-distant-spectacles-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
-                                </tr>
-                                <!-- Near Vision Row -->
-                                <tr>
-                                    <td class="py-2 px-2 text-gray-700 border-r border-blue-200 font-medium">Near</td>
-                                    <td class="py-2 px-1 border-r border-blue-200"><select id="mcu-vision-near-unaided-left" class="input text-xs w-full" required><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-near-unaided-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
-                                    <td class="py-2 px-1 border-r border-blue-200"><select id="mcu-vision-near-unaided-right" class="input text-xs w-full" required><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-near-unaided-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
-                                    <td class="py-2 px-1 border-r border-blue-200"><select id="mcu-vision-near-spectacles-left" class="input text-xs w-full" required><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-near-spectacles-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
-                                    <td class="py-2 px-1"><select id="mcu-vision-near-spectacles-right" class="input text-xs w-full" required><option value="">Pilih</option><option value="">-</option><option value="Tidak Diperiksa">Tidak Diperiksa</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-near-spectacles-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
                     <!-- Other Examinations -->
                     <div class="grid grid-cols-3 gap-4 mb-4">
                         <div>
@@ -459,28 +420,43 @@
                         </div>
                     </div>
 
-                    <!-- Framingham Risk Factors -->
-                    <h4 class="font-semibold text-gray-900 mb-3">Faktor Risiko Framingham</h4>
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <label class="label">Status Merokok <span class="text-red-500">*</span></label>
-                            <select id="mcu-smoking-status" class="input" required>
-                                <option value="">Pilih...</option>
-                                <option value="Tidak Merokok">Tidak Merokok</option>
-                                <option value="Mantan Perokok">Mantan Perokok</option>
-                                <option value="Perokok">Perokok</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="label">Frekuensi Olahraga <span class="text-red-500">*</span></label>
-                            <select id="mcu-exercise-frequency" class="input" required>
-                                <option value="">Pilih...</option>
-                                <option value=">2x Seminggu">&gt;2x Seminggu</option>
-                                <option value="1-2x Seminggu">1-2x Seminggu</option>
-                                <option value="1-2x Sebulan">1-2x Sebulan</option>
-                                <option value="Tidak Pernah">Tidak Pernah</option>
-                            </select>
-                        </div>
+                    <!-- Vision Assessment - Detailed 8-field structure -->
+                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Penglihatan <span class="text-red-500">*</span></h4>
+                    <div class="bg-blue-50 rounded-lg p-4 mb-4 overflow-x-auto">
+                        <table class="w-full text-xs border-collapse">
+                            <thead>
+                                <tr class="border-b-2 border-blue-300">
+                                    <th colspan="1" class="text-center py-2 px-2 font-semibold text-gray-700 border-r border-blue-200">Vision</th>
+                                    <th colspan="2" class="text-center py-2 px-2 font-semibold text-gray-700 border-r border-blue-200">Unaided</th>
+                                    <th colspan="2" class="text-center py-2 px-2 font-semibold text-gray-700">With Spectacles</th>
+                                </tr>
+                                <tr class="border-b border-blue-200">
+                                    <th class="text-center py-2 px-2 font-semibold text-gray-700 border-r border-blue-200"></th>
+                                    <th class="text-center py-2 px-2 font-semibold text-gray-700 border-r border-blue-200">Left</th>
+                                    <th class="text-center py-2 px-2 font-semibold text-gray-700 border-r border-blue-200">Right</th>
+                                    <th class="text-center py-2 px-2 font-semibold text-gray-700 border-r border-blue-200">Left</th>
+                                    <th class="text-center py-2 px-2 font-semibold text-gray-700">Right</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Distant Vision Row -->
+                                <tr class="border-b border-blue-100">
+                                    <td class="py-2 px-2 text-gray-700 border-r border-blue-200 font-medium">Distant</td>
+                                    <td class="py-2 px-1 border-r border-blue-200"><select id="mcu-vision-distant-unaided-left" class="input text-xs w-full" required><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-distant-unaided-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-1 border-r border-blue-200"><select id="mcu-vision-distant-unaided-right" class="input text-xs w-full" required><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-distant-unaided-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-1 border-r border-blue-200"><select id="mcu-vision-distant-spectacles-left" class="input text-xs w-full" required><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-distant-spectacles-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-1"><select id="mcu-vision-distant-spectacles-right" class="input text-xs w-full" required><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-distant-spectacles-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                </tr>
+                                <!-- Near Vision Row -->
+                                <tr>
+                                    <td class="py-2 px-2 text-gray-700 border-r border-blue-200 font-medium">Near</td>
+                                    <td class="py-2 px-1 border-r border-blue-200"><select id="mcu-vision-near-unaided-left" class="input text-xs w-full" required><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-near-unaided-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-1 border-r border-blue-200"><select id="mcu-vision-near-unaided-right" class="input text-xs w-full" required><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-near-unaided-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-1 border-r border-blue-200"><select id="mcu-vision-near-spectacles-left" class="input text-xs w-full" required><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-near-spectacles-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-1"><select id="mcu-vision-near-spectacles-right" class="input text-xs w-full" required><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="mcu-vision-near-spectacles-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
 
                     <!-- Pemeriksaan Lab Section -->
