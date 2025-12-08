@@ -54,11 +54,22 @@ export function transformMCU(mcu) {
         employeeId: mcu.employee_id,
         mcuType: mcu.mcu_type,
         mcuDate: mcu.mcu_date,
+        ageAtMCU: mcu.age_at_mcu,
         bmi: mcu.bmi,
         bloodPressure: mcu.blood_pressure,
         respiratoryRate: mcu.respiratory_rate,
         pulse: mcu.pulse,
         temperature: mcu.temperature,
+        // 8-field vision structure (map from snake_case to camelCase)
+        visionDistantUnaideLeft: mcu.vision_distant_unaided_left,
+        visionDistantUnaideRight: mcu.vision_distant_unaided_right,
+        visionDistantSpectaclesLeft: mcu.vision_distant_spectacles_left,
+        visionDistantSpectaclesRight: mcu.vision_distant_spectacles_right,
+        visionNearUnaideLeft: mcu.vision_near_unaided_left,
+        visionNearUnaideRight: mcu.vision_near_unaided_right,
+        visionNearSpectaclesLeft: mcu.vision_near_spectacles_left,
+        visionNearSpectaclesRight: mcu.vision_near_spectacles_right,
+        // Legacy single vision field (for backward compatibility)
         vision: mcu.vision,
         audiometry: mcu.audiometry,
         spirometry: mcu.spirometry,
@@ -68,16 +79,25 @@ export function transformMCU(mcu) {
         xray: mcu.xray,
         ekg: mcu.ekg,
         treadmill: mcu.treadmill,
+        sgot: mcu.sgot,
+        sgpt: mcu.sgpt,
+        cbc: mcu.cbc,
+        // Lifestyle fields (map from snake_case to camelCase)
+        smokingStatus: mcu.smoking_status,
+        exerciseFrequency: mcu.exercise_frequency,
+        // Rujukan/Referral fields (map from snake_case to camelCase)
         doctor: mcu.doctor,  // CRITICAL: Doctor ID from referral data
         recipient: mcu.recipient,
         keluhanUtama: mcu.keluhan_utama,
         diagnosisKerja: mcu.diagnosis_kerja,
         alasanRujuk: mcu.alasan_rujuk,
+        // Result fields
         initialResult: mcu.initial_result,
         initialNotes: mcu.initial_notes,
         finalResult: mcu.final_result,
         finalNotes: mcu.final_notes,
         status: mcu.status,
+        // Metadata fields
         deletedAt: mcu.deleted_at,
         createdAt: mcu.created_at,
         updatedAt: mcu.updated_at,
