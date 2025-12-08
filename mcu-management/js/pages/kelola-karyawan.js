@@ -1183,7 +1183,8 @@ window.viewMCUDetail = async function(mcuId) {
         if (empIdEl) empIdEl.textContent = emp?.employeeId || '-';
 
         const empJobEl = document.getElementById('mcu-detail-emp-job');
-        if (empJobEl) empJobEl.textContent = job?.name || empJobTitle || '-';
+        // Show job title: prefer matched master data name, fall back to raw employee job_title value
+        if (empJobEl) empJobEl.textContent = empJobTitle || '-';
 
         const empDeptEl = document.getElementById('mcu-detail-emp-dept');
         if (empDeptEl) empDeptEl.textContent = dept?.name || empDept || '-';

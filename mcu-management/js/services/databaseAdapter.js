@@ -394,13 +394,25 @@ export const MCUs = {
                     employee_id: mcu.employeeId,
                     mcu_type: mcu.mcuType,
                     mcu_date: mcu.mcuDate,
-                    // Examination results (single set, not initial/final)
+                    age_at_mcu: mcu.ageAtMCU,
+                    // Examination results (vital signs)
                     bmi: mcu.bmi,
                     blood_pressure: mcu.bloodPressure,
                     respiratory_rate: mcu.respiratoryRate,
                     pulse: mcu.pulse,
                     temperature: mcu.temperature,
+                    // 8-field vision structure (map camelCase to snake_case)
+                    vision_distant_unaided_left: mcu.visionDistantUnaideLeft,
+                    vision_distant_unaided_right: mcu.visionDistantUnaideRight,
+                    vision_distant_spectacles_left: mcu.visionDistantSpectaclesLeft,
+                    vision_distant_spectacles_right: mcu.visionDistantSpectaclesRight,
+                    vision_near_unaided_left: mcu.visionNearUnaideLeft,
+                    vision_near_unaided_right: mcu.visionNearUnaideRight,
+                    vision_near_spectacles_left: mcu.visionNearSpectaclesLeft,
+                    vision_near_spectacles_right: mcu.visionNearSpectaclesRight,
+                    // Legacy single vision field (for backward compatibility)
                     vision: mcu.vision,
+                    // Other exams
                     audiometry: mcu.audiometry,
                     spirometry: mcu.spirometry,
                     hbsag: mcu.hbsag,
@@ -409,7 +421,13 @@ export const MCUs = {
                     xray: mcu.xray,
                     ekg: mcu.ekg,
                     treadmill: mcu.treadmill,
-                    // ✅ FIX: Add doctor field to insert (was missing!)
+                    sgot: mcu.sgot,
+                    sgpt: mcu.sgpt,
+                    cbc: mcu.cbc,
+                    // Lifestyle fields
+                    smoking_status: mcu.smokingStatus,
+                    exercise_frequency: mcu.exerciseFrequency,
+                    // Rujukan/Referral fields
                     doctor: mcu.doctor,
                     recipient: mcu.recipient,
                     keluhan_utama: mcu.keluhanUtama,
@@ -442,13 +460,25 @@ export const MCUs = {
             const fieldMapping = {
                 mcuType: 'mcu_type',
                 mcuDate: 'mcu_date',
-                // Examination results (single set)
+                ageAtMCU: 'age_at_mcu',
+                // Vital signs
                 bmi: 'bmi',
                 bloodPressure: 'blood_pressure',
                 respiratoryRate: 'respiratory_rate',
                 pulse: 'pulse',
                 temperature: 'temperature',
+                // 8-field vision structure
+                visionDistantUnaideLeft: 'vision_distant_unaided_left',
+                visionDistantUnaideRight: 'vision_distant_unaided_right',
+                visionDistantSpectaclesLeft: 'vision_distant_spectacles_left',
+                visionDistantSpectaclesRight: 'vision_distant_spectacles_right',
+                visionNearUnaideLeft: 'vision_near_unaided_left',
+                visionNearUnaideRight: 'vision_near_unaided_right',
+                visionNearSpectaclesLeft: 'vision_near_spectacles_left',
+                visionNearSpectaclesRight: 'vision_near_spectacles_right',
+                // Legacy single vision field (for backward compatibility)
                 vision: 'vision',
+                // Other exams
                 audiometry: 'audiometry',
                 spirometry: 'spirometry',
                 hbsag: 'hbsag',
@@ -457,7 +487,13 @@ export const MCUs = {
                 treadmill: 'treadmill',
                 napza: 'napza',
                 colorblind: 'colorblind',
-                // ✅ FIX: Add doctor field mapping (for referral data)
+                sgot: 'sgot',
+                sgpt: 'sgpt',
+                cbc: 'cbc',
+                // Lifestyle fields
+                smokingStatus: 'smoking_status',
+                exerciseFrequency: 'exercise_frequency',
+                // Rujukan/Referral fields
                 doctor: 'doctor',
                 recipient: 'recipient',
                 keluhanUtama: 'keluhan_utama',

@@ -47,7 +47,18 @@ const fieldLabels = {
   mcuDate: 'Tanggal MCU',
   bmi: 'BMI',
   bloodPressure: 'Tekanan Darah',
+  respiratoryRate: 'Frekuensi Nafas',
+  pulse: 'Nadi',
+  temperature: 'Suhu',
   vision: 'Penglihatan',
+  visionDistantUnaideLeft: 'Visus Jauh Mata Kiri (Tanpa Koreksi)',
+  visionDistantUnaideRight: 'Visus Jauh Mata Kanan (Tanpa Koreksi)',
+  visionDistantSpectaclesLeft: 'Visus Jauh Mata Kiri (Dengan Kacamata)',
+  visionDistantSpectaclesRight: 'Visus Jauh Mata Kanan (Dengan Kacamata)',
+  visionNearUnaideLeft: 'Visus Dekat Mata Kiri (Tanpa Koreksi)',
+  visionNearUnaideRight: 'Visus Dekat Mata Kanan (Tanpa Koreksi)',
+  visionNearSpectaclesLeft: 'Visus Dekat Mata Kiri (Dengan Kacamata)',
+  visionNearSpectaclesRight: 'Visus Dekat Mata Kanan (Dengan Kacamata)',
   audiometry: 'Audiometri',
   spirometry: 'Spirometri',
   xray: 'X-Ray',
@@ -58,6 +69,14 @@ const fieldLabels = {
   sgpt: 'SGPT',
   cbc: 'CBC',
   napza: 'NAPZA',
+  colorblind: 'Buta Warna',
+  smokingStatus: 'Status Merokok',
+  exerciseFrequency: 'Frekuensi Olahraga',
+  doctor: 'Dokter',
+  recipient: 'Penerima',
+  keluhanUtama: 'Keluhan Utama',
+  diagnosisKerja: 'Diagnosis Kerja',
+  alasanRujuk: 'Alasan Rujukan',
   initialResult: 'Hasil Awal',
   initialNotes: 'Catatan Awal',
   finalResult: 'Hasil Akhir',
@@ -76,9 +95,24 @@ export function getFieldLabel(fieldName) {
  * Fields to track for MCU changes
  */
 const mcuTrackableFields = [
-  'mcuType', 'mcuDate', 'bmi', 'bloodPressure', 'vision', 'audiometry',
-  'spirometry', 'xray', 'ekg', 'treadmill',
-  'hbsag', 'sgot', 'sgpt', 'cbc', 'napza',
+  // Basic info
+  'mcuType', 'mcuDate',
+  // Vital signs
+  'bmi', 'bloodPressure', 'respiratoryRate', 'pulse', 'temperature',
+  // Vision - legacy single field and new 8-field structure
+  'vision',
+  'visionDistantUnaideLeft', 'visionDistantUnaideRight',
+  'visionDistantSpectaclesLeft', 'visionDistantSpectaclesRight',
+  'visionNearUnaideLeft', 'visionNearUnaideRight',
+  'visionNearSpectaclesLeft', 'visionNearSpectaclesRight',
+  // Other exams
+  'audiometry', 'spirometry', 'xray', 'ekg', 'treadmill',
+  'hbsag', 'sgot', 'sgpt', 'cbc', 'napza', 'colorblind',
+  // Lifestyle
+  'smokingStatus', 'exerciseFrequency',
+  // Rujukan fields
+  'doctor', 'recipient', 'keluhanUtama', 'diagnosisKerja', 'alasanRujuk',
+  // Results
   'initialResult', 'initialNotes', 'finalResult', 'finalNotes', 'status'
 ];
 
