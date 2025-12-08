@@ -334,6 +334,50 @@ class AnalysisDashboardService {
   }
 
   /**
+   * Normalize examination/assessment values
+   * Handles case-sensitivity, whitespace, and common typos
+   */
+  normalizeValue(value) {
+    if (!value) return 'Not Recorded';
+
+    // Convert to string and trim whitespace
+    let normalized = String(value).trim();
+
+    // Common normalization mappings (typos and variations)
+    const normalizations = {
+      'normal': 'Normal',
+      'nornal': 'Normal',  // typo
+      'normall': 'Normal',  // typo
+      'noraml': 'Normal',  // typo
+      'positive': 'Positive',
+      'positif': 'Positive',
+      'negatif': 'Negative',
+      'negative': 'Negative',
+      'good': 'Good',
+      'baik': 'Good',
+      'poor': 'Poor',
+      'buruk': 'Poor',
+      'fair': 'Fair',
+      'sedang': 'Fair',
+      'fit': 'Fit',
+      'not fit': 'Not Fit',
+      'unfit': 'Not Fit'
+    };
+
+    // Apply normalization mapping (case-insensitive)
+    const lowerNormalized = normalized.toLowerCase();
+    if (normalizations[lowerNormalized]) {
+      return normalizations[lowerNormalized];
+    }
+
+    // If no specific mapping, use title case
+    return normalized
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+
+  /**
    * 4. Vision Assessment Results
    */
   renderVisionChart() {
@@ -342,7 +386,7 @@ class AnalysisDashboardService {
 
     const visionCounts = {};
     this.filteredData.forEach(item => {
-      const vision = item.mcu.vision || 'Not Recorded';
+      const vision = this.normalizeValue(item.mcu.vision);
       visionCounts[vision] = (visionCounts[vision] || 0) + 1;
     });
 
@@ -391,7 +435,7 @@ class AnalysisDashboardService {
 
       const counts = {};
       this.filteredData.forEach(item => {
-        const value = item.mcu[exam.key] || 'Not Recorded';
+        const value = this.normalizeValue(item.mcu[exam.key]);
         counts[value] = (counts[value] || 0) + 1;
       });
 
