@@ -14,7 +14,8 @@
  * 3. Stale-while-revalidate: Master data (fetch fresh, serve stale immediately)
  */
 
-const CACHE_VERSION = 'madis-v5';
+const CACHE_VERSION = 'madis-v6';
+const MAX_CACHE_ENTRIES = 200;
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const API_CACHE = `${CACHE_VERSION}-api`;
@@ -31,29 +32,36 @@ const STATIC_ASSETS = [
 ];
 
 /**
- * Install Event - Cache static assets
+ * Install Event - Cache static assets (continue even if some fail)
  */
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
+      // Use allSettled to cache assets that succeed, ignore failures
+      return Promise.allSettled(
+        STATIC_ASSETS.map(url => cache.add(url))
+      );
     })
     .then(() => self.skipWaiting()) // Activate immediately
     .catch((error) => {
+      console.warn('Service worker install error:', error);
     })
   );
 });
 
 /**
- * Activate Event - Clean up old caches
+ * Activate Event - Clean up old caches aggressively
  */
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => name !== STATIC_CACHE && name !== DYNAMIC_CACHE && name !== API_CACHE)
-          .map((name) => caches.delete(name))
+          .filter((name) => !name.startsWith(CACHE_VERSION))
+          .map((name) => {
+            console.log(`Deleting old cache: ${name}`);
+            return caches.delete(name);
+          })
       );
     })
     .then(() => self.clients.claim()) // Take control immediately
@@ -78,8 +86,14 @@ self.addEventListener('fetch', (event) => {
   }
 
   // HTML pages - Network first
-  if (request.headers.get('Accept').includes('text/html')) {
+  if (request.headers.get('Accept')?.includes('text/html')) {
     event.respondWith(networkFirstStrategy(request));
+    return;
+  }
+
+  // Supabase API calls - Network first with longer timeout
+  if (url.hostname === 'xqyuktsfjvdqfhulobai.supabase.co') {
+    event.respondWith(apiNetworkFirstStrategy(request));
     return;
   }
 
@@ -114,26 +128,32 @@ self.addEventListener('fetch', (event) => {
  */
 async function cacheFirstStrategy(request) {
   try {
-    // Check cache
+    // Check cache first - fastest path
     const cached = await caches.match(request);
     if (cached) {
       return cached;
     }
 
-    // Network fallback
-    const response = await fetch(request);
+    // Network fallback with timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+
+    const response = await fetch(request, { signal: controller.signal });
+    clearTimeout(timeout);
 
     // Cache successful responses
-    if (response.ok) {
+    if (response.ok && response.status < 400) {
       const cache = await caches.open(DYNAMIC_CACHE);
-      cache.put(request, response.clone());
+      cache.put(request, response.clone())
+        .catch(err => console.warn('Cache put error:', err));
+      trimCache(DYNAMIC_CACHE, MAX_CACHE_ENTRIES);
     }
 
     return response;
   } catch (error) {
-    // Offline: return cached version if available
+    // Timeout or network error, return cached or error
     const cached = await caches.match(request);
-    return cached || new Response('Offline - resource not available', { status: 503 });
+    return cached || new Response('Resource unavailable', { status: 503 });
   }
 }
 
@@ -142,46 +162,59 @@ async function cacheFirstStrategy(request) {
  * Good for: HTML pages, frequently changing content
  */
 async function networkFirstStrategy(request) {
+  const cachePromise = caches.match(request);
+
   try {
-    const response = await fetch(request);
+    // Network request with timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 7000); // 7 second timeout
+
+    const response = await fetch(request, { signal: controller.signal });
+    clearTimeout(timeout);
 
     // Cache successful responses
-    if (response.ok) {
+    if (response.ok || response.status < 400) {
       const cache = await caches.open(DYNAMIC_CACHE);
-      cache.put(request, response.clone());
+      cache.put(request, response.clone())
+        .catch(err => console.warn('Cache put error:', err));
     }
 
     return response;
   } catch (error) {
-    // Network failed: return cached version
-    const cached = await caches.match(request);
+    // Network failed or timeout, return cached version
+    const cached = await cachePromise;
     return cached || new Response('Offline - page not available', { status: 503 });
   }
 }
 
 /**
- * API Network-first strategy: For API calls with special handling
+ * API Network-first strategy: For API calls with special handling and timeouts
  */
 async function apiNetworkFirstStrategy(request) {
+  const cacheKey = new Request(request, { method: 'GET' });
+
   try {
-    const response = await fetch(request);
+    // API request with longer timeout (15s for Supabase)
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+    const response = await fetch(request, { signal: controller.signal });
+    clearTimeout(timeout);
 
     // Cache successful API responses
     if (response.ok && response.status === 200) {
       const cache = await caches.open(API_CACHE);
-      cache.put(request, response.clone());
+      cache.put(cacheKey, response.clone())
+        .catch(err => console.warn('API cache put error:', err));
     }
 
     return response;
   } catch (error) {
-    // Network failed: return cached API response
-    const cached = await caches.match(request);
+    // Network failed or timeout: return cached API response
+    const cached = await caches.match(cacheKey);
 
     if (cached) {
-      // Return cached response but with a warning header
-      const responseWithHeader = new Response(cached.body, cached);
-      responseWithHeader.headers.set('X-From-Cache', 'true');
-      return responseWithHeader;
+      return cached;
     }
 
     // No cache available: return error response
@@ -216,8 +249,25 @@ async function staleWhileRevalidateStrategy(request) {
  * Check if URL is a static asset
  */
 function isStaticAsset(url) {
-  const staticExtensions = ['.css', '.js', '.png', '.jpg', '.gif', '.svg', '.woff', '.woff2', '.ttf', '.eot'];
+  const staticExtensions = ['.css', '.js', '.png', '.jpg', '.gif', '.svg', '.woff', '.woff2', '.ttf', '.eot', '.json', '.wasm'];
   return staticExtensions.some((ext) => url.pathname.endsWith(ext));
+}
+
+/**
+ * Trim cache to keep only N most recent entries
+ */
+async function trimCache(cacheName, maxEntries) {
+  try {
+    const cache = await caches.open(cacheName);
+    const keys = await cache.keys();
+
+    if (keys.length > maxEntries) {
+      const keysToDelete = keys.slice(0, keys.length - maxEntries);
+      await Promise.all(keysToDelete.map(key => cache.delete(key)));
+    }
+  } catch (error) {
+    console.warn(`Error trimming cache ${cacheName}:`, error);
+  }
 }
 
 /**
