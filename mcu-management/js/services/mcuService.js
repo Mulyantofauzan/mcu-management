@@ -46,6 +46,10 @@ class MCUService {
       napza: mcuData.napza || null,
       colorblind: mcuData.colorblind || null,
 
+      // Lifestyle fields
+      smokingStatus: mcuData.smokingStatus || null,
+      exerciseFrequency: mcuData.exerciseFrequency || null,
+
       // Rujukan fields
       doctor: mcuData.doctor || null,  // ✅ FIX: Add doctor field (was missing!)
       recipient: mcuData.recipient || null,
@@ -245,6 +249,7 @@ class MCUService {
       'audiometry', 'spirometry',
       'xray', 'ekg', 'treadmill', 'hbsag',
       'sgot', 'sgpt', 'cbc', 'napza',
+      'smokingStatus', 'exerciseFrequency', // ✅ FIX: Include lifestyle fields!
       'doctor', // ✅ FIX: Include doctor field so it gets saved during edit!
       'recipient', 'keluhanUtama', 'diagnosisKerja', 'alasanRujuk',
       'colorblind', 'initialResult', 'initialNotes' // ✅ FIX: Include initial result fields
