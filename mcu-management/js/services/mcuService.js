@@ -24,19 +24,19 @@ class MCUService {
 
       // Examination fields
       bmi: mcuData.bmi || null,
-      bloodPressure: mcuData.bloodPressure || null,
-      respiratoryRate: mcuData.respiratoryRate || null,
+      blood_pressure: mcuData.bloodPressure || null,
+      respiratory_rate: mcuData.respiratoryRate || null,
       pulse: mcuData.pulse || null,
       temperature: mcuData.temperature || null,
-      // 8-field vision structure
-      visionDistantUnaideLeft: mcuData.visionDistantUnaideLeft || null,
-      visionDistantUnaideRight: mcuData.visionDistantUnaideRight || null,
-      visionDistantSpectaclesLeft: mcuData.visionDistantSpectaclesLeft || null,
-      visionDistantSpectaclesRight: mcuData.visionDistantSpectaclesRight || null,
-      visionNearUnaideLeft: mcuData.visionNearUnaideLeft || null,
-      visionNearUnaideRight: mcuData.visionNearUnaideRight || null,
-      visionNearSpectaclesLeft: mcuData.visionNearSpectaclesLeft || null,
-      visionNearSpectaclesRight: mcuData.visionNearSpectaclesRight || null,
+      // 8-field vision structure (map to snake_case for database)
+      vision_distant_unaided_left: mcuData.visionDistantUnaideLeft || null,
+      vision_distant_unaided_right: mcuData.visionDistantUnaideRight || null,
+      vision_distant_spectacles_left: mcuData.visionDistantSpectaclesLeft || null,
+      vision_distant_spectacles_right: mcuData.visionDistantSpectaclesRight || null,
+      vision_near_unaided_left: mcuData.visionNearUnaideLeft || null,
+      vision_near_unaided_right: mcuData.visionNearUnaideRight || null,
+      vision_near_spectacles_left: mcuData.visionNearSpectaclesLeft || null,
+      vision_near_spectacles_right: mcuData.visionNearSpectaclesRight || null,
       audiometry: mcuData.audiometry || null,
       spirometry: mcuData.spirometry || null,
       xray: mcuData.xray || null,
@@ -50,12 +50,12 @@ class MCUService {
       smoking_status: mcuData.smokingStatus || null,
       exercise_frequency: mcuData.exerciseFrequency || null,
 
-      // Rujukan fields
-      doctor: mcuData.doctor || null,  // ✅ FIX: Add doctor field (was missing!)
+      // Rujukan fields (map camelCase to snake_case for database)
+      doctor: mcuData.doctor || null,
       recipient: mcuData.recipient || null,
-      keluhanUtama: mcuData.keluhanUtama || null,
-      diagnosisKerja: mcuData.diagnosisKerja || null,
-      alasanRujuk: mcuData.alasanRujuk || null,
+      keluhan_utama: mcuData.keluhanUtama || null,
+      diagnosis_kerja: mcuData.diagnosisKerja || null,
+      alasan_rujuk: mcuData.alasanRujuk || null,
 
       // Results
       initialResult: mcuData.initialResult,
@@ -238,37 +238,64 @@ class MCUService {
     }
 
     // Also update examination fields if provided
-    const examFields = [
-      'mcuDate', 'mcuType', // ✅ FIX: Include date and type for change tracking
-      'bmi', 'bloodPressure', 'respiratoryRate', 'pulse', 'temperature',
-      // 8-field vision structure
-      'visionDistantUnaideLeft', 'visionDistantUnaideRight',
-      'visionDistantSpectaclesLeft', 'visionDistantSpectaclesRight',
-      'visionNearUnaideLeft', 'visionNearUnaideRight',
-      'visionNearSpectaclesLeft', 'visionNearSpectaclesRight',
-      'audiometry', 'spirometry',
-      'xray', 'ekg', 'treadmill', 'hbsag',
-      'sgot', 'sgpt', 'cbc', 'napza',
-      'smoking_status', 'exercise_frequency', // ✅ FIX: Include lifestyle fields! (snake_case for database)
-      'doctor', // ✅ FIX: Include doctor field so it gets saved during edit!
-      'recipient', 'keluhanUtama', 'diagnosisKerja', 'alasanRujuk',
-      'colorblind', 'initialResult', 'initialNotes' // ✅ FIX: Include initial result fields
-    ];
+    // Map from JavaScript field names (camelCase) to database field names (snake_case)
+    const fieldMap = {
+      // Date and type
+      'mcuDate': 'mcuDate',
+      'mcuType': 'mcuType',
 
-    examFields.forEach(field => {
-      // Map camelCase field names to snake_case for database
-      let dbField = field;
-      let dataValue = followUpData[field];
+      // Vital signs
+      'bmi': 'bmi',
+      'bloodPressure': 'blood_pressure',
+      'respiratoryRate': 'respiratory_rate',
+      'pulse': 'pulse',
+      'temperature': 'temperature',
 
-      // Handle camelCase to snake_case conversions
-      if (field === 'smoking_status' && followUpData['smokingStatus'] !== undefined) {
-        dataValue = followUpData['smokingStatus'];
-      } else if (field === 'exercise_frequency' && followUpData['exerciseFrequency'] !== undefined) {
-        dataValue = followUpData['exerciseFrequency'];
-      }
+      // Vision fields (8-field structure)
+      'visionDistantUnaideLeft': 'vision_distant_unaided_left',
+      'visionDistantUnaideRight': 'vision_distant_unaided_right',
+      'visionDistantSpectaclesLeft': 'vision_distant_spectacles_left',
+      'visionDistantSpectaclesRight': 'vision_distant_spectacles_right',
+      'visionNearUnaideLeft': 'vision_near_unaided_left',
+      'visionNearUnaideRight': 'vision_near_unaided_right',
+      'visionNearSpectaclesLeft': 'vision_near_spectacles_left',
+      'visionNearSpectaclesRight': 'vision_near_spectacles_right',
+
+      // Other exams
+      'audiometry': 'audiometry',
+      'spirometry': 'spirometry',
+      'xray': 'xray',
+      'ekg': 'ekg',
+      'treadmill': 'treadmill',
+      'hbsag': 'hbsag',
+      'sgot': 'sgot',
+      'sgpt': 'sgpt',
+      'cbc': 'cbc',
+      'napza': 'napza',
+      'colorblind': 'colorblind',
+
+      // Lifestyle fields
+      'smokingStatus': 'smoking_status',
+      'exerciseFrequency': 'exercise_frequency',
+
+      // Rujukan fields
+      'doctor': 'doctor',
+      'recipient': 'recipient',
+      'keluhanUtama': 'keluhan_utama',
+      'diagnosisKerja': 'diagnosis_kerja',
+      'alasanRujuk': 'alasan_rujuk',
+
+      // Initial result fields
+      'initialResult': 'initialResult',
+      'initialNotes': 'initialNotes'
+    };
+
+    // Process all fields with proper camelCase to snake_case mapping
+    Object.entries(fieldMap).forEach(([jsField, dbField]) => {
+      const dataValue = followUpData[jsField];
 
       if (dataValue !== undefined) {
-        updateData[field] = dataValue;
+        updateData[dbField] = dataValue;
       }
     });
 
