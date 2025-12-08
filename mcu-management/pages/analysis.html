@@ -81,49 +81,274 @@
         </header>
 
         <main class="p-6">
-            <div class="mb-6"><h1 class="text-2xl font-bold text-gray-900">Analysis Dashboard</h1><p class="text-gray-500">Looker Studio embedded analytics</p></div>
+            <!-- Page Header -->
+            <div class="mb-6">
+                <h1 class="text-2xl font-bold text-gray-900">Analysis Dashboard</h1>
+                <p class="text-gray-500">Analisis MCU data dari pemeriksaan terakhir setiap karyawan</p>
+            </div>
 
-            <div class="card" style="height: calc(100vh - 200px);">
-                <div class="h-full flex items-center justify-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                    <div class="text-center p-8">
-                        <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Looker Studio Dashboard</h3>
-                        <p class="text-gray-600 mb-4">Embed your Looker Studio dashboard here</p>
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-left max-w-md mx-auto">
-                            <p class="font-semibold text-blue-900 mb-2">To add your dashboard:</p>
-                            <ol class="list-decimal list-inside space-y-1 text-blue-700">
-                                <li>Create dashboard in Looker Studio</li>
-                                <li>Get embed URL</li>
-                                <li>Replace the code below in this HTML file</li>
-                            </ol>
-                            <code class="block mt-3 p-2 bg-gray-900 text-green-400 text-xs rounded">
-                                &lt;iframe src="YOUR_LOOKER_URL" width="100%" height="100%"&gt;&lt;/iframe&gt;
-                            </code>
+            <!-- Filter Section -->
+            <div class="card mb-6 p-4">
+                <div class="flex flex-wrap gap-4 items-end">
+                    <div class="flex-1 min-w-48">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Departemen</label>
+                        <select id="filterDepartment" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            <option value="">Semua Departemen</option>
+                        </select>
+                    </div>
+                    <div class="flex-1 min-w-48">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Job Title</label>
+                        <select id="filterJobTitle" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            <option value="">Semua Job Title</option>
+                        </select>
+                    </div>
+                    <div class="flex-1 min-w-48">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Status Kesehatan</label>
+                        <select id="filterStatus" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            <option value="">Semua Status</option>
+                            <option value="Fit">Fit</option>
+                            <option value="Fit With Note">Fit With Note</option>
+                            <option value="Temporary Unfit">Temporary Unfit</option>
+                            <option value="Unfit">Unfit</option>
+                        </select>
+                    </div>
+                    <button id="btnApplyFilter" class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition">Apply Filter</button>
+                    <button id="btnResetFilter" class="px-6 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition">Reset</button>
+                </div>
+            </div>
+
+            <!-- 1. Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="card p-6 bg-gradient-to-br from-blue-50 to-blue-100">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-600 text-sm">Total MCU</p>
+                            <p class="text-3xl font-bold text-blue-600 mt-2" id="statTotalMCU">0</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path>
+                            </svg>
                         </div>
                     </div>
                 </div>
 
-                <!-- Uncomment and replace with your Looker Studio embed URL -->
-                <!--
-                <iframe
-                    src="YOUR_LOOKER_STUDIO_EMBED_URL_HERE"
-                    width="100%"
-                    height="100%"
-                    frameborder="0"
-                    style="border:0"
-                    allowfullscreen
-                    title="Looker Studio Dashboard">
-                </iframe>
-                -->
+                <div class="card p-6 bg-gradient-to-br from-green-50 to-green-100">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-600 text-sm">Fit</p>
+                            <p class="text-3xl font-bold text-green-600 mt-2" id="statFit">0</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-200 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card p-6 bg-gradient-to-br from-yellow-50 to-yellow-100">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-600 text-sm">Fit With Note</p>
+                            <p class="text-3xl font-bold text-yellow-600 mt-2" id="statFitWithNote">0</p>
+                        </div>
+                        <div class="w-12 h-12 bg-yellow-200 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card p-6 bg-gradient-to-br from-red-50 to-red-100">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-gray-600 text-sm">Unfit</p>
+                            <p class="text-3xl font-bold text-red-600 mt-2" id="statUnfit">0</p>
+                        </div>
+                        <div class="w-12 h-12 bg-red-200 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. BMI Chart -->
+            <div class="card p-6 mb-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">BMI Distribution</h2>
+                <canvas id="chartBMI" height="80"></canvas>
+            </div>
+
+            <!-- 3. Blood Pressure Chart -->
+            <div class="card p-6 mb-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Blood Pressure Range Distribution</h2>
+                <canvas id="chartBloodPressure" height="80"></canvas>
+            </div>
+
+            <!-- 4. Vision Chart -->
+            <div class="card p-6 mb-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Vision Assessment Results</h2>
+                <canvas id="chartVision" height="80"></canvas>
+            </div>
+
+            <!-- 5. Examination Results -->
+            <div class="card p-6 mb-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Physical Examination Results</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-2">Audiometri</p>
+                        <canvas id="chartAudiometri"></canvas>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-2">Spirometri</p>
+                        <canvas id="chartSpirometri"></canvas>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-2">HBSAG</p>
+                        <canvas id="chartHBSAG"></canvas>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-2">X-Ray</p>
+                        <canvas id="chartXRay"></canvas>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-2">EKG</p>
+                        <canvas id="chartEKG"></canvas>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-2">Treadmill</p>
+                        <canvas id="chartTreadmill"></canvas>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-2">NAPZA</p>
+                        <canvas id="chartNAPZA"></canvas>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-2">Buta Warna</p>
+                        <canvas id="chartColorblind"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Lab Results Analysis -->
+            <div class="card p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Lab Results Analysis</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- By Status -->
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-700 mb-3">By Status (Normal/Low/High)</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>SGOT</span>
+                                    <span id="sgotStatus" class="text-gray-500">-</span>
+                                </div>
+                                <canvas id="chartLabSGOT" height="30"></canvas>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>SGPT</span>
+                                    <span id="sgptStatus" class="text-gray-500">-</span>
+                                </div>
+                                <canvas id="chartLabSGPT" height="30"></canvas>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Hemoglobin</span>
+                                    <span id="hemoglobinStatus" class="text-gray-500">-</span>
+                                </div>
+                                <canvas id="chartLabHemoglobin" height="30"></canvas>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Leukosit</span>
+                                    <span id="leukositStatus" class="text-gray-500">-</span>
+                                </div>
+                                <canvas id="chartLabLeukosit" height="30"></canvas>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Trombosit</span>
+                                    <span id="trombositStatus" class="text-gray-500">-</span>
+                                </div>
+                                <canvas id="chartLabTrombosit" height="30"></canvas>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Gula Darah Puasa</span>
+                                    <span id="gdpStatus" class="text-gray-500">-</span>
+                                </div>
+                                <canvas id="chartLabGDP" height="30"></canvas>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Kolesterol Total</span>
+                                    <span id="kolesterolStatus" class="text-gray-500">-</span>
+                                </div>
+                                <canvas id="chartLabKolesterol" height="30"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lab Range Analysis -->
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-700 mb-3">Range Distribution</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <div class="text-sm mb-1">Trigliserida</div>
+                                <canvas id="chartLabTrigliserida" height="30"></canvas>
+                            </div>
+                            <div>
+                                <div class="text-sm mb-1">HDL Kolesterol</div>
+                                <canvas id="chartLabHDL" height="30"></canvas>
+                            </div>
+                            <div>
+                                <div class="text-sm mb-1">LDL Kolesterol</div>
+                                <canvas id="chartLabLDL" height="30"></canvas>
+                            </div>
+                            <div>
+                                <div class="text-sm mb-1">Ureum</div>
+                                <canvas id="chartLabUreum" height="30"></canvas>
+                            </div>
+                            <div>
+                                <div class="text-sm mb-1">Kreatinin</div>
+                                <canvas id="chartLabKreatinin" height="30"></canvas>
+                            </div>
+                            <div>
+                                <div class="text-sm mb-1">Gula Darah 2 JPP</div>
+                                <canvas id="chartLabGDP2JPP" height="30"></canvas>
+                            </div>
+                            <div>
+                                <div class="text-sm mb-1">Asam Urat</div>
+                                <canvas id="chartLabAsamUrat" height="30"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Overlay -->
+            <div id="dashboardLoadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+                <div class="bg-white rounded-lg p-8 text-center">
+                    <div class="inline-block">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+                    </div>
+                    <p class="mt-4 text-gray-600">Loading dashboard data...</p>
+                </div>
             </div>
         </main>
+
+        <!-- Chart.js Library -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     </div>
 
     <script type="module">
         import { authService } from '../js/services/authService.js';
         import { initSidebar } from '../js/utils/sidebarInit.js';
+        import { analysisDashboardService } from '../js/services/analysisDashboardService.js';
 
         if (!authService.isAuthenticated()) {
             window.location.href = 'login.html';
@@ -146,8 +371,11 @@
                 if (userRoleEl) userRoleEl.textContent = role;
                 if (userInitialEl) userInitialEl.textContent = initial;
 
-                // Initialize sidebar - handles sidebar active link and admin menus
+                // Initialize sidebar
                 await initSidebar();
+
+                // Initialize dashboard
+                await analysisDashboardService.initializeDashboard();
             }
 
             // Mark page as initialized (triggers CSS fade-in)
