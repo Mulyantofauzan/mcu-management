@@ -1035,6 +1035,8 @@ window.handleAddMCU = async function(event) {
             hbsag: document.getElementById('mcu-hbsag').value || null,
             napza: getFieldValue('mcu-napza', 'mcu-napza-other'),
             colorblind: getFieldValue('mcu-colorblind', 'mcu-colorblind-other'),
+            smokingStatus: document.getElementById('mcu-smoking-status').value || null,
+            exerciseFrequency: document.getElementById('mcu-exercise-frequency').value || null,
             doctor: doctorId,
             recipient: document.getElementById('mcu-recipient').value || null,
             keluhanUtama: document.getElementById('mcu-keluhan').value || null,
@@ -1216,15 +1218,23 @@ window.viewMCUDetail = async function(mcuId) {
         document.getElementById('mcu-detail-napza').textContent = mcu.napza || '-';
         document.getElementById('mcu-detail-colorblind').textContent = mcu.colorblind || '-';
 
-        // Fill 8-field vision details
-        document.getElementById('mcu-detail-vision-distant-unaided-left').textContent = mcu.visionDistantUnaideLeft || '-';
-        document.getElementById('mcu-detail-vision-distant-unaided-right').textContent = mcu.visionDistantUnaideRight || '-';
-        document.getElementById('mcu-detail-vision-distant-spectacles-left').textContent = mcu.visionDistantSpectaclesLeft || '-';
-        document.getElementById('mcu-detail-vision-distant-spectacles-right').textContent = mcu.visionDistantSpectaclesRight || '-';
-        document.getElementById('mcu-detail-vision-near-unaided-left').textContent = mcu.visionNearUnaideLeft || '-';
-        document.getElementById('mcu-detail-vision-near-unaided-right').textContent = mcu.visionNearUnaideRight || '-';
-        document.getElementById('mcu-detail-vision-near-spectacles-left').textContent = mcu.visionNearSpectaclesLeft || '-';
-        document.getElementById('mcu-detail-vision-near-spectacles-right').textContent = mcu.visionNearSpectaclesRight || '-';
+        // Fill 8-field vision details with null check
+        const visionFields = [
+            { id: 'mcu-detail-vision-distant-unaided-left', value: mcu.visionDistantUnaideLeft },
+            { id: 'mcu-detail-vision-distant-unaided-right', value: mcu.visionDistantUnaideRight },
+            { id: 'mcu-detail-vision-distant-spectacles-left', value: mcu.visionDistantSpectaclesLeft },
+            { id: 'mcu-detail-vision-distant-spectacles-right', value: mcu.visionDistantSpectaclesRight },
+            { id: 'mcu-detail-vision-near-unaided-left', value: mcu.visionNearUnaideLeft },
+            { id: 'mcu-detail-vision-near-unaided-right', value: mcu.visionNearUnaideRight },
+            { id: 'mcu-detail-vision-near-spectacles-left', value: mcu.visionNearSpectaclesLeft },
+            { id: 'mcu-detail-vision-near-spectacles-right', value: mcu.visionNearSpectaclesRight }
+        ];
+        visionFields.forEach(field => {
+            const el = document.getElementById(field.id);
+            if (el) {
+                el.textContent = field.value || '-';
+            }
+        });
 
         // Fill doctor data - compare as numbers to handle Supabase numeric IDs
         let doctor = null;

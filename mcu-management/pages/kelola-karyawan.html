@@ -736,6 +736,64 @@
                         <div><label class="label">Suhu <span class="text-red-500">*</span></label><input type="text" id="mcu-temp" class="input" placeholder="Contoh: 36.5" required /></div>
                     </div>
 
+                    <!-- Other Examinations -->
+                    <div class="grid grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label class="label">Audiometri <span class="text-red-500">*</span></label>
+                            <select id="mcu-audio" class="input" required onchange="handleOtherOptionChange(this, 'mcu-audio-other')">
+                                <option value="">Pilih...</option>
+                                <option value="Normal">Normal</option>
+                                <option value="Gangguan Ringan">Gangguan Ringan</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                            <input type="text" id="mcu-audio-other" class="input mt-1 hidden" placeholder="Sebutkan hasil lainnya..." />
+                        </div>
+                        <div>
+                            <label class="label">Spirometri <span class="text-red-500">*</span></label>
+                            <select id="mcu-spiro" class="input" required onchange="handleOtherOptionChange(this, 'mcu-spiro-other')">
+                                <option value="">Pilih...</option>
+                                <option value="Normal">Normal</option>
+                                <option value="Restriktif">Restriktif</option>
+                                <option value="Obstruktif">Obstruktif</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                            <input type="text" id="mcu-spiro-other" class="input mt-1 hidden" placeholder="Sebutkan hasil lainnya..." />
+                        </div>
+                        <div>
+                            <label class="label">HBsAg <span class="text-red-500">*</span></label>
+                            <select id="mcu-hbsag" class="input" required>
+                                <option value="">Pilih: Reaktif / Non-reaktif</option>
+                                <option value="Negatif">Negatif</option>
+                                <option value="Positif">Positif</option>
+                                <option value="Reaktif">Reaktif</option>
+                                <option value="Non-Reaktif">Non-Reaktif</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Lifestyle Information -->
+                    <div class="grid grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label class="label">Status Merokok <span class="text-red-500">*</span></label>
+                            <select id="mcu-smoking-status" class="input" required>
+                                <option value="">Pilih...</option>
+                                <option value="Tidak Merokok">Tidak Merokok</option>
+                                <option value="Mantan Perokok">Mantan Perokok</option>
+                                <option value="Perokok Aktif">Perokok Aktif</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Frekuensi Olahraga <span class="text-red-500">*</span></label>
+                            <select id="mcu-exercise-frequency" class="input" required>
+                                <option value="">Pilih...</option>
+                                <option value="Tidak Pernah">Tidak Pernah</option>
+                                <option value="Jarang (&lt;1x/minggu)">Jarang (&lt;1x/minggu)</option>
+                                <option value="1-3x/minggu">1-3x/minggu</option>
+                                <option value="≥4x/minggu">≥4x/minggu</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <!-- Vision Assessment - Detailed 8-field structure -->
                     <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Penglihatan <span class="text-red-500">*</span></h4>
                     <div class="bg-blue-50 rounded-lg p-4 mb-4">
