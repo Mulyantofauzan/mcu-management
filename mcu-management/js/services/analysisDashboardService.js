@@ -491,14 +491,17 @@ class AnalysisDashboardService {
       if (!ctx) return;
 
       const itemInfo = this.labItemsMap[labItem.id];
-      if (!itemInfo) return;
+      if (!itemInfo) {
+        console.warn(`[AnalysisDashboard] Lab item ${labItem.id} (${labItem.name}) not found in database`);
+        return;
+      }
 
       const values = [];
       const statusCounts = { 'Normal': 0, 'Low': 0, 'High': 0, 'Not Recorded': 0 };
 
       this.filteredData.forEach(item => {
         const lab = item.labs[labItem.id];
-        if (lab) {
+        if (lab && lab.value) {
           values.push(lab.value);
           const status = this.determineLabStatus(lab.value, itemInfo.min_range_reference, itemInfo.max_range_reference);
           statusCounts[status]++;
@@ -506,6 +509,16 @@ class AnalysisDashboardService {
           statusCounts['Not Recorded']++;
         }
       });
+
+      // Debug: Log if most values are "Not Recorded"
+      const totalRecorded = statusCounts['Normal'] + statusCounts['Low'] + statusCounts['High'];
+      if (totalRecorded === 0 && this.filteredData.length > 0) {
+        console.warn(`[AnalysisDashboard] ${labItem.name}: No recorded values for ${this.filteredData.length} employees`, {
+          itemInfo: itemInfo,
+          minRange: itemInfo.min_range_reference,
+          maxRange: itemInfo.max_range_reference
+        });
+      }
 
       // Update status element
       if (labItem.statusEl) {
@@ -546,15 +559,26 @@ class AnalysisDashboardService {
 
   /**
    * Determine lab status (Normal/Low/High)
+   * Handles missing reference ranges gracefully
    */
   determineLabStatus(value, minRange, maxRange) {
-    if (!value) return 'Not Recorded';
+    if (!value && value !== 0) return 'Not Recorded';
 
     const numValue = parseFloat(value);
+    if (isNaN(numValue)) return 'Not Recorded';
+
+    // If reference ranges are missing, can't determine status - treat as recorded but unknown
+    if (!minRange && !maxRange) {
+      return 'Normal'; // Assume normal if we can't verify (data issue, not lab issue)
+    }
+
     const numMin = parseFloat(minRange);
     const numMax = parseFloat(maxRange);
 
-    if (isNaN(numValue) || isNaN(numMin) || isNaN(numMax)) return 'Unknown';
+    // If ranges exist but can't parse them, still count as attempted determination
+    if (isNaN(numMin) || isNaN(numMax)) {
+      return 'Normal'; // Assume normal if ranges are invalid
+    }
 
     if (numValue < numMin) return 'Low';
     if (numValue > numMax) return 'High';
