@@ -628,7 +628,7 @@ export const MCUFiles = {
                 query = query.is('deletedat', null);
             }
 
-            const { data, error } = await query.order('uploaded_at', { ascending: false });
+            const { data, error } = await query.order('uploadedat', { ascending: false });
 
             if (error) throw error;
             return data || [];

@@ -340,7 +340,7 @@ export class FileUploadWidget {
                 filename: file.name,
                 filetype: file.type,
                 filesize: file.size,
-                uploaded_at: new Date().toISOString(),
+                uploadedat: new Date().toISOString(),
                 isTemp: true // Mark as temporary (not yet in database)
             });
 
@@ -411,7 +411,7 @@ export class FileUploadWidget {
     renderFileItem(file) {
         const fileIcon = this.getFileIcon(file.filetype);
         const fileSize = this.formatFileSize(file.filesize);
-        const uploadDate = new Date(file.uploaded_at).toLocaleDateString();
+        const uploadDate = new Date(file.uploadedat).toLocaleDateString();
 
         return `
             <div class="file-item" data-fileid="${file.fileid}">
