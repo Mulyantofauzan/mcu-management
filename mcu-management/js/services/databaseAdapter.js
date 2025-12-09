@@ -387,61 +387,82 @@ export const MCUs = {
     async add(mcu) {
         if (getUseSupabase()) {
             const supabase = getSupabaseClient();
+
+            const insertPayload = {
+                mcu_id: mcu.mcuId,
+                employee_id: mcu.employeeId,
+                mcu_type: mcu.mcuType,
+                mcu_date: mcu.mcuDate,
+                // Note: age_at_mcu is calculated on backend, not stored in database
+                // Examination results (vital signs)
+                bmi: mcu.bmi,
+                blood_pressure: mcu.bloodPressure,
+                respiratory_rate: mcu.respiratoryRate,
+                pulse: mcu.pulse,
+                temperature: mcu.temperature,
+                // 8-field vision structure (map camelCase to snake_case)
+                vision_distant_unaided_left: mcu.visionDistantUnaideLeft,
+                vision_distant_unaided_right: mcu.visionDistantUnaideRight,
+                vision_distant_spectacles_left: mcu.visionDistantSpectaclesLeft,
+                vision_distant_spectacles_right: mcu.visionDistantSpectaclesRight,
+                vision_near_unaided_left: mcu.visionNearUnaideLeft,
+                vision_near_unaided_right: mcu.visionNearUnaideRight,
+                vision_near_spectacles_left: mcu.visionNearSpectaclesLeft,
+                vision_near_spectacles_right: mcu.visionNearSpectaclesRight,
+                // Legacy single vision field (for backward compatibility)
+                vision: mcu.vision,
+                // Other exams
+                audiometry: mcu.audiometry,
+                spirometry: mcu.spirometry,
+                hbsag: mcu.hbsag,
+                napza: mcu.napza,
+                colorblind: mcu.colorblind,
+                xray: mcu.xray,
+                ekg: mcu.ekg,
+                treadmill: mcu.treadmill,
+                sgot: mcu.sgot,
+                sgpt: mcu.sgpt,
+                cbc: mcu.cbc,
+                // Lifestyle fields
+                smoking_status: mcu.smokingStatus,
+                exercise_frequency: mcu.exerciseFrequency,
+                // Rujukan/Referral fields
+                doctor: mcu.doctor,
+                recipient: mcu.recipient,
+                keluhan_utama: mcu.keluhanUtama,
+                diagnosis_kerja: mcu.diagnosisKerja,
+                alasan_rujuk: mcu.alasanRujuk,
+                // Initial and final results
+                initial_result: mcu.initialResult,
+                initial_notes: mcu.initialNotes,
+                final_result: mcu.finalResult,
+                final_notes: mcu.finalNotes,
+                status: mcu.status,
+                created_by: mcu.createdBy,
+                updated_by: mcu.updatedBy
+            };
+
+            // 🔍 DEBUG: Log the exact payload being sent to Supabase
+            console.log('💾 [databaseAdapter.MCUs.add] SUPABASE INSERT PAYLOAD:', {
+              vision: {
+                vision_distant_unaided_left: insertPayload.vision_distant_unaided_left,
+                vision_distant_unaided_right: insertPayload.vision_distant_unaided_right,
+                vision_distant_spectacles_left: insertPayload.vision_distant_spectacles_left,
+                vision_distant_spectacles_right: insertPayload.vision_distant_spectacles_right,
+                vision_near_unaided_left: insertPayload.vision_near_unaided_left,
+                vision_near_unaided_right: insertPayload.vision_near_unaided_right,
+                vision_near_spectacles_left: insertPayload.vision_near_spectacles_left,
+                vision_near_spectacles_right: insertPayload.vision_near_spectacles_right
+              },
+              lifestyle: {
+                smoking_status: insertPayload.smoking_status,
+                exercise_frequency: insertPayload.exercise_frequency
+              }
+            });
+
             const { data, error } = await supabase
                 .from('mcus')
-                .insert({
-                    mcu_id: mcu.mcuId,
-                    employee_id: mcu.employeeId,
-                    mcu_type: mcu.mcuType,
-                    mcu_date: mcu.mcuDate,
-                    // Note: age_at_mcu is calculated on backend, not stored in database
-                    // Examination results (vital signs)
-                    bmi: mcu.bmi,
-                    blood_pressure: mcu.bloodPressure,
-                    respiratory_rate: mcu.respiratoryRate,
-                    pulse: mcu.pulse,
-                    temperature: mcu.temperature,
-                    // 8-field vision structure (map camelCase to snake_case)
-                    vision_distant_unaided_left: mcu.visionDistantUnaideLeft,
-                    vision_distant_unaided_right: mcu.visionDistantUnaideRight,
-                    vision_distant_spectacles_left: mcu.visionDistantSpectaclesLeft,
-                    vision_distant_spectacles_right: mcu.visionDistantSpectaclesRight,
-                    vision_near_unaided_left: mcu.visionNearUnaideLeft,
-                    vision_near_unaided_right: mcu.visionNearUnaideRight,
-                    vision_near_spectacles_left: mcu.visionNearSpectaclesLeft,
-                    vision_near_spectacles_right: mcu.visionNearSpectaclesRight,
-                    // Legacy single vision field (for backward compatibility)
-                    vision: mcu.vision,
-                    // Other exams
-                    audiometry: mcu.audiometry,
-                    spirometry: mcu.spirometry,
-                    hbsag: mcu.hbsag,
-                    napza: mcu.napza,
-                    colorblind: mcu.colorblind,
-                    xray: mcu.xray,
-                    ekg: mcu.ekg,
-                    treadmill: mcu.treadmill,
-                    sgot: mcu.sgot,
-                    sgpt: mcu.sgpt,
-                    cbc: mcu.cbc,
-                    // Lifestyle fields
-                    smoking_status: mcu.smokingStatus,
-                    exercise_frequency: mcu.exerciseFrequency,
-                    // Rujukan/Referral fields
-                    doctor: mcu.doctor,
-                    recipient: mcu.recipient,
-                    keluhan_utama: mcu.keluhanUtama,
-                    diagnosis_kerja: mcu.diagnosisKerja,
-                    alasan_rujuk: mcu.alasanRujuk,
-                    // Initial and final results
-                    initial_result: mcu.initialResult,
-                    initial_notes: mcu.initialNotes,
-                    final_result: mcu.finalResult,
-                    final_notes: mcu.finalNotes,
-                    status: mcu.status,
-                    created_by: mcu.createdBy,
-                    updated_by: mcu.updatedBy
-                })
+                .insert(insertPayload)
                 .select()
                 .single();
 
@@ -516,6 +537,25 @@ export const MCUs = {
             Object.keys(updates).forEach(key => {
                 const dbKey = fieldMapping[key] || key;
                 updateData[dbKey] = updates[key];
+            });
+
+            // 🔍 DEBUG: Log the update payload
+            console.log('💾 [databaseAdapter.MCUs.update] SUPABASE UPDATE PAYLOAD for MCU:', mcuId, {
+              vision: {
+                vision_distant_unaided_left: updateData.vision_distant_unaided_left,
+                vision_distant_unaided_right: updateData.vision_distant_unaided_right,
+                vision_distant_spectacles_left: updateData.vision_distant_spectacles_left,
+                vision_distant_spectacles_right: updateData.vision_distant_spectacles_right,
+                vision_near_unaided_left: updateData.vision_near_unaided_left,
+                vision_near_unaided_right: updateData.vision_near_unaided_right,
+                vision_near_spectacles_left: updateData.vision_near_spectacles_left,
+                vision_near_spectacles_right: updateData.vision_near_spectacles_right
+              },
+              lifestyle: {
+                smoking_status: updateData.smoking_status,
+                exercise_frequency: updateData.exercise_frequency
+              },
+              allUpdateKeys: Object.keys(updateData)
             });
 
             const { data, error } = await supabase

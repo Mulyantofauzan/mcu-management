@@ -740,6 +740,25 @@ window.handleAddMCU = async function(event) {
             initialNotes: document.getElementById('mcu-notes').value
         };
 
+        // 🔍 DEBUG: Log the collected data BEFORE passing to batch service
+        console.log('📋 [tambah-karyawan] MCU DATA COLLECTED:', {
+            vision: {
+                distantUnaidedLeft: mcuData.visionDistantUnaideLeft,
+                distantUnaidedRight: mcuData.visionDistantUnaideRight,
+                distantSpectaclesLeft: mcuData.visionDistantSpectaclesLeft,
+                distantSpectaclesRight: mcuData.visionDistantSpectaclesRight,
+                nearUnaidedLeft: mcuData.visionNearUnaideLeft,
+                nearUnaidedRight: mcuData.visionNearUnaideRight,
+                nearSpectaclesLeft: mcuData.visionNearSpectaclesLeft,
+                nearSpectaclesRight: mcuData.visionNearSpectaclesRight
+            },
+            lifestyle: {
+                smokingStatus: mcuData.smokingStatus,
+                exerciseFrequency: mcuData.exerciseFrequency
+            },
+            allMcuDataKeys: Object.keys(mcuData)
+        });
+
         // Show unified loading with step tracking
         const tempFiles = tempFileStorage.getFiles(mcuData.mcuId);
         showUnifiedLoading('Memproses...', 'Mengunggah file dan menyimpan data');

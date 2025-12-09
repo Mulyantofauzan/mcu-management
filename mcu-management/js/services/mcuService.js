@@ -22,21 +22,21 @@ class MCUService {
       mcuDate: mcuData.mcuDate,
       ageAtMCU: ageAtMCU,
 
-      // Examination fields
+      // Examination fields (MUST be camelCase - databaseAdapter will map to snake_case)
       bmi: mcuData.bmi || null,
-      blood_pressure: mcuData.bloodPressure || null,
-      respiratory_rate: mcuData.respiratoryRate || null,
+      bloodPressure: mcuData.bloodPressure || null,
+      respiratoryRate: mcuData.respiratoryRate || null,
       pulse: mcuData.pulse || null,
       temperature: mcuData.temperature || null,
-      // 8-field vision structure (map to snake_case for database)
-      vision_distant_unaided_left: mcuData.visionDistantUnaideLeft || null,
-      vision_distant_unaided_right: mcuData.visionDistantUnaideRight || null,
-      vision_distant_spectacles_left: mcuData.visionDistantSpectaclesLeft || null,
-      vision_distant_spectacles_right: mcuData.visionDistantSpectaclesRight || null,
-      vision_near_unaided_left: mcuData.visionNearUnaideLeft || null,
-      vision_near_unaided_right: mcuData.visionNearUnaideRight || null,
-      vision_near_spectacles_left: mcuData.visionNearSpectaclesLeft || null,
-      vision_near_spectacles_right: mcuData.visionNearSpectaclesRight || null,
+      // 8-field vision structure (MUST be camelCase - databaseAdapter will map to snake_case)
+      visionDistantUnaideLeft: mcuData.visionDistantUnaideLeft || null,
+      visionDistantUnaideRight: mcuData.visionDistantUnaideRight || null,
+      visionDistantSpectaclesLeft: mcuData.visionDistantSpectaclesLeft || null,
+      visionDistantSpectaclesRight: mcuData.visionDistantSpectaclesRight || null,
+      visionNearUnaideLeft: mcuData.visionNearUnaideLeft || null,
+      visionNearUnaideRight: mcuData.visionNearUnaideRight || null,
+      visionNearSpectaclesLeft: mcuData.visionNearSpectaclesLeft || null,
+      visionNearSpectaclesRight: mcuData.visionNearSpectaclesRight || null,
       audiometry: mcuData.audiometry || null,
       spirometry: mcuData.spirometry || null,
       xray: mcuData.xray || null,
@@ -46,18 +46,18 @@ class MCUService {
       napza: mcuData.napza || null,
       colorblind: mcuData.colorblind || null,
 
-      // Lifestyle fields (map camelCase to snake_case for database)
-      smoking_status: mcuData.smokingStatus || null,
-      exercise_frequency: mcuData.exerciseFrequency || null,
+      // Lifestyle fields (MUST be camelCase - databaseAdapter will map to snake_case)
+      smokingStatus: mcuData.smokingStatus || null,
+      exerciseFrequency: mcuData.exerciseFrequency || null,
 
-      // Rujukan fields (map camelCase to snake_case for database)
+      // Rujukan fields (MUST be camelCase - databaseAdapter will map to snake_case)
       doctor: mcuData.doctor || null,
       recipient: mcuData.recipient || null,
-      keluhan_utama: mcuData.keluhanUtama || null,
-      diagnosis_kerja: mcuData.diagnosisKerja || null,
-      alasan_rujuk: mcuData.alasanRujuk || null,
+      keluhanUtama: mcuData.keluhanUtama || null,
+      diagnosisKerja: mcuData.diagnosisKerja || null,
+      alasanRujuk: mcuData.alasanRujuk || null,
 
-      // Results
+      // Results (MUST be camelCase)
       initialResult: mcuData.initialResult,
       initialNotes: mcuData.initialNotes || '',
       finalResult: null,
@@ -69,6 +69,25 @@ class MCUService {
       // Note: lastUpdatedTimestamp removed - use updatedAt instead (Supabase standard)
       deletedAt: null
     };
+
+    // 🔍 DEBUG: Log the MCU object BEFORE database insert
+    console.log('📤 [mcuService.create] MCU OBJECT BEFORE DATABASE INSERT:', {
+      vision: {
+        vision_distant_unaided_left: mcu.vision_distant_unaided_left,
+        vision_distant_unaided_right: mcu.vision_distant_unaided_right,
+        vision_distant_spectacles_left: mcu.vision_distant_spectacles_left,
+        vision_distant_spectacles_right: mcu.vision_distant_spectacles_right,
+        vision_near_unaided_left: mcu.vision_near_unaided_left,
+        vision_near_unaided_right: mcu.vision_near_unaided_right,
+        vision_near_spectacles_left: mcu.vision_near_spectacles_left,
+        vision_near_spectacles_right: mcu.vision_near_spectacles_right
+      },
+      lifestyle: {
+        smoking_status: mcu.smoking_status,
+        exercise_frequency: mcu.exercise_frequency
+      },
+      allMcuKeys: Object.keys(mcu)
+    });
 
     await database.add('mcus', mcu);
 
@@ -238,64 +257,64 @@ class MCUService {
     }
 
     // Also update examination fields if provided
-    // Map from JavaScript field names (camelCase) to database field names (snake_case)
-    const fieldMap = {
+    // IMPORTANT: updateData must use camelCase keys - databaseAdapter will handle mapping to snake_case
+    const supportedFields = [
       // Date and type
-      'mcuDate': 'mcuDate',
-      'mcuType': 'mcuType',
+      'mcuDate',
+      'mcuType',
 
       // Vital signs
-      'bmi': 'bmi',
-      'bloodPressure': 'blood_pressure',
-      'respiratoryRate': 'respiratory_rate',
-      'pulse': 'pulse',
-      'temperature': 'temperature',
+      'bmi',
+      'bloodPressure',
+      'respiratoryRate',
+      'pulse',
+      'temperature',
 
       // Vision fields (8-field structure)
-      'visionDistantUnaideLeft': 'vision_distant_unaided_left',
-      'visionDistantUnaideRight': 'vision_distant_unaided_right',
-      'visionDistantSpectaclesLeft': 'vision_distant_spectacles_left',
-      'visionDistantSpectaclesRight': 'vision_distant_spectacles_right',
-      'visionNearUnaideLeft': 'vision_near_unaided_left',
-      'visionNearUnaideRight': 'vision_near_unaided_right',
-      'visionNearSpectaclesLeft': 'vision_near_spectacles_left',
-      'visionNearSpectaclesRight': 'vision_near_spectacles_right',
+      'visionDistantUnaideLeft',
+      'visionDistantUnaideRight',
+      'visionDistantSpectaclesLeft',
+      'visionDistantSpectaclesRight',
+      'visionNearUnaideLeft',
+      'visionNearUnaideRight',
+      'visionNearSpectaclesLeft',
+      'visionNearSpectaclesRight',
 
       // Other exams
-      'audiometry': 'audiometry',
-      'spirometry': 'spirometry',
-      'xray': 'xray',
-      'ekg': 'ekg',
-      'treadmill': 'treadmill',
-      'hbsag': 'hbsag',
-      'sgot': 'sgot',
-      'sgpt': 'sgpt',
-      'cbc': 'cbc',
-      'napza': 'napza',
-      'colorblind': 'colorblind',
+      'audiometry',
+      'spirometry',
+      'xray',
+      'ekg',
+      'treadmill',
+      'hbsag',
+      'sgot',
+      'sgpt',
+      'cbc',
+      'napza',
+      'colorblind',
 
       // Lifestyle fields
-      'smokingStatus': 'smoking_status',
-      'exerciseFrequency': 'exercise_frequency',
+      'smokingStatus',
+      'exerciseFrequency',
 
       // Rujukan fields
-      'doctor': 'doctor',
-      'recipient': 'recipient',
-      'keluhanUtama': 'keluhan_utama',
-      'diagnosisKerja': 'diagnosis_kerja',
-      'alasanRujuk': 'alasan_rujuk',
+      'doctor',
+      'recipient',
+      'keluhanUtama',
+      'diagnosisKerja',
+      'alasanRujuk',
 
       // Initial result fields
-      'initialResult': 'initialResult',
-      'initialNotes': 'initialNotes'
-    };
+      'initialResult',
+      'initialNotes'
+    ];
 
-    // Process all fields with proper camelCase to snake_case mapping
-    Object.entries(fieldMap).forEach(([jsField, dbField]) => {
-      const dataValue = followUpData[jsField];
+    // Process all supported fields - pass camelCase keys to databaseAdapter
+    supportedFields.forEach(field => {
+      const dataValue = followUpData[field];
 
       if (dataValue !== undefined) {
-        updateData[dbField] = dataValue;
+        updateData[field] = dataValue;
       }
     });
 
