@@ -923,6 +923,13 @@ window.addMCUForEmployee = async function(employeeId) {
         document.getElementById('mcu-form').reset();
         document.getElementById('mcu-employee-id').value = employeeId;
 
+        // ✅ CRITICAL: Clear lab widget state before opening modal
+        // This ensures fresh lab data collection for each new MCU
+        if (labResultWidgetAdd) {
+            labResultWidgetAdd.clear();
+            console.log('✅ Lab widget cleared before opening modal');
+        }
+
         // Set default date to today
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('mcu-date').value = today;
@@ -952,9 +959,15 @@ window.addMCUForEmployee = async function(employeeId) {
 
         openModal('add-mcu-modal');
 
-        // ✅ Use pre-initialized lab form (initialized once on page load)
-        // No need to reinit - form is permanent like other form fields
-        if (labResultWidgetAdd) {
+        // ✅ CRITICAL: Reinitialize lab widget when modal opens to ensure fresh state
+        // This prevents stale data from previous modal sessions
+        if (!labResultWidgetAdd || !labResultWidgetAdd.container) {
+            console.warn('⚠️ Lab widget not ready, reinitializing...');
+            const { StaticLabForm } = await import('../components/staticLabForm.js');
+            labResultWidgetAdd = new StaticLabForm('lab-results-container-add-karyawan');
+            console.log('✅ Lab widget reinitialized');
+        } else {
+            console.log('✅ Lab widget ready for Add MCU modal');
         }
     } catch (error) {
 
@@ -1123,10 +1136,27 @@ window.handleAddMCU = async function(event) {
         let labResults = [];
         if (labResultWidgetAdd) {
             labResults = labResultWidgetAdd.getAllLabResults() || [];
+            console.log('🧪 [handleAddMCU] Lab results collected:', {
+                count: labResults.length,
+                firstItem: labResults[0],
+                allResults: labResults
+            });
+        } else {
+            console.warn('⚠️ [handleAddMCU] Lab widget not available, proceeding without lab results');
+        }
+
+        // Validate that we have data to save
+        if (!mcuData || !mcuData.employeeId) {
+            throw new Error('MCU data incomplete - missing required fields');
         }
 
         // ✅ BATCH SAVE: Use MCU batch service to atomically save MCU + lab results
         // This prevents race conditions and orphaned records on sequential MCU operations
+        console.log('📤 [handleAddMCU] Calling mcuBatchService.saveMCUWithLabResults with:', {
+            mcuDataKeys: Object.keys(mcuData),
+            labResultsCount: labResults.length
+        });
+
         const batchResult = await mcuBatchService.saveMCUWithLabResults(mcuData, labResults, currentUser);
 
         if (!batchResult.success) {
