@@ -672,6 +672,26 @@ export const MCUFiles = {
     async delete(fileId) {
         // Alias for hardDelete for backward compatibility
         return await this.hardDelete(fileId);
+    },
+
+    async update(fileId, data) {
+        if (getUseSupabase()) {
+            const supabase = getSupabaseClient();
+            const { data: result, error } = await supabase
+                .from('mcufiles')
+                .update(data)
+                .eq('fileid', fileId);
+
+            if (error) throw error;
+            return result;
+        }
+        // IndexedDB: Update record
+        const file = await indexedDB.db.mcufiles?.where('fileid').equals(fileId).first();
+        if (file) {
+            Object.assign(file, data);
+            await indexedDB.db.mcufiles?.put(file);
+        }
+        return file;
     }
 };
 

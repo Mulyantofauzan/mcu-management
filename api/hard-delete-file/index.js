@@ -84,10 +84,11 @@ module.exports = async (req, res) => {
     }
 
     // Step 3: Hard delete file record from database
+    // Use fileId from the fetched fileData record (to handle both fileId and storagePath queries)
     const { error: deleteError } = await supabase
       .from('mcufiles')
       .delete()
-      .eq('fileid', fileId);
+      .eq('fileid', fileData.fileid);
 
     if (deleteError) {
       return res.status(500).json({
@@ -101,8 +102,9 @@ module.exports = async (req, res) => {
     });
 
   } catch (error) {
+    console.error('[hard-delete-file] Error:', error);
     return res.status(500).json({
-      error: 'Internal server error'
+      error: error.message || 'Internal server error'
     });
   }
 };

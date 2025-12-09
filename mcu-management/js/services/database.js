@@ -87,6 +87,7 @@ class DatabaseService {
             case 'users': return await adp.Users.update(id, data);
             case 'employees': return await adp.Employees.update(id, data);
             case 'mcus': return await adp.MCUs.update(id, data);
+            case 'mcufiles': return await adp.MCUFiles.update(id, data);
             case 'mcuChanges': return await adp.MCUChanges.update(id, data);
             case 'departments': return await adp.MasterData.updateDepartment(id, data.name);
             case 'jobTitles': return await adp.MasterData.updateJobTitle(id, data.name);
