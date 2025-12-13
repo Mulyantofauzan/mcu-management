@@ -65,13 +65,13 @@ export function getVisionGrade(value) {
 
 /**
  * Compare two vision grades
- * Returns hierarchy: BERAT > SEDANG > RINGAN > NORMAL > unmeasured
+ * Returns hierarchy: berat > sedang > ringan > normal > unmeasured
  * @param {string} grade1 - First grade ID
  * @param {string} grade2 - Second grade ID
  * @returns {string} Worse of the two grades
  */
 function getWorseGrade(grade1, grade2) {
-  const hierarchy = ['BERAT', 'SEDANG', 'RINGAN', 'NORMAL'];
+  const hierarchy = ['berat', 'sedang', 'ringan', 'normal'];
 
   if (grade1 === 'unmeasured' && grade2 === 'unmeasured') return 'unmeasured';
   if (grade1 === 'unmeasured') return grade2;
@@ -87,35 +87,84 @@ function getWorseGrade(grade1, grade2) {
 }
 
 /**
+ * Get best eye vision from one pair (unaided + spectacles)
+ * Priority: Unaided > Spectacles (because unaided is more realistic)
+ * If both available, take the WORSE one (more conservative)
+ * @param {string} unaided - Unaided vision value
+ * @param {string} spectacles - Spectacles vision value
+ * @returns {string} Grade ID for this pair
+ */
+function getEyeGrade(unaided, spectacles) {
+  const unaaidedGrade = getVisionGrade(unaided);
+  const spectaclesGrade = getVisionGrade(spectacles);
+
+  // If only one available, use it
+  if (unaaidedGrade !== 'unmeasured' && spectaclesGrade === 'unmeasured') {
+    return unaaidedGrade;
+  }
+  if (spectaclesGrade !== 'unmeasured' && unaaidedGrade === 'unmeasured') {
+    return spectaclesGrade;
+  }
+
+  // If both unavailable, return unmeasured
+  if (unaaidedGrade === 'unmeasured' && spectaclesGrade === 'unmeasured') {
+    return 'unmeasured';
+  }
+
+  // Both available: prioritize UNAIDED (more important) but if both exist, take worse
+  return getWorseGrade(unaaidedGrade, spectaclesGrade);
+}
+
+/**
  * Evaluate overall vision status from 8 vision fields
- * Takes the worst grade from all fields
+ * Smart logic:
+ * - Groups fields into 4 eye-pairs (Distant/Near × Left/Right)
+ * - For each pair: evaluates unaided vs spectacles
+ * - Returns worst grade from all pairs
+ * - Only returns "unmeasured" if ALL 8 fields are empty
+ *
  * @param {object} visionFields - Object with 8 vision fields
  * @returns {string} Overall grade ID ('normal', 'ringan', 'sedang', 'berat', 'unmeasured')
  */
 export function evaluateVisionStatus(visionFields) {
   if (!visionFields) return 'unmeasured';
 
-  const fields = [
-    visionFields.visionDistantUnaideLeft,
-    visionFields.visionDistantUnaideRight,
-    visionFields.visionDistantSpectaclesLeft,
-    visionFields.visionDistantSpectaclesRight,
-    visionFields.visionNearUnaideLeft,
-    visionFields.visionNearUnaideRight,
-    visionFields.visionNearSpectaclesLeft,
-    visionFields.visionNearSpectaclesRight
+  // Group into 4 eye-pairs: Distant Left, Distant Right, Near Left, Near Right
+  const eyePairs = [
+    // Distant vision
+    {
+      name: 'Distant Left',
+      unaided: visionFields.visionDistantUnaideLeft,
+      spectacles: visionFields.visionDistantSpectaclesLeft
+    },
+    {
+      name: 'Distant Right',
+      unaided: visionFields.visionDistantUnaideRight,
+      spectacles: visionFields.visionDistantSpectaclesRight
+    },
+    // Near vision
+    {
+      name: 'Near Left',
+      unaided: visionFields.visionNearUnaideLeft,
+      spectacles: visionFields.visionNearSpectaclesLeft
+    },
+    {
+      name: 'Near Right',
+      unaided: visionFields.visionNearUnaideRight,
+      spectacles: visionFields.visionNearSpectaclesRight
+    }
   ];
 
-  // Get grades for all fields
-  const grades = fields.map(field => getVisionGrade(field));
+  // Evaluate each eye-pair
+  const eyeGrades = eyePairs.map(pair => getEyeGrade(pair.unaided, pair.spectacles));
 
-  // Count non-unmeasured fields
-  const measuredGrades = grades.filter(g => g !== 'unmeasured');
+  // Filter out unmeasured to find measured grades
+  const measuredGrades = eyeGrades.filter(g => g !== 'unmeasured');
 
-  // If no measured fields, return unmeasured
+  // If no measured grades at all, return unmeasured
   if (measuredGrades.length === 0) return 'unmeasured';
 
-  // Return worst grade
+  // Return worst grade from all measured pairs
   return measuredGrades.reduce((worst, current) => getWorseGrade(worst, current));
 }
 
