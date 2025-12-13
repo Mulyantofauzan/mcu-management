@@ -159,6 +159,16 @@
                         </a>
                     </li>
 
+                    <!-- Assessment RAHMA -->
+                    <li>
+                        <a href="javascript:void(0)" onclick="window.initAssessmentRahmaDAshboard?.()" class="sidebar-link" data-page="assessment-rahma-dashboard">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            <span>Assessment RAHMA</span>
+                        </a>
+                    </li>
+
                     <!-- Kelola User (Admin Only) -->
                     <li id="menu-kelola-user">
                         <a href="./pages/kelola-user.html" class="sidebar-link" data-page="kelola-user">
@@ -491,6 +501,14 @@
                     <div id="activity-list" class="space-y-3"></div>
                 </div>
             </div>
+
+            <!-- Assessment RAHMA Dashboard Page -->
+            <div id="assessment-rahma-dashboard-page" class="hidden">
+                <!-- Content populated by JavaScript -->
+                <div class="text-center text-gray-500 py-8">
+                    <p>Loading RAHMA Dashboard...</p>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -507,6 +525,12 @@
 
     <!-- Scripts -->
     <script type="module" src="js/pages/dashboard.js"></script>
+
+    <!-- Assessment RAHMA Dashboard Import -->
+    <script type="module">
+        import { initAssessmentRahmaDAshboard } from './js/pages/assessment-rahma-dashboard.js';
+        window.initAssessmentRahmaDAshboard = initAssessmentRahmaDAshboard;
+    </script>
 
     <!-- Display App Version -->
     <script>
