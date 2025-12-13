@@ -82,16 +82,16 @@ class AnalysisDashboardService {
         }
       });
 
-      // Get all lab results for all MCUs (with batching to avoid 400 errors)
+      // Get lab results only for LATEST MCUs (lazy load all MCUs later if needed)
       let labResults = [];
-      const allMCUIds = mcus.map(m => m.mcu_id);
+      const latestMCUIds = Object.values(latestMCUPerEmployee).map(m => m.mcu_id);
 
-      // Only query lab results if there are MCUs to query
+      // Only query lab results if there are latest MCUs to query
       // Batch queries to avoid hitting URL length limits
-      if (allMCUIds.length > 0) {
+      if (latestMCUIds.length > 0) {
         const batchSize = 100;
-        for (let i = 0; i < allMCUIds.length; i += batchSize) {
-          const batch = allMCUIds.slice(i, i + batchSize);
+        for (let i = 0; i < latestMCUIds.length; i += batchSize) {
+          const batch = latestMCUIds.slice(i, i + batchSize);
           const { data: labs, error: labError } = await supabase
             .from('pemeriksaan_lab')
             .select('*')
@@ -137,36 +137,16 @@ class AnalysisDashboardService {
           };
         });
 
-      // Build consolidated data for ALL MCU records (for year-based filtering)
-      // Only include active employees with ANY MCU records
-      this.allMCUData = mcus
-        .filter(mcu => employees.some(emp => emp.employee_id === mcu.employee_id && emp.is_active === true))
-        .map(mcu => {
-          const emp = employees.find(e => e.employee_id === mcu.employee_id);
-          const dept = departments?.find(d => d.name === emp.department);
-          const job = jobTitles?.find(j => j.name === emp.job_title);
+      // Initialize allMCUData as empty - will be lazy loaded when user selects "Semua Tahun"
+      this.allMCUData = [];
+      // Initialize availableYears - will be populated when all MCU data is loaded
+      this.availableYears = [];
 
-          // Get lab results for this MCU
-          const mcuLabResults = labResults?.filter(l => l.mcu_id === mcu.mcu_id) || [];
-          const labMap = {};
-          mcuLabResults.forEach(lab => {
-            labMap[lab.lab_item_id] = lab;
-          });
-
-          return {
-            employee: emp,
-            mcu,
-            department: dept,
-            jobTitle: job,
-            labs: labMap
-          };
-        });
-
-      // Extract available years from all MCU records
+      // Extract available years from latest MCUs only (for initial display)
       const yearSet = new Set();
-      this.allMCUData.forEach(item => {
-        if (item.mcu && item.mcu.mcu_date) {
-          const year = new Date(item.mcu.mcu_date).getFullYear();
+      Object.values(latestMCUPerEmployee).forEach(mcu => {
+        if (mcu && mcu.mcu_date) {
+          const year = new Date(mcu.mcu_date).getFullYear();
           yearSet.add(year);
         }
       });
@@ -229,6 +209,133 @@ class AnalysisDashboardService {
   }
 
   /**
+   * Lazy load all MCU records and years (called when user selects "Semua Tahun")
+   */
+  async loadAllMCUData() {
+    // Return early if already loaded
+    if (this.allMCUData.length > 0) {
+      return;
+    }
+
+    try {
+      console.log('Lazy loading all MCU data...');
+
+      // Get all MCUs again (this time we'll process all records, not just latest)
+      const { data: allMcus, error: mcuError } = await supabase
+        .from('mcus')
+        .select('*')
+        .is('deleted_at', null)
+        .order('mcu_date', { ascending: false });
+
+      if (mcuError) throw mcuError;
+
+      // Get all employees (we need this for filtering)
+      const { data: employees, error: empError } = await supabase
+        .from('employees')
+        .select('*')
+        .is('deleted_at', null);
+
+      if (empError) throw empError;
+
+      // Get departments and job titles
+      const { data: departments } = await supabase.from('departments').select('*');
+      const { data: jobTitles } = await supabase.from('job_titles').select('*');
+
+      // Get ALL lab results for all MCUs (with batching)
+      let allLabResults = [];
+      const allMCUIds = allMcus.map(m => m.mcu_id);
+
+      if (allMCUIds.length > 0) {
+        const batchSize = 100;
+        for (let i = 0; i < allMCUIds.length; i += batchSize) {
+          const batch = allMCUIds.slice(i, i + batchSize);
+          const { data: labs, error: labError } = await supabase
+            .from('pemeriksaan_lab')
+            .select('*')
+            .in('mcu_id', batch)
+            .is('deleted_at', null);
+
+          if (labError) {
+            console.warn(`Warning loading lab batch ${Math.floor(i/batchSize)+1}:`, labError);
+          } else {
+            allLabResults = allLabResults.concat(labs || []);
+          }
+        }
+      }
+
+      // Build consolidated data for ALL MCU records
+      // Only include active employees with ANY MCU records
+      this.allMCUData = allMcus
+        .filter(mcu => employees.some(emp => emp.employee_id === mcu.employee_id && emp.is_active === true))
+        .map(mcu => {
+          const emp = employees.find(e => e.employee_id === mcu.employee_id);
+          const dept = departments?.find(d => d.name === emp.department);
+          const job = jobTitles?.find(j => j.name === emp.job_title);
+
+          // Get lab results for this MCU
+          const mcuLabResults = allLabResults?.filter(l => l.mcu_id === mcu.mcu_id) || [];
+          const labMap = {};
+          mcuLabResults.forEach(lab => {
+            labMap[lab.lab_item_id] = lab;
+          });
+
+          return {
+            employee: emp,
+            mcu,
+            department: dept,
+            jobTitle: job,
+            labs: labMap
+          };
+        });
+
+      // Extract available years from ALL MCU records
+      const yearSet = new Set();
+      this.allMCUData.forEach(item => {
+        if (item.mcu && item.mcu.mcu_date) {
+          const year = new Date(item.mcu.mcu_date).getFullYear();
+          yearSet.add(year);
+        }
+      });
+
+      const newYears = Array.from(yearSet).sort((a, b) => b - a);
+
+      // Update available years if we found more
+      if (newYears.length > this.availableYears.length) {
+        this.availableYears = newYears;
+        this.updateYearDropdown();
+      }
+
+      console.log('All MCU data loaded:', {
+        totalRecords: this.allMCUData.length,
+        availableYears: this.availableYears
+      });
+    } catch (error) {
+      console.error('Error lazy loading all MCU data:', error);
+    }
+  }
+
+  /**
+   * Update year dropdown with new years
+   */
+  updateYearDropdown() {
+    const yearSelect = document.getElementById('filterYear');
+    if (!yearSelect) return;
+
+    // Clear existing options except the first one
+    while (yearSelect.options.length > 1) {
+      yearSelect.remove(1);
+    }
+
+    // Add years
+    this.availableYears.forEach(year => {
+      const option = document.createElement('option');
+      option.value = year;
+      option.textContent = year;
+      yearSelect.appendChild(option);
+    });
+  }
+
+  /**
    * Setup event listeners for filters
    */
   setupEventListeners() {
@@ -248,6 +355,8 @@ class AnalysisDashboardService {
       // Show/hide year filter based on selection
       if (e.target.value === 'all-years') {
         yearFilterContainer.style.display = 'block';
+        // Lazy load all MCU data when user switches to "Semua Tahun"
+        await this.loadAllMCUData();
       } else {
         yearFilterContainer.style.display = 'none';
         yearSelect.value = ''; // Reset year filter
