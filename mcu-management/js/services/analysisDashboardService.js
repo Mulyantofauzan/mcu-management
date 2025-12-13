@@ -7,6 +7,7 @@
 
 import { supabase } from '../config/supabase.js';
 import { labService } from './labService.js';
+import { LAB_ITEMS_MAPPING } from '../data/labItemsMapping.js';
 
 class AnalysisDashboardService {
   constructor() {
@@ -79,15 +80,26 @@ class AnalysisDashboardService {
 
       // Get all lab results for latest MCUs
       const mculIds = Object.values(latestMCUPerEmployee).map(m => m.mcu_id);
-      const { data: labResults } = await supabase
+      console.log(`[AnalysisDashboard] Loading lab results for ${mculIds.length} latest MCUs:`, mculIds);
+      const { data: labResults, error: labError } = await supabase
         .from('pemeriksaan_lab')
         .select('*')
-        .in('mcu_id', mculIds);
+        .in('mcu_id', mculIds)
+        .is('deleted_at', null); // ✅ CRITICAL: Only get non-deleted lab results
 
-      // Get lab items info
-      const { data: labItems } = await supabase.from('lab_items').select('*');
-      labItems?.forEach(item => {
-        this.labItemsMap[item.id] = item;
+      if (labError) throw labError;
+      console.log(`[AnalysisDashboard] Retrieved ${labResults?.length || 0} lab results from database`);
+
+      // ✅ CRITICAL FIX: Use labItemsMapping.js as authoritative source for lab item reference ranges
+      // This prevents issues with corrupted or missing min/max values in database
+      // labItemsMapping.js is the single source of truth for all lab item metadata
+      this.labItemsMap = { ...LAB_ITEMS_MAPPING };
+      // Also add unit information from mapping
+      Object.keys(this.labItemsMap).forEach(id => {
+        const item = this.labItemsMap[id];
+        // Map 'min' and 'max' from labItemsMapping to database field names
+        item.min_range_reference = item.min;
+        item.max_range_reference = item.max;
       });
 
       // Build consolidated data
@@ -539,21 +551,25 @@ class AnalysisDashboardService {
       { id: 32, name: 'Asam Urat', canvasId: 'chartLabAsamUrat' }
     ];
 
+    console.log(`[AnalysisDashboard] Rendering ${labItems.length} lab result charts for ${this.filteredData.length} employees`);
+    console.log(`[AnalysisDashboard] Lab items mapping keys: ${Object.keys(this.labItemsMap).join(', ')}`);
+
     labItems.forEach(labItem => {
       const ctx = document.getElementById(labItem.canvasId)?.getContext('2d');
       if (!ctx) return;
 
       const itemInfo = this.labItemsMap[labItem.id];
       if (!itemInfo) {
-        console.warn(`[AnalysisDashboard] Lab item ${labItem.id} (${labItem.name}) not found in database`);
+        console.warn(`[AnalysisDashboard] Lab item ${labItem.id} (${labItem.name}) not found in labItemsMap`);
         return;
       }
 
       const values = [];
       const statusCounts = { 'Normal': 0, 'Low': 0, 'High': 0, 'Not Recorded': 0 };
+      const labId = labItem.id;
 
       this.filteredData.forEach(item => {
-        const lab = item.labs[labItem.id];
+        const lab = item.labs[labId];
         if (lab && lab.value) {
           values.push(lab.value);
           const status = this.determineLabStatus(lab.value, itemInfo.min_range_reference, itemInfo.max_range_reference);
@@ -566,11 +582,14 @@ class AnalysisDashboardService {
       // Debug: Log if most values are "Not Recorded"
       const totalRecorded = statusCounts['Normal'] + statusCounts['Low'] + statusCounts['High'];
       if (totalRecorded === 0 && this.filteredData.length > 0) {
-        console.warn(`[AnalysisDashboard] ${labItem.name}: No recorded values for ${this.filteredData.length} employees`, {
+        console.warn(`[AnalysisDashboard] ${labItem.name} (ID: ${labId}): No recorded values for ${this.filteredData.length} employees`, {
           itemInfo: itemInfo,
           minRange: itemInfo.min_range_reference,
-          maxRange: itemInfo.max_range_reference
+          maxRange: itemInfo.max_range_reference,
+          sampleLabs: this.filteredData.slice(0, 2).map(item => item.labs)
         });
+      } else if (totalRecorded > 0) {
+        console.log(`[AnalysisDashboard] ${labItem.name} (ID: ${labId}): Found ${totalRecorded} recorded values`, statusCounts);
       }
 
       // Update status element
