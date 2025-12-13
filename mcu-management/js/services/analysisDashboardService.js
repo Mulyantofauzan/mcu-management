@@ -1195,17 +1195,22 @@ class AnalysisDashboardService {
               align: 'end',
               color: '#333',
               font: { size: 10, weight: 'bold' },
-              offset: 4,
+              offset: 8,
               formatter: function(value) {
                 return value > 0 ? value : '';
               }
+            }
+          },
+          layout: {
+            padding: {
+              right: 50 // Add padding on right side for labels
             }
           },
           scales: {
             x: {
               beginAtZero: true,
               ticks: { stepSize: Math.max(1, Math.ceil(maxValue / 5)) },
-              max: Math.ceil(maxValue * 1.15) // Add 15% padding for labels
+              max: Math.ceil(maxValue * 1.2) // Increase padding to 20% for more space
             },
             y: { ticks: { font: { size: 11 } } }
           }
