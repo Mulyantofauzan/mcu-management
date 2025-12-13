@@ -90,17 +90,10 @@ class AnalysisDashboardService {
       if (labError) throw labError;
       console.log(`[AnalysisDashboard] Retrieved ${labResults?.length || 0} lab results from database`);
 
-      // ✅ CRITICAL FIX: Use labItemsMapping.js as authoritative source for lab item reference ranges
-      // This prevents issues with corrupted or missing min/max values in database
-      // labItemsMapping.js is the single source of truth for all lab item metadata
+      // ✅ Load lab items mapping for display purposes (name, unit)
+      // Status is read directly from database 'notes' column, not calculated from ranges
+      // This ensures chart data matches exactly what's stored in database
       this.labItemsMap = { ...LAB_ITEMS_MAPPING };
-      // Also add unit information from mapping
-      Object.keys(this.labItemsMap).forEach(id => {
-        const item = this.labItemsMap[id];
-        // Map 'min' and 'max' from labItemsMapping to database field names
-        item.min_range_reference = item.min;
-        item.max_range_reference = item.max;
-      });
 
       // Build consolidated data
       this.allData = employees
@@ -568,28 +561,38 @@ class AnalysisDashboardService {
       const statusCounts = { 'Normal': 0, 'Low': 0, 'High': 0, 'Not Recorded': 0 };
       const labId = labItem.id;
 
+      // ✅ CRITICAL FIX: Read status directly from 'notes' column instead of recalculating
+      // The notes column contains pre-calculated status ("Normal", "High", "Low") from database
+      // This ensures chart data matches exactly what's in the database
       this.filteredData.forEach(item => {
         const lab = item.labs[labId];
         if (lab && lab.value) {
           values.push(lab.value);
-          const status = this.determineLabStatus(lab.value, itemInfo.min_range_reference, itemInfo.max_range_reference);
+
+          // ✅ Get status directly from notes column (already calculated when lab result was saved)
+          let status = 'Not Recorded';
+          if (lab.notes) {
+            // notes column contains status: "Normal", "High", or "Low"
+            const normalizedStatus = String(lab.notes).trim();
+            if (['Normal', 'High', 'Low'].includes(normalizedStatus)) {
+              status = normalizedStatus;
+            }
+          }
+
           statusCounts[status]++;
         } else {
           statusCounts['Not Recorded']++;
         }
       });
 
-      // Debug: Log if most values are "Not Recorded"
+      // Debug: Log data status
       const totalRecorded = statusCounts['Normal'] + statusCounts['Low'] + statusCounts['High'];
       if (totalRecorded === 0 && this.filteredData.length > 0) {
         console.warn(`[AnalysisDashboard] ${labItem.name} (ID: ${labId}): No recorded values for ${this.filteredData.length} employees`, {
-          itemInfo: itemInfo,
-          minRange: itemInfo.min_range_reference,
-          maxRange: itemInfo.max_range_reference,
-          sampleLabs: this.filteredData.slice(0, 2).map(item => item.labs)
+          sampleLabs: this.filteredData.slice(0, 2).map(item => item.labs[labId])
         });
       } else if (totalRecorded > 0) {
-        console.log(`[AnalysisDashboard] ${labItem.name} (ID: ${labId}): Found ${totalRecorded} recorded values`, statusCounts);
+        console.log(`[AnalysisDashboard] ${labItem.name} (ID: ${labId}): Found ${totalRecorded} recorded values from database`, statusCounts);
       }
 
       // Update status element
@@ -629,33 +632,6 @@ class AnalysisDashboardService {
     });
   }
 
-  /**
-   * Determine lab status (Normal/Low/High)
-   * Handles missing reference ranges gracefully
-   */
-  determineLabStatus(value, minRange, maxRange) {
-    if (!value && value !== 0) return 'Not Recorded';
-
-    const numValue = parseFloat(value);
-    if (isNaN(numValue)) return 'Not Recorded';
-
-    // If reference ranges are missing, can't determine status - treat as recorded but unknown
-    if (!minRange && !maxRange) {
-      return 'Normal'; // Assume normal if we can't verify (data issue, not lab issue)
-    }
-
-    const numMin = parseFloat(minRange);
-    const numMax = parseFloat(maxRange);
-
-    // If ranges exist but can't parse them, still count as attempted determination
-    if (isNaN(numMin) || isNaN(numMax)) {
-      return 'Normal'; // Assume normal if ranges are invalid
-    }
-
-    if (numValue < numMin) return 'Low';
-    if (numValue > numMax) return 'High';
-    return 'Normal';
-  }
 
   /**
    * Destroy existing chart to avoid conflicts
