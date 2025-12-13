@@ -514,8 +514,8 @@ class AnalysisDashboardService {
         plugins: {
           legend: { display: false },
           datalabels: {
-            anchor: 'end',
-            align: 'top',
+            anchor: 'center',
+            align: 'center',
             color: '#333',
             font: { size: 10, weight: 'bold' },
             formatter: function(value) {
@@ -584,8 +584,8 @@ class AnalysisDashboardService {
         plugins: {
           legend: { display: false },
           datalabels: {
-            anchor: 'end',
-            align: 'top',
+            anchor: 'center',
+            align: 'center',
             color: '#333',
             font: { size: 10, weight: 'bold' },
             formatter: function(value) {
@@ -729,14 +729,14 @@ class AnalysisDashboardService {
           data: data,
           backgroundColor: colors,
           borderColor: '#fff',
-          borderWidth: 2
+          borderWidth: 1.5
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: true,
         plugins: {
-          legend: { position: 'bottom' },
+          legend: { position: 'bottom', labels: { font: { size: 10 }, padding: 8 } },
           tooltip: {
             callbacks: {
               label: function(context) {
@@ -752,10 +752,8 @@ class AnalysisDashboardService {
             anchor: 'center',
             align: 'center',
             color: '#fff',
-            font: { size: 11, weight: 'bold' },
+            font: { size: 9, weight: 'bold' },
             formatter: function(value) {
-              const total = this.dataset.data.reduce((a, b) => a + b, 0);
-              const percentage = Math.round((value / total) * 100);
               return value > 0 ? `${value}` : '';
             }
           }
@@ -828,8 +826,8 @@ class AnalysisDashboardService {
               plugins: {
                 legend: { display: false },
                 datalabels: {
-                  anchor: 'end',
-                  align: 'top',
+                  anchor: 'center',
+                  align: 'center',
                   color: '#333',
                   font: { size: 10, weight: 'bold' },
                   formatter: function(value) {
@@ -890,8 +888,8 @@ class AnalysisDashboardService {
               plugins: {
                 legend: { display: false },
                 datalabels: {
-                  anchor: 'end',
-                  align: 'top',
+                  anchor: 'center',
+                  align: 'center',
                   color: '#333',
                   font: { size: 10, weight: 'bold' },
                   formatter: function(value) {
@@ -1172,8 +1170,8 @@ class AnalysisDashboardService {
           plugins: {
             legend: { display: false },
             datalabels: {
-              anchor: 'end',
-              align: 'right',
+              anchor: 'center',
+              align: 'center',
               color: '#333',
               font: { size: 10, weight: 'bold' },
               formatter: function(value) {
