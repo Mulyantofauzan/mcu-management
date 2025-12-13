@@ -558,7 +558,7 @@ class AnalysisDashboardService {
               scales: {
                 y: {
                   beginAtZero: true,
-                  max: Math.max(...smokingData) * 1.2,
+                  max: Math.max(5, Math.max(...smokingData) * 1.2),
                   ticks: { stepSize: 1 }
                 }
               }
@@ -617,7 +617,7 @@ class AnalysisDashboardService {
               scales: {
                 y: {
                   beginAtZero: true,
-                  max: Math.max(...exerciseData) * 1.2,
+                  max: Math.max(5, Math.max(...exerciseData) * 1.2),
                   ticks: { stepSize: 1 }
                 }
               }
