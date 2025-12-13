@@ -28,8 +28,11 @@ export function transformEmployee(emp) {
         employeeId: emp.employee_id,
         name: emp.name,
         jenisKelamin: emp.jenis_kelamin || 'Laki-laki',
-        jobTitle: emp.job_title,
-        department: emp.department,
+        jobTitleId: emp.job_title_id,  // Job title ID for lookups
+        jobTitle: emp.job_title,        // Job title name display
+        jobId: emp.job_title_id,        // Alias for backward compatibility
+        departmentId: emp.department_id, // Department ID for lookups
+        department: emp.department,      // Department name
         dateOfBirth: emp.date_of_birth,
         birthDate: emp.date_of_birth, // alias
         bloodType: emp.blood_type,
