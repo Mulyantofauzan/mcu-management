@@ -176,53 +176,59 @@
                 </div>
             </div>
 
-            <!-- 2. BMI Chart -->
-            <div class="card p-6 mb-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">BMI Distribution</h2>
-                <canvas id="chartBMI" height="80"></canvas>
+            <!-- 2-3. BMI & Blood Pressure Charts (2 Columns) -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- BMI Chart -->
+                <div class="card p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Distribusi BMI</h2>
+                    <canvas id="chartBMI" height="80"></canvas>
+                </div>
+
+                <!-- Blood Pressure Chart -->
+                <div class="card p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Distribusi Tekanan Darah</h2>
+                    <canvas id="chartBloodPressure" height="80"></canvas>
+                </div>
             </div>
 
-            <!-- 3. Blood Pressure Chart -->
+            <!-- 4. Vision Chart (Smaller) -->
             <div class="card p-6 mb-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Blood Pressure Range Distribution</h2>
-                <canvas id="chartBloodPressure" height="80"></canvas>
-            </div>
-
-            <!-- 4. Vision Chart -->
-            <div class="card p-6 mb-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Vision Assessment Results</h2>
-                <canvas id="chartVision" height="80"></canvas>
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Hasil Pemeriksaan Penglihatan</h2>
+                <canvas id="chartVision" height="50"></canvas>
                 <!-- Vision Legend -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4 pt-4 border-t">
-                    <div class="text-center">
-                        <div class="w-4 h-4 rounded mx-auto mb-2" style="background-color: #10b981;"></div>
-                        <p class="text-xs font-medium text-gray-700">Normal (6/6)</p>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-3 pt-3 border-t text-center">
+                    <div>
+                        <div class="w-3 h-3 rounded mx-auto mb-1" style="background-color: #10b981;"></div>
+                        <p class="text-xs text-gray-700">Normal (6/6)</p>
                     </div>
-                    <div class="text-center">
-                        <div class="w-4 h-4 rounded mx-auto mb-2" style="background-color: #f59e0b;"></div>
-                        <p class="text-xs font-medium text-gray-700">Gangguan Ringan (6/9-6/12)</p>
+                    <div>
+                        <div class="w-3 h-3 rounded mx-auto mb-1" style="background-color: #f59e0b;"></div>
+                        <p class="text-xs text-gray-700">Ringan (6/9-6/12)</p>
                     </div>
-                    <div class="text-center">
-                        <div class="w-4 h-4 rounded mx-auto mb-2" style="background-color: #f97316;"></div>
-                        <p class="text-xs font-medium text-gray-700">Gangguan Sedang (6/18-6/24)</p>
+                    <div>
+                        <div class="w-3 h-3 rounded mx-auto mb-1" style="background-color: #f97316;"></div>
+                        <p class="text-xs text-gray-700">Sedang (6/18-6/24)</p>
                     </div>
-                    <div class="text-center">
-                        <div class="w-4 h-4 rounded mx-auto mb-2" style="background-color: #ef4444;"></div>
-                        <p class="text-xs font-medium text-gray-700">Gangguan Berat (6/36-6/60)</p>
+                    <div>
+                        <div class="w-3 h-3 rounded mx-auto mb-1" style="background-color: #ef4444;"></div>
+                        <p class="text-xs text-gray-700">Berat (6/36-6/60)</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Smoking Status Chart -->
-            <div class="card p-6 mb-6">
-                <p class="text-sm font-medium text-gray-700 mb-3">Smoking Status</p>
-                <canvas id="chartSmokingStatus" height="40"></canvas>
-            </div>
+            <!-- Smoking Status & Exercise Frequency Charts (2 Columns) -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- Smoking Status Chart -->
+                <div class="card p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Status Merokok</h2>
+                    <canvas id="chartSmokingStatus" height="40"></canvas>
+                </div>
 
-            <!-- Exercise Frequency Chart -->
-            <div class="card p-6 mb-6">
-                <p class="text-sm font-medium text-gray-700 mb-3">Exercise Frequency</p>
-                <canvas id="chartExerciseFrequency" height="40"></canvas>
+                <!-- Exercise Frequency Chart -->
+                <div class="card p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Frekuensi Olahraga</h2>
+                    <canvas id="chartExerciseFrequency" height="40"></canvas>
+                </div>
             </div>
 
             <!-- 5. Examination Results -->
