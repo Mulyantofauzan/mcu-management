@@ -1,0 +1,151 @@
+<!-- Assessment RAHMA Modal -->
+<!-- Include this in your main HTML page -->
+
+<div id="assessment-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto">
+  <div class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+      <!-- Header -->
+      <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex justify-between items-center">
+        <div>
+          <h2 class="text-2xl font-bold">Assessment RAHMA</h2>
+          <p class="text-sm text-blue-100">Framingham CVD Risk Score Assessment</p>
+        </div>
+        <button onclick="window.closeModal('assessment-modal')" class="text-white hover:bg-blue-800 p-2 rounded">
+          ✕
+        </button>
+      </div>
+
+      <!-- Content -->
+      <div class="p-6 space-y-6">
+        <!-- Demographics Section -->
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <h3 class="font-bold text-sm mb-4 text-gray-700">📋 Data Karyawan (Auto-filled)</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <label class="font-semibold text-gray-600">MCU ID</label>
+              <input type="text" id="assess_mcu_id" readonly class="w-full px-3 py-2 border rounded bg-gray-100 text-gray-700">
+            </div>
+            <div>
+              <label class="font-semibold text-gray-600">Nama Karyawan</label>
+              <input type="text" id="assess_employee_name" readonly class="w-full px-3 py-2 border rounded bg-gray-100 text-gray-700">
+            </div>
+            <div>
+              <label class="font-semibold text-gray-600">Jenis Kelamin</label>
+              <select id="assess_gender" readonly class="w-full px-3 py-2 border rounded bg-gray-100 text-gray-700">
+                <option value="wanita">Wanita (Female)</option>
+                <option value="pria">Pria (Male)</option>
+              </select>
+            </div>
+            <div>
+              <label class="font-semibold text-gray-600">Umur (tahun)</label>
+              <input type="number" id="assess_age" readonly class="w-full px-3 py-2 border rounded bg-gray-100 text-gray-700">
+            </div>
+            <div>
+              <label class="font-semibold text-gray-600">Tingkat Risiko Pekerjaan</label>
+              <select id="assess_job_risk" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="low">Rendah (Low)</option>
+                <option value="moderate" selected>Sedang (Moderate)</option>
+                <option value="high">Tinggi (High)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lifestyle Section -->
+        <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
+          <h3 class="font-bold text-sm mb-4 text-gray-700">🏃 Gaya Hidup</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <label class="font-semibold text-gray-600">Frekuensi Olahraga</label>
+              <select id="assess_exercise" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value=">2x_seminggu">>2x per minggu (Most Protective)</option>
+                <option value="1-2x_seminggu" selected>1-2x per minggu (Baseline)</option>
+                <option value="1-2x_sebulan">1-2x per bulan</option>
+                <option value="tidak_pernah">Tidak pernah (Never)</option>
+              </select>
+              <p class="text-xs text-green-600 mt-1">💚 Faktor Protektif - Semakin sering = semakin baik</p>
+            </div>
+            <div>
+              <label class="font-semibold text-gray-600">Status Merokok</label>
+              <select id="assess_smoking" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="tidak_merokok" selected>Tidak merokok (Non-smoker)</option>
+                <option value="mantan_perokok">Mantan perokok (Former)</option>
+                <option value="perokok">Merokok (Current)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vital Signs Section -->
+        <div class="bg-amber-50 p-4 rounded-lg border-l-4 border-amber-500">
+          <h3 class="font-bold text-sm mb-4 text-gray-700">❤️ Vital Signs (from MCU)</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div>
+              <label class="font-semibold text-gray-600">Tekanan Darah Sistolik</label>
+              <input type="number" id="assess_systolic" placeholder="e.g., 120" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <p class="text-xs text-gray-500 mt-1">mmHg</p>
+            </div>
+            <div>
+              <label class="font-semibold text-gray-600">Tekanan Darah Diastolik</label>
+              <input type="number" id="assess_diastolic" placeholder="e.g., 80" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <p class="text-xs text-gray-500 mt-1">mmHg</p>
+            </div>
+            <div>
+              <label class="font-semibold text-gray-600">BMI</label>
+              <input type="number" id="assess_bmi" placeholder="e.g., 24.5" step="0.1" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <p class="text-xs text-gray-500 mt-1">kg/m²</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lab Results Section -->
+        <div class="bg-purple-50 p-4 rounded-lg border-l-4 border-purple-500">
+          <h3 class="font-bold text-sm mb-4 text-gray-700">🧪 Hasil Lab (from Lab Results)</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <label class="font-semibold text-gray-600">Gula Darah Puasa (GDP)</label>
+              <input type="number" id="assess_glucose" placeholder="e.g., 100" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <p class="text-xs text-gray-500 mt-1">mg/dL (Normal: ≤126)</p>
+            </div>
+            <div>
+              <label class="font-semibold text-gray-600">Kolesterol Total</label>
+              <input type="number" id="assess_cholesterol" placeholder="e.g., 200" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <p class="text-xs text-gray-500 mt-1">mg/dL (Optimal: <200)</p>
+            </div>
+            <div>
+              <label class="font-semibold text-gray-600">Trigliserida</label>
+              <input type="number" id="assess_triglycerides" placeholder="e.g., 150" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <p class="text-xs text-gray-500 mt-1">mg/dL (Normal: <200)</p>
+            </div>
+            <div>
+              <label class="font-semibold text-gray-600">HDL Kolesterol</label>
+              <input type="number" id="assess_hdl" placeholder="e.g., 50" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <p class="text-xs text-gray-500 mt-1">mg/dL (Higher = Better: >44)</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Display -->
+        <div id="assessment-results" class="min-h-[100px] bg-gray-50 p-4 rounded-lg">
+          <p class="text-gray-500 text-sm">Klik "Hitung Assessment" untuk melihat hasil</p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-3 justify-end">
+          <button onclick="window.closeModal('assessment-modal')"
+            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+            Batal
+          </button>
+          <button onclick="window.assessmentRAHMA.calculateAssessment()"
+            class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg">
+            🔢 Hitung Assessment
+          </button>
+          <button id="save-assessment-btn" onclick="window.assessmentRAHMA.saveAssessment()"
+            class="hidden px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg">
+            💾 Simpan Hasil
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

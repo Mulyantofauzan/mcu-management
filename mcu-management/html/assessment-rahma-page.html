@@ -1,0 +1,106 @@
+<!-- Assessment RAHMA Page -->
+<!-- This is the main page shown when user clicks "Assessment RAHMA" from sidebar menu -->
+
+<div id="assessment-rahma-page" class="hidden p-6">
+  <!-- Page Header -->
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">📊 Assessment RAHMA</h1>
+    <p class="text-gray-600">Framingham CVD Risk Score Assessment - Penilaian Risiko Kardiovaskular</p>
+  </div>
+
+  <!-- Info Box -->
+  <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg mb-6">
+    <h3 class="font-bold text-blue-900 mb-2">ℹ️ Tentang RAHMA</h3>
+    <p class="text-sm text-blue-800 mb-2">
+      <strong>RAHMA</strong> adalah singkatan dari <strong>Risk Assessment Health Management Analytics</strong>.
+      Fitur ini menggunakan <strong>Framingham Cardiovascular Risk Score</strong> untuk menilai risiko penyakit jantung 10 tahun ke depan.
+    </p>
+    <p class="text-sm text-blue-800">
+      <strong>11 Parameter:</strong> Gender, Umur, Job Risk, Exercise, Smoking, Blood Pressure, BMI, Glucose, Cholesterol, Triglycerides, HDL
+    </p>
+  </div>
+
+  <!-- Search and Filter -->
+  <div class="mb-4 flex gap-4">
+    <div class="flex-1">
+      <input type="text" id="assessment-search" placeholder="Cari: MCU ID, Nama Karyawan, NIK..."
+        onkeyup="window.assessmentRAHMA.filterAssessments()"
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+    <button onclick="window.assessmentRAHMA.initAssessmentRAHMA()"
+      class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg">
+      🔄 Refresh
+    </button>
+  </div>
+
+  <!-- Table -->
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-100 border-b">
+        <tr>
+          <th class="px-4 py-3 text-left font-semibold text-gray-700">No.</th>
+          <th class="px-4 py-3 text-left font-semibold text-gray-700">MCU ID</th>
+          <th class="px-4 py-3 text-left font-semibold text-gray-700">Nama Karyawan</th>
+          <th class="px-4 py-3 text-left font-semibold text-gray-700">Departemen</th>
+          <th class="px-4 py-3 text-left font-semibold text-gray-700">Posisi</th>
+          <th class="px-4 py-3 text-left font-semibold text-gray-700">Tanggal MCU</th>
+          <th class="px-4 py-3 text-left font-semibold text-gray-700">Status MCU</th>
+          <th class="px-4 py-3 text-center font-semibold text-gray-700">Action</th>
+        </tr>
+      </thead>
+      <tbody id="assessment-table-body">
+        <!-- Populated by JavaScript -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="mt-4 flex justify-between items-center">
+    <div class="text-sm text-gray-600" id="pagination-info">
+      Halaman 1 dari 1
+    </div>
+    <div class="flex gap-2">
+      <button id="prev-page-btn" onclick="window.assessmentRAHMA.prevPage()"
+        class="px-3 py-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+        ← Sebelumnya
+      </button>
+      <button id="next-page-btn" onclick="window.assessmentRAHMA.nextPage()"
+        class="px-3 py-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+        Berikutnya →
+      </button>
+    </div>
+  </div>
+
+  <!-- Risk Category Legend -->
+  <div class="mt-8 p-4 bg-gray-50 rounded-lg">
+    <h3 class="font-bold text-sm mb-3">Kategori Risiko:</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+      <div class="flex items-start gap-2">
+        <span class="bg-green-100 text-green-800 px-3 py-1 rounded text-xs font-medium">LOW</span>
+        <div>
+          <p class="font-semibold">Risiko Rendah</p>
+          <p class="text-gray-600 text-xs">Total Score: 0-4 | CVD Risk: < 5%</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-2">
+        <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded text-xs font-medium">MEDIUM</span>
+        <div>
+          <p class="font-semibold">Risiko Menengah</p>
+          <p class="text-gray-600 text-xs">Total Score: 5-11 | CVD Risk: 5-20%</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-2">
+        <span class="bg-red-100 text-red-800 px-3 py-1 rounded text-xs font-medium">HIGH</span>
+        <div>
+          <p class="font-semibold">Risiko Tinggi</p>
+          <p class="text-gray-600 text-xs">Total Score: 12+ | CVD Risk: > 20%</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Include the modal -->
+<!-- Add this import to your main HTML: -->
+<!-- <link rel="import" href="html/assessment-rahma-modal.html"> -->
+<!-- Or copy the content of assessment-rahma-modal.html here -->
