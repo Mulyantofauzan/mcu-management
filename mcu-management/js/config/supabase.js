@@ -8,9 +8,7 @@
 // Import environment config to ensure credentials are loaded
 import { ENV, initializeEnv } from './envConfig.js';
 // Initialize env config synchronously (it may already be initialized)
-console.log('[supabase.js] Calling initializeEnv()...');
 await initializeEnv();
-console.log('[supabase.js] initializeEnv() completed');
 
 // Load Supabase client from CDN (added in HTML)
 // <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -30,7 +28,6 @@ if (SUPABASE_URL && SUPABASE_ANON_KEY) {
 
 // Function to initialize Supabase when CDN script is loaded
 async function initSupabase() {
-    console.log('[supabase.js] initSupabase() called');
     if (SUPABASE_URL && SUPABASE_ANON_KEY) {
         // Wait for Supabase library to be available (loaded via CDN)
         let attempts = 0;

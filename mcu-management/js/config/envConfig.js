@@ -18,8 +18,6 @@ export const ENV = {
  * Load configuration from multiple sources
  */
 export async function loadEnvironmentConfig() {
-  console.log('[envConfig.js] loadEnvironmentConfig() called');
-
   // Priority 1: Try API endpoint first (production on Vercel)
   // This loads env vars from Vercel environment variables at runtime
   try {
@@ -74,11 +72,9 @@ export async function loadEnvironmentConfig() {
  * Initialize and set window.ENV for backward compatibility
  */
 export async function initializeEnv() {
-  console.log('[envConfig.js] initializeEnv() called');
   await loadEnvironmentConfig();
   // Also set on window for legacy code that expects window.ENV
   window.ENV = { ...ENV };
-  console.log('[envConfig.js] initializeEnv() completed, window.ENV:', window.ENV);
   return ENV;
 }
 
