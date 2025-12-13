@@ -94,8 +94,9 @@ class AnalysisDashboardService {
       this.labItemsMap = { ...LAB_ITEMS_MAPPING };
 
       // Build consolidated data
+      // Only include active employees with latest MCU records
       this.allData = employees
-        .filter(emp => latestMCUPerEmployee[emp.employee_id])
+        .filter(emp => emp.status === 'Aktif' && latestMCUPerEmployee[emp.employee_id])
         .map(emp => {
           const mcu = latestMCUPerEmployee[emp.employee_id];
           const dept = departments?.find(d => d.name === emp.department);
