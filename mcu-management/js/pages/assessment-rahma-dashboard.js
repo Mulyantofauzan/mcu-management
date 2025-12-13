@@ -134,8 +134,9 @@ function setupAutoRefresh() {
 async function loadEmployees() {
   try {
     const all = await employeeService.getAll();
-    // Filter: active employees only (is_active = true, deleted_at = null)
-    allEmployees = all.filter(emp => emp.is_active && !emp.deleted_at);
+    // Filter: active employees only (isActive = true, deletedAt = null)
+    // Note: employees are already transformed with camelCase field names
+    allEmployees = all.filter(emp => emp.isActive && !emp.deletedAt);
   } catch (error) {
     console.error('Error loading employees:', error);
     allEmployees = [];
@@ -196,9 +197,10 @@ function calculateAllAssessments() {
 
   allEmployees.forEach(employee => {
     // Get latest MCU for this employee
+    // Note: MCU data is transformed with camelCase field names
     const employeeMCUs = allMCUs
-      .filter(mcu => mcu.employee_id === employee.employee_id && !mcu.deleted_at)
-      .sort((a, b) => new Date(b.mcu_date) - new Date(a.mcu_date));
+      .filter(mcu => mcu.employeeId === employee.employeeId && !mcu.deletedAt)
+      .sort((a, b) => new Date(b.mcuDate) - new Date(a.mcuDate));
 
     if (employeeMCUs.length === 0) {
       // No MCU, skip
@@ -207,38 +209,38 @@ function calculateAllAssessments() {
 
     const latestMCU = employeeMCUs[0];
 
-    // Include MCU data (don't filter by final_result to show all assessments)
-    // if (!latestMCU.final_result) {
+    // Include MCU data (don't filter by finalResult to show all assessments)
+    // if (!latestMCU.finalResult) {
     //   return;
     // }
 
     // Get associated data
     const dept = departments.find(d => d.id === employee.departmentId);
     const job = jobTitles.find(j => j.id === employee.jobId);
-    const vendor = employee.vendor_name
-      ? vendors.find(v => v.name === employee.vendor_name)
+    const vendor = employee.vendorName
+      ? vendors.find(v => v.name === employee.vendorName)
       : null;
 
     // Get lab results for latest MCU
     const labResults = allMCUs
-      .find(m => m.mcu_id === latestMCU.mcu_id)
-      ? allMCUs.filter(m => m.employee_id === employee.employee_id)
-        .find(m => m.mcu_id === latestMCU.mcu_id)
+      .find(m => m.mcuId === latestMCU.mcuId)
+      ? allMCUs.filter(m => m.employeeId === employee.employeeId)
+        .find(m => m.mcuId === latestMCU.mcuId)
       : null;
 
     // Check if this MCU has lab results
     const hasLabResults = latestMCU.glucose || latestMCU.cholesterol || latestMCU.triglycerides || latestMCU.hdl;
-    const isIncomplete = !latestMCU.blood_pressure || !latestMCU.bmi || (!hasLabResults);
+    const isIncomplete = !latestMCU.bloodPressure || !latestMCU.bmi || (!hasLabResults);
 
     // Prepare assessment data
     const assessmentInput = {
-      gender: employee.jenis_kelamin === 'L' || employee.jenis_kelamin === 'Laki-laki' ? 'pria' : 'wanita',
-      age: calculateAge(employee.date_of_birth, latestMCU.mcu_date),
-      jobRiskLevel: job?.risk_level || 'moderate',
-      exerciseFrequency: latestMCU.exercise_frequency || '1-2x_seminggu',
-      smokingStatus: latestMCU.smoking_status || 'tidak_merokok',
-      systolic: parseFloat(latestMCU.blood_pressure?.split('/')[0]) || null,
-      diastolic: parseFloat(latestMCU.blood_pressure?.split('/')[1]) || null,
+      gender: employee.jenisKelamin === 'L' || employee.jenisKelamin === 'Laki-laki' ? 'pria' : 'wanita',
+      age: calculateAge(employee.birthDate, latestMCU.mcuDate),
+      jobRiskLevel: job?.riskLevel || 'moderate',
+      exerciseFrequency: latestMCU.exerciseFrequency || '1-2x_seminggu',
+      smokingStatus: latestMCU.smokingStatus || 'tidak_merokok',
+      systolic: parseFloat(latestMCU.bloodPressure?.split('/')[0]) || null,
+      diastolic: parseFloat(latestMCU.bloodPressure?.split('/')[1]) || null,
       bmi: parseFloat(latestMCU.bmi) || null,
       glucose: latestMCU.glucose ? parseFloat(latestMCU.glucose) : null,
       cholesterol: latestMCU.cholesterol ? parseFloat(latestMCU.cholesterol) : null,
@@ -251,34 +253,34 @@ function calculateAllAssessments() {
     try {
       result = framinghamCalculatorService.performCompleteAssessment(assessmentInput);
     } catch (err) {
-      console.warn(`Error calculating assessment for ${employee.employee_id}:`, err);
+      console.warn(`Error calculating assessment for ${employee.employeeId}:`, err);
       return;
     }
 
     // Add to assessment data
     assessmentData.push({
       employee: {
-        employee_id: employee.employee_id,
+        employee_id: employee.employeeId,
         name: employee.name,
-        gender: employee.jenis_kelamin,
-        birthDate: employee.date_of_birth,
+        gender: employee.jenisKelamin,
+        birthDate: employee.birthDate,
         departmentId: employee.departmentId,
         department: dept?.name || 'N/A',
         jobId: employee.jobId,
         jobTitle: job?.name || 'N/A',
         vendorName: vendor?.name || null,
-        isActive: employee.is_active,
-        deletedAt: employee.deleted_at
+        isActive: employee.isActive,
+        deletedAt: employee.deletedAt
       },
       mcu: {
-        mcuId: latestMCU.mcu_id,
-        mcuDate: latestMCU.mcu_date,
-        mcuType: latestMCU.mcu_type,
-        bloodPressure: latestMCU.blood_pressure,
+        mcuId: latestMCU.mcuId,
+        mcuDate: latestMCU.mcuDate,
+        mcuType: latestMCU.mcuType,
+        bloodPressure: latestMCU.bloodPressure,
         bmi: latestMCU.bmi,
-        smokingStatus: latestMCU.smoking_status,
-        exerciseFrequency: latestMCU.exercise_frequency,
-        finalResult: latestMCU.final_result
+        smokingStatus: latestMCU.smokingStatus,
+        exerciseFrequency: latestMCU.exerciseFrequency,
+        finalResult: latestMCU.finalResult
       },
       assessment: result,
       scores: {
@@ -743,7 +745,7 @@ export async function toggleEmployeeActive(employeeId, isActive) {
   }
 
   try {
-    await employeeService.update(employeeId, { is_active: isActive });
+    await employeeService.update(employeeId, { isActive: isActive });
     showToast(`Karyawan ${isActive ? 'diaktifkan' : 'dinonaktifkan'}`, 'success');
 
     // Reload dashboard
@@ -755,7 +757,7 @@ export async function toggleEmployeeActive(employeeId, isActive) {
 }
 
 /**
- * Soft delete employee (set deleted_at)
+ * Soft delete employee (set deletedAt)
  */
 export async function softDeleteEmployee(employeeId) {
   if (!confirm('Hapus karyawan ini? Data akan tersimpan di "Data Terhapus".')) {
@@ -764,7 +766,7 @@ export async function softDeleteEmployee(employeeId) {
 
   try {
     const now = new Date().toISOString();
-    await employeeService.update(employeeId, { deleted_at: now });
+    await employeeService.update(employeeId, { deletedAt: now });
     showToast('Karyawan berhasil dihapus (soft delete)', 'success');
 
     // Reload dashboard
