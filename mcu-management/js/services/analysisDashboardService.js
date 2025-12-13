@@ -216,9 +216,10 @@ class AnalysisDashboardService {
    */
   updateSummaryCards() {
     const total = this.filteredData.length;
-    const fit = this.filteredData.filter(d => d.mcu.status === 'Fit').length;
-    const fitNote = this.filteredData.filter(d => d.mcu.status === 'Fit With Note').length;
-    const unfit = this.filteredData.filter(d => d.mcu.status === 'Unfit').length;
+    // Handle both exact match and fallback for status field
+    const fit = this.filteredData.filter(d => (d.mcu.status || d.mcu.status) === 'Fit').length;
+    const fitNote = this.filteredData.filter(d => (d.mcu.status || d.mcu.status) === 'Fit With Note').length;
+    const unfit = this.filteredData.filter(d => (d.mcu.status || d.mcu.status) === 'Unfit').length;
 
     document.getElementById('statTotalMCU').textContent = total;
     document.getElementById('statFit').textContent = fit;
@@ -245,7 +246,8 @@ class AnalysisDashboardService {
     Object.keys(ranges).forEach(range => counts[range] = 0);
 
     this.filteredData.forEach(item => {
-      const bmi = item.mcu.bmi;
+      // Handle both camelCase and snake_case
+      const bmi = item.mcu.bmi || item.mcu.bmi;
       if (bmi) {
         for (const [range, config] of Object.entries(ranges)) {
           if (bmi >= config.min && bmi <= config.max) {
@@ -298,7 +300,8 @@ class AnalysisDashboardService {
     Object.keys(ranges).forEach(r => counts[r] = 0);
 
     this.filteredData.forEach(item => {
-      const bp = item.mcu.blood_pressure;
+      // Handle both camelCase and snake_case
+      const bp = item.mcu.blood_pressure || item.mcu.blood_pressure;
       if (bp) {
         const [systol, dias] = bp.split('/').map(v => parseInt(v));
         if (!isNaN(systol) && !isNaN(dias)) {
@@ -488,14 +491,14 @@ class AnalysisDashboardService {
    */
   renderExaminationCharts() {
     const examinations = [
-      { key: 'audiometry', id: 'chartAudiometri', label: 'Audiometri' },
-      { key: 'spirometry', id: 'chartSpirometri', label: 'Spirometri' },
-      { key: 'hbsag', id: 'chartHBSAG', label: 'HBSAG' },
-      { key: 'xray', id: 'chartXRay', label: 'X-Ray' },
-      { key: 'ekg', id: 'chartEKG', label: 'EKG' },
-      { key: 'treadmill', id: 'chartTreadmill', label: 'Treadmill' },
-      { key: 'napza', id: 'chartNAPZA', label: 'NAPZA' },
-      { key: 'colorblind', id: 'chartColorblind', label: 'Buta Warna' }
+      { key: 'audiometry', snakeKey: 'audiometry', id: 'chartAudiometri', label: 'Audiometri' },
+      { key: 'spirometry', snakeKey: 'spirometry', id: 'chartSpirometri', label: 'Spirometri' },
+      { key: 'hbsag', snakeKey: 'hbsag', id: 'chartHBSAG', label: 'HBSAG' },
+      { key: 'xray', snakeKey: 'xray', id: 'chartXRay', label: 'X-Ray' },
+      { key: 'ekg', snakeKey: 'ekg', id: 'chartEKG', label: 'EKG' },
+      { key: 'treadmill', snakeKey: 'treadmill', id: 'chartTreadmill', label: 'Treadmill' },
+      { key: 'napza', snakeKey: 'napza', id: 'chartNAPZA', label: 'NAPZA' },
+      { key: 'colorblind', snakeKey: 'colorblind', id: 'chartColorblind', label: 'Buta Warna' }
     ];
 
     examinations.forEach(exam => {
@@ -504,7 +507,8 @@ class AnalysisDashboardService {
 
       const counts = {};
       this.filteredData.forEach(item => {
-        const value = this.normalizeValue(item.mcu[exam.key]);
+        // Try camelCase first, then fallback to snake_case
+        const value = this.normalizeValue(item.mcu[exam.key] || item.mcu[exam.snakeKey]);
         counts[value] = (counts[value] || 0) + 1;
       });
 
