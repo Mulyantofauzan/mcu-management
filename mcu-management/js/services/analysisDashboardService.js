@@ -1045,6 +1045,11 @@ class AnalysisDashboardService {
           indexAxis: 'x', // Vertical bars
           responsive: true,
           maintainAspectRatio: true,
+          layout: {
+            padding: {
+              top: 30 // Add padding at top for data labels
+            }
+          },
           plugins: {
             legend: { display: false },
             tooltip: {
@@ -1058,15 +1063,17 @@ class AnalysisDashboardService {
                 }
               }
             },
-            // Data labels on top of bars
+            // Data labels on top of bars (outside, above bars)
             datalabels: {
               anchor: 'end',
-              align: 'top',
+              align: 'end',
+              offset: 6,
               color: '#333',
-              font: { size: 10, weight: 'bold' },
+              font: { size: 11, weight: 'bold' },
               formatter: function(value) {
                 return value > 0 ? value : '';
-              }
+              },
+              clip: false // Allow labels to overflow canvas
             }
           },
           scales: {
