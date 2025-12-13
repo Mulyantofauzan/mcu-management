@@ -13,9 +13,11 @@ import { evaluateVisionStatus, getGradeInfo } from '../utils/visionScaleHelper.j
 class AnalysisDashboardService {
   constructor() {
     this.charts = new Map(); // Store chart instances for cleanup
-    this.allData = []; // Cache all MCU data
+    this.allData = []; // Cache all MCU data (latest per employee only)
+    this.allMCUData = []; // Cache ALL MCU records (for year-based filtering)
     this.filteredData = []; // Current filtered data
     this.labItemsMap = {}; // Map lab_item_id to lab info
+    this.mcuPeriodFilter = 'latest'; // 'latest' or 'all-years'
   }
 
   /**
@@ -78,12 +80,12 @@ class AnalysisDashboardService {
         }
       });
 
-      // Get all lab results for latest MCUs
-      const mculIds = Object.values(latestMCUPerEmployee).map(m => m.mcu_id);
+      // Get all lab results for all MCUs
+      const allMCUIds = mcus.map(m => m.mcu_id);
       const { data: labResults, error: labError } = await supabase
         .from('pemeriksaan_lab')
         .select('*')
-        .in('mcu_id', mculIds)
+        .in('mcu_id', allMCUIds)
         .is('deleted_at', null); // ✅ CRITICAL: Only get non-deleted lab results
 
       if (labError) throw labError;
@@ -93,7 +95,7 @@ class AnalysisDashboardService {
       // This ensures chart data matches exactly what's stored in database
       this.labItemsMap = { ...LAB_ITEMS_MAPPING };
 
-      // Build consolidated data
+      // Build consolidated data for LATEST MCU per employee
       // Only include active employees (is_active = true) with latest MCU records
       this.allData = employees
         .filter(emp => emp.is_active === true && latestMCUPerEmployee[emp.employee_id])
@@ -118,11 +120,37 @@ class AnalysisDashboardService {
           };
         });
 
+      // Build consolidated data for ALL MCU records (for year-based filtering)
+      // Only include active employees with ANY MCU records
+      this.allMCUData = mcus
+        .filter(mcu => employees.some(emp => emp.employee_id === mcu.employee_id && emp.is_active === true))
+        .map(mcu => {
+          const emp = employees.find(e => e.employee_id === mcu.employee_id);
+          const dept = departments?.find(d => d.name === emp.department);
+          const job = jobTitles?.find(j => j.name === emp.job_title);
+
+          // Get lab results for this MCU
+          const mcuLabResults = labResults?.filter(l => l.mcu_id === mcu.mcu_id) || [];
+          const labMap = {};
+          mcuLabResults.forEach(lab => {
+            labMap[lab.lab_item_id] = lab;
+          });
+
+          return {
+            employee: emp,
+            mcu,
+            department: dept,
+            jobTitle: job,
+            labs: labMap
+          };
+        });
+
       this.filteredData = [...this.allData];
       console.log('Dashboard data loaded:', {
         totalEmployees: employees.length,
         activeEmployees: this.allData.length,
         employeesWithMCU: employees.filter(e => latestMCUPerEmployee[e.employee_id]).length,
+        allMCURecords: this.allMCUData.length,
         data: this.allData
       });
     } catch (error) {
@@ -169,9 +197,16 @@ class AnalysisDashboardService {
   setupEventListeners() {
     const btnApply = document.getElementById('btnApplyFilter');
     const btnReset = document.getElementById('btnResetFilter');
+    const mcuPeriodSelect = document.getElementById('filterMCUPeriod');
 
     btnApply?.addEventListener('click', () => this.applyFilters());
     btnReset?.addEventListener('click', () => this.resetFilters());
+
+    // Listen for MCU period filter changes (apply immediately)
+    mcuPeriodSelect?.addEventListener('change', async (e) => {
+      this.mcuPeriodFilter = e.target.value;
+      await this.applyFilters();
+    });
   }
 
   /**
@@ -181,8 +216,13 @@ class AnalysisDashboardService {
     const dept = document.getElementById('filterDepartment').value;
     const job = document.getElementById('filterJobTitle').value;
     const status = document.getElementById('filterStatus').value;
+    const mcuPeriod = document.getElementById('filterMCUPeriod').value || this.mcuPeriodFilter;
 
-    this.filteredData = this.allData.filter(item => {
+    // Determine base data source based on MCU period filter
+    const baseData = mcuPeriod === 'all-years' ? this.allMCUData : this.allData;
+
+    // Apply filters
+    this.filteredData = baseData.filter(item => {
       if (dept && item.employee.department !== dept) return false;
       if (job && item.employee.job_title !== job) return false;
       if (status && item.mcu.status !== status) return false;
@@ -196,9 +236,11 @@ class AnalysisDashboardService {
    * Reset all filters
    */
   async resetFilters() {
+    document.getElementById('filterMCUPeriod').value = 'latest';
     document.getElementById('filterDepartment').value = '';
     document.getElementById('filterJobTitle').value = '';
     document.getElementById('filterStatus').value = '';
+    this.mcuPeriodFilter = 'latest';
     this.filteredData = [...this.allData];
     await this.renderAllCharts();
   }
