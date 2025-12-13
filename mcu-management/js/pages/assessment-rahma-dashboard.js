@@ -190,6 +190,10 @@ function calculateAllAssessments() {
         .find(m => m.mcu_id === latestMCU.mcu_id)
       : null;
 
+    // Check if this MCU has lab results
+    const hasLabResults = latestMCU.glucose || latestMCU.cholesterol || latestMCU.triglycerides || latestMCU.hdl;
+    const isIncomplete = !latestMCU.blood_pressure || !latestMCU.bmi || (!hasLabResults);
+
     // Prepare assessment data
     const assessmentInput = {
       gender: employee.jenis_kelamin === 'L' || employee.jenis_kelamin === 'Laki-laki' ? 'pria' : 'wanita',
@@ -200,15 +204,11 @@ function calculateAllAssessments() {
       systolic: parseFloat(latestMCU.blood_pressure?.split('/')[0]) || null,
       diastolic: parseFloat(latestMCU.blood_pressure?.split('/')[1]) || null,
       bmi: parseFloat(latestMCU.bmi) || null,
-      glucose: null,
-      cholesterol: null,
-      triglycerides: null,
-      hdl: null
+      glucose: latestMCU.glucose ? parseFloat(latestMCU.glucose) : null,
+      cholesterol: latestMCU.cholesterol ? parseFloat(latestMCU.cholesterol) : null,
+      triglycerides: latestMCU.triglycerides ? parseFloat(latestMCU.triglycerides) : null,
+      hdl: latestMCU.hdl ? parseFloat(latestMCU.hdl) : null
     };
-
-    // Get lab values (will need to fetch from pemeriksaan_lab)
-    // For now, use nulls - will update in separate call
-    // TODO: Load lab results
 
     // Calculate Framingham score
     let result = null;
@@ -259,7 +259,8 @@ function calculateAllAssessments() {
         hdl: result.hdl_score
       },
       totalScore: result.total_score,
-      riskCategory: result.risk_category
+      riskCategory: result.risk_category,
+      isIncomplete: isIncomplete
     });
   });
 
@@ -606,24 +607,24 @@ function renderEmployeeTable() {
     const statusFinalBg = isDeleted ? 'bg-red-100 text-red-800' : statusBg;
 
     const row = document.createElement('tr');
-    row.className = 'border-b hover:bg-gray-50';
+    row.className = `border-b hover:bg-gray-50 ${item.isIncomplete ? 'bg-yellow-50' : ''}`;
     row.innerHTML = `
       <td class="px-2 py-2 text-xs text-gray-600">${startIdx + idx + 1}</td>
-      <td class="px-2 py-2 text-xs font-medium text-gray-900">${item.employee.name}</td>
+      <td class="px-2 py-2 text-xs font-medium text-gray-900">${item.employee.name} ${item.isIncomplete ? '<span title="Data tidak lengkap">⚠️</span>' : ''}</td>
       <td class="px-2 py-2 text-xs text-gray-600">${item.employee.jobTitle}</td>
       <td class="px-2 py-2 text-xs text-center">${genderDisplay}</td>
       <td class="px-2 py-2 text-xs text-center font-semibold">${age}</td>
       <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.jobRisk}</td>
       <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.exercise}</td>
       <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.smoking}</td>
-      <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.bloodPressure}</td>
-      <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.bmi}</td>
-      <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.cholesterol}</td>
-      <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.triglycerides}</td>
-      <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.hdl}</td>
+      <td class="px-2 py-2 text-xs text-center font-mono ${!item.mcu.bloodPressure ? 'text-gray-400 line-through' : ''}">${item.scores.bloodPressure}</td>
+      <td class="px-2 py-2 text-xs text-center font-mono ${!item.mcu.bmi ? 'text-gray-400 line-through' : ''}">${item.scores.bmi}</td>
+      <td class="px-2 py-2 text-xs text-center font-mono text-gray-400">${item.scores.cholesterol}</td>
+      <td class="px-2 py-2 text-xs text-center font-mono text-gray-400">${item.scores.triglycerides}</td>
+      <td class="px-2 py-2 text-xs text-center font-mono text-gray-400">${item.scores.hdl}</td>
       <td class="px-2 py-2 text-xs text-center font-bold">${item.totalScore > 0 ? '+' : ''}${item.totalScore}</td>
       <td class="px-2 py-2 text-xs text-center">
-        <span class="px-1 py-0.5 rounded text-xs font-semibold ${riskBg}">
+        <span class="px-1 py-0.5 rounded text-xs font-semibold ${riskBg}" title="${item.isIncomplete ? 'Data belum lengkap' : ''}">
           ${riskLabel}
         </span>
       </td>
