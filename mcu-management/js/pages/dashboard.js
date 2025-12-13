@@ -37,6 +37,7 @@ import { initSuperSearch } from '../components/superSearch.js';
 import storageDiagnostic from '../utils/storageDiagnostic.js';  // ✅ Diagnostic tools for file upload troubleshooting
 import { initVersionManager } from '../utils/versionManager.js';  // ✅ Version update manager
 import { initThemeManager } from '../utils/themeManager.js';  // ✅ Dark mode / Light mode manager
+import { networkStatusManager } from '../utils/networkStatusManager.js';  // ✅ Network status monitoring
 
 // Initialize environment variables immediately (before other module code runs)
 initializeEnv().then(() => {
