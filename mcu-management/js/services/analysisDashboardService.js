@@ -487,40 +487,113 @@ class AnalysisDashboardService {
   }
 
   /**
-   * 5. Physical Examination Results (8 bar charts)
+   * 5. Physical Examination Results - Split into 3 sections
+   * Section 1: Simple Binary (donut charts) - NAPZA, Buta Warna, HBSAG
+   * Section 2: Standard Exams (vertical bar charts) - Audiometri, Spirometri
+   * Section 3: Complex Medical (vertical bar charts) - X-Ray, EKG, Treadmill
    */
   renderExaminationCharts() {
-    const examinations = [
-      { key: 'audiometry', snakeKey: 'audiometry', id: 'chartAudiometri', label: 'Audiometri' },
-      { key: 'spirometry', snakeKey: 'spirometry', id: 'chartSpirometri', label: 'Spirometri' },
-      { key: 'hbsag', snakeKey: 'hbsag', id: 'chartHBSAG', label: 'HBSAG' },
-      { key: 'xray', snakeKey: 'xray', id: 'chartXRay', label: 'X-Ray' },
-      { key: 'ekg', snakeKey: 'ekg', id: 'chartEKG', label: 'EKG' },
-      { key: 'treadmill', snakeKey: 'treadmill', id: 'chartTreadmill', label: 'Treadmill' },
+    // Section 1: Simple binary exams (donut charts)
+    this.renderSimpleExaminations();
+
+    // Section 2 & 3: Standard and complex exams (vertical bar charts with data labels)
+    this.renderStandardExaminations();
+  }
+
+  /**
+   * Render simple binary examination results as donut charts
+   */
+  renderSimpleExaminations() {
+    const simpleExams = [
       { key: 'napza', snakeKey: 'napza', id: 'chartNAPZA', label: 'NAPZA' },
-      { key: 'colorblind', snakeKey: 'colorblind', id: 'chartColorblind', label: 'Buta Warna' }
+      { key: 'colorblind', snakeKey: 'colorblind', id: 'chartColorblind', label: 'Buta Warna' },
+      { key: 'hbsag', snakeKey: 'hbsag', id: 'chartHBSAG', label: 'HBSAG' }
     ];
 
-    examinations.forEach(exam => {
+    simpleExams.forEach(exam => {
       const ctx = document.getElementById(exam.id)?.getContext('2d');
       if (!ctx) return;
 
       const counts = {};
       this.filteredData.forEach(item => {
-        // Try camelCase first, then fallback to snake_case
         const value = this.normalizeValue(item.mcu[exam.key] || item.mcu[exam.snakeKey]);
         counts[value] = (counts[value] || 0) + 1;
       });
 
-      const colors = ['#10b981', '#f59e0b', '#ef4444', '#6366f1', '#8b5cf6', '#ec4899'];
+      const colors = ['#10b981', '#f59e0b', '#ef4444', '#6366f1'];
       const labels = Object.keys(counts);
       const data = Object.values(counts);
 
       this.destroyChart(exam.id);
       this.charts.set(exam.id, new Chart(ctx, {
-        type: 'bar',
+        type: 'doughnut',
         data: {
           labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: colors.slice(0, labels.length),
+            borderColor: '#fff',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.parsed || 0;
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percentage = Math.round((value / total) * 100);
+                  return `${label}: ${value} (${percentage}%)`;
+                }
+              }
+            }
+          }
+        }
+      }));
+    });
+  }
+
+  /**
+   * Render standard and complex examination results as vertical bar charts with data labels
+   */
+  renderStandardExaminations() {
+    const exams = [
+      { key: 'audiometry', snakeKey: 'audiometry', id: 'chartAudiometri', label: 'Audiometri' },
+      { key: 'spirometry', snakeKey: 'spirometry', id: 'chartSpirometri', label: 'Spirometri' },
+      { key: 'xray', snakeKey: 'xray', id: 'chartXRay', label: 'X-Ray' },
+      { key: 'ekg', snakeKey: 'ekg', id: 'chartEKG', label: 'EKG' },
+      { key: 'treadmill', snakeKey: 'treadmill', id: 'chartTreadmill', label: 'Treadmill' }
+    ];
+
+    exams.forEach(exam => {
+      const ctx = document.getElementById(exam.id)?.getContext('2d');
+      if (!ctx) return;
+
+      const counts = {};
+      this.filteredData.forEach(item => {
+        const value = this.normalizeValue(item.mcu[exam.key] || item.mcu[exam.snakeKey]);
+        counts[value] = (counts[value] || 0) + 1;
+      });
+
+      const colors = ['#10b981', '#f59e0b', '#ef4444', '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#06b6d4'];
+      const labels = Object.keys(counts);
+      const data = Object.values(counts);
+
+      // Truncate long labels to max 30 chars for display
+      const displayLabels = labels.map(label =>
+        label.length > 30 ? label.substring(0, 27) + '...' : label
+      );
+
+      this.destroyChart(exam.id);
+      this.charts.set(exam.id, new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: displayLabels,
           datasets: [{
             label: exam.label,
             data: data,
@@ -530,17 +603,49 @@ class AnalysisDashboardService {
           }]
         },
         options: {
-          indexAxis: 'y',
+          indexAxis: 'x', // Vertical bars
           responsive: true,
           maintainAspectRatio: true,
           plugins: {
-            legend: { display: false }
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: function(context) {
+                  // Show full label on hover
+                  return labels[context[0].dataIndex];
+                },
+                label: function(context) {
+                  return `Count: ${context.parsed.y}`;
+                }
+              }
+            },
+            // Data labels on top of bars
+            datalabels: {
+              anchor: 'end',
+              align: 'top',
+              color: '#333',
+              font: { size: 10, weight: 'bold' },
+              formatter: function(value) {
+                return value > 0 ? value : '';
+              }
+            }
           },
           scales: {
-            x: { beginAtZero: true, ticks: { stepSize: 1 }, max: this.filteredData.length },
-            y: { ticks: { font: { size: 11 } } }
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 1 },
+              max: this.filteredData.length
+            },
+            x: {
+              ticks: {
+                font: { size: 10 },
+                maxRotation: 45,
+                minRotation: 0
+              }
+            }
           }
-        }
+        },
+        plugins: [window.ChartDataLabels || {}] // Use datalabels plugin if available
       }));
     });
   }
