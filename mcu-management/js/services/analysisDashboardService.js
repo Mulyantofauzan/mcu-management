@@ -1149,6 +1149,21 @@ class AnalysisDashboardService {
       });
 
       const totalRecorded = statusCounts['Normal'] + statusCounts['Low'] + statusCounts['High'];
+      const totalCount = statusCounts['Normal'] + statusCounts['Low'] + statusCounts['High'] + statusCounts['Not Recorded'];
+
+      // Hide lab item if no data (totalCount <= 0)
+      const labContainer = document.getElementById(labItem.canvasId)?.closest('div');
+      if (totalCount <= 0) {
+        if (labContainer) {
+          labContainer.style.display = 'none';
+        }
+        return;
+      }
+
+      // Show lab item if it was hidden
+      if (labContainer) {
+        labContainer.style.display = '';
+      }
 
       // Update status element
       if (labItem.statusEl) {
