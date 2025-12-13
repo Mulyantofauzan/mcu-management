@@ -445,10 +445,10 @@ class AnalysisDashboardService {
       const gradeId = evaluateVisionStatus(visionFields);
       const gradeInfo = getGradeInfo(gradeId);
 
-      // Skip if grade info not found (shouldn't happen but safety check)
+      // Skip this item if grade info not found (shouldn't happen but safety check)
       if (!gradeInfo) {
         console.warn(`Unknown vision grade: ${gradeId}`);
-        return;
+        return; // continue to next item in forEach
       }
 
       const statusLabel = gradeInfo.label;
