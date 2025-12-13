@@ -86,10 +86,46 @@ export async function initAssessmentRahmaDAshboard() {
 
     showToast(`Assessment RAHMA Dashboard dimuat - ${assessmentData.length} assessments`, 'success');
 
+    // Setup auto-refresh untuk detect data baru (every 30 seconds)
+    setupAutoRefresh();
+
   } catch (error) {
     console.error('Error initializing RAHMA dashboard:', error);
     showToast(`Error: ${error.message}`, 'error');
   }
+}
+
+/**
+ * Setup auto-refresh untuk detect MCU data baru
+ * Refresh setiap 30 detik untuk calculate otomatis
+ */
+let autoRefreshInterval = null;
+function setupAutoRefresh() {
+  // Clear existing interval if any
+  if (autoRefreshInterval) {
+    clearInterval(autoRefreshInterval);
+  }
+
+  // Refresh data setiap 30 detik
+  autoRefreshInterval = setInterval(async () => {
+    try {
+      // Reload MCU data saja (fastest way to detect changes)
+      await loadMCUs();
+
+      // Re-calculate assessments dengan data terbaru
+      calculateAllAssessments();
+
+      // Update UI tanpa reload page
+      renderDashboard();
+
+      console.log('Auto-refresh: Assessment data updated', {
+        totalMCUs: allMCUs.length,
+        assessmentsCalculated: assessmentData.length
+      });
+    } catch (error) {
+      console.error('Error in auto-refresh:', error);
+    }
+  }, 30000); // 30 detik
 }
 
 /**
