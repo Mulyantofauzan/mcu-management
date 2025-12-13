@@ -70,24 +70,6 @@ class MCUService {
       deletedAt: null
     };
 
-    // 🔍 DEBUG: Log the MCU object BEFORE database insert
-      vision: {
-        vision_distant_unaided_left: mcu.vision_distant_unaided_left,
-        vision_distant_unaided_right: mcu.vision_distant_unaided_right,
-        vision_distant_spectacles_left: mcu.vision_distant_spectacles_left,
-        vision_distant_spectacles_right: mcu.vision_distant_spectacles_right,
-        vision_near_unaided_left: mcu.vision_near_unaided_left,
-        vision_near_unaided_right: mcu.vision_near_unaided_right,
-        vision_near_spectacles_left: mcu.vision_near_spectacles_left,
-        vision_near_spectacles_right: mcu.vision_near_spectacles_right
-      },
-      lifestyle: {
-        smoking_status: mcu.smoking_status,
-        exercise_frequency: mcu.exercise_frequency
-      },
-      allMcuKeys: Object.keys(mcu)
-    });
-
     await database.add('mcus', mcu);
 
     // Create initial change entry
