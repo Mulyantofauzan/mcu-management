@@ -425,15 +425,16 @@ class AnalysisDashboardService {
     // Evaluate vision status for each employee
     this.filteredData.forEach(item => {
       // Extract 8-field vision data
+      // Handle both camelCase (from services) and snake_case (from Supabase direct queries)
       const visionFields = {
-        visionDistantUnaideLeft: item.mcu.visionDistantUnaideLeft,
-        visionDistantUnaideRight: item.mcu.visionDistantUnaideRight,
-        visionDistantSpectaclesLeft: item.mcu.visionDistantSpectaclesLeft,
-        visionDistantSpectaclesRight: item.mcu.visionDistantSpectaclesRight,
-        visionNearUnaideLeft: item.mcu.visionNearUnaideLeft,
-        visionNearUnaideRight: item.mcu.visionNearUnaideRight,
-        visionNearSpectaclesLeft: item.mcu.visionNearSpectaclesLeft,
-        visionNearSpectaclesRight: item.mcu.visionNearSpectaclesRight
+        visionDistantUnaideLeft: item.mcu.visionDistantUnaideLeft || item.mcu.vision_distant_unaided_left,
+        visionDistantUnaideRight: item.mcu.visionDistantUnaideRight || item.mcu.vision_distant_unaided_right,
+        visionDistantSpectaclesLeft: item.mcu.visionDistantSpectaclesLeft || item.mcu.vision_distant_spectacles_left,
+        visionDistantSpectaclesRight: item.mcu.visionDistantSpectaclesRight || item.mcu.vision_distant_spectacles_right,
+        visionNearUnaideLeft: item.mcu.visionNearUnaideLeft || item.mcu.vision_near_unaided_left,
+        visionNearUnaideRight: item.mcu.visionNearUnaideRight || item.mcu.vision_near_unaided_right,
+        visionNearSpectaclesLeft: item.mcu.visionNearSpectaclesLeft || item.mcu.vision_near_spectacles_left,
+        visionNearSpectaclesRight: item.mcu.visionNearSpectaclesRight || item.mcu.vision_near_spectacles_right
       };
 
       // Get overall vision status (worst grade from all 8 fields)
