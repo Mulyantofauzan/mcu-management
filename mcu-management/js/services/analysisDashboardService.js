@@ -722,7 +722,7 @@ class AnalysisDashboardService {
 
     this.destroyChart('chartVision');
     this.charts.set('chartVision', new Chart(ctx, {
-      type: 'doughnut',
+      type: 'pie',
       data: {
         labels: labels,
         datasets: [{
@@ -749,12 +749,16 @@ class AnalysisDashboardService {
             }
           },
           datalabels: {
-            anchor: 'center',
-            align: 'center',
-            color: '#fff',
-            font: { size: 9, weight: 'bold' },
-            formatter: function(value) {
-              return value > 0 ? `${value}` : '';
+            anchor: 'end',
+            align: 'end',
+            offset: 4,
+            color: '#333',
+            font: { size: 11, weight: 'bold' },
+            formatter: function(value, context) {
+              if (value === 0) return '';
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const percentage = Math.round((value / total) * 100);
+              return `${value}`;
             }
           }
         }
@@ -807,39 +811,44 @@ class AnalysisDashboardService {
         } else {
           const smokingCtx = smokingCanvas.getContext('2d');
           new Chart(smokingCtx, {
-            type: 'bar',
+            type: 'pie',
             data: {
               labels: smokingLabels,
               datasets: [{
-                label: 'Count',
                 data: smokingData,
                 backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-                borderColor: ['#059669', '#d97706', '#dc2626'],
-                borderWidth: 1,
-                borderRadius: 4
+                borderColor: '#fff',
+                borderWidth: 1.5
               }]
             },
             options: {
-              indexAxis: 'x',
               responsive: true,
               maintainAspectRatio: true,
               plugins: {
-                legend: { display: false },
-                datalabels: {
-                  anchor: 'center',
-                  align: 'center',
-                  color: '#333',
-                  font: { size: 10, weight: 'bold' },
-                  formatter: function(value) {
-                    return value > 0 ? value : '';
+                legend: { position: 'bottom', labels: { font: { size: 10 }, padding: 8 } },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      const label = context.label || '';
+                      const value = context.parsed || 0;
+                      const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                      const percentage = Math.round((value / total) * 100);
+                      return `${label}: ${value} (${percentage}%)`;
+                    }
                   }
-                }
-              },
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  max: Math.max(5, Math.max(...smokingData) * 1.2),
-                  ticks: { stepSize: 1 }
+                },
+                datalabels: {
+                  anchor: 'end',
+                  align: 'end',
+                  offset: 4,
+                  color: '#333',
+                  font: { size: 11, weight: 'bold' },
+                  formatter: function(value, context) {
+                    if (value === 0) return '';
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    const percentage = Math.round((value / total) * 100);
+                    return `${value}`;
+                  }
                 }
               }
             },
@@ -869,39 +878,44 @@ class AnalysisDashboardService {
         } else {
           const exerciseCtx = exerciseCanvas.getContext('2d');
           new Chart(exerciseCtx, {
-            type: 'bar',
+            type: 'pie',
             data: {
               labels: exerciseLabels,
               datasets: [{
-                label: 'Count',
                 data: exerciseData,
                 backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'],
-                borderColor: ['#059669', '#1d4ed8', '#d97706', '#dc2626'],
-                borderWidth: 1,
-                borderRadius: 4
+                borderColor: '#fff',
+                borderWidth: 1.5
               }]
             },
             options: {
-              indexAxis: 'x',
               responsive: true,
               maintainAspectRatio: true,
               plugins: {
-                legend: { display: false },
-                datalabels: {
-                  anchor: 'center',
-                  align: 'center',
-                  color: '#333',
-                  font: { size: 10, weight: 'bold' },
-                  formatter: function(value) {
-                    return value > 0 ? value : '';
+                legend: { position: 'bottom', labels: { font: { size: 10 }, padding: 8 } },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      const label = context.label || '';
+                      const value = context.parsed || 0;
+                      const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                      const percentage = Math.round((value / total) * 100);
+                      return `${label}: ${value} (${percentage}%)`;
+                    }
                   }
-                }
-              },
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  max: Math.max(5, Math.max(...exerciseData) * 1.2),
-                  ticks: { stepSize: 1 }
+                },
+                datalabels: {
+                  anchor: 'end',
+                  align: 'end',
+                  offset: 4,
+                  color: '#333',
+                  font: { size: 11, weight: 'bold' },
+                  formatter: function(value, context) {
+                    if (value === 0) return '';
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    const percentage = Math.round((value / total) * 100);
+                    return `${value}`;
+                  }
                 }
               }
             },
