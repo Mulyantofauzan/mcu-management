@@ -204,6 +204,7 @@ class AnalysisDashboardService {
       this.renderBMIChart();
       this.renderBloodPressureChart();
       this.renderVisionChart();
+      this.renderFraminghamCharts();
       this.renderExaminationCharts();
       this.renderLabResultsCharts();
     } catch (error) {
@@ -490,6 +491,144 @@ class AnalysisDashboardService {
         }
       }
     }));
+  }
+
+  /**
+   * 4.5. Framingham Preparation Data - Smoking Status and Exercise Frequency
+   * Renders two vertical bar charts for Framingham risk assessment data
+   */
+  renderFraminghamCharts() {
+    const smoking = [
+      { key: 'smoking_status', snakeKey: 'smoking_status', id: 'chartSmokingStatus', label: 'Smoking Status' },
+      { key: 'exercise_frequency', snakeKey: 'exercise_frequency', id: 'chartExerciseFrequency', label: 'Exercise Frequency' }
+    ];
+
+    // Smoking Status categories
+    const smokingLabels = ['Tidak Merokok', 'Mantan Perokok', 'Perokok'];
+    // Exercise Frequency categories
+    const exerciseLabels = ['>2x Seminggu', '1-2x Seminggu', '1-2x Sebulan', 'Tidak Pernah'];
+
+    try {
+      // Render Smoking Status
+      const smokingCounts = {};
+      smokingLabels.forEach(label => smokingCounts[label] = 0);
+
+      this.filteredData.forEach(item => {
+        const status = item.mcu?.smoking_status || item.mcu?.smokingStatus;
+        if (status && smokingCounts.hasOwnProperty(status)) {
+          smokingCounts[status]++;
+        }
+      });
+
+      const smokingCanvas = document.getElementById('chartSmokingStatus');
+      if (smokingCanvas) {
+        const smokingData = smokingLabels.map(label => smokingCounts[label]);
+        const hasData = smokingData.some(count => count > 0);
+
+        if (!hasData) {
+          smokingCanvas.parentElement.innerHTML = '<p class="text-gray-500 text-sm">No Data Recorded</p>';
+        } else {
+          const smokingCtx = smokingCanvas.getContext('2d');
+          new Chart(smokingCtx, {
+            type: 'bar',
+            data: {
+              labels: smokingLabels,
+              datasets: [{
+                label: 'Count',
+                data: smokingData,
+                backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                borderColor: ['#059669', '#d97706', '#dc2626'],
+                borderWidth: 1,
+                borderRadius: 4
+              }]
+            },
+            options: {
+              indexAxis: 'x',
+              responsive: true,
+              maintainAspectRatio: true,
+              plugins: {
+                legend: { display: false },
+                datalabels: {
+                  anchor: 'end',
+                  align: 'end',
+                  font: { size: 11, weight: 'bold' },
+                  color: '#374151'
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: Math.max(...smokingData) * 1.2,
+                  ticks: { stepSize: 1 }
+                }
+              }
+            },
+            plugins: [ChartDataLabels]
+          });
+        }
+      }
+
+      // Render Exercise Frequency
+      const exerciseCounts = {};
+      exerciseLabels.forEach(label => exerciseCounts[label] = 0);
+
+      this.filteredData.forEach(item => {
+        const frequency = item.mcu?.exercise_frequency || item.mcu?.exerciseFrequency;
+        if (frequency && exerciseCounts.hasOwnProperty(frequency)) {
+          exerciseCounts[frequency]++;
+        }
+      });
+
+      const exerciseCanvas = document.getElementById('chartExerciseFrequency');
+      if (exerciseCanvas) {
+        const exerciseData = exerciseLabels.map(label => exerciseCounts[label]);
+        const hasData = exerciseData.some(count => count > 0);
+
+        if (!hasData) {
+          exerciseCanvas.parentElement.innerHTML = '<p class="text-gray-500 text-sm">No Data Recorded</p>';
+        } else {
+          const exerciseCtx = exerciseCanvas.getContext('2d');
+          new Chart(exerciseCtx, {
+            type: 'bar',
+            data: {
+              labels: exerciseLabels,
+              datasets: [{
+                label: 'Count',
+                data: exerciseData,
+                backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'],
+                borderColor: ['#059669', '#1d4ed8', '#d97706', '#dc2626'],
+                borderWidth: 1,
+                borderRadius: 4
+              }]
+            },
+            options: {
+              indexAxis: 'x',
+              responsive: true,
+              maintainAspectRatio: true,
+              plugins: {
+                legend: { display: false },
+                datalabels: {
+                  anchor: 'end',
+                  align: 'end',
+                  font: { size: 11, weight: 'bold' },
+                  color: '#374151'
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: Math.max(...exerciseData) * 1.2,
+                  ticks: { stepSize: 1 }
+                }
+              }
+            },
+            plugins: [ChartDataLabels]
+          });
+        }
+      }
+    } catch (error) {
+      console.warn('Error rendering Framingham charts:', error);
+    }
   }
 
   /**
