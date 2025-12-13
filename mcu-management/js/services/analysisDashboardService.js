@@ -555,13 +555,7 @@ class AnalysisDashboardService {
               responsive: true,
               maintainAspectRatio: true,
               plugins: {
-                legend: { display: false },
-                datalabels: {
-                  anchor: 'end',
-                  align: 'end',
-                  font: { size: 11, weight: 'bold' },
-                  color: '#374151'
-                }
+                legend: { display: false }
               },
               scales: {
                 y: {
@@ -570,8 +564,7 @@ class AnalysisDashboardService {
                   ticks: { stepSize: 1 }
                 }
               }
-            },
-            plugins: [ChartDataLabels]
+            }
           });
         }
       }
@@ -614,13 +607,7 @@ class AnalysisDashboardService {
               responsive: true,
               maintainAspectRatio: true,
               plugins: {
-                legend: { display: false },
-                datalabels: {
-                  anchor: 'end',
-                  align: 'end',
-                  font: { size: 11, weight: 'bold' },
-                  color: '#374151'
-                }
+                legend: { display: false }
               },
               scales: {
                 y: {
@@ -629,8 +616,7 @@ class AnalysisDashboardService {
                   ticks: { stepSize: 1 }
                 }
               }
-            },
-            plugins: [ChartDataLabels]
+            }
           });
         }
       }
