@@ -1168,6 +1168,9 @@ class AnalysisDashboardService {
       }
 
       // Create horizontal bar chart showing status distribution
+      const barData = [statusCounts['Normal'], statusCounts['Low'], statusCounts['High'], statusCounts['Not Recorded']];
+      const maxValue = Math.max(...barData, 1); // At least 1 to avoid division by zero
+
       this.destroyChart(labItem.canvasId);
       this.charts.set(labItem.canvasId, new Chart(ctx, {
         type: 'bar',
@@ -1175,7 +1178,7 @@ class AnalysisDashboardService {
           labels: ['Normal', 'Low', 'High', 'Not Recorded'],
           datasets: [{
             label: labItem.name,
-            data: [statusCounts['Normal'], statusCounts['Low'], statusCounts['High'], statusCounts['Not Recorded']],
+            data: barData,
             backgroundColor: ['#10b981', '#3b82f6', '#ef4444', '#d1d5db'],
             borderColor: ['#059669', '#1d4ed8', '#dc2626', '#9ca3af'],
             borderWidth: 1
@@ -1188,17 +1191,22 @@ class AnalysisDashboardService {
           plugins: {
             legend: { display: false },
             datalabels: {
-              anchor: 'center',
-              align: 'center',
+              anchor: 'end',
+              align: 'end',
               color: '#333',
               font: { size: 10, weight: 'bold' },
+              offset: 4,
               formatter: function(value) {
                 return value > 0 ? value : '';
               }
             }
           },
           scales: {
-            x: { beginAtZero: true, ticks: { stepSize: 1 }, max: this.filteredData.length },
+            x: {
+              beginAtZero: true,
+              ticks: { stepSize: Math.max(1, Math.ceil(maxValue / 5)) },
+              max: Math.ceil(maxValue * 1.15) // Add 15% padding for labels
+            },
             y: { ticks: { font: { size: 11 } } }
           }
         },
