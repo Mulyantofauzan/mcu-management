@@ -71,7 +71,6 @@ class MCUService {
     };
 
     // 🔍 DEBUG: Log the MCU object BEFORE database insert
-    console.log('📤 [mcuService.create] MCU OBJECT BEFORE DATABASE INSERT:', {
       vision: {
         vision_distant_unaided_left: mcu.vision_distant_unaided_left,
         vision_distant_unaided_right: mcu.vision_distant_unaided_right,
@@ -348,18 +347,15 @@ class MCUService {
       throw new Error(`MCU not found: ${mcuId}`);
     }
 
-    console.log('[mcuService.softDelete] Starting soft delete for MCU:', mcuId);
 
     // Update with deleted timestamp
     const updateResult = await database.update('mcus', mcuId, {
       deletedAt: getCurrentTimestamp()
     });
 
-    console.log('[mcuService.softDelete] Update result:', updateResult);
 
     // Verify update was successful by fetching the updated MCU
     const updatedMCU = await this.getById(mcuId);
-    console.log('[mcuService.softDelete] Verification - Updated MCU deletedAt:', updatedMCU?.deletedAt);
 
     if (!updatedMCU?.deletedAt) {
       throw new Error(`Failed to soft delete MCU: deletedAt timestamp not set`);
@@ -370,12 +366,10 @@ class MCUService {
       const employeeId = mcu?.employeeId;
       const employee = employeeId ? await database.get('employees', employeeId) : null;
       const employeeName = employee?.name || 'Unknown';
-      console.log('[mcuService.softDelete] Logging activity for MCU delete');
       await database.logActivity('delete', 'MCU', mcuId, currentUser.userId,
         `Moved MCU to trash: ${mcuId}. Date: ${mcu?.mcuDate}, Employee: ${employeeName}`);
     }
 
-    console.log('[mcuService.softDelete] Soft delete completed successfully for MCU:', mcuId);
     return true;
   }
 
@@ -413,12 +407,10 @@ class MCUService {
             await database.hardDelete('mcufiles', fileId);
             filesDeleted++;
           } catch (err) {
-            console.error(`[mcuService.permanentDelete] Error deleting file ${fileId}:`, err.message);
           }
         }
       }
     } catch (err) {
-      console.error(`[mcuService.permanentDelete] Error deleting MCU files:`, err.message);
     }
 
     // ✅ CASCADE DELETE 2: Delete all lab results
@@ -434,12 +426,10 @@ class MCUService {
             await database.hardDelete('pemeriksaan_lab', lab.id);
             labResultsDeleted++;
           } catch (err) {
-            console.error(`[mcuService.permanentDelete] Error deleting lab result ${lab.id}:`, err.message);
           }
         }
       }
     } catch (err) {
-      console.error(`[mcuService.permanentDelete] Error deleting lab results:`, err.message);
     }
 
     // ✅ CASCADE DELETE 3: Delete all change records
@@ -453,12 +443,10 @@ class MCUService {
             await database.hardDelete('mcuChanges', change.id);
             changesDeleted++;
           } catch (err) {
-            console.error(`[mcuService.permanentDelete] Error deleting change record ${change.id}:`, err.message);
           }
         }
       }
     } catch (err) {
-      console.error(`[mcuService.permanentDelete] Error deleting change records:`, err.message);
     }
 
     // ✅ DELETE MCU RECORD

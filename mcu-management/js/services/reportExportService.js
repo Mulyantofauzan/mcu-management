@@ -288,7 +288,6 @@ class ReportExportService {
         dataCount: consolidatedData.length
       };
     } catch (error) {
-      console.error('[ReportExportService] Export error:', error);
       return {
         success: false,
         message: 'Gagal export: ' + error.message,

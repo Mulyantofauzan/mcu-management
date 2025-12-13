@@ -21,11 +21,9 @@ export async function verifyDatabaseIntegrity() {
         await supabaseReady;
 
         if (!isSupabaseEnabled()) {
-            console.error('Supabase not enabled');
             return { success: false, error: 'Supabase not enabled' };
         }
 
-        console.log('🔍 Verifying Database Integrity...\n');
 
         // Fetch all pemeriksaan_lab records
         const { data, error } = await supabase
@@ -35,19 +33,13 @@ export async function verifyDatabaseIntegrity() {
             .limit(1000);
 
         if (error) {
-            console.error('Database Error:', error);
             return { success: false, error: error.message };
         }
 
         if (!data || data.length === 0) {
-            console.log('⚠️  No records found in pemeriksaan_lab table');
             return { success: true, data: [] };
         }
 
-        console.log(`📊 Total records found: ${data.length}\n`);
-        console.log('='.repeat(100));
-        console.log('INTEGRITY CHECK RESULTS:');
-        console.log('='.repeat(100) + '\n');
 
         const issues = [];
         const byLabId = {};
@@ -67,7 +59,6 @@ export async function verifyDatabaseIntegrity() {
             const records = byLabId[labId];
 
             if (!expected) {
-                console.log(`⚠️  Lab Item ID ${labId}: NOT DEFINED IN MAPPING`);
                 issues.push({
                     type: 'undefined',
                     labId: labId,
@@ -76,9 +67,6 @@ export async function verifyDatabaseIntegrity() {
                 continue;
             }
 
-            console.log(`\n📋 Lab Item: ${expected.name} (ID: ${labId})`);
-            console.log(`   Expected Range: ${expected.min} - ${expected.max}`);
-            console.log(`   Records: ${records.length}`);
 
             // Check for data corruption
             let corrupted = 0;
@@ -101,12 +89,9 @@ export async function verifyDatabaseIntegrity() {
             });
 
             if (corrupted > 0) {
-                console.log(`   ❌ CORRUPTED: ${corrupted}/${records.length} records have wrong min/max`);
                 detailedIssues.forEach(issue => {
-                    console.log(`      - Record ${issue.id}: ${issue.actual} (value: ${issue.value})`);
                 });
                 if (detailedIssues.length < corrupted) {
-                    console.log(`      ... and ${corrupted - detailedIssues.length} more`);
                 }
                 issues.push({
                     type: 'corrupted',
@@ -118,21 +103,15 @@ export async function verifyDatabaseIntegrity() {
                     totalCount: records.length
                 });
             } else {
-                console.log(`   ✅ CLEAN: All records have correct min/max`);
             }
         }
 
         // Summary
-        console.log('\n' + '='.repeat(100));
-        console.log('SUMMARY:');
-        console.log('='.repeat(100));
 
         const corruptedIssues = issues.filter(i => i.type === 'corrupted');
         const undefinedIssues = issues.filter(i => i.type === 'undefined');
 
         if (corruptedIssues.length === 0 && undefinedIssues.length === 0) {
-            console.log('\n✅ DATABASE IS CLEAN - No integrity issues found!');
-            console.log('\nAll lab items have correct min/max reference ranges matching labItemsMapping.');
             return {
                 success: true,
                 status: 'CLEAN',
@@ -141,18 +120,12 @@ export async function verifyDatabaseIntegrity() {
             };
         } else {
             if (corruptedIssues.length > 0) {
-                console.log(`\n❌ CORRUPTED DATA FOUND in ${corruptedIssues.length} lab item(s):`);
                 corruptedIssues.forEach(issue => {
-                    console.log(`   - ${issue.name} (ID: ${issue.labId}): ${issue.corruptedCount}/${issue.totalCount} records corrupted`);
-                    console.log(`     Expected: ${issue.expectedMin} - ${issue.expectedMax}`);
                 });
-                console.log('\n💡 Solution: Run the SQL migration fix-corrupted-min-max-ranges.sql');
             }
 
             if (undefinedIssues.length > 0) {
-                console.log(`\n⚠️  UNDEFINED LAB ITEMS in database (not in labItemsMapping):`);
                 undefinedIssues.forEach(issue => {
-                    console.log(`   - Lab Item ID ${issue.labId}: ${issue.count} records`);
                 });
             }
 
@@ -165,7 +138,6 @@ export async function verifyDatabaseIntegrity() {
         }
 
     } catch (error) {
-        console.error('Error during verification:', error.message);
         return { success: false, error: error.message };
     }
 }

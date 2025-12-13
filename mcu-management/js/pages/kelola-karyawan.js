@@ -927,7 +927,6 @@ window.addMCUForEmployee = async function(employeeId) {
         // This ensures fresh lab data collection for each new MCU
         if (labResultWidgetAdd) {
             labResultWidgetAdd.clear();
-            console.log('✅ Lab widget cleared before opening modal');
         }
 
         // Set default date to today
@@ -962,12 +961,8 @@ window.addMCUForEmployee = async function(employeeId) {
         // ✅ CRITICAL: Reinitialize lab widget when modal opens to ensure fresh state
         // This prevents stale data from previous modal sessions
         if (!labResultWidgetAdd || !labResultWidgetAdd.container) {
-            console.warn('⚠️ Lab widget not ready, reinitializing...');
             const { StaticLabForm } = await import('../components/staticLabForm.js');
             labResultWidgetAdd = new StaticLabForm('lab-results-container-add-karyawan');
-            console.log('✅ Lab widget reinitialized');
-        } else {
-            console.log('✅ Lab widget ready for Add MCU modal');
         }
     } catch (error) {
 
@@ -1060,23 +1055,6 @@ window.handleAddMCU = async function(event) {
         };
 
         // 🔍 DEBUG: Log the collected data BEFORE passing to batch service
-        console.log('📋 [kelola-karyawan ADD MCU] MCU DATA COLLECTED:', {
-            vision: {
-                distantUnaidedLeft: mcuData.visionDistantUnaideLeft,
-                distantUnaidedRight: mcuData.visionDistantUnaideRight,
-                distantSpectaclesLeft: mcuData.visionDistantSpectaclesLeft,
-                distantSpectaclesRight: mcuData.visionDistantSpectaclesRight,
-                nearUnaidedLeft: mcuData.visionNearUnaideLeft,
-                nearUnaidedRight: mcuData.visionNearUnaideRight,
-                nearSpectaclesLeft: mcuData.visionNearSpectaclesLeft,
-                nearSpectaclesRight: mcuData.visionNearSpectaclesRight
-            },
-            lifestyle: {
-                smokingStatus: mcuData.smokingStatus,
-                exerciseFrequency: mcuData.exerciseFrequency
-            }
-        });
-
         // Validate form data
         const validation = validateMCUForm(mcuData);
         if (!validation.isValid) {
@@ -1136,13 +1114,6 @@ window.handleAddMCU = async function(event) {
         let labResults = [];
         if (labResultWidgetAdd) {
             labResults = labResultWidgetAdd.getAllLabResults() || [];
-            console.log('🧪 [handleAddMCU] Lab results collected:', {
-                count: labResults.length,
-                firstItem: labResults[0],
-                allResults: labResults
-            });
-        } else {
-            console.warn('⚠️ [handleAddMCU] Lab widget not available, proceeding without lab results');
         }
 
         // Validate that we have data to save
@@ -1152,11 +1123,6 @@ window.handleAddMCU = async function(event) {
 
         // ✅ BATCH SAVE: Use MCU batch service to atomically save MCU + lab results
         // This prevents race conditions and orphaned records on sequential MCU operations
-        console.log('📤 [handleAddMCU] Calling mcuBatchService.saveMCUWithLabResults with:', {
-            mcuDataKeys: Object.keys(mcuData),
-            labResultsCount: labResults.length
-        });
-
         const batchResult = await mcuBatchService.saveMCUWithLabResults(mcuData, labResults, currentUser);
 
         if (!batchResult.success) {
@@ -1841,24 +1807,6 @@ window.handleEditMCU = async function(event) {
             initialResult: document.getElementById('edit-mcu-initial-result').value,
             initialNotes: document.getElementById('edit-mcu-initial-notes').value
         };
-
-        // 🔍 DEBUG: Log the collected update data BEFORE passing to batch service
-        console.log('📋 [kelola-karyawan EDIT MCU] UPDATE DATA COLLECTED:', {
-            vision: {
-                distantUnaidedLeft: updateData.visionDistantUnaideLeft,
-                distantUnaidedRight: updateData.visionDistantUnaideRight,
-                distantSpectaclesLeft: updateData.visionDistantSpectaclesLeft,
-                distantSpectaclesRight: updateData.visionDistantSpectaclesRight,
-                nearUnaidedLeft: updateData.visionNearUnaideLeft,
-                nearUnaidedRight: updateData.visionNearUnaideRight,
-                nearSpectaclesLeft: updateData.visionNearSpectaclesLeft,
-                nearSpectaclesRight: updateData.visionNearSpectaclesRight
-            },
-            lifestyle: {
-                smokingStatus: updateData.smokingStatus,
-                exerciseFrequency: updateData.exerciseFrequency
-            }
-        });
 
         // Add final result if filled
         const finalResult = document.getElementById('edit-mcu-final-result').value;

@@ -220,7 +220,6 @@ class LabService {
         .select();
 
       if (error) {
-        console.error(`[LabService] INSERT ERROR for lab_item_id ${data.labItemId}:`, {
           error: error.message,
           details: error.details,
           hint: error.hint,
@@ -255,7 +254,6 @@ class LabService {
       const cacheKey = `labResults:${mcuId}`;
       const cached = cacheManager.get(cacheKey);
       if (cached) {
-        console.log(`[LabService] Cache HIT for MCU ${mcuId}: ${cached.length} results`);
         return cached;
       }
 

@@ -60,7 +60,6 @@ function addToVersionHistory(version, timestamp = new Date().toISOString()) {
       localStorage.setItem(VERSION_HISTORY_KEY, JSON.stringify(history));
     }
   } catch (error) {
-    console.warn('[versionManager] Error adding to version history:', error.message);
   }
 }
 
@@ -165,7 +164,6 @@ async function applyUpdate() {
       for (let registration of registrations) {
         await registration.unregister();
       }
-      console.log('[versionManager] Service workers unregistered');
     }
 
     // Clear all caches
@@ -174,14 +172,12 @@ async function applyUpdate() {
       for (let cacheName of cacheNames) {
         await caches.delete(cacheName);
       }
-      console.log('[versionManager] All caches cleared');
     }
 
     // Update version in localStorage
     storeCurrentVersion();
     addToVersionHistory(CURRENT_VERSION);
 
-    console.log('[versionManager] Reloading page...');
 
     // Wait 500ms to ensure caches are cleared, then reload
     setTimeout(() => {
@@ -190,7 +186,6 @@ async function applyUpdate() {
     }, 500);
 
   } catch (error) {
-    console.error('[versionManager] Error applying update:', error);
     alert('Gagal mengaplikasikan update. Silakan refresh halaman secara manual (Ctrl+Shift+R).');
   }
 }
@@ -204,15 +199,12 @@ export async function initVersionManager() {
   const isFirstTime = !storedVersion || storedVersion === '0.0.0';
   const hasUpdate = isUpdateAvailable();
 
-  console.log(`[versionManager] Checking version... Current: v${CURRENT_VERSION}, Stored: v${storedVersion}`);
-  console.log(`[versionManager] First time: ${isFirstTime}, Update available: ${hasUpdate}`);
 
   // Add to version history
   addToVersionHistory(CURRENT_VERSION);
 
   // Show notification only if NOT first time AND update is available
   if (!isFirstTime && hasUpdate) {
-    console.log('[versionManager] Update available! Showing banner...');
     showUpdateBanner();
   }
 

@@ -33,7 +33,6 @@ class PerformanceMonitor {
         this.marks.set(`${name}-start`, performance.now());
       }
     } catch (error) {
-      console.warn('Mark error:', error);
     }
   }
 
@@ -70,15 +69,12 @@ class PerformanceMonitor {
 
         // Log if exceeds threshold
         if (threshold && duration > threshold) {
-          console.warn(`⚠️ Performance: ${name} took ${duration.toFixed(2)}ms (threshold: ${threshold}ms)`);
         } else if (duration > 1000) {
-          console.warn(`⚠️ Performance: ${name} took ${duration.toFixed(2)}ms (slow)`);
         }
       }
 
       return duration;
     } catch (error) {
-      console.warn('Measure error:', error);
       return 0;
     }
   }
@@ -103,12 +99,9 @@ class PerformanceMonitor {
 
       // Log FCP and LCP if available
       if (paint.length > 0) {
-        console.log(`📊 First Contentful Paint: ${paint[0].startTime.toFixed(2)}ms`);
       }
 
-      console.log('📊 Page Load Metrics:', metrics);
     } catch (error) {
-      console.warn('Could not access performance metrics:', error);
     }
   }
 
@@ -123,7 +116,6 @@ class PerformanceMonitor {
    * Log all metrics
    */
   logMetrics() {
-    console.table(this.getMetrics());
   }
 
   /**

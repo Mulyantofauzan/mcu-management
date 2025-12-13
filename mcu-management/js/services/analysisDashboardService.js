@@ -38,7 +38,6 @@ class AnalysisDashboardService {
 
       this.showLoading(false);
     } catch (error) {
-      console.error('[AnalysisDashboard] Init error:', error);
       this.showLoading(false);
       alert('Error loading dashboard: ' + error.message);
     }
@@ -119,7 +118,6 @@ class AnalysisDashboardService {
 
       this.filteredData = [...this.allData];
     } catch (error) {
-      console.error('[AnalysisDashboard] Data load error:', error);
       throw error;
     }
   }
@@ -152,7 +150,7 @@ class AnalysisDashboardService {
         jobSelect.appendChild(option);
       });
     } catch (error) {
-      console.error('[AnalysisDashboard] Filter populate error:', error);
+      // Error silently handled
     }
   }
 
@@ -208,7 +206,7 @@ class AnalysisDashboardService {
       this.renderExaminationCharts();
       this.renderLabResultsCharts();
     } catch (error) {
-      console.error('[AnalysisDashboard] Render error:', error);
+      // Error silently handled
     }
   }
 

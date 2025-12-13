@@ -132,7 +132,6 @@ class EmployeeService {
     const employee = await this.getById(employeeId);
     const employeeName = employee?.name || 'Unknown';
 
-    console.log('[employeeService.softDelete] Starting soft delete for employee:', employeeId);
 
     await database.update('employees', employeeId, {
       deletedAt: getCurrentTimestamp()
@@ -145,7 +144,6 @@ class EmployeeService {
     let filesDeletedCount = 0;
 
     for (const mcu of mcus) {
-      console.log('[employeeService.softDelete] Soft-deleting MCU:', mcu.mcuId);
       await database.update('mcus', mcu.mcuId, {
         deletedAt: getCurrentTimestamp()
       });
@@ -155,7 +153,6 @@ class EmployeeService {
       const allMCUFiles = await database.getAll('mcufiles', true);
       const mcuFiles = allMCUFiles.filter(file => file.mcuid === mcu.mcuId && !file.deletedat);
       for (const file of mcuFiles) {
-        console.log('[employeeService.softDelete] Soft-deleting file:', file.fileid);
         await database.update('mcufiles', file.fileid, {
           deletedat: getCurrentTimestamp()
         });
@@ -170,7 +167,6 @@ class EmployeeService {
         `Moved to trash: ${employeeName} (${employeeId}). Associated ${mcus.length} MCU records and ${filesDeletedCount} files also moved to trash.`);
     }
 
-    console.log('[employeeService.softDelete] Soft delete completed for employee:', employeeId);
     return true;
   }
 

@@ -92,7 +92,6 @@ export function getValidLabItemIds() {
  */
 export function validateLabResult(labResult) {
     if (!labResult || typeof labResult !== 'object') {
-        console.warn('[labItemsMapping] Invalid lab result: not an object');
         return null;
     }
 
@@ -102,12 +101,10 @@ export function validateLabResult(labResult) {
 
     // Validate required fields
     if (!isValidLabItemId(labItemId)) {
-        console.warn(`[labItemsMapping] Invalid lab_item_id: ${labItemId}. Valid IDs: ${getValidLabItemIds().join(', ')}`);
         return null;
     }
 
     if (isNaN(value) || value <= 0) {
-        console.warn(`[labItemsMapping] Invalid value for lab_item_id ${labItemId}: ${labResult.value}`);
         return null;
     }
 

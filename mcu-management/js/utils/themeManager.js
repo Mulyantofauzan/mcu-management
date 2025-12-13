@@ -37,7 +37,6 @@ function getStoredTheme() {
   try {
     return localStorage.getItem(THEME_STORAGE_KEY) || THEMES.SYSTEM;
   } catch (error) {
-    console.warn('[themeManager] Error reading stored theme:', error.message);
     return THEMES.SYSTEM;
   }
 }
@@ -49,7 +48,6 @@ function saveThemePreference(theme) {
   try {
     localStorage.setItem(THEME_STORAGE_KEY, theme);
   } catch (error) {
-    console.warn('[themeManager] Error saving theme preference:', error.message);
   }
 }
 
@@ -83,7 +81,6 @@ function applyTheme(theme) {
   // Update meta theme-color for browser UI (mobile)
   updateThemeColor(activeTheme);
 
-  console.log(`[themeManager] Applied theme: ${activeTheme}`);
 }
 
 /**
@@ -131,7 +128,6 @@ function toggleTheme() {
  */
 function setTheme(theme) {
   if (!Object.values(THEMES).includes(theme)) {
-    console.warn(`[themeManager] Invalid theme: ${theme}`);
     return;
   }
 
@@ -188,7 +184,6 @@ export function initThemeManager() {
     }
   }
 
-  console.log('[themeManager] Initialized with theme:', getThemeStatus());
 }
 
 /**

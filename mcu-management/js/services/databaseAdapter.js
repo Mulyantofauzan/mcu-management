@@ -443,7 +443,6 @@ export const MCUs = {
             };
 
             // 🔍 DEBUG: Log the exact payload being sent to Supabase
-            console.log('💾 [databaseAdapter.MCUs.add] SUPABASE INSERT PAYLOAD:', {
               vision: {
                 vision_distant_unaided_left: insertPayload.vision_distant_unaided_left,
                 vision_distant_unaided_right: insertPayload.vision_distant_unaided_right,
@@ -540,7 +539,6 @@ export const MCUs = {
             });
 
             // 🔍 DEBUG: Log the update payload
-            console.log('💾 [databaseAdapter.MCUs.update] SUPABASE UPDATE PAYLOAD for MCU:', mcuId, {
               vision: {
                 vision_distant_unaided_left: updateData.vision_distant_unaided_left,
                 vision_distant_unaided_right: updateData.vision_distant_unaided_right,
@@ -565,12 +563,10 @@ export const MCUs = {
                 .select();
 
             if (error) {
-                console.error('[databaseAdapter.MCUs.update] Supabase error:', error);
                 throw error;
             }
 
             if (!data || data.length === 0) {
-                console.warn('[databaseAdapter.MCUs.update] No data returned from update, attempting to fetch MCU');
                 // If update didn't return data, fetch it directly
                 const { data: fetchedData, error: fetchError } = await supabase
                     .from('mcus')
@@ -579,7 +575,6 @@ export const MCUs = {
                     .single();
 
                 if (fetchError) {
-                    console.error('[databaseAdapter.MCUs.update] Failed to fetch updated MCU:', fetchError);
                     throw fetchError;
                 }
 

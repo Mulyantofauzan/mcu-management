@@ -40,7 +40,6 @@ class CacheManager {
 
       return data;
     } catch (error) {
-      console.error(`Cache fetch error for ${key}:`, error);
       throw error;
     }
   }
