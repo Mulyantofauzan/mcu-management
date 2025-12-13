@@ -52,7 +52,10 @@
       </div>
 
       <!-- Title -->
-      <h2 class="text-3xl font-extrabold text-center mb-1 drop-shadow-md">MADIS</h2>
+      <div class="flex items-center justify-center gap-2 mb-1">
+        <h2 class="text-3xl font-extrabold drop-shadow-md">MADIS</h2>
+        <span class="text-xs font-semibold text-indigo-200 bg-indigo-500/30 px-2 py-1 rounded" id="app-version">v1.0.9</span>
+      </div>
       <p class="text-sm text-indigo-100 mb-6 text-center tracking-wide">Medical Check-Up Analysis & Data Information System</p>
 
       <!-- Form -->
@@ -224,6 +227,22 @@
 
     // Show any logout message on page load
     showLogoutMessage();
+  </script>
+
+  <!-- Display App Version -->
+  <script>
+    // Load version from package.json
+    fetch('../package.json')
+      .then(res => res.json())
+      .then(pkg => {
+        const versionElements = document.querySelectorAll('#app-version');
+        versionElements.forEach(el => {
+          el.textContent = 'v' + pkg.version;
+        });
+      })
+      .catch(err => {
+        console.log('Could not load version from package.json');
+      });
   </script>
 </body>
 </html>
