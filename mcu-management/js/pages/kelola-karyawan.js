@@ -1632,10 +1632,53 @@ window.editMCU = async function() {
                     'edit-mcu-alasan': mcu.alasanRujuk
                 };
 
-                // Set all bio fields
+                // ✅ CRITICAL FIX: Handle examination fields with "Lainnya" support
+                // If value doesn't match standard options, set as "Lainnya" and show custom field
+                const examinationFields = {
+                    'edit-mcu-audio': { value: mcu.audiometry, otherId: 'edit-mcu-audio-other', options: ['Normal', 'Gangguan Ringan', 'Lainnya'] },
+                    'edit-mcu-spiro': { value: mcu.spirometry, otherId: 'edit-mcu-spiro-other', options: ['Normal', 'Restriktif', 'Obstruktif', 'Lainnya'] },
+                    'edit-mcu-xray': { value: mcu.xray, otherId: 'edit-mcu-xray-other', options: ['Normal', 'Lainnya'] },
+                    'edit-mcu-ekg': { value: mcu.ekg, otherId: 'edit-mcu-ekg-other', options: ['Normal', 'Normal Resting ECG', 'Lainnya'] },
+                    'edit-mcu-treadmill': { value: mcu.treadmill, otherId: 'edit-mcu-treadmill-other', options: ['Normal', 'Tidak diperiksa', 'Lainnya'] },
+                    'edit-mcu-napza': { value: mcu.napza, otherId: 'edit-mcu-napza-other', options: ['Negatif', 'Lainnya'] },
+                    'edit-mcu-colorblind': { value: mcu.colorblind, otherId: 'edit-mcu-colorblind-other', options: ['Normal', 'Buta Warna Parsial', 'Lainnya'] }
+                };
+
+                // Set examination fields with smart "Lainnya" handling
+                Object.entries(examinationFields).forEach(([id, config]) => {
+                    const selectEl = document.getElementById(id);
+                    const otherEl = document.getElementById(config.otherId);
+
+                    if (config.value) {
+                        // Check if value matches any standard option
+                        if (config.options.includes(config.value) || config.value === '') {
+                            // Standard option - set directly
+                            if (selectEl) selectEl.value = config.value;
+                            // Hide the "Lainnya" field
+                            if (otherEl) otherEl.classList.add('hidden');
+                        } else {
+                            // Custom value - set as "Lainnya"
+                            if (selectEl) selectEl.value = 'Lainnya';
+                            // Show and populate the "Lainnya" field
+                            if (otherEl) {
+                                otherEl.classList.remove('hidden');
+                                otherEl.value = config.value;
+                            }
+                        }
+                    } else {
+                        // No value - clear and hide Lainnya field
+                        if (selectEl) selectEl.value = '';
+                        if (otherEl) otherEl.classList.add('hidden');
+                    }
+
+                    // Trigger change event
+                    if (selectEl) selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                });
+
+                // Set all other bio fields (non-examination)
                 Object.entries(bioFields).forEach(([id, value]) => {
                     const el = document.getElementById(id);
-                    if (el) {
+                    if (el && !examinationFields[id]) {
                         el.value = value || '';
                         // Trigger change event for any dependent fields
                         el.dispatchEvent(new Event('change', { bubbles: true }));
