@@ -14,7 +14,7 @@
  * 3. Stale-while-revalidate: Master data (fetch fresh, serve stale immediately)
  */
 
-const CACHE_VERSION = 'madis-v17';
+const CACHE_VERSION = 'madis-v18';
 const MAX_CACHE_ENTRIES = 200;
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;

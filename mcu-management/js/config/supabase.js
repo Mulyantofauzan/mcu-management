@@ -19,12 +19,14 @@ await initializeEnv();
 const SUPABASE_URL = ENV.SUPABASE_URL || window.ENV?.SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = ENV.SUPABASE_ANON_KEY || window.ENV?.SUPABASE_ANON_KEY || '';
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-}
-
 // Initialize Supabase client
 let supabase = null;
 let useSupabase = false;
+
+// Check if credentials are available
+if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+    // Will be initialized asynchronously in initSupabase()
+}
 
 // Function to initialize Supabase when CDN script is loaded
 async function initSupabase() {
