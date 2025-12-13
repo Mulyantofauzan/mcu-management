@@ -511,9 +511,21 @@ class AnalysisDashboardService {
       options: {
         responsive: true,
         maintainAspectRatio: true,
-        plugins: { legend: { display: false } },
+        plugins: {
+          legend: { display: false },
+          datalabels: {
+            anchor: 'end',
+            align: 'top',
+            color: '#333',
+            font: { size: 10, weight: 'bold' },
+            formatter: function(value) {
+              return value > 0 ? value : '';
+            }
+          }
+        },
         scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-      }
+      },
+      plugins: [window.ChartDataLabels || {}]
     }));
   }
 
@@ -569,9 +581,21 @@ class AnalysisDashboardService {
       options: {
         responsive: true,
         maintainAspectRatio: true,
-        plugins: { legend: { display: false } },
+        plugins: {
+          legend: { display: false },
+          datalabels: {
+            anchor: 'end',
+            align: 'top',
+            color: '#333',
+            font: { size: 10, weight: 'bold' },
+            formatter: function(value) {
+              return value > 0 ? value : '';
+            }
+          }
+        },
         scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-      }
+      },
+      plugins: [window.ChartDataLabels || {}]
     }));
   }
 
@@ -723,9 +747,21 @@ class AnalysisDashboardService {
                 return `${label}: ${value} (${percentage}%)`;
               }
             }
+          },
+          datalabels: {
+            anchor: 'center',
+            align: 'center',
+            color: '#fff',
+            font: { size: 11, weight: 'bold' },
+            formatter: function(value) {
+              const total = this.dataset.data.reduce((a, b) => a + b, 0);
+              const percentage = Math.round((value / total) * 100);
+              return value > 0 ? `${value}` : '';
+            }
           }
         }
-      }
+      },
+      plugins: [window.ChartDataLabels || {}]
     }));
   }
 
@@ -783,7 +819,16 @@ class AnalysisDashboardService {
               responsive: true,
               maintainAspectRatio: true,
               plugins: {
-                legend: { display: false }
+                legend: { display: false },
+                datalabels: {
+                  anchor: 'end',
+                  align: 'top',
+                  color: '#333',
+                  font: { size: 10, weight: 'bold' },
+                  formatter: function(value) {
+                    return value > 0 ? value : '';
+                  }
+                }
               },
               scales: {
                 y: {
@@ -792,7 +837,8 @@ class AnalysisDashboardService {
                   ticks: { stepSize: 1 }
                 }
               }
-            }
+            },
+            plugins: [window.ChartDataLabels || {}]
           });
         }
       }
@@ -835,7 +881,16 @@ class AnalysisDashboardService {
               responsive: true,
               maintainAspectRatio: true,
               plugins: {
-                legend: { display: false }
+                legend: { display: false },
+                datalabels: {
+                  anchor: 'end',
+                  align: 'top',
+                  color: '#333',
+                  font: { size: 10, weight: 'bold' },
+                  formatter: function(value) {
+                    return value > 0 ? value : '';
+                  }
+                }
               },
               scales: {
                 y: {
@@ -844,7 +899,8 @@ class AnalysisDashboardService {
                   ticks: { stepSize: 1 }
                 }
               }
-            }
+            },
+            plugins: [window.ChartDataLabels || {}]
           });
         }
       }
@@ -1106,12 +1162,24 @@ class AnalysisDashboardService {
           indexAxis: 'y',
           responsive: true,
           maintainAspectRatio: true,
-          plugins: { legend: { display: false } },
+          plugins: {
+            legend: { display: false },
+            datalabels: {
+              anchor: 'end',
+              align: 'right',
+              color: '#333',
+              font: { size: 10, weight: 'bold' },
+              formatter: function(value) {
+                return value > 0 ? value : '';
+              }
+            }
+          },
           scales: {
             x: { beginAtZero: true, ticks: { stepSize: 1 }, max: this.filteredData.length },
             y: { ticks: { font: { size: 11 } } }
           }
-        }
+        },
+        plugins: [window.ChartDataLabels || {}]
       }));
     });
   }
