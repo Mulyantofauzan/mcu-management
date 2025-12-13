@@ -791,7 +791,9 @@ window.openMCUUpdateModal = async function(mcuId) {
     }
 
     try {
-      const existingLabResults = await labService.getPemeriksaanLabByMcuId(mcuId);
+      // ✅ CRITICAL FIX: Use relaxed validation for edit forms
+      // Show ALL data even if values are invalid/outside range
+      const existingLabResults = await labService.getPemeriksaanLabByMcuIdForEdit(mcuId);
       labResultWidgetUpdate.loadExistingResults(existingLabResults);
     } catch (error) {
       labResultWidgetUpdate.clear();

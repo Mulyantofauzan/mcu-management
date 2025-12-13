@@ -1590,10 +1590,11 @@ window.editMCU = async function() {
                     if (el) el.value = '';
                 });
 
-                // Load existing lab results from database and populate form
+                // ✅ CRITICAL FIX: Load existing lab results using relaxed validation
+                // Use getPemeriksaanLabByMcuIdForEdit to show ALL data even if values are invalid/outside range
                 if (labResultWidgetEdit) {
                     try {
-                        const existingLabResults = await labService.getPemeriksaanLabByMcuId(window.currentMCUId);
+                        const existingLabResults = await labService.getPemeriksaanLabByMcuIdForEdit(window.currentMCUId);
                         labResultWidgetEdit.loadExistingResults(existingLabResults);
                     } catch (labError) {
                         // Continue even if lab results fail to load

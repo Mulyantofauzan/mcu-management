@@ -334,6 +334,63 @@ class LabService {
   }
 
   /**
+   * Get all pemeriksaan lab for MCU (for edit form - with relaxed filtering)
+   * Same as getPemeriksaanLabByMcuId but WITHOUT value validation
+   * This ensures all existing data is shown in edit form even if values are invalid/outside range
+   */
+  async getPemeriksaanLabByMcuIdForEdit(mcuId) {
+    try {
+      await supabaseReady;
+
+      if (!isSupabaseEnabled()) {
+        return [];
+      }
+
+      // ✅ For edit forms: return ALL data without strict validation
+      // User needs to see existing values even if they're invalid
+      const { data, error } = await supabase
+        .from('pemeriksaan_lab')
+        .select(`
+          id,
+          mcu_id,
+          employee_id,
+          lab_item_id,
+          value,
+          unit,
+          min_range_reference,
+          max_range_reference,
+          notes,
+          created_at,
+          updated_at,
+          lab_items:lab_item_id(id, name, description, unit)
+        `)
+        .eq('mcu_id', mcuId)
+        .is('deleted_at', null)
+        .not('lab_item_id', 'is', null)
+        .order('created_at', { ascending: true })
+        .limit(50);
+
+      if (error) throw error;
+
+      // ✅ RELAXED: Accept ANY numeric value or even null/empty
+      // Don't filter out invalid values - user needs to see them in edit form
+      const allData = [];
+      (data || []).forEach(item => {
+        if (!item) return;
+        if (!item.lab_item_id) return;
+
+        // ✅ Accept ANY value including null, empty, or invalid numbers
+        // These will be displayed in the form for user to correct
+        allData.push(item);
+      });
+
+      return allData;
+    } catch (error) {
+      return [];
+    }
+  }
+
+  /**
    * Update pemeriksaan lab
    */
   async updatePemeriksaanLab(id, data, currentUser) {
