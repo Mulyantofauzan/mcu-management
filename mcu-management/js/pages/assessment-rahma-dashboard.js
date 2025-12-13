@@ -522,6 +522,8 @@ function renderDashboard() {
               <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">HDL</th>
               <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Nilai Total</th>
               <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Hasil</th>
+              <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Status</th>
+              <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Aksi</th>
             </tr>
           </thead>
           <tbody id="employee-list-body">
@@ -570,7 +572,7 @@ function renderEmployeeTable() {
   tbody.innerHTML = '';
 
   if (pageData.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="15" class="text-center text-gray-500 py-4">Tidak ada data</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="17" class="text-center text-gray-500 py-4">Tidak ada data</td></tr>';
     updatePagination();
     return;
   }
@@ -596,6 +598,13 @@ function renderEmployeeTable() {
       age--;
     }
 
+    // Status badge
+    const statusBg = item.employee.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+    const statusLabel = item.employee.isActive ? 'Aktif' : 'Inaktif';
+    const isDeleted = item.employee.deletedAt !== null && item.employee.deletedAt !== undefined;
+    const statusDisplay = isDeleted ? 'Dihapus' : statusLabel;
+    const statusFinalBg = isDeleted ? 'bg-red-100 text-red-800' : statusBg;
+
     const row = document.createElement('tr');
     row.className = 'border-b hover:bg-gray-50';
     row.innerHTML = `
@@ -617,6 +626,31 @@ function renderEmployeeTable() {
         <span class="px-1 py-0.5 rounded text-xs font-semibold ${riskBg}">
           ${riskLabel}
         </span>
+      </td>
+      <td class="px-2 py-2 text-xs text-center">
+        <span class="px-1 py-0.5 rounded text-xs font-semibold ${statusFinalBg}">
+          ${statusDisplay}
+        </span>
+      </td>
+      <td class="px-2 py-2 text-xs text-center space-x-1 flex justify-center gap-1">
+        ${!isDeleted ? `
+          <button onclick="window.assessmentRAHMA.toggleEmployeeActive('${item.employee.employee_id}', ${!item.employee.isActive})"
+                  title="${item.employee.isActive ? 'Nonaktifkan' : 'Aktifkan'}"
+                  class="px-2 py-1 text-xs rounded ${item.employee.isActive ? 'bg-yellow-500 hover:bg-yellow-600 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'}">
+            ${item.employee.isActive ? '🔇' : '🔆'}
+          </button>
+          <button onclick="window.assessmentRAHMA.softDeleteEmployee('${item.employee.employee_id}')"
+                  title="Hapus (Soft Delete)"
+                  class="px-2 py-1 text-xs rounded bg-orange-500 hover:bg-orange-600 text-white">
+            🗑️
+          </button>
+        ` : `
+          <button onclick="window.assessmentRAHMA.permanentDeleteEmployee('${item.employee.employee_id}')"
+                  title="Hapus Permanen"
+                  class="px-2 py-1 text-xs rounded bg-red-600 hover:bg-red-700 text-white">
+            ⚠️ Permanen
+          </button>
+        `}
       </td>
     `;
     tbody.appendChild(row);
@@ -660,6 +694,71 @@ export function prevPage() {
   if (currentPage > 1) {
     currentPage--;
     renderEmployeeTable();
+  }
+}
+
+/**
+ * Toggle employee active/inactive status
+ */
+export async function toggleEmployeeActive(employeeId, isActive) {
+  if (!confirm(`${isActive ? 'Aktifkan' : 'Nonaktifkan'} karyawan ini?`)) {
+    return;
+  }
+
+  try {
+    await employeeService.update(employeeId, { is_active: isActive });
+    showToast(`Karyawan ${isActive ? 'diaktifkan' : 'dinonaktifkan'}`, 'success');
+
+    // Reload dashboard
+    location.reload();
+  } catch (error) {
+    console.error('Error toggling employee active status:', error);
+    showToast(`Error: ${error.message}`, 'error');
+  }
+}
+
+/**
+ * Soft delete employee (set deleted_at)
+ */
+export async function softDeleteEmployee(employeeId) {
+  if (!confirm('Hapus karyawan ini? Data akan tersimpan di "Data Terhapus".')) {
+    return;
+  }
+
+  try {
+    const now = new Date().toISOString();
+    await employeeService.update(employeeId, { deleted_at: now });
+    showToast('Karyawan berhasil dihapus (soft delete)', 'success');
+
+    // Reload dashboard
+    location.reload();
+  } catch (error) {
+    console.error('Error soft deleting employee:', error);
+    showToast(`Error: ${error.message}`, 'error');
+  }
+}
+
+/**
+ * Permanent delete employee (delete from database)
+ */
+export async function permanentDeleteEmployee(employeeId) {
+  if (!confirm('PERINGATAN: Hapus permanen karyawan ini? Tindakan ini TIDAK DAPAT DIURUNGKAN!')) {
+    return;
+  }
+
+  if (!confirm('Apakah Anda YAKIN? Data akan HILANG SELAMANYA!')) {
+    return;
+  }
+
+  try {
+    await employeeService.delete(employeeId);
+    showToast('Karyawan berhasil dihapus secara permanen', 'success');
+
+    // Reload dashboard
+    location.reload();
+  } catch (error) {
+    console.error('Error permanently deleting employee:', error);
+    showToast(`Error: ${error.message}`, 'error');
   }
 }
 
@@ -755,6 +854,9 @@ window.assessmentRAHMA = {
   filterByJob,
   filterByJobRiskLevel,
   searchAssessments,
+  toggleEmployeeActive,
+  softDeleteEmployee,
+  permanentDeleteEmployee,
   exportToCSV,
   nextPage,
   prevPage
