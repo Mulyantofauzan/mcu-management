@@ -20,20 +20,13 @@
 
     <link rel="stylesheet" href="css/output.css">
 
-    <!-- Debug logging for startup -->
-    <script>
-        console.log('[index.html] Page starting to load...');
-        console.log('[index.html] window.location:', window.location.href);
-    </script>
 
     <!-- Supabase - Production Database (critical) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        console.log('[index.html] Supabase CDN script tag loaded, waiting for window.supabase...');
-        // Log when Supabase is actually available
+        // Wait for Supabase to be available
         const checkSupabase = setInterval(() => {
             if (typeof window.supabase !== 'undefined') {
-                console.log('[index.html] window.supabase is now available');
                 clearInterval(checkSupabase);
             }
         }, 100);
@@ -58,17 +51,14 @@
                 const script = document.createElement('script');
                 script.src = cdnUrls[window.pakoLoadAttempts];
                 script.onload = () => {
-                    console.log(`✅ Pako loaded from CDN ${window.pakoLoadAttempts + 1}`);
                     window.pakoReady = true;
                 };
                 script.onerror = () => {
-                    console.warn(`⚠️ CDN ${window.pakoLoadAttempts + 1} failed, trying next...`);
                     window.pakoLoadAttempts++;
                     window.loadPako();
                 };
                 document.head.appendChild(script);
             } else {
-                console.warn('⚠️ All pako CDN sources failed, compression will be disabled');
                 window.pakoReady = false;
             }
         };

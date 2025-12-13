@@ -444,8 +444,8 @@ class AnalysisDashboardService {
       visionStatusCounts[statusLabel]++;
     });
 
-    // Filter out zero counts for cleaner chart
-    const labels = Object.keys(visionStatusCounts).filter(label => visionStatusCounts[label] > 0);
+    // Use all labels (don't filter out zeros) so chart always shows all categories
+    const labels = Object.keys(visionStatusCounts);
     const data = labels.map(label => visionStatusCounts[label]);
     const colors = labels.map(label => visionColors[label]);
 

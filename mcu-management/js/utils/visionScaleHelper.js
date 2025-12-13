@@ -55,7 +55,7 @@ export function getVisionGrade(value) {
   // Check each grade
   for (const [gradeKey, gradeInfo] of Object.entries(VISION_GRADES)) {
     if (gradeInfo.values.some(v => v.toUpperCase() === normalized)) {
-      return gradeKey;
+      return gradeInfo.id; // Return id (lowercase) instead of key (uppercase)
     }
   }
 
