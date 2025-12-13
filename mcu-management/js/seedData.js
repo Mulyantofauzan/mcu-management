@@ -72,8 +72,9 @@ export async function seedDatabase() {
     // For Supabase, we skip clearing to preserve production data
     try {
       await database.clearAll();
-
+      console.log('[seedData.js] Database cleared');
     } catch (error) {
+      console.log('[seedData.js] Could not clear database (expected if using Supabase):', error.message);
     }
 
     // 1. Create Master Data
