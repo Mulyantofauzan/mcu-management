@@ -21,6 +21,7 @@ class MasterDataService {
     const jobTitle = {
       jobTitleId: generateJobTitleId(),
       name: data.name,
+      risk_level: data.riskLevel || 'moderate', // Default to 'moderate' for Framingham assessment
       createdAt: getCurrentTimestamp(),
       updatedAt: getCurrentTimestamp()
     };
@@ -29,8 +30,8 @@ class MasterDataService {
     cacheManager.clear('jobTitles:all');
     // ✅ FIX: Log activity with details
     if (currentUser?.userId) {
-      await database.logActivity('create', 'JobTitle', jobTitle.jobTitleId, currentUser.userId,
-        `Created job title: ${jobTitle.name} (${jobTitle.jobTitleId})`);
+      const details = `Created job title: ${jobTitle.name} (${jobTitle.jobTitleId}), Risk Level: ${jobTitle.risk_level}`;
+      await database.logActivity('create', 'JobTitle', jobTitle.jobTitleId, currentUser.userId, details);
     }
     return jobTitle;
   }
@@ -63,17 +64,24 @@ class MasterDataService {
   }
 
   async updateJobTitle(id, data, currentUser) {
-    await database.update('jobTitles', id, {
+    const updateData = {
       name: data.name,
       updatedAt: getCurrentTimestamp()
-    });
+    };
+
+    // Include risk_level if provided (for Framingham assessment)
+    if (data.riskLevel) {
+      updateData.risk_level = data.riskLevel;
+    }
+
+    await database.update('jobTitles', id, updateData);
     // Invalidate cache
     cacheManager.clear('jobTitles:all');
     cacheManager.clear(`jobTitle:${id}`);
     // ✅ FIX: Log activity with details
     if (currentUser?.userId) {
-      await database.logActivity('update', 'JobTitle', id, currentUser.userId,
-        `Updated job title to: ${data.name}`);
+      const details = `Updated job title to: ${data.name}${data.riskLevel ? `, Risk Level: ${data.riskLevel}` : ''}`;
+      await database.logActivity('update', 'JobTitle', id, currentUser.userId, details);
     }
     return await this.getJobTitleById(id);
   }

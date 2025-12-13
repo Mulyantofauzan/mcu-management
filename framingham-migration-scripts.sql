@@ -2,22 +2,37 @@
  * Framingham CVD Risk Assessment - Database Migration Scripts
  * Execute in Supabase SQL Editor
  *
- * This script creates the framingham_assessment table needed for Framingham assessment feature.
- *
- * NOTE: The following columns already exist in the database and do NOT need to be added:
- * ✅ job_titles.risk_level (already exists with constraint)
- * ✅ mcus.smoking_status (already exists with constraint)
- * ✅ mcus.exercise_frequency (already exists with constraint)
- *
- * This script ONLY creates the framingham_assessment table for storing assessment results.
+ * This script ensures all required columns exist and creates the framingham_assessment table.
+ * It is safe to run multiple times - existing columns will not cause errors.
  */
 
 -- ============================================
--- VERIFY EXISTING COLUMNS (Safe to run)
+-- 1. ENSURE job_titles.risk_level EXISTS
 -- ============================================
--- The following columns should already exist in your database:
--- SELECT column_name FROM information_schema.columns WHERE table_name='job_titles' AND column_name='risk_level';
--- SELECT column_name FROM information_schema.columns WHERE table_name='mcus' AND column_name IN ('smoking_status', 'exercise_frequency');
+-- Add risk_level column if it doesn't exist (safe to run multiple times)
+ALTER TABLE public.job_titles
+ADD COLUMN IF NOT EXISTS risk_level VARCHAR(20) DEFAULT 'moderate'
+  CHECK (risk_level IN ('low', 'moderate', 'high'));
+
+-- Add comment for clarity
+COMMENT ON COLUMN public.job_titles.risk_level IS 'Occupational risk level for Framingham CVD assessment: low, moderate, or high. Editable in Data Master.';
+
+-- ============================================
+-- 2. ENSURE mcus.smoking_status & exercise_frequency EXIST
+-- ============================================
+-- Add smoking_status if doesn't exist
+ALTER TABLE public.mcus
+ADD COLUMN IF NOT EXISTS smoking_status VARCHAR(50) DEFAULT NULL
+  CHECK (smoking_status IS NULL OR smoking_status IN ('tidak_merokok', 'mantan_perokok', 'perokok'));
+
+-- Add exercise_frequency if doesn't exist
+ALTER TABLE public.mcus
+ADD COLUMN IF NOT EXISTS exercise_frequency VARCHAR(50) DEFAULT NULL
+  CHECK (exercise_frequency IS NULL OR exercise_frequency IN ('>2x_seminggu', '1-2x_seminggu', '1-2x_sebulan', 'tidak_pernah'));
+
+-- Add comments
+COMMENT ON COLUMN public.mcus.smoking_status IS 'Smoking status: tidak_merokok (non-smoker), mantan_perokok (former), perokok (current)';
+COMMENT ON COLUMN public.mcus.exercise_frequency IS 'Exercise frequency: >2x_seminggu (>2x/week), 1-2x_seminggu (1-2x/week), 1-2x_sebulan (1-2x/month), tidak_pernah (never)';
 
 -- ============================================
 -- CREATE framingham_assessment TABLE
@@ -80,17 +95,20 @@ COMMENT ON COLUMN public.framingham_assessment.assessment_data IS 'JSON snapshot
 -- ============================================
 -- SUMMARY OF CHANGES
 -- ============================================
--- ℹ️  COLUMNS ALREADY EXIST (no action needed):
--- ✅ job_titles.risk_level (default 'moderate') - ALREADY EXISTS
--- ✅ mcus.smoking_status (nullable) - ALREADY EXISTS
--- ✅ mcus.exercise_frequency (nullable) - ALREADY EXISTS
+-- 🆕 COLUMNS (created if not exists - safe to run multiple times):
+-- ✅ job_titles.risk_level (default 'moderate') - For Framingham job risk scoring
+-- ✅ mcus.smoking_status (nullable) - For MCU smoking status recording
+-- ✅ mcus.exercise_frequency (nullable) - For MCU exercise frequency recording
 --
 -- 🆕 NEW TABLE CREATED:
--- ✅ framingham_assessment - Complete schema with indexes and constraints
+-- ✅ framingham_assessment - Complete schema with indexes and constraints for storing assessments
 --
 -- NEXT STEPS:
--- 1. Execute this script in Supabase SQL Editor (only creates framingham_assessment table)
--- 2. Verify table creation with query:
+-- 1. Execute this script in Supabase SQL Editor
+-- 2. Verify columns with queries:
+--    SELECT column_name FROM information_schema.columns WHERE table_name='job_titles' AND column_name='risk_level';
+--    SELECT column_name FROM information_schema.columns WHERE table_name='mcus' AND column_name IN ('smoking_status', 'exercise_frequency');
+-- 3. Verify framingham_assessment table:
 --    SELECT table_name FROM information_schema.tables WHERE table_name='framingham_assessment';
--- 3. The dashboard will automatically use existing columns: risk_level, smoking_status, exercise_frequency
--- 4. Start using Assessment RAHMA Dashboard feature
+-- 4. UI for editing risk_level is now available in Data Master > Jabatan tab
+-- 5. Start using Assessment RAHMA Dashboard feature

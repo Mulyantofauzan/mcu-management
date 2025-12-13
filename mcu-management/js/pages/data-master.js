@@ -345,13 +345,31 @@ window.openAddModal = function() {
 function setupFormFields() {
     const formBody = document.querySelector('.modal-body form');
 
-    // Clear all field containers except item-name
-    const existingFields = formBody.querySelectorAll('div:not(:has(#item-name))');
+    // Hide risk_level field by default
+    const riskLevelField = document.getElementById('risk-level-field');
+    if (riskLevelField) {
+        riskLevelField.classList.add('hidden');
+    }
+
+    // Clear all field containers except item-name and risk-level-field
+    const existingFields = formBody.querySelectorAll('div:not(:has(#item-name)):not(#risk-level-field)');
     existingFields.forEach(field => {
         if (!field.classList.contains('modal-footer')) {
             field.remove();
         }
     });
+
+    // Setup fields untuk jobTitles (show risk_level field)
+    if (currentTab === 'jobTitles') {
+        if (riskLevelField) {
+            riskLevelField.classList.remove('hidden');
+        }
+        // Set default value to 'moderate'
+        const riskLevelSelect = document.getElementById('item-risk-level');
+        if (riskLevelSelect) {
+            riskLevelSelect.value = 'moderate';
+        }
+    }
 
     // Setup fields untuk labItems
     if (currentTab === 'labItems') {
@@ -401,6 +419,14 @@ window.editItem = async function(id) {
 
     document.getElementById('item-name').value = item.name;
 
+    // Populate risk_level field untuk jobTitles
+    if (currentTab === 'jobTitles') {
+        const riskLevelEl = document.getElementById('item-risk-level');
+        if (riskLevelEl) {
+            riskLevelEl.value = item.risk_level || 'moderate';
+        }
+    }
+
     // Populate labItems fields jika ada
     if (currentTab === 'labItems') {
         const descEl = document.getElementById('item-description');
@@ -427,6 +453,15 @@ window.handleSubmit = async function(event) {
 
     const config = tabConfig[currentTab];
     let formData = { name: document.getElementById('item-name').value };
+
+    // Special handling untuk jobTitles dengan risk_level
+    if (currentTab === 'jobTitles') {
+        const riskLevelEl = document.getElementById('item-risk-level');
+        formData = {
+            name: document.getElementById('item-name').value,
+            riskLevel: riskLevelEl?.value || 'moderate'
+        };
+    }
 
     // Special handling untuk labItems dengan fields tambahan
     if (currentTab === 'labItems') {

@@ -126,6 +126,17 @@
                         <label class="label">Nama <span class="text-danger">*</span></label>
                         <input type="text" id="item-name" class="input" required />
                     </div>
+                    <!-- Risk Level Field (only for Job Titles) -->
+                    <div id="risk-level-field" class="hidden">
+                        <label class="label">Tingkat Risiko Pekerjaan <span class="text-danger">*</span></label>
+                        <select id="item-risk-level" class="input">
+                            <option value="">-- Pilih Tingkat Risiko --</option>
+                            <option value="low">Low (Risiko Rendah)</option>
+                            <option value="moderate">Moderate (Risiko Sedang) - Default</option>
+                            <option value="high">High (Risiko Tinggi)</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Digunakan untuk penilaian Framingham CVD Risk Assessment</p>
+                    </div>
                     <div class="modal-footer">
                         <button type="button" onclick="window.closeCrudModal()" class="btn btn-secondary">Batal</button>
                         <button type="submit" class="btn btn-primary">Simpan</button>
