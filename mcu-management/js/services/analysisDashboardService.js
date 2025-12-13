@@ -119,7 +119,14 @@ class AnalysisDashboardService {
         });
 
       this.filteredData = [...this.allData];
+      console.log('Dashboard data loaded:', {
+        totalEmployees: employees.length,
+        activeEmployees: this.allData.length,
+        employeesWithMCU: employees.filter(e => latestMCUPerEmployee[e.employee_id]).length,
+        data: this.allData
+      });
     } catch (error) {
+      console.error('Error loading dashboard data:', error);
       throw error;
     }
   }
