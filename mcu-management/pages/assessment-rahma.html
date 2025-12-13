@@ -96,15 +96,8 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="../js/pages/assessment-rahma-dashboard.js"></script>
     <script type="module">
         import { initAssessmentRahmaDAshboard } from '../js/pages/assessment-rahma-dashboard.js';
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', async function() {
-            await initAssessmentRahmaDAshboard();
-            document.body.classList.add('initialized');
-        });
 
         // Handle logout
         window.handleLogout = function() {
@@ -113,6 +106,28 @@
                 location.href = '../index.html?logout=true';
             }
         };
+
+        // Initialize dashboard immediately when DOM is ready
+        async function init() {
+            try {
+                // Wait a moment for DOM to be fully ready
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', async () => {
+                        await initAssessmentRahmaDAshboard();
+                        document.body.classList.add('initialized');
+                    });
+                } else {
+                    // DOM already loaded
+                    await initAssessmentRahmaDAshboard();
+                    document.body.classList.add('initialized');
+                }
+            } catch (error) {
+                console.error('Error initializing Assessment RAHMA:', error);
+            }
+        }
+
+        // Start initialization
+        init();
     </script>
 </body>
 </html>

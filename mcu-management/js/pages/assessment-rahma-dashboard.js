@@ -65,13 +65,24 @@ export async function initAssessmentRahmaDAshboard() {
     // Calculate assessments for all active employees (latest MCU only)
     calculateAllAssessments();
 
+    console.log('Assessment Data:', {
+      totalEmployees: allEmployees.length,
+      totalMCUs: allMCUs.length,
+      assessmentsCalculated: assessmentData.length,
+      riskCounts: {
+        low: assessmentData.filter(d => d.riskCategory === 'low').length,
+        medium: assessmentData.filter(d => d.riskCategory === 'medium').length,
+        high: assessmentData.filter(d => d.riskCategory === 'high').length
+      }
+    });
+
     // Initialize super search
     initSuperSearch();
 
     // Render dashboard
     renderDashboard();
 
-    showToast('Assessment RAHMA Dashboard dimuat', 'success');
+    showToast(`Assessment RAHMA Dashboard dimuat - ${assessmentData.length} assessments`, 'success');
 
   } catch (error) {
     console.error('Error initializing RAHMA dashboard:', error);
@@ -158,10 +169,10 @@ function calculateAllAssessments() {
 
     const latestMCU = employeeMCUs[0];
 
-    // Only include if MCU has final result (completed)
-    if (!latestMCU.final_result) {
-      return;
-    }
+    // Include MCU data (don't filter by final_result to show all assessments)
+    // if (!latestMCU.final_result) {
+    //   return;
+    // }
 
     // Get associated data
     const dept = departments.find(d => d.id === employee.departmentId);
