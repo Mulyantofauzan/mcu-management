@@ -32,6 +32,8 @@ let vendors = [];
 let currentPage = 1;
 const itemsPerPage = 15;
 let currentFilter = 'all'; // 'all', 'low', 'medium', 'high'
+let filterByJobTitle = null; // Filter by job title
+let filterByRiskLevel = null; // Filter by risk level (low, moderate, high)
 
 /**
  * Initialize RAHMA Dashboard
@@ -224,10 +226,13 @@ function calculateAllAssessments() {
         name: employee.name,
         gender: employee.jenis_kelamin,
         birthDate: employee.date_of_birth,
+        departmentId: employee.departmentId,
         department: dept?.name || 'N/A',
+        jobId: employee.jobId,
         jobTitle: job?.name || 'N/A',
         vendorName: vendor?.name || null,
-        isActive: employee.is_active
+        isActive: employee.is_active,
+        deletedAt: employee.deleted_at
       },
       mcu: {
         mcuId: latestMCU.mcu_id,
@@ -268,13 +273,49 @@ function calculateAllAssessments() {
 export function applyFilter(category) {
   currentFilter = category;
   currentPage = 1;
+  applyAllFilters();
+}
 
-  if (category === 'all') {
-    filteredData = [...assessmentData];
-  } else {
-    filteredData = assessmentData.filter(d => d.riskCategory === category);
+/**
+ * Apply filter by job title
+ */
+export function filterByJob(jobId) {
+  filterByJobTitle = jobId === 'all' ? null : jobId;
+  currentPage = 1;
+  applyAllFilters();
+}
+
+/**
+ * Apply filter by risk level (job_titles.risk_level)
+ */
+export function filterByJobRiskLevel(riskLevel) {
+  filterByRiskLevel = riskLevel === 'all' ? null : riskLevel;
+  currentPage = 1;
+  applyAllFilters();
+}
+
+/**
+ * Apply all filters together
+ */
+function applyAllFilters() {
+  let filtered = [...assessmentData];
+
+  // Filter by risk category (LOW/MEDIUM/HIGH)
+  if (currentFilter !== 'all') {
+    filtered = filtered.filter(d => d.riskCategory === currentFilter);
   }
 
+  // Filter by job title
+  if (filterByJobTitle) {
+    filtered = filtered.filter(d => d.employee.jobId === filterByJobTitle);
+  }
+
+  // Filter by job risk level (low, moderate, high)
+  if (filterByRiskLevel) {
+    filtered = filtered.filter(d => d.assessment.jobRiskLevel === filterByRiskLevel);
+  }
+
+  filteredData = filtered;
   renderDashboard();
 }
 
@@ -359,6 +400,45 @@ function renderDashboard() {
         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
     </div>
 
+    <!-- Filter Controls -->
+    <div class="p-6 bg-white border-b border-gray-200">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Filter by Job Title -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Filter Jabatan</label>
+          <select id="filter-job-title" onchange="window.assessmentRAHMA.filterByJob(this.value)"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="all">-- Semua Jabatan --</option>
+            ${jobTitles.map(j => `<option value="${j.id}">${j.name}</option>`).join('')}
+          </select>
+        </div>
+
+        <!-- Filter by Risk Level -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Filter Tingkat Risiko Pekerjaan</label>
+          <select id="filter-risk-level" onchange="window.assessmentRAHMA.filterByJobRiskLevel(this.value)"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="all">-- Semua Level --</option>
+            <option value="low">Low (Rendah)</option>
+            <option value="moderate">Moderate (Sedang)</option>
+            <option value="high">High (Tinggi)</option>
+          </select>
+        </div>
+
+        <!-- Export Button -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">&nbsp;</label>
+          <button onclick="window.assessmentRAHMA.exportToCSV()"
+                  class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            Export CSV
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Risk Category Cards -->
     <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
       <!-- LOW RISK Card -->
@@ -423,19 +503,25 @@ function renderDashboard() {
 
     <!-- Employee List Table -->
     <div class="p-6">
-      <div class="bg-white rounded-lg shadow overflow-hidden">
-        <table class="w-full text-sm">
+      <div class="bg-white rounded-lg shadow overflow-x-auto">
+        <table class="w-full text-xs">
           <thead class="bg-gray-100 border-b sticky top-0">
             <tr>
-              <th class="px-4 py-3 text-left font-semibold text-gray-700">No.</th>
-              <th class="px-4 py-3 text-left font-semibold text-gray-700">ID Karyawan</th>
-              <th class="px-4 py-3 text-left font-semibold text-gray-700">Nama</th>
-              <th class="px-4 py-3 text-left font-semibold text-gray-700">Dept</th>
-              <th class="px-4 py-3 text-left font-semibold text-gray-700">Posisi</th>
-              <th class="px-4 py-3 text-center font-semibold text-gray-700">Tanggal MCU</th>
-              <th class="px-4 py-3 text-center font-semibold text-gray-700">11 Parameters Score</th>
-              <th class="px-4 py-3 text-center font-semibold text-gray-700">Total</th>
-              <th class="px-4 py-3 text-center font-semibold text-gray-700">Risk</th>
+              <th class="px-2 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">No</th>
+              <th class="px-2 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">Nama</th>
+              <th class="px-2 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">Jabatan</th>
+              <th class="px-2 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">Jenis Kelamin</th>
+              <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Umur</th>
+              <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Job</th>
+              <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Olahraga</th>
+              <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Merokok</th>
+              <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Tekanan Darah</th>
+              <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">BMI</th>
+              <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Kolesterol</th>
+              <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Trigliserid</th>
+              <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">HDL</th>
+              <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Nilai Total</th>
+              <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Hasil</th>
             </tr>
           </thead>
           <tbody id="employee-list-body">
@@ -484,7 +570,7 @@ function renderEmployeeTable() {
   tbody.innerHTML = '';
 
   if (pageData.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-gray-500 py-4">Tidak ada data</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="15" class="text-center text-gray-500 py-4">Tidak ada data</td></tr>';
     updatePagination();
     return;
   }
@@ -494,29 +580,41 @@ function renderEmployeeTable() {
                    item.riskCategory === 'medium' ? 'bg-yellow-100 text-yellow-800' :
                    'bg-red-100 text-red-800';
 
-    const riskLabel = item.riskCategory === 'low' ? '✅ LOW' :
-                     item.riskCategory === 'medium' ? '⚠️ MEDIUM' :
-                     '🔴 HIGH';
+    const riskLabel = item.riskCategory === 'low' ? 'LOW' :
+                     item.riskCategory === 'medium' ? 'MEDIUM' :
+                     'HIGH';
 
-    // Format scores display
-    const scoresStr = `${item.scores.gender}|${item.scores.age}|${item.scores.jobRisk}|${item.scores.exercise}|${item.scores.smoking}|${item.scores.bloodPressure}|${item.scores.bmi}|${item.scores.glucose}|${item.scores.cholesterol}|${item.scores.triglycerides}|${item.scores.hdl}`;
+    // Helper function to format gender
+    const genderDisplay = item.employee.gender === 'L' || item.employee.gender === 'Laki-laki' ? 'L' : 'P';
+
+    // Calculate age from birth date and MCU date
+    const birthDate = new Date(item.employee.birthDate);
+    const mcuDate = new Date(item.mcu.mcuDate);
+    let age = mcuDate.getFullYear() - birthDate.getFullYear();
+    const monthDiff = mcuDate.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && mcuDate.getDate() < birthDate.getDate())) {
+      age--;
+    }
 
     const row = document.createElement('tr');
     row.className = 'border-b hover:bg-gray-50';
     row.innerHTML = `
-      <td class="px-4 py-3 text-sm">${startIdx + idx + 1}</td>
-      <td class="px-4 py-3 text-sm font-mono text-blue-600">${item.employee.employee_id}</td>
-      <td class="px-4 py-3 text-sm font-medium">${item.employee.name}</td>
-      <td class="px-4 py-3 text-sm">${item.employee.department}</td>
-      <td class="px-4 py-3 text-sm">${item.employee.jobTitle}</td>
-      <td class="px-4 py-3 text-sm text-center">${formatDateDisplay(item.mcu.mcuDate)}</td>
-      <td class="px-4 py-3 text-xs text-center font-mono">
-        <span title="G|A|JR|Ex|Sm|BP|BMI|Glu|Chol|Trig|HDL"
-              class="bg-gray-100 px-2 py-1 rounded">${scoresStr}</span>
-      </td>
-      <td class="px-4 py-3 text-sm text-center font-bold">${item.totalScore > 0 ? '+' : ''}${item.totalScore}</td>
-      <td class="px-4 py-3 text-sm text-center">
-        <span class="px-2 py-1 rounded text-xs font-semibold ${riskBg}">
+      <td class="px-2 py-2 text-xs text-gray-600">${startIdx + idx + 1}</td>
+      <td class="px-2 py-2 text-xs font-medium text-gray-900">${item.employee.name}</td>
+      <td class="px-2 py-2 text-xs text-gray-600">${item.employee.jobTitle}</td>
+      <td class="px-2 py-2 text-xs text-center">${genderDisplay}</td>
+      <td class="px-2 py-2 text-xs text-center font-semibold">${age}</td>
+      <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.jobRisk}</td>
+      <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.exercise}</td>
+      <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.smoking}</td>
+      <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.bloodPressure}</td>
+      <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.bmi}</td>
+      <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.cholesterol}</td>
+      <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.triglycerides}</td>
+      <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.hdl}</td>
+      <td class="px-2 py-2 text-xs text-center font-bold">${item.totalScore > 0 ? '+' : ''}${item.totalScore}</td>
+      <td class="px-2 py-2 text-xs text-center">
+        <span class="px-1 py-0.5 rounded text-xs font-semibold ${riskBg}">
           ${riskLabel}
         </span>
       </td>
@@ -565,11 +663,99 @@ export function prevPage() {
   }
 }
 
+/**
+ * Export filtered data to CSV
+ */
+export function exportToCSV() {
+  if (filteredData.length === 0) {
+    showToast('Tidak ada data untuk diekspor', 'warning');
+    return;
+  }
+
+  // CSV Header
+  const headers = [
+    'No',
+    'Nama',
+    'Jabatan',
+    'Jenis Kelamin',
+    'Umur',
+    'Job',
+    'Olahraga',
+    'Merokok',
+    'Tekanan Darah',
+    'BMI',
+    'Kolesterol',
+    'Trigliserid',
+    'HDL',
+    'Nilai Total',
+    'Hasil'
+  ];
+
+  // CSV Data
+  const rows = filteredData.map((item, idx) => {
+    const genderDisplay = item.employee.gender === 'L' || item.employee.gender === 'Laki-laki' ? 'L' : 'P';
+
+    // Calculate age
+    const birthDate = new Date(item.employee.birthDate);
+    const mcuDate = new Date(item.mcu.mcuDate);
+    let age = mcuDate.getFullYear() - birthDate.getFullYear();
+    const monthDiff = mcuDate.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && mcuDate.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    const riskLabel = item.riskCategory === 'low' ? 'LOW' :
+                     item.riskCategory === 'medium' ? 'MEDIUM' : 'HIGH';
+
+    return [
+      idx + 1,
+      item.employee.name,
+      item.employee.jobTitle,
+      genderDisplay,
+      age,
+      item.scores.jobRisk,
+      item.scores.exercise,
+      item.scores.smoking,
+      item.scores.bloodPressure,
+      item.scores.bmi,
+      item.scores.cholesterol,
+      item.scores.triglycerides,
+      item.scores.hdl,
+      item.totalScore,
+      riskLabel
+    ];
+  });
+
+  // Create CSV content
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+  ].join('\n');
+
+  // Download CSV
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+
+  link.setAttribute('href', url);
+  link.setAttribute('download', `assessment-rahma-${new Date().getTime()}.csv`);
+  link.style.visibility = 'hidden';
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  showToast(`${filteredData.length} data berhasil diekspor ke CSV`, 'success');
+}
+
 // Export to window
 window.assessmentRAHMA = {
   initAssessmentRahmaDAshboard,
   applyFilter,
+  filterByJob,
+  filterByJobRiskLevel,
   searchAssessments,
+  exportToCSV,
   nextPage,
   prevPage
 };
