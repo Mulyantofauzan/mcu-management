@@ -205,6 +205,39 @@ async function loadVendors() {
 }
 
 /**
+ * Normalize exercise frequency values from database to calculator format
+ */
+function normalizeExerciseFrequency(value) {
+  if (!value) return '1-2x_seminggu'; // Default baseline
+
+  const normalized = String(value).toLowerCase().trim().replace(/\s+/g, '_');
+
+  // Map database values to calculator format
+  if (normalized.includes('>2x')) return '>2x_seminggu';
+  if (normalized.includes('1-2x') && normalized.includes('minggu')) return '1-2x_seminggu';
+  if (normalized.includes('1-2x') && normalized.includes('bulan')) return '1-2x_sebulan';
+  if (normalized.includes('tidak') && normalized.includes('pernah')) return 'tidak_pernah';
+
+  return normalized; // Return as-is if it matches calculator format already
+}
+
+/**
+ * Normalize smoking status values from database to calculator format
+ */
+function normalizeSmokingStatus(value) {
+  if (!value) return 'tidak_merokok'; // Default non-smoker
+
+  const normalized = String(value).toLowerCase().trim().replace(/\s+/g, '_');
+
+  // Map database values to calculator format
+  if (normalized.includes('tidak') && normalized.includes('merokok')) return 'tidak_merokok';
+  if (normalized.includes('mantan')) return 'mantan_perokok';
+  if (normalized.includes('perokok') || normalized.includes('aktif')) return 'perokok';
+
+  return normalized; // Return as-is if it matches calculator format already
+}
+
+/**
  * Calculate assessment for all active employees
  * Uses LATEST MCU for each employee only
  */
@@ -257,13 +290,13 @@ function calculateAllAssessments() {
     const hasLabResults = latestMCU.glucose || latestMCU.cholesterol || latestMCU.triglycerides || latestMCU.hdl;
     const isIncomplete = !latestMCU.bloodPressure || !latestMCU.bmi || (!hasLabResults);
 
-    // Prepare assessment data
+    // Prepare assessment data with normalized values
     const assessmentInput = {
       gender: employee.jenisKelamin === 'L' || employee.jenisKelamin === 'Laki-laki' ? 'pria' : 'wanita',
       age: calculateAge(employee.birthDate, latestMCU.mcuDate),
       jobRiskLevel: job?.riskLevel || 'moderate',
-      exerciseFrequency: latestMCU.exerciseFrequency || '1-2x_seminggu',
-      smokingStatus: latestMCU.smokingStatus || 'tidak_merokok',
+      exerciseFrequency: normalizeExerciseFrequency(latestMCU.exerciseFrequency),
+      smokingStatus: normalizeSmokingStatus(latestMCU.smokingStatus),
       systolic: parseFloat(latestMCU.bloodPressure?.split('/')[0]) || null,
       diastolic: parseFloat(latestMCU.bloodPressure?.split('/')[1]) || null,
       bmi: parseFloat(latestMCU.bmi) || null,
