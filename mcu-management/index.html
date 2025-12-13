@@ -520,17 +520,17 @@
 
     <!-- Display App Version -->
     <script>
-        // Load version from package.json
-        fetch('package.json')
+        // Load version from version.json
+        fetch('version.json')
             .then(res => res.json())
-            .then(pkg => {
+            .then(data => {
                 const versionElements = document.querySelectorAll('#app-version');
                 versionElements.forEach(el => {
-                    el.textContent = 'v' + pkg.version;
+                    el.textContent = 'v' + data.version;
                 });
             })
             .catch(err => {
-                console.log('Could not load version from package.json');
+                console.log('Could not load version from version.json');
             });
     </script>
 </body>
