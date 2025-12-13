@@ -220,12 +220,6 @@ class LabService {
         .select();
 
       if (error) {
-          error: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
-          payload: insertPayload
-        });
         throw error;
       }
 
