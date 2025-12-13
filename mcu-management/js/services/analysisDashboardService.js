@@ -80,7 +80,6 @@ class AnalysisDashboardService {
 
       // Get all lab results for latest MCUs
       const mculIds = Object.values(latestMCUPerEmployee).map(m => m.mcu_id);
-      console.log(`[AnalysisDashboard] Loading lab results for ${mculIds.length} latest MCUs:`, mculIds);
       const { data: labResults, error: labError } = await supabase
         .from('pemeriksaan_lab')
         .select('*')
@@ -88,7 +87,6 @@ class AnalysisDashboardService {
         .is('deleted_at', null); // ✅ CRITICAL: Only get non-deleted lab results
 
       if (labError) throw labError;
-      console.log(`[AnalysisDashboard] Retrieved ${labResults?.length || 0} lab results from database`);
 
       // ✅ Load lab items mapping for display purposes (name, unit)
       // Status is read directly from database 'notes' column, not calculated from ranges
@@ -544,8 +542,6 @@ class AnalysisDashboardService {
       { id: 32, name: 'Asam Urat', canvasId: 'chartLabAsamUrat' }
     ];
 
-    console.log(`[AnalysisDashboard] Rendering ${labItems.length} lab result charts for ${this.filteredData.length} employees`);
-    console.log(`[AnalysisDashboard] Lab items mapping keys: ${Object.keys(this.labItemsMap).join(', ')}`);
 
     labItems.forEach(labItem => {
       const ctx = document.getElementById(labItem.canvasId)?.getContext('2d');
@@ -553,7 +549,6 @@ class AnalysisDashboardService {
 
       const itemInfo = this.labItemsMap[labItem.id];
       if (!itemInfo) {
-        console.warn(`[AnalysisDashboard] Lab item ${labItem.id} (${labItem.name}) not found in labItemsMap`);
         return;
       }
 
@@ -585,15 +580,7 @@ class AnalysisDashboardService {
         }
       });
 
-      // Debug: Log data status
       const totalRecorded = statusCounts['Normal'] + statusCounts['Low'] + statusCounts['High'];
-      if (totalRecorded === 0 && this.filteredData.length > 0) {
-        console.warn(`[AnalysisDashboard] ${labItem.name} (ID: ${labId}): No recorded values for ${this.filteredData.length} employees`, {
-          sampleLabs: this.filteredData.slice(0, 2).map(item => item.labs[labId])
-        });
-      } else if (totalRecorded > 0) {
-        console.log(`[AnalysisDashboard] ${labItem.name} (ID: ${labId}): Found ${totalRecorded} recorded values from database`, statusCounts);
-      }
 
       // Update status element
       if (labItem.statusEl) {

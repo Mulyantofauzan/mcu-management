@@ -32,24 +32,6 @@ class MCUBatchService {
     let createdMCU = null;
 
     try {
-      // 🔍 DEBUG: Log received MCU data
-      console.log('📥 [mcuBatchService.saveMCUWithLabResults] RECEIVED DATA:', {
-        vision: {
-          distantUnaidedLeft: mcuData.visionDistantUnaideLeft,
-          distantUnaidedRight: mcuData.visionDistantUnaideRight,
-          distantSpectaclesLeft: mcuData.visionDistantSpectaclesLeft,
-          distantSpectaclesRight: mcuData.visionDistantSpectaclesRight,
-          nearUnaidedLeft: mcuData.visionNearUnaideLeft,
-          nearUnaidedRight: mcuData.visionNearUnaideRight,
-          nearSpectaclesLeft: mcuData.visionNearSpectaclesLeft,
-          nearSpectaclesRight: mcuData.visionNearSpectaclesRight
-        },
-        lifestyle: {
-          smokingStatus: mcuData.smokingStatus,
-          exerciseFrequency: mcuData.exerciseFrequency
-        }
-      });
-
       // ✅ STEP 1: Validate MCU data FIRST (before any save)
       this._validateMCUData(mcuData);
 
