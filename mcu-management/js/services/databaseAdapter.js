@@ -32,7 +32,7 @@ export function getDatabase() {
  * Check if using Supabase
  */
 export function isUsingSupabase() {
-    return useSupabase;
+    return getUseSupabase();
 }
 
 // ============================================
@@ -442,23 +442,6 @@ export const MCUs = {
                 updated_by: mcu.updatedBy
             };
 
-            // 🔍 DEBUG: Log the exact payload being sent to Supabase
-              vision: {
-                vision_distant_unaided_left: insertPayload.vision_distant_unaided_left,
-                vision_distant_unaided_right: insertPayload.vision_distant_unaided_right,
-                vision_distant_spectacles_left: insertPayload.vision_distant_spectacles_left,
-                vision_distant_spectacles_right: insertPayload.vision_distant_spectacles_right,
-                vision_near_unaided_left: insertPayload.vision_near_unaided_left,
-                vision_near_unaided_right: insertPayload.vision_near_unaided_right,
-                vision_near_spectacles_left: insertPayload.vision_near_spectacles_left,
-                vision_near_spectacles_right: insertPayload.vision_near_spectacles_right
-              },
-              lifestyle: {
-                smoking_status: insertPayload.smoking_status,
-                exercise_frequency: insertPayload.exercise_frequency
-              }
-            });
-
             const { data, error } = await supabase
                 .from('mcus')
                 .insert(insertPayload)
@@ -536,24 +519,6 @@ export const MCUs = {
             Object.keys(updates).forEach(key => {
                 const dbKey = fieldMapping[key] || key;
                 updateData[dbKey] = updates[key];
-            });
-
-            // 🔍 DEBUG: Log the update payload
-              vision: {
-                vision_distant_unaided_left: updateData.vision_distant_unaided_left,
-                vision_distant_unaided_right: updateData.vision_distant_unaided_right,
-                vision_distant_spectacles_left: updateData.vision_distant_spectacles_left,
-                vision_distant_spectacles_right: updateData.vision_distant_spectacles_right,
-                vision_near_unaided_left: updateData.vision_near_unaided_left,
-                vision_near_unaided_right: updateData.vision_near_unaided_right,
-                vision_near_spectacles_left: updateData.vision_near_spectacles_left,
-                vision_near_spectacles_right: updateData.vision_near_spectacles_right
-              },
-              lifestyle: {
-                smoking_status: updateData.smoking_status,
-                exercise_frequency: updateData.exercise_frequency
-              },
-              allUpdateKeys: Object.keys(updateData)
             });
 
             const { data, error } = await supabase
