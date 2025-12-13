@@ -43,7 +43,21 @@
       "Bash(\"https://xqyuktsfjvdqfhulobai.supabase.co/functions/v1/upload-to-google-drive\")",
       "Bash(ANON_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxeXVrdHNjanZkcWZodWxvYmFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MjkxNzQsImV4cCI6MjA3NjQwNTE3NH0.8_lmNISdJ7AMi0QgAqBoPathoiUeH_WZRDqFaAiRDwY\")",
       "Bash(md5:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(for file in /Users/mulyanto/Desktop/MCU-APP/mcu-management/js/services/{cacheManager,databaseAdapter,employeeService,labService,mcuService,reportExportService}.js /Users/mulyanto/Desktop/MCU-APP/mcu-management/js/utils/{dbVerification,performanceMonitor,themeManager,versionManager}.js)",
+      "Bash(do if [ -f \"$file\" ])",
+      "Bash(then echo \"=== $file ===\" grep -n \"console\\.\" \"$file\")",
+      "Bash(while read file)",
+      "Bash(do sed -i '' '/console\\.log\\|console\\.warn\\|console\\.error/d' \"$file\" done)",
+      "Bash(xargs:*)",
+      "Bash(for file in /Users/mulyanto/Desktop/MCU-APP/mcu-management/js/services/*.js)",
+      "Bash(do node -c \"$file\")",
+      "Bash(echo:*)",
+      "Bash(while IFS= read -r file)",
+      "Bash(for file in js/services/*.js js/utils/*.js js/pages/*.js js/config/*.js)",
+      "Bash(for file in js/**/*.js)",
+      "Bash(for file in env-config.js js/config/envConfig.js js/config/supabase.js js/pages/dashboard.js js/services/database.js js/seedData.js js/utils/uiHelpers.js)",
+      "Bash(do echo \"=== Checking $file ===\")"
     ],
     "deny": [],
     "ask": []

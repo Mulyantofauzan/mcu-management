@@ -14,7 +14,7 @@
  * 3. Stale-while-revalidate: Master data (fetch fresh, serve stale immediately)
  */
 
-const CACHE_VERSION = 'madis-v20';
+const CACHE_VERSION = 'madis-v21';
 const MAX_CACHE_ENTRIES = 200;
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
@@ -44,7 +44,7 @@ self.addEventListener('install', (event) => {
     })
     .then(() => self.skipWaiting()) // Activate immediately
     .catch((error) => {
-      console.warn('Service worker install error:', error);
+      // Silent fail - service worker installation errors are non-critical
     })
   );
 });
@@ -58,10 +58,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames
           .filter((name) => !name.startsWith(CACHE_VERSION))
-          .map((name) => {
-            console.log(`Deleting old cache: ${name}`);
-            return caches.delete(name);
-          })
+          .map((name) => caches.delete(name))
       );
     })
     .then(() => self.clients.claim()) // Take control immediately
@@ -144,8 +141,7 @@ async function cacheFirstStrategy(request) {
     // Cache successful responses
     if (response.ok && response.status < 400) {
       const cache = await caches.open(DYNAMIC_CACHE);
-      cache.put(request, response.clone())
-        .catch(err => console.warn('Cache put error:', err));
+      cache.put(request, response.clone());
       trimCache(DYNAMIC_CACHE, MAX_CACHE_ENTRIES);
     }
 
@@ -175,8 +171,7 @@ async function networkFirstStrategy(request) {
     // Cache successful responses
     if (response.ok || response.status < 400) {
       const cache = await caches.open(DYNAMIC_CACHE);
-      cache.put(request, response.clone())
-        .catch(err => console.warn('Cache put error:', err));
+      cache.put(request, response.clone());
     }
 
     return response;
@@ -204,8 +199,7 @@ async function apiNetworkFirstStrategy(request) {
     // Cache successful API responses
     if (response.ok && response.status === 200) {
       const cache = await caches.open(API_CACHE);
-      cache.put(cacheKey, response.clone())
-        .catch(err => console.warn('API cache put error:', err));
+      cache.put(cacheKey, response.clone());
     }
 
     return response;
@@ -266,7 +260,7 @@ async function trimCache(cacheName, maxEntries) {
       await Promise.all(keysToDelete.map(key => cache.delete(key)));
     }
   } catch (error) {
-    console.warn(`Error trimming cache ${cacheName}:`, error);
+    // Silent fail - cache trimming errors are non-critical
   }
 }
 

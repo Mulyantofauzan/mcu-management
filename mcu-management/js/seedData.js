@@ -2,17 +2,11 @@
  * Seed Data Script
  * Populates database with demo data for testing
  */
-
-console.log('[seedData.js] Module loading...');
-
 import { database } from './services/database.js';
 import { employeeService } from './services/employeeService.js';
 import { mcuService } from './services/mcuService.js';
 import { masterDataService } from './services/masterDataService.js';
 import { authService } from './services/authService.js';
-
-console.log('[seedData.js] All imports completed');
-
 const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 const mcuTypes = ['Pre-Employee', 'Annual', 'Khusus', 'Final'];
 const mcuResults = ['Fit', 'Follow-Up', 'Unfit'];
@@ -76,7 +70,6 @@ export async function seedDatabase() {
     // For Supabase, we skip clearing to preserve production data
     try {
       await database.clearAll();
-      console.log('[seedData.js] Database cleared');
     } catch (error) {
       console.log('[seedData.js] Could not clear database (expected if using Supabase):', error.message);
     }

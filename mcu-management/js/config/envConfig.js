@@ -23,40 +23,34 @@ export async function loadEnvironmentConfig() {
   // Priority 1: Try API endpoint first (production on Vercel)
   // This loads env vars from Vercel environment variables at runtime
   try {
-    console.log('[envConfig.js] Trying /api/config endpoint...');
     const response = await fetch('/api/config', {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
     });
     if (response.ok) {
       const config = await response.json();
-      console.log('[envConfig.js] /api/config response:', config);
       if (config.SUPABASE_URL) {
         Object.assign(ENV, {
           SUPABASE_URL: config.SUPABASE_URL,
           SUPABASE_ANON_KEY: config.SUPABASE_ANON_KEY,
           ENABLE_AUTO_SEED: config.ENABLE_AUTO_SEED || false
         });
-        console.log('[envConfig.js] Loaded from /api/config');
         return true;
       }
     }
   } catch (error) {
-    console.log('[envConfig.js] /api/config not available:', error.message);
     // API endpoint not available (expected in dev without backend)
   }
 
   // Priority 2: Load from Vite environment variables
   // Vite replaces import.meta.env.VITE_* during build or dev
   // Works for both dev server (.env.local) and production build (.env.production)
-  console.log('[envConfig.js] import.meta.env.VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL);
   if (import.meta.env.VITE_SUPABASE_URL) {
     Object.assign(ENV, {
       SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
       SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
       ENABLE_AUTO_SEED: import.meta.env.VITE_ENABLE_AUTO_SEED === 'true'
     });
-    console.log('[envConfig.js] Loaded from Vite env vars');
     return true;
   }
 
@@ -90,5 +84,4 @@ export async function initializeEnv() {
 
 // Export logging function
 export function logEnvStatus() {
-  console.log('[envConfig.js] ENV status:', ENV);
 }

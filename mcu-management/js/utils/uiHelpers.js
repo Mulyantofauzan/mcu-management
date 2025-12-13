@@ -2,9 +2,6 @@
  * UI Helper Utilities
  * Toast notifications, modals, loading states, etc.
  */
-
-console.log('[uiHelpers.js] Module loading...');
-
 // Toast Notifications - SECURITY: XSS-safe implementation
 export function showToast(message, type = 'info') {
   const toast = document.createElement('div');

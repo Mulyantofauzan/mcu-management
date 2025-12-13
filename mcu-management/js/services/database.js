@@ -20,11 +20,8 @@ const getAdapter = async () => {
 };
 
 // Check which database is being used
-console.log('[database.js] Checking which database to use...');
 if (isSupabaseEnabled()) {
-    console.log('[database.js] Using Supabase');
 } else {
-    console.log('[database.js] Using IndexedDB');
 }
 
 /**
@@ -33,7 +30,6 @@ if (isSupabaseEnabled()) {
 class DatabaseService {
     constructor() {
         // Initialize database service
-        console.log('[database.js] DatabaseService constructor called');
     }
 
     // Users
