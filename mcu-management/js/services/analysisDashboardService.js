@@ -787,8 +787,15 @@ class AnalysisDashboardService {
 
       this.filteredData.forEach(item => {
         const status = item.mcu?.smoking_status || item.mcu?.smokingStatus;
-        if (status && smokingCounts.hasOwnProperty(status)) {
-          smokingCounts[status]++;
+        if (status) {
+          // Map database values to display labels
+          let mappedStatus = status;
+          if (status === 'Perokok Aktif') {
+            mappedStatus = 'Perokok';
+          }
+          if (smokingCounts.hasOwnProperty(mappedStatus)) {
+            smokingCounts[mappedStatus]++;
+          }
         }
       });
 
