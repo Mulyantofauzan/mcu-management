@@ -520,10 +520,57 @@ class AnalysisDashboardService {
       if (!ctx) return;
 
       const counts = {};
+      let hasData = false;
+
       this.filteredData.forEach(item => {
-        const value = this.normalizeValue(item.mcu[exam.key] || item.mcu[exam.snakeKey]);
+        // Get value from mcu object (support both naming conventions)
+        const rawValue = item.mcu[exam.key] || item.mcu[exam.snakeKey];
+
+        // Skip empty/null values
+        if (!rawValue || String(rawValue).trim() === '') {
+          return;
+        }
+
+        hasData = true;
+        const value = this.normalizeValue(rawValue);
         counts[value] = (counts[value] || 0) + 1;
       });
+
+      // If no data found, show "No Data" placeholder
+      if (!hasData || labels.length === 0) {
+        const displayLabels = ['No Data Recorded'];
+        const dataValues = [1];
+        const chartLabels = ['No Data'];
+
+        this.destroyChart(exam.id);
+        this.charts.set(exam.id, new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: displayLabels,
+            datasets: [{
+              label: exam.label,
+              data: dataValues,
+              backgroundColor: '#e5e7eb',
+              borderColor: '#d1d5db',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            indexAxis: 'x',
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: { display: false },
+              tooltip: { enabled: true }
+            },
+            scales: {
+              y: { beginAtZero: true, ticks: { stepSize: 1 } },
+              x: { ticks: { font: { size: 10 } } }
+            }
+          }
+        }));
+        return;
+      }
 
       const colors = ['#10b981', '#f59e0b', '#ef4444', '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#06b6d4'];
       const labels = Object.keys(counts);
