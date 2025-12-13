@@ -153,14 +153,6 @@ class AnalysisDashboardService {
       this.availableYears = Array.from(yearSet).sort((a, b) => b - a); // Sort descending
 
       this.filteredData = [...this.allData];
-      console.log('Dashboard data loaded:', {
-        totalEmployees: employees.length,
-        activeEmployees: this.allData.length,
-        employeesWithMCU: employees.filter(e => latestMCUPerEmployee[e.employee_id]).length,
-        allMCURecords: this.allMCUData.length,
-        availableYears: this.availableYears,
-        data: this.allData
-      });
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       throw error;
@@ -1203,14 +1195,15 @@ class AnalysisDashboardService {
           },
           layout: {
             padding: {
-              right: 80 // Add padding on right side for labels
+              left: 20,
+              right: 120 // Add generous padding on right side for labels
             }
           },
           scales: {
             x: {
               beginAtZero: true,
               ticks: { stepSize: Math.max(1, Math.ceil(maxValue / 5)) },
-              max: Math.ceil(maxValue * 1.3) // Increase padding to 30% for more space
+              max: Math.ceil(maxValue * 1.5) // Increase padding to 50% for more space
             },
             y: { ticks: { font: { size: 11 } } }
           }
