@@ -8,6 +8,7 @@
 import { supabase } from '../config/supabase.js';
 import { labService } from './labService.js';
 import { LAB_ITEMS_MAPPING } from '../data/labItemsMapping.js';
+import { evaluateVisionStatus, getGradeInfo } from '../utils/visionScaleHelper.js';
 
 class AnalysisDashboardService {
   constructor() {
@@ -397,55 +398,65 @@ class AnalysisDashboardService {
   }
 
   /**
-   * 4. Vision Assessment Results
+   * 4. Vision Assessment Results - Based on 8-field vision structure
+   * Evaluates overall vision status from all 8 vision fields
+   * Categories: Normal, Gangguan Ringan, Gangguan Sedang, Gangguan Berat, Tidak Terukur
    */
   renderVisionChart() {
     const ctx = document.getElementById('chartVision')?.getContext('2d');
     if (!ctx) return;
 
-    const visionCounts = {};
+    const visionStatusCounts = {
+      'Normal': 0,
+      'Gangguan Ringan': 0,
+      'Gangguan Sedang': 0,
+      'Gangguan Berat': 0,
+      'Tidak Terukur': 0
+    };
+
+    const visionColors = {
+      'Normal': '#10b981',
+      'Gangguan Ringan': '#f59e0b',
+      'Gangguan Sedang': '#f97316',
+      'Gangguan Berat': '#ef4444',
+      'Tidak Terukur': '#9ca3af'
+    };
+
+    // Evaluate vision status for each employee
     this.filteredData.forEach(item => {
-      // Handle 8-field vision structure with fallback to old format
-      let vision = 'Not Recorded';
+      // Extract 8-field vision data
+      const visionFields = {
+        visionDistantUnaideLeft: item.mcu.visionDistantUnaideLeft,
+        visionDistantUnaideRight: item.mcu.visionDistantUnaideRight,
+        visionDistantSpectaclesLeft: item.mcu.visionDistantSpectaclesLeft,
+        visionDistantSpectaclesRight: item.mcu.visionDistantSpectaclesRight,
+        visionNearUnaideLeft: item.mcu.visionNearUnaideLeft,
+        visionNearUnaideRight: item.mcu.visionNearUnaideRight,
+        visionNearSpectaclesLeft: item.mcu.visionNearSpectaclesLeft,
+        visionNearSpectaclesRight: item.mcu.visionNearSpectaclesRight
+      };
 
-      // If 8-field vision structure exists, use it
-      if (item.mcu.visionDistantUnaideLeft || item.mcu.visionDistantUnaideRight ||
-          item.mcu.visionDistantSpectaclesLeft || item.mcu.visionDistantSpectaclesRight ||
-          item.mcu.visionNearUnaideLeft || item.mcu.visionNearUnaideRight ||
-          item.mcu.visionNearSpectaclesLeft || item.mcu.visionNearSpectaclesRight) {
-        // Build a summary showing all 8 values
-        const distantUnaided = [
-          item.mcu.visionDistantUnaideLeft || 'N/A',
-          item.mcu.visionDistantUnaideRight || 'N/A'
-        ].join(',');
-        const nearUnaided = [
-          item.mcu.visionNearUnaideLeft || 'N/A',
-          item.mcu.visionNearUnaideRight || 'N/A'
-        ].join(',');
-        vision = `D(Unaided): ${distantUnaided} / N(Unaided): ${nearUnaided}`;
-      } else if (item.mcu.visionDistant || item.mcu.visionNear) {
-        // Fallback to old 2-field vision format
-        const distant = item.mcu.visionDistant ? this.normalizeValue(item.mcu.visionDistant) : 'N/A';
-        const near = item.mcu.visionNear ? this.normalizeValue(item.mcu.visionNear) : 'N/A';
-        vision = `D: ${distant} / N: ${near}`;
-      } else if (item.mcu.vision) {
-        // Fallback to old single vision field for backwards compatibility
-        vision = this.normalizeValue(item.mcu.vision);
-      }
+      // Get overall vision status (worst grade from all 8 fields)
+      const gradeId = evaluateVisionStatus(visionFields);
+      const gradeInfo = getGradeInfo(gradeId);
+      const statusLabel = gradeInfo.label;
 
-      visionCounts[vision] = (visionCounts[vision] || 0) + 1;
+      visionStatusCounts[statusLabel]++;
     });
 
-    const colors = ['#10b981', '#f59e0b', '#ef4444', '#6366f1', '#8b5cf6'];
+    // Filter out zero counts for cleaner chart
+    const labels = Object.keys(visionStatusCounts).filter(label => visionStatusCounts[label] > 0);
+    const data = labels.map(label => visionStatusCounts[label]);
+    const colors = labels.map(label => visionColors[label]);
 
     this.destroyChart('chartVision');
     this.charts.set('chartVision', new Chart(ctx, {
       type: 'doughnut',
       data: {
-        labels: Object.keys(visionCounts),
+        labels: labels,
         datasets: [{
-          data: Object.values(visionCounts),
-          backgroundColor: colors.slice(0, Object.keys(visionCounts).length),
+          data: data,
+          backgroundColor: colors,
           borderColor: '#fff',
           borderWidth: 2
         }]
@@ -454,7 +465,18 @@ class AnalysisDashboardService {
         responsive: true,
         maintainAspectRatio: true,
         plugins: {
-          legend: { position: 'bottom' }
+          legend: { position: 'bottom' },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.label || '';
+                const value = context.parsed || 0;
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const percentage = Math.round((value / total) * 100);
+                return `${label}: ${value} (${percentage}%)`;
+              }
+            }
+          }
         }
       }
     }));
