@@ -78,6 +78,22 @@ export async function initAssessmentRahmaDAshboard() {
       }
     });
 
+    // Debug: Sample employee data for first assessment
+    if (assessmentData.length > 0) {
+      const sample = assessmentData[0];
+      console.log('Sample Assessment (First):', {
+        employeeName: sample.employee.name,
+        jobTitle: sample.employee.jobTitle,
+        jobId: sample.employee.jobId,
+        age: assessmentData[0].assessment.age,
+        ageScore: assessmentData[0].scores.age,
+        exerciseFrequency: assessmentData[0].assessment.exerciseFrequency,
+        exerciseScore: assessmentData[0].scores.exercise,
+        smokingStatus: assessmentData[0].assessment.smokingStatus,
+        smokingScore: assessmentData[0].scores.smoking
+      });
+    }
+
     // Initialize super search
     initSuperSearch();
 
@@ -217,6 +233,15 @@ function calculateAllAssessments() {
     // Get associated data
     const dept = departments.find(d => d.id === employee.departmentId);
     const job = jobTitles.find(j => j.id === employee.jobId);
+
+    // Debug: Log if job lookup fails
+    if (!job && employee.jobId) {
+      console.warn(`Job not found for employee ${employee.employeeId}: jobId=${employee.jobId}`, {
+        availableJobIds: jobTitles.map(j => j.id),
+        searchedFor: employee.jobId
+      });
+    }
+
     const vendor = employee.vendorName
       ? vendors.find(v => v.name === employee.vendorName)
       : null;
