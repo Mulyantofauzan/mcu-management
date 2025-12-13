@@ -307,7 +307,32 @@ export function searchAssessments() {
  */
 function renderDashboard() {
   const page = document.getElementById('rahma-main-content');
-  if (!page) return;
+  if (!page) {
+    console.error('rahma-main-content element not found');
+    return;
+  }
+
+  // Show empty state if no data
+  if (!assessmentData || assessmentData.length === 0) {
+    page.innerHTML = `
+      <div class="p-6">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">📊 Assessment RAHMA Dashboard</h1>
+        <p class="text-gray-600 mb-6">Framingham CVD Risk Assessment - Penilaian Risiko Kardiovaskular</p>
+
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+          <svg class="w-16 h-16 mx-auto mb-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <p class="text-lg font-semibold text-gray-700 mb-2">Belum ada data</p>
+          <p class="text-gray-600">Tidak ada karyawan aktif dengan MCU terbaru untuk ditampilkan.</p>
+          <p class="text-sm text-gray-500 mt-4">
+            Pastikan ada karyawan aktif dengan data MCU terbaru, maka dashboard akan menampilkan penilaian Framingham CVD Risk.
+          </p>
+        </div>
+      </div>
+    `;
+    return;
+  }
 
   // Count by risk category
   const lowCount = assessmentData.filter(d => d.riskCategory === 'low').length;
