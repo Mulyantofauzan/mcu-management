@@ -158,9 +158,24 @@ class StaticLabForm {
             if (value) {
                 const numValue = parseFloat(value);
                 if (!isNaN(numValue) && numValue > 0) {
+                    // ✅ CRITICAL FIX: Calculate and include status in notes field
+                    // This ensures lab results saved via staticLabForm also have status in notes column
+                    let status = '';
+                    const { min, max } = metadata;
+                    if (!isNaN(min) && !isNaN(max)) {
+                        if (numValue < min) {
+                            status = 'Low';
+                        } else if (numValue > max) {
+                            status = 'High';
+                        } else {
+                            status = 'Normal';
+                        }
+                    }
+
                     results.push({
                         labItemId: labItemId,
-                        value: numValue
+                        value: numValue,
+                        notes: status  // ✅ Include status in notes field
                     });
                 } else {
                 }
