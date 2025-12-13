@@ -549,7 +549,7 @@ function renderDashboard() {
               <th class="px-2 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">No</th>
               <th class="px-2 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">Nama</th>
               <th class="px-2 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">Jabatan</th>
-              <th class="px-2 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">Jenis Kelamin</th>
+              <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">JK</th>
               <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Umur</th>
               <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Job</th>
               <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Olahraga</th>
@@ -562,7 +562,6 @@ function renderDashboard() {
               <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Nilai Total</th>
               <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Hasil</th>
               <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Status</th>
-              <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Aksi</th>
             </tr>
           </thead>
           <tbody id="employee-list-body">
@@ -611,7 +610,7 @@ function renderEmployeeTable() {
   tbody.innerHTML = '';
 
   if (pageData.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="17" class="text-center text-gray-500 py-4">Tidak ada data</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="16" class="text-center text-gray-500 py-4">Tidak ada data</td></tr>';
     updatePagination();
     return;
   }
@@ -650,8 +649,8 @@ function renderEmployeeTable() {
       <td class="px-2 py-2 text-xs text-gray-600">${startIdx + idx + 1}</td>
       <td class="px-2 py-2 text-xs font-medium text-gray-900">${item.employee.name} ${item.isIncomplete ? '<span title="Data tidak lengkap">⚠️</span>' : ''}</td>
       <td class="px-2 py-2 text-xs text-gray-600">${item.employee.jobTitle}</td>
-      <td class="px-2 py-2 text-xs text-center">${genderDisplay}</td>
-      <td class="px-2 py-2 text-xs text-center font-semibold">${age}</td>
+      <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.gender}</td>
+      <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.age}</td>
       <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.jobRisk}</td>
       <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.exercise}</td>
       <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.smoking}</td>
@@ -671,26 +670,6 @@ function renderEmployeeTable() {
           ${statusDisplay}
         </span>
       </td>
-      <td class="px-2 py-2 text-xs text-center space-x-1 flex justify-center gap-1">
-        ${!isDeleted ? `
-          <button onclick="window.assessmentRAHMA.toggleEmployeeActive('${item.employee.employee_id}', ${!item.employee.isActive})"
-                  title="${item.employee.isActive ? 'Nonaktifkan' : 'Aktifkan'}"
-                  class="px-2 py-1 text-xs rounded ${item.employee.isActive ? 'bg-yellow-500 hover:bg-yellow-600 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'}">
-            ${item.employee.isActive ? '🔇' : '🔆'}
-          </button>
-          <button onclick="window.assessmentRAHMA.softDeleteEmployee('${item.employee.employee_id}')"
-                  title="Hapus (Soft Delete)"
-                  class="px-2 py-1 text-xs rounded bg-orange-500 hover:bg-orange-600 text-white">
-            🗑️
-          </button>
-        ` : `
-          <button onclick="window.assessmentRAHMA.permanentDeleteEmployee('${item.employee.employee_id}')"
-                  title="Hapus Permanen"
-                  class="px-2 py-1 text-xs rounded bg-red-600 hover:bg-red-700 text-white">
-            ⚠️ Permanen
-          </button>
-        `}
-      </td>
     `;
     tbody.appendChild(row);
   });
@@ -708,7 +687,10 @@ function updatePagination() {
   const nextBtn = document.getElementById('next-btn');
 
   if (infoEl) {
-    infoEl.textContent = `Menampilkan ${filteredData.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-${Math.min(currentPage * itemsPerPage, filteredData.length)} dari ${filteredData.length} karyawan`;
+    // Show filtered data count, but also total MCU count
+    const displayCount = filteredData.length;
+    const totalCount = allMCUs.length;
+    infoEl.textContent = `Menampilkan ${displayCount > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-${Math.min(currentPage * itemsPerPage, displayCount)} dari ${displayCount} data (Total MCU: ${totalCount})`;
   }
 
   if (prevBtn) prevBtn.disabled = currentPage <= 1;
