@@ -80,15 +80,30 @@ class AnalysisDashboardService {
         }
       });
 
-      // Get all lab results for all MCUs
+      // Get all lab results for all MCUs (with batching to avoid 400 errors)
+      let labResults = [];
       const allMCUIds = mcus.map(m => m.mcu_id);
-      const { data: labResults, error: labError } = await supabase
-        .from('pemeriksaan_lab')
-        .select('*')
-        .in('mcu_id', allMCUIds)
-        .is('deleted_at', null); // ✅ CRITICAL: Only get non-deleted lab results
 
-      if (labError) throw labError;
+      // Only query lab results if there are MCUs to query
+      // Batch queries to avoid hitting URL length limits
+      if (allMCUIds.length > 0) {
+        const batchSize = 100;
+        for (let i = 0; i < allMCUIds.length; i += batchSize) {
+          const batch = allMCUIds.slice(i, i + batchSize);
+          const { data: labs, error: labError } = await supabase
+            .from('pemeriksaan_lab')
+            .select('*')
+            .in('mcu_id', batch)
+            .is('deleted_at', null);
+
+          if (labError) {
+            console.warn(`Warning loading lab batch ${Math.floor(i/batchSize)+1}:`, labError);
+            // Continue processing instead of throwing
+          } else {
+            labResults = labResults.concat(labs || []);
+          }
+        }
+      }
 
       // ✅ Load lab items mapping for display purposes (name, unit)
       // Status is read directly from database 'notes' column, not calculated from ranges
