@@ -31,7 +31,6 @@ function validateR2Config() {
   }
 
   if (missing.length > 0) {
-    console.error('❌ R2 Config Error - Missing:', missing.join(', '));
     throw new Error(`Missing R2 environment variables: ${missing.join(', ')}`);
   }
   return true;
@@ -58,10 +57,10 @@ try {
       secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY
     },
     logger: {
-      debug: (msg) => console.debug(`[R2 Debug] ${msg}`),
-      info: (msg) => console.info(`[R2 Info] ${msg}`),
-      warn: (msg) => console.warn(`[R2 Warn] ${msg}`),
-      error: (msg) => console.error(`[R2 Error] ${msg}`)
+      debug: () => {},
+      info: () => {},
+      warn: () => {},
+      error: () => {}
     }
   });
   R2_CONFIG_VALID = true;
@@ -186,7 +185,6 @@ async function uploadFileToStorage(fileBuffer, fileName, employeeId, mcuId, mime
 
     // Generate file path with correct structure
     const { folderPath, filePath } = await generateStoragePath(employeeId, mcuId, fileName);
-    console.log(`   Size: ${(fileBuffer.length / 1024).toFixed(1)}KB`);
     // Upload to R2
     const uploadCommand = new PutObjectCommand({
       Bucket: STORAGE_BUCKET,

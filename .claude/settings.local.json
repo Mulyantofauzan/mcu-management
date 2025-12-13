@@ -57,7 +57,9 @@
       "Bash(for file in js/services/*.js js/utils/*.js js/pages/*.js js/config/*.js)",
       "Bash(for file in js/**/*.js)",
       "Bash(for file in env-config.js js/config/envConfig.js js/config/supabase.js js/pages/dashboard.js js/services/database.js js/seedData.js js/utils/uiHelpers.js)",
-      "Bash(do echo \"=== Checking $file ===\")"
+      "Bash(do echo \"=== Checking $file ===\")",
+      "Bash(for file in mcu-management/js/seedData.js js/services/auditLogService.js js/utils/totpManager.js api/config.js api/r2SignedUrlService.js api/r2StorageService.js)",
+      "Bash(then node -c \"$file\")"
     ],
     "deny": [],
     "ask": []

@@ -138,7 +138,6 @@ class AuditLogService {
 
       // Log to console in development
       if (this.DEBUG_MODE) {
-        console.log('[AUDIT]', auditEntry);
       }
 
       return {

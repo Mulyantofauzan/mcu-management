@@ -82,7 +82,6 @@ class TOTPManager {
 
       return false;
     } catch (error) {
-      console.error('TOTP verification error:', error);
       return false;
     }
   }
@@ -119,7 +118,6 @@ class TOTPManager {
       const code = (truncated % 1000000).toString().padStart(6, '0');
       return code;
     } catch (error) {
-      console.error('TOTP generation error:', error);
       return '';
     }
   }
@@ -324,7 +322,6 @@ class TOTPManager {
       const counter = Math.floor(now / this.TIME_STEP);
       return this.generateTOTP(secret, counter);
     } catch (error) {
-      console.error('Error getting current code:', error);
       return '';
     }
   }

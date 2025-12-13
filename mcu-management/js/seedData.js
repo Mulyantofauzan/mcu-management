@@ -71,7 +71,6 @@ export async function seedDatabase() {
     try {
       await database.clearAll();
     } catch (error) {
-      console.log('[seedData.js] Could not clear database (expected if using Supabase):', error.message);
     }
 
     // 1. Create Master Data

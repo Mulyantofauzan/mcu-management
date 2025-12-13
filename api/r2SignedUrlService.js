@@ -45,8 +45,6 @@ async function generateSignedUrl(filePath, expirySeconds = SIGNED_URL_EXPIRY_SEC
     if (!filePath) {
       throw new Error('File path is required');
     }
-    console.log(`   Expires in: ${expirySeconds} seconds (${(expirySeconds / 3600).toFixed(1)} hours)`);
-
     // Create GetObject command for the file
     const getObjectCommand = new GetObjectCommand({
       Bucket: STORAGE_BUCKET,
@@ -160,9 +158,6 @@ async function getAuthorizedMcuFiles(mcuId, userId) {
         count: 0
       };
     }
-
-    console.log(`✅ Found ${files.length} file(s)`);
-
     // Check authorization - get employee ID from first file
     const firstFile = files[0];
     const { data: employee, error: empError } = await supabase
