@@ -48,9 +48,8 @@ export async function initAssessmentRahmaDAshboard() {
     }
 
     // Show loading
-    const page = document.getElementById('assessment-rahma-dashboard-page');
+    const page = document.getElementById('rahma-main-content');
     if (page) {
-      page.classList.remove('hidden');
       page.innerHTML = '<div class="p-6"><p class="text-gray-600">Loading...</p></div>';
     }
 
@@ -296,7 +295,7 @@ export function searchAssessments() {
  * Render complete dashboard
  */
 function renderDashboard() {
-  const page = document.getElementById('assessment-rahma-dashboard-page');
+  const page = document.getElementById('rahma-main-content');
   if (!page) return;
 
   // Count by risk category
