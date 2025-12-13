@@ -17,7 +17,9 @@ class AnalysisDashboardService {
     this.allMCUData = []; // Cache ALL MCU records (for year-based filtering)
     this.filteredData = []; // Current filtered data
     this.labItemsMap = {}; // Map lab_item_id to lab info
-    this.mcuPeriodFilter = 'latest'; // 'latest' or 'all-years'
+    this.mcuPeriodFilter = 'latest'; // 'latest', 'all-years', or specific year
+    this.selectedYear = null; // Selected year for filtering
+    this.availableYears = []; // List of years available in data
   }
 
   /**
@@ -160,12 +162,23 @@ class AnalysisDashboardService {
           };
         });
 
+      // Extract available years from all MCU records
+      const yearSet = new Set();
+      this.allMCUData.forEach(item => {
+        if (item.mcu && item.mcu.mcu_date) {
+          const year = new Date(item.mcu.mcu_date).getFullYear();
+          yearSet.add(year);
+        }
+      });
+      this.availableYears = Array.from(yearSet).sort((a, b) => b - a); // Sort descending
+
       this.filteredData = [...this.allData];
       console.log('Dashboard data loaded:', {
         totalEmployees: employees.length,
         activeEmployees: this.allData.length,
         employeesWithMCU: employees.filter(e => latestMCUPerEmployee[e.employee_id]).length,
         allMCURecords: this.allMCUData.length,
+        availableYears: this.availableYears,
         data: this.allData
       });
     } catch (error) {
@@ -181,6 +194,7 @@ class AnalysisDashboardService {
     try {
       const deptSelect = document.getElementById('filterDepartment');
       const jobSelect = document.getElementById('filterJobTitle');
+      const yearSelect = document.getElementById('filterYear');
 
       // Get unique departments
       const departments = [...new Set(this.allData.map(d => d.employee.department).filter(Boolean))];
@@ -201,6 +215,14 @@ class AnalysisDashboardService {
         option.textContent = job;
         jobSelect.appendChild(option);
       });
+
+      // Populate year dropdown with available years
+      this.availableYears.forEach(year => {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        yearSelect.appendChild(option);
+      });
     } catch (error) {
       // Error silently handled
     }
@@ -213,6 +235,8 @@ class AnalysisDashboardService {
     const btnApply = document.getElementById('btnApplyFilter');
     const btnReset = document.getElementById('btnResetFilter');
     const mcuPeriodSelect = document.getElementById('filterMCUPeriod');
+    const yearFilterContainer = document.getElementById('yearFilterContainer');
+    const yearSelect = document.getElementById('filterYear');
 
     btnApply?.addEventListener('click', () => this.applyFilters());
     btnReset?.addEventListener('click', () => this.resetFilters());
@@ -220,6 +244,22 @@ class AnalysisDashboardService {
     // Listen for MCU period filter changes (apply immediately)
     mcuPeriodSelect?.addEventListener('change', async (e) => {
       this.mcuPeriodFilter = e.target.value;
+
+      // Show/hide year filter based on selection
+      if (e.target.value === 'all-years') {
+        yearFilterContainer.style.display = 'block';
+      } else {
+        yearFilterContainer.style.display = 'none';
+        yearSelect.value = ''; // Reset year filter
+        this.selectedYear = null;
+      }
+
+      await this.applyFilters();
+    });
+
+    // Listen for year filter changes
+    yearSelect?.addEventListener('change', async (e) => {
+      this.selectedYear = e.target.value ? parseInt(e.target.value) : null;
       await this.applyFilters();
     });
   }
@@ -232,15 +272,30 @@ class AnalysisDashboardService {
     const job = document.getElementById('filterJobTitle').value;
     const status = document.getElementById('filterStatus').value;
     const mcuPeriod = document.getElementById('filterMCUPeriod').value || this.mcuPeriodFilter;
+    const selectedYear = this.selectedYear || (document.getElementById('filterYear')?.value ? parseInt(document.getElementById('filterYear').value) : null);
 
     // Determine base data source based on MCU period filter
-    const baseData = mcuPeriod === 'all-years' ? this.allMCUData : this.allData;
+    let baseData = this.allData; // Default to latest
+    if (mcuPeriod === 'all-years') {
+      baseData = this.allMCUData;
+    }
 
     // Apply filters
     this.filteredData = baseData.filter(item => {
       if (dept && item.employee.department !== dept) return false;
       if (job && item.employee.job_title !== job) return false;
       if (status && item.mcu.status !== status) return false;
+
+      // Apply year filter if in all-years mode and year is selected
+      if (mcuPeriod === 'all-years' && selectedYear) {
+        if (item.mcu && item.mcu.mcu_date) {
+          const itemYear = new Date(item.mcu.mcu_date).getFullYear();
+          if (itemYear !== selectedYear) return false;
+        } else {
+          return false;
+        }
+      }
+
       return true;
     });
 
@@ -251,11 +306,18 @@ class AnalysisDashboardService {
    * Reset all filters
    */
   async resetFilters() {
+    const yearFilterContainer = document.getElementById('yearFilterContainer');
+    const yearSelect = document.getElementById('filterYear');
+
     document.getElementById('filterMCUPeriod').value = 'latest';
     document.getElementById('filterDepartment').value = '';
     document.getElementById('filterJobTitle').value = '';
     document.getElementById('filterStatus').value = '';
+    yearSelect.value = '';
+
     this.mcuPeriodFilter = 'latest';
+    this.selectedYear = null;
+    yearFilterContainer.style.display = 'none';
     this.filteredData = [...this.allData];
     await this.renderAllCharts();
   }
