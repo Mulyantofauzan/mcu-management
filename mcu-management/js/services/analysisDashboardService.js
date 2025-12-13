@@ -94,17 +94,9 @@ class AnalysisDashboardService {
       this.labItemsMap = { ...LAB_ITEMS_MAPPING };
 
       // Build consolidated data
-      // Only include active employees with latest MCU records
-      // Log unique status values to help with debugging
-      const uniqueStatuses = [...new Set(employees.map(e => e.status))];
-      console.log('Unique employee statuses in database:', uniqueStatuses);
-
+      // Only include active employees (is_active = true) with latest MCU records
       this.allData = employees
-        .filter(emp => {
-          const hasStatus = emp.status && (emp.status.toLowerCase() === 'active' || emp.status === 'Active');
-          const hasMCU = latestMCUPerEmployee[emp.employee_id];
-          return hasStatus && hasMCU;
-        })
+        .filter(emp => emp.is_active === true && latestMCUPerEmployee[emp.employee_id])
         .map(emp => {
           const mcu = latestMCUPerEmployee[emp.employee_id];
           const dept = departments?.find(d => d.name === emp.department);
@@ -129,7 +121,6 @@ class AnalysisDashboardService {
       this.filteredData = [...this.allData];
       console.log('Dashboard data loaded:', {
         totalEmployees: employees.length,
-        uniqueStatuses: uniqueStatuses,
         activeEmployees: this.allData.length,
         employeesWithMCU: employees.filter(e => latestMCUPerEmployee[e.employee_id]).length,
         data: this.allData
