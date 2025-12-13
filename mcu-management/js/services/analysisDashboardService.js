@@ -1175,19 +1175,31 @@ class AnalysisDashboardService {
       }
 
       // Create horizontal bar chart showing status distribution
-      const barData = [statusCounts['Normal'], statusCounts['Low'], statusCounts['High'], statusCounts['Not Recorded']];
+      // Dynamically filter out categories with 0 count
+      const allLabels = ['Normal', 'Low', 'High', 'Not Recorded'];
+      const allData = [statusCounts['Normal'], statusCounts['Low'], statusCounts['High'], statusCounts['Not Recorded']];
+      const allColors = ['#10b981', '#3b82f6', '#ef4444', '#d1d5db'];
+      const allBorderColors = ['#059669', '#1d4ed8', '#dc2626', '#9ca3af'];
+
+      // Filter to only show categories with count > 0
+      const filteredIndices = allData.map((count, index) => count > 0 ? index : -1).filter(index => index !== -1);
+      const labels = filteredIndices.map(i => allLabels[i]);
+      const barData = filteredIndices.map(i => allData[i]);
+      const backgroundColor = filteredIndices.map(i => allColors[i]);
+      const borderColor = filteredIndices.map(i => allBorderColors[i]);
+
       const maxValue = Math.max(...barData, 1); // At least 1 to avoid division by zero
 
       this.destroyChart(labItem.canvasId);
       this.charts.set(labItem.canvasId, new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: ['Normal', 'Low', 'High', 'Not Recorded'],
+          labels: labels,
           datasets: [{
             label: labItem.name,
             data: barData,
-            backgroundColor: ['#10b981', '#3b82f6', '#ef4444', '#d1d5db'],
-            borderColor: ['#059669', '#1d4ed8', '#dc2626', '#9ca3af'],
+            backgroundColor: backgroundColor,
+            borderColor: borderColor,
             borderWidth: 1
           }]
         },
