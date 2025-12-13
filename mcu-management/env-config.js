@@ -92,6 +92,12 @@ async function loadConfig() {
 }
 
 // Load configuration immediately
-loadConfig();
+console.log('[env-config.js] Starting loadConfig...');
+loadConfig().then(() => {
+  console.log('[env-config.js] loadConfig completed');
+  console.log('[env-config.js] window.ENV:', window.ENV);
+}).catch(err => {
+  console.error('[env-config.js] loadConfig error:', err);
+});
 
 // Debug: Log loaded configuration

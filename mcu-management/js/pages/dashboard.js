@@ -19,6 +19,8 @@ if ('serviceWorker' in navigator) {
     });
 }
 
+console.log('[dashboard.js] Module loading...');
+
 // ✅ CRITICAL: Load environment config BEFORE importing Supabase
 // This ensures window.ENV is set before supabase.js tries to use it
 import { initializeEnv, logEnvStatus } from '../config/envConfig.js';
@@ -39,10 +41,15 @@ import { initVersionManager } from '../utils/versionManager.js';  // ✅ Version
 import { initThemeManager } from '../utils/themeManager.js';  // ✅ Dark mode / Light mode manager
 import { networkStatusManager } from '../utils/networkStatusManager.js';  // ✅ Network status monitoring
 
+console.log('[dashboard.js] All imports completed');
+
 // Initialize environment variables immediately (before other module code runs)
+console.log('[dashboard.js] Initializing environment...');
 initializeEnv().then(() => {
+  console.log('[dashboard.js] Environment initialized');
   logEnvStatus();
 }).catch(err => {
+  console.error('[dashboard.js] Environment initialization error:', err);
 });
 
 // State
