@@ -749,10 +749,9 @@ class AnalysisDashboardService {
             }
           },
           datalabels: {
-            anchor: 'end',
-            align: 'end',
-            offset: 4,
-            color: '#333',
+            anchor: 'center',
+            align: 'center',
+            color: '#fff',
             font: { size: 11, weight: 'bold' },
             formatter: function(value, context) {
               if (value === 0) return '';
@@ -838,10 +837,9 @@ class AnalysisDashboardService {
                   }
                 },
                 datalabels: {
-                  anchor: 'end',
-                  align: 'end',
-                  offset: 4,
-                  color: '#333',
+                  anchor: 'center',
+                  align: 'center',
+                  color: '#fff',
                   font: { size: 11, weight: 'bold' },
                   formatter: function(value, context) {
                     if (value === 0) return '';
@@ -905,10 +903,9 @@ class AnalysisDashboardService {
                   }
                 },
                 datalabels: {
-                  anchor: 'end',
-                  align: 'end',
-                  offset: 4,
-                  color: '#333',
+                  anchor: 'center',
+                  align: 'center',
+                  color: '#fff',
                   font: { size: 11, weight: 'bold' },
                   formatter: function(value, context) {
                     if (value === 0) return '';
