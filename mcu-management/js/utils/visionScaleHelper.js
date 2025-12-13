@@ -182,7 +182,8 @@ export function getGradeInfo(gradeId) {
     };
   }
 
-  return VISION_GRADES[gradeId] || null;
+  const upperKey = gradeId.toUpperCase();
+  return VISION_GRADES[upperKey] || null;
 }
 
 /**

@@ -443,8 +443,14 @@ class AnalysisDashboardService {
       // Get overall vision status (worst grade from all 8 fields)
       const gradeId = evaluateVisionStatus(visionFields);
       const gradeInfo = getGradeInfo(gradeId);
-      const statusLabel = gradeInfo.label;
 
+      // Skip if grade info not found (shouldn't happen but safety check)
+      if (!gradeInfo) {
+        console.warn(`Unknown vision grade: ${gradeId}`);
+        return;
+      }
+
+      const statusLabel = gradeInfo.label;
       visionStatusCounts[statusLabel]++;
     });
 
