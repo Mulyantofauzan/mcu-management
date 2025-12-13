@@ -488,9 +488,8 @@ class AnalysisDashboardService {
 
   /**
    * 5. Physical Examination Results - All as vertical bar charts
-   * Displays 7 exams in order: Audiometri, Spirometri, HBSAG, X-Ray, EKG, Treadmill, NAPZA
+   * Displays all 8 exams in order: Audiometri, Spirometri, HBSAG, X-Ray, EKG, Treadmill, NAPZA, Buta Warna
    * All rendered as vertical bars with data labels and truncated labels with hover tooltips
-   * NOTE: Buta Warna (colorblind) field not yet in database schema
    */
   renderExaminationCharts() {
     const exams = [
@@ -500,8 +499,8 @@ class AnalysisDashboardService {
       { key: 'xray', snakeKey: 'xray', id: 'chartXRay', label: 'X-Ray' },
       { key: 'ekg', snakeKey: 'ekg', id: 'chartEKG', label: 'EKG' },
       { key: 'treadmill', snakeKey: 'treadmill', id: 'chartTreadmill', label: 'Treadmill' },
-      { key: 'napza', snakeKey: 'napza', id: 'chartNAPZA', label: 'NAPZA' }
-      // NOTE: 'colorblind' field doesn't exist in database schema yet - removed from chart list
+      { key: 'napza', snakeKey: 'napza', id: 'chartNAPZA', label: 'NAPZA' },
+      { key: 'colorblind', snakeKey: 'colorblind', id: 'chartColorblind', label: 'Buta Warna' }
     ];
 
     this.renderExamCharts(exams);
