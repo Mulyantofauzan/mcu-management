@@ -282,6 +282,8 @@ function renderTable() {
     // Dynamic columns berdasarkan tab
     if (currentTab === 'labItems') {
         html += '<th>Nama</th><th>Satuan</th><th>Rentang Min-Max</th><th>Status</th><th>Aksi</th>';
+    } else if (currentTab === 'jobTitles') {
+        html += '<th>ID</th><th>Nama</th><th>Tingkat Risiko</th><th>Aksi</th>';
     } else {
         html += '<th>ID</th><th>Nama</th><th>Aksi</th>';
     }
@@ -297,6 +299,14 @@ function renderTable() {
             html += `<td><span class="text-sm text-gray-600">${item.unit || '-'}</span></td>`;
             html += `<td><span class="text-sm text-gray-600">${item.min_range_reference || '-'} - ${item.max_range_reference || '-'}</span></td>`;
             html += `<td><span class="text-sm ${item.is_active ? 'text-green-600' : 'text-red-600'}">${item.is_active ? 'Aktif' : 'Tidak Aktif'}</span></td>`;
+        } else if (currentTab === 'jobTitles') {
+            // Job titles columns dengan risk_level
+            html += `<td><span class="text-sm text-gray-600">${item.id}</span></td>`;
+            html += `<td><span class="font-medium text-gray-900">${item.name}</span></td>`;
+            const riskLevel = item.risk_level || 'moderate';
+            const riskLevelDisplay = riskLevel === 'low' ? 'Rendah' : riskLevel === 'high' ? 'Tinggi' : 'Sedang';
+            const riskColor = riskLevel === 'low' ? 'text-green-600' : riskLevel === 'high' ? 'text-red-600' : 'text-yellow-600';
+            html += `<td><span class="text-sm font-medium ${riskColor}">${riskLevelDisplay}</span></td>`;
         } else {
             // Standard columns untuk master data lainnya
             html += `<td><span class="text-sm text-gray-600">${item.id}</span></td>`;
