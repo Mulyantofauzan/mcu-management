@@ -207,7 +207,7 @@ class AnalysisDashboardService {
       this.renderExaminationCharts();
       this.renderLabResultsCharts();
     } catch (error) {
-      // Error silently handled
+      console.error('Error rendering dashboard charts:', error);
     }
   }
 
@@ -488,8 +488,9 @@ class AnalysisDashboardService {
 
   /**
    * 5. Physical Examination Results - All as vertical bar charts
-   * Displays all 8 exams in order: Audiometri, Spirometri, HBSAG, X-Ray, EKG, Treadmill, NAPZA, Buta Warna
+   * Displays 7 exams in order: Audiometri, Spirometri, HBSAG, X-Ray, EKG, Treadmill, NAPZA
    * All rendered as vertical bars with data labels and truncated labels with hover tooltips
+   * NOTE: Buta Warna (colorblind) field not yet in database schema
    */
   renderExaminationCharts() {
     const exams = [
@@ -499,8 +500,8 @@ class AnalysisDashboardService {
       { key: 'xray', snakeKey: 'xray', id: 'chartXRay', label: 'X-Ray' },
       { key: 'ekg', snakeKey: 'ekg', id: 'chartEKG', label: 'EKG' },
       { key: 'treadmill', snakeKey: 'treadmill', id: 'chartTreadmill', label: 'Treadmill' },
-      { key: 'napza', snakeKey: 'napza', id: 'chartNAPZA', label: 'NAPZA' },
-      { key: 'colorblind', snakeKey: 'colorblind', id: 'chartColorblind', label: 'Buta Warna' }
+      { key: 'napza', snakeKey: 'napza', id: 'chartNAPZA', label: 'NAPZA' }
+      // NOTE: 'colorblind' field doesn't exist in database schema yet - removed from chart list
     ];
 
     this.renderExamCharts(exams);
@@ -516,8 +517,12 @@ class AnalysisDashboardService {
   renderExamCharts(exams) {
 
     exams.forEach(exam => {
-      const ctx = document.getElementById(exam.id)?.getContext('2d');
-      if (!ctx) return;
+      try {
+        const ctx = document.getElementById(exam.id)?.getContext('2d');
+        if (!ctx) {
+          console.warn(`Chart canvas not found for exam: ${exam.label} (id: ${exam.id})`);
+          return;
+        }
 
       const counts = {};
       let hasData = false;
@@ -536,11 +541,14 @@ class AnalysisDashboardService {
         counts[value] = (counts[value] || 0) + 1;
       });
 
+      // Define labels and data from counts object
+      const labels = Object.keys(counts);
+      const data = Object.values(counts);
+
       // If no data found, show "No Data" placeholder
       if (!hasData || labels.length === 0) {
         const displayLabels = ['No Data Recorded'];
         const dataValues = [1];
-        const chartLabels = ['No Data'];
 
         this.destroyChart(exam.id);
         this.charts.set(exam.id, new Chart(ctx, {
@@ -573,8 +581,6 @@ class AnalysisDashboardService {
       }
 
       const colors = ['#10b981', '#f59e0b', '#ef4444', '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#06b6d4'];
-      const labels = Object.keys(counts);
-      const data = Object.values(counts);
 
       // Truncate long labels to max 30 chars for display
       const displayLabels = labels.map(label =>
@@ -639,6 +645,9 @@ class AnalysisDashboardService {
         },
         plugins: [window.ChartDataLabels || {}] // Use datalabels plugin if available
       }));
+      } catch (error) {
+        console.error(`Error rendering chart for ${exam.label}:`, error);
+      }
     });
   }
 
