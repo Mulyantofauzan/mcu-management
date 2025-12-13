@@ -1101,13 +1101,13 @@ class AnalysisDashboardService {
       { id: 6, name: 'Trombosit', canvasId: 'chartLabTrombosit', statusEl: 'trombositStatus' },
       { id: 7, name: 'Gula Darah Puasa', canvasId: 'chartLabGDP', statusEl: 'gdpStatus' },
       { id: 8, name: 'Kolesterol Total', canvasId: 'chartLabKolesterol', statusEl: 'kolesterolStatus' },
-      { id: 9, name: 'Trigliserida', canvasId: 'chartLabTrigliserida' },
-      { id: 10, name: 'HDL Kolesterol', canvasId: 'chartLabHDL' },
-      { id: 11, name: 'LDL Kolesterol', canvasId: 'chartLabLDL' },
-      { id: 12, name: 'Ureum', canvasId: 'chartLabUreum' },
-      { id: 13, name: 'Kreatinin', canvasId: 'chartLabKreatinin' },
-      { id: 31, name: 'Gula Darah 2 JPP', canvasId: 'chartLabGDP2JPP' },
-      { id: 32, name: 'Asam Urat', canvasId: 'chartLabAsamUrat' }
+      { id: 9, name: 'Trigliserida', canvasId: 'chartLabTrigliserida', statusEl: 'trigiseridaStatus' },
+      { id: 10, name: 'HDL Kolesterol', canvasId: 'chartLabHDL', statusEl: 'hdlStatus' },
+      { id: 11, name: 'LDL Kolesterol', canvasId: 'chartLabLDL', statusEl: 'ldlStatus' },
+      { id: 12, name: 'Ureum', canvasId: 'chartLabUreum', statusEl: 'ureumlStatus' },
+      { id: 13, name: 'Kreatinin', canvasId: 'chartLabKreatinin', statusEl: 'kreatininStatus' },
+      { id: 31, name: 'Gula Darah 2 JPP', canvasId: 'chartLabGDP2JPP', statusEl: 'gdp2jppStatus' },
+      { id: 32, name: 'Asam Urat', canvasId: 'chartLabAsamUrat', statusEl: 'asamuratStatus' }
     ];
 
 
