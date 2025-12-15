@@ -84,9 +84,21 @@ module.exports = async (req, res) => {
     }
 
     if (!fileDataArray || fileDataArray.length === 0) {
-      console.warn('[hard-delete-file] File not found in database');
+      // Try alternative query if exact match fails - check if data exists with different format
+      console.warn('[hard-delete-file] File not found with exact query, checking if file exists in database');
+      const { data: allFiles, error: checkError } = await supabase
+        .from('mcufiles')
+        .select('count')
+        .limit(1);
+
+      if (!checkError && allFiles) {
+        console.warn('[hard-delete-file] Database is accessible, but file not found with current query parameters');
+      }
+
       return res.status(404).json({
-        error: 'File not found in database'
+        error: 'File not found in database',
+        searchedWith: fileId ? 'fileId' : 'storagePath',
+        searchValue: fileId || queryStoragePath
       });
     }
 
