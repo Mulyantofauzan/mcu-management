@@ -39,6 +39,21 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // Validate environment variables first
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('[hard-delete-file] Missing Supabase credentials');
+      return res.status(500).json({
+        error: 'Server configuration error: Missing Supabase credentials'
+      });
+    }
+
+    if (!process.env.CLOUDFLARE_R2_ACCESS_KEY_ID || !process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY) {
+      console.error('[hard-delete-file] Missing Cloudflare R2 credentials');
+      return res.status(500).json({
+        error: 'Server configuration error: Missing R2 credentials'
+      });
+    }
+
     const { fileId, storagePath: queryStoragePath } = req.query;
 
     // Validate required parameters - need either fileId or storagePath
@@ -47,6 +62,8 @@ module.exports = async (req, res) => {
         error: 'Missing required parameter: either fileId or storagePath'
       });
     }
+
+    console.log(`[hard-delete-file] Processing delete request: fileId=${fileId}, storagePath=${queryStoragePath}`);
 
     // Step 1: Get file details from database
     let query = supabase.from('mcufiles').select('*');
@@ -59,52 +76,68 @@ module.exports = async (req, res) => {
 
     const { data: fileDataArray, error: fetchError } = await query;
 
-    if (fetchError || !fileDataArray || fileDataArray.length === 0) {
+    if (fetchError) {
+      console.error('[hard-delete-file] Database fetch error:', fetchError);
+      return res.status(500).json({
+        error: `Database error: ${fetchError.message}`
+      });
+    }
+
+    if (!fileDataArray || fileDataArray.length === 0) {
+      console.warn('[hard-delete-file] File not found in database');
       return res.status(404).json({
-        error: 'File not found'
+        error: 'File not found in database'
       });
     }
 
     const fileData = fileDataArray[0];
+    console.log(`[hard-delete-file] Found file record:`, { fileid: fileData.fileid, supabase_storage_path: fileData.supabase_storage_path });
 
     // Step 2: Delete from R2 storage if storage path exists
     // Check both field names: supabase_storage_path and storage_path (for backward compatibility)
     const fileStoragePath = fileData.supabase_storage_path || fileData.storage_path;
     if (fileStoragePath) {
       try {
+        console.log(`[hard-delete-file] Deleting from R2 storage: ${fileStoragePath}`);
         await r2.deleteObject({
           Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME,
           Key: fileStoragePath
         }).promise();
+        console.log(`[hard-delete-file] Successfully deleted from R2`);
       } catch (r2Error) {
-        console.warn(`⚠️ Failed to delete from R2 (will continue with DB delete): ${r2Error.message}`);
+        console.warn(`[hard-delete-file] ⚠️ Failed to delete from R2 (will continue with DB delete): ${r2Error.message}`);
         // Continue anyway - we'll still delete from database
       }
     } else {
+      console.warn('[hard-delete-file] No storage path found in file record');
     }
 
     // Step 3: Hard delete file record from database
     // Use fileId from the fetched fileData record (to handle both fileId and storagePath queries)
+    console.log(`[hard-delete-file] Deleting from database: fileid=${fileData.fileid}`);
     const { error: deleteError } = await supabase
       .from('mcufiles')
       .delete()
       .eq('fileid', fileData.fileid);
 
     if (deleteError) {
+      console.error('[hard-delete-file] Database delete error:', deleteError);
       return res.status(500).json({
         error: `Failed to delete file record: ${deleteError.message}`
       });
     }
 
+    console.log(`[hard-delete-file] Successfully deleted file from database`);
     return res.status(200).json({
       success: true,
       message: 'File permanently deleted from storage and database'
     });
 
   } catch (error) {
-    console.error('[hard-delete-file] Error:', error);
+    console.error('[hard-delete-file] Unexpected error:', error);
     return res.status(500).json({
-      error: error.message || 'Internal server error'
+      error: error.message || 'Internal server error',
+      details: error.stack
     });
   }
 };

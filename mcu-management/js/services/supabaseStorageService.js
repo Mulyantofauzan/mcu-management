@@ -425,14 +425,23 @@ export async function deleteFileFromStorage(storagePath) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      // Return success anyway since we might be deleting a file that doesn't exist
-      return { success: true, message: 'File deletion attempt completed' };
+      console.error('[deleteFileFromStorage] API Error:', {
+        status: response.status,
+        error: errorData.error,
+        details: errorData.details
+      });
+      return {
+        success: false,
+        error: errorData.error || `HTTP ${response.status}: Failed to delete file`,
+        details: errorData.details
+      };
     }
 
     const result = await response.json();
     return { success: true, message: result.message || 'File deleted from storage' };
 
   } catch (error) {
+    console.error('[deleteFileFromStorage] Exception:', error);
     return { success: false, error: error.message };
   }
 }
