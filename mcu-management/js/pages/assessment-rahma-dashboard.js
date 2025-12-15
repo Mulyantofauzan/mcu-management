@@ -24,6 +24,8 @@ import { initSuperSearch } from '../components/superSearch.js';
 // State
 let allEmployees = [];
 let allMCUs = [];
+let allLabResults = []; // Lab results from pemeriksaan_lab table
+let labItems = []; // Lab item names for reference
 let assessmentData = [];
 let filteredData = [];
 let departments = [];
@@ -61,7 +63,9 @@ export async function initAssessmentRahmaDAshboard() {
       loadMCUs(),
       loadDepartments(),
       loadJobTitles(),
-      loadVendors()
+      loadVendors(),
+      loadLabItems(),
+      loadLabResults()
     ]);
 
     // Calculate assessments for all active employees (latest MCU only)
@@ -249,6 +253,111 @@ async function loadVendors() {
 }
 
 /**
+ * Load lab items (for reference to get item names)
+ */
+async function loadLabItems() {
+  try {
+    labItems = await masterDataService.getAll('lab_items');
+  } catch (error) {
+    console.warn('Error loading lab items:', error);
+    labItems = [];
+  }
+}
+
+/**
+ * Load lab results from pemeriksaan_lab table
+ */
+async function loadLabResults() {
+  try {
+    // Load lab results using database service
+    const { getSupabaseClient, isSupabaseEnabled } = await import('../config/supabase.js');
+
+    if (!isSupabaseEnabled()) {
+      console.warn('Supabase not enabled - lab results not loaded');
+      allLabResults = [];
+      return;
+    }
+
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase
+      .from('pemeriksaan_lab')
+      .select('*');
+
+    if (error) {
+      console.error('Error loading lab results:', error);
+      allLabResults = [];
+    } else {
+      allLabResults = data || [];
+    }
+  } catch (error) {
+    console.error('Error loading lab results:', error);
+    allLabResults = [];
+  }
+}
+
+/**
+ * Get lab values (glucose, cholesterol, triglycerides, HDL) from pemeriksaan_lab
+ * Looks up lab results by mcuId and matches by lab item name
+ */
+function getLabValuesForMCU(mcuId) {
+  if (!mcuId || !allLabResults || allLabResults.length === 0) {
+    return {
+      glucose: null,
+      cholesterol: null,
+      triglycerides: null,
+      hdl: null
+    };
+  }
+
+  // Filter lab results for this MCU
+  const mcuLabResults = allLabResults.filter(lab => lab.mcu_id === mcuId);
+
+  if (mcuLabResults.length === 0) {
+    return {
+      glucose: null,
+      cholesterol: null,
+      triglycerides: null,
+      hdl: null
+    };
+  }
+
+  // Map lab items
+  const labValuesByName = {};
+  mcuLabResults.forEach(result => {
+    // Get lab item name from labItems array
+    const labItem = labItems.find(item => item.id === result.lab_item_id);
+    if (labItem) {
+      labValuesByName[labItem.name.toLowerCase()] = parseFloat(result.value) || null;
+    }
+  });
+
+  // Extract specific lab values (Framingham uses these)
+  // Kolesterol = Cholesterol Total
+  // Trigliserid = Triglycerides
+  // HDL = HDL Cholesterol
+  // GDP/Glucose = Fasting Blood Glucose
+  return {
+    glucose: labValuesByName['gdp'] || labValuesByName['glucose'] || labValuesByName['gdp (fasting blood glucose)'] || null,
+    cholesterol: labValuesByName['kolesterol total'] || labValuesByName['cholesterol'] || labValuesByName['total cholesterol'] || null,
+    triglycerides: labValuesByName['trigliserid'] || labValuesByName['triglycerides'] || null,
+    hdl: labValuesByName['hdl'] || labValuesByName['hdl cholesterol'] || null
+  };
+}
+
+/**
+ * Get job title name by matching job_title text from employee
+ * Since employees.job_title is text, we need to find matching job in job_titles
+ */
+function getJobTitleByName(jobTitleText) {
+  if (!jobTitleText || !jobTitles || jobTitles.length === 0) {
+    return null;
+  }
+
+  // Exact match first
+  return jobTitles.find(j => j.name === jobTitleText);
+}
+
+/**
  * Normalize exercise frequency values from database to calculator format
  */
 function normalizeExerciseFrequency(value) {
@@ -320,32 +429,27 @@ function calculateAllAssessments() {
 
     // Get associated data
     const dept = departments.find(d => d.id === employee.departmentId);
-    const job = jobTitles.find(j => j.id === employee.jobId);
+
+    // Get job by matching job_title text name (since employee.job_title is text, not id)
+    const job = getJobTitleByName(employee.jobTitle);
 
     // Debug: Log if job lookup fails
-    if (!job && employee.jobId) {
-      console.warn(`Job not found for employee ${employee.employeeId}: jobId=${employee.jobId}`, {
-        availableJobIds: jobTitles.map(j => j.id),
-        searchedFor: employee.jobId
-      });
+    if (!job && employee.jobTitle) {
+      console.warn(`Job not found for employee ${employee.employeeId}: jobTitle="${employee.jobTitle}"`);
     }
 
     const vendor = employee.vendorName
       ? vendors.find(v => v.name === employee.vendorName)
       : null;
 
-    // Get lab results for latest MCU
-    const labResults = allMCUs
-      .find(m => m.mcuId === latestMCU.mcuId)
-      ? allMCUs.filter(m => m.employeeId === employee.employeeId)
-        .find(m => m.mcuId === latestMCU.mcuId)
-      : null;
+    // Get lab values from pemeriksaan_lab table (not from mcus table)
+    const labValues = getLabValuesForMCU(latestMCU.mcuId);
 
     // Check if this MCU has lab results
-    const hasLabResults = latestMCU.glucose || latestMCU.cholesterol || latestMCU.triglycerides || latestMCU.hdl;
+    const hasLabResults = labValues.glucose || labValues.cholesterol || labValues.triglycerides || labValues.hdl;
     const isIncomplete = !latestMCU.bloodPressure || !latestMCU.bmi || (!hasLabResults);
 
-    // Prepare assessment data with normalized values
+    // Prepare assessment data with normalized values and lab values from pemeriksaan_lab
     const assessmentInput = {
       gender: employee.jenisKelamin === 'L' || employee.jenisKelamin === 'Laki-laki' ? 'pria' : 'wanita',
       age: calculateAge(employee.birthDate, latestMCU.mcuDate),
@@ -355,21 +459,24 @@ function calculateAllAssessments() {
       systolic: parseFloat(latestMCU.bloodPressure?.split('/')[0]) || null,
       diastolic: parseFloat(latestMCU.bloodPressure?.split('/')[1]) || null,
       bmi: parseFloat(latestMCU.bmi) || null,
-      glucose: latestMCU.glucose ? parseFloat(latestMCU.glucose) : null,
-      cholesterol: latestMCU.cholesterol ? parseFloat(latestMCU.cholesterol) : null,
-      triglycerides: latestMCU.triglycerides ? parseFloat(latestMCU.triglycerides) : null,
-      hdl: latestMCU.hdl ? parseFloat(latestMCU.hdl) : null
+      glucose: labValues.glucose,
+      cholesterol: labValues.cholesterol,
+      triglycerides: labValues.triglycerides,
+      hdl: labValues.hdl
     };
 
-    // Debug: Log MCU lab values for first employee
+    // Debug: Log MCU and lab values for first employee
     if (employee.employeeId === allEmployees[0]?.employeeId) {
-      console.log(`MCU Lab Values for ${employee.name}:`, {
-        glucose: latestMCU.glucose,
-        cholesterol: latestMCU.cholesterol,
-        triglycerides: latestMCU.triglycerides,
-        hdl: latestMCU.hdl,
+      console.log(`Lab Values from pemeriksaan_lab for ${employee.name} (MCU: ${latestMCU.mcuId}):`, {
+        glucose: labValues.glucose,
+        cholesterol: labValues.cholesterol,
+        triglycerides: labValues.triglycerides,
+        hdl: labValues.hdl,
         bloodPressure: latestMCU.bloodPressure,
-        bmi: latestMCU.bmi
+        bmi: latestMCU.bmi,
+        jobTitle: employee.jobTitle,
+        jobFound: job !== null,
+        jobRiskLevel: job?.riskLevel || 'not found'
       });
     }
 
@@ -406,10 +513,11 @@ function calculateAllAssessments() {
         bmi: latestMCU.bmi,
         smokingStatus: latestMCU.smokingStatus,
         exerciseFrequency: latestMCU.exerciseFrequency,
-        glucose: latestMCU.glucose,
-        cholesterol: latestMCU.cholesterol,
-        triglycerides: latestMCU.triglycerides,
-        hdl: latestMCU.hdl,
+        // Lab values from pemeriksaan_lab table
+        glucose: labValues.glucose,
+        cholesterol: labValues.cholesterol,
+        triglycerides: labValues.triglycerides,
+        hdl: labValues.hdl,
         finalResult: latestMCU.finalResult
       },
       assessment: result,
