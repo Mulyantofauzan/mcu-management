@@ -211,6 +211,16 @@ async function loadEmployees() {
 async function loadMCUs() {
   try {
     allMCUs = await mcuService.getAll();
+
+    // Debug: Show MCU date range
+    if (allMCUs.length > 0) {
+      const mcuDates = allMCUs.map(mcu => mcu.mcuDate).sort();
+      console.log('=== MCU DATA LOADED ===');
+      console.log('Total MCUs:', allMCUs.length);
+      console.log('Earliest MCU Date:', mcuDates[0]);
+      console.log('Latest MCU Date:', mcuDates[mcuDates.length - 1]);
+      console.log('First 5 MCU IDs:', allMCUs.slice(0, 5).map(m => ({ mcuId: m.mcuId, mcuDate: m.mcuDate })));
+    }
   } catch (error) {
     console.error('Error loading MCUs:', error);
     allMCUs = [];
