@@ -84,13 +84,22 @@ export async function initAssessmentRahmaDAshboard() {
       console.log('Sample Assessment (First):', {
         employeeName: sample.employee.name,
         jobTitle: sample.employee.jobTitle,
-        jobId: sample.employee.jobId,
-        age: assessmentData[0].assessment.age,
-        ageScore: assessmentData[0].scores.age,
-        exerciseFrequency: assessmentData[0].assessment.exerciseFrequency,
-        exerciseScore: assessmentData[0].scores.exercise,
-        smokingStatus: assessmentData[0].assessment.smokingStatus,
-        smokingScore: assessmentData[0].scores.smoking
+        jobRiskLevel: sample.employee.jobRiskLevel,
+        jobRiskScore: sample.scores.jobRisk,
+        age: sample.assessment.age,
+        ageScore: sample.scores.age,
+        exerciseFrequency: sample.assessment.exerciseFrequency,
+        exerciseScore: sample.scores.exercise,
+        smokingStatus: sample.assessment.smokingStatus,
+        smokingScore: sample.scores.smoking,
+        mcuGlucose: sample.mcu.glucose,
+        glucoseScore: sample.scores.glucose,
+        mcuCholesterol: sample.mcu.cholesterol,
+        cholesterolScore: sample.scores.cholesterol,
+        mcuTriglycerides: sample.mcu.triglycerides,
+        trigliceridScore: sample.scores.triglycerides,
+        mcuHdl: sample.mcu.hdl,
+        hdlScore: sample.scores.hdl
       });
     }
 
@@ -238,6 +247,17 @@ function normalizeSmokingStatus(value) {
 }
 
 /**
+ * Convert job risk level to numeric score
+ */
+function getJobRiskScore(riskLevel) {
+  if (!riskLevel) return 1; // Default to moderate (1)
+  const level = String(riskLevel).toLowerCase().trim();
+  if (level === 'low') return 0;
+  if (level === 'high') return 2;
+  return 1; // moderate
+}
+
+/**
  * Calculate assessment for all active employees
  * Uses LATEST MCU for each employee only
  */
@@ -306,6 +326,18 @@ function calculateAllAssessments() {
       hdl: latestMCU.hdl ? parseFloat(latestMCU.hdl) : null
     };
 
+    // Debug: Log MCU lab values for first employee
+    if (employee.employeeId === allEmployees[0]?.employeeId) {
+      console.log(`MCU Lab Values for ${employee.name}:`, {
+        glucose: latestMCU.glucose,
+        cholesterol: latestMCU.cholesterol,
+        triglycerides: latestMCU.triglycerides,
+        hdl: latestMCU.hdl,
+        bloodPressure: latestMCU.bloodPressure,
+        bmi: latestMCU.bmi
+      });
+    }
+
     // Calculate Framingham score
     let result = null;
     try {
@@ -326,6 +358,7 @@ function calculateAllAssessments() {
         department: dept?.name || 'N/A',
         jobId: employee.jobId,
         jobTitle: job?.name || 'N/A',
+        jobRiskLevel: job?.riskLevel || 'moderate',
         vendorName: vendor?.name || null,
         isActive: employee.isActive,
         deletedAt: employee.deletedAt
@@ -338,13 +371,17 @@ function calculateAllAssessments() {
         bmi: latestMCU.bmi,
         smokingStatus: latestMCU.smokingStatus,
         exerciseFrequency: latestMCU.exerciseFrequency,
+        glucose: latestMCU.glucose,
+        cholesterol: latestMCU.cholesterol,
+        triglycerides: latestMCU.triglycerides,
+        hdl: latestMCU.hdl,
         finalResult: latestMCU.finalResult
       },
       assessment: result,
       scores: {
         gender: result.jenis_kelamin_score,
         age: result.umur_score,
-        jobRisk: result.job_risk_score,
+        jobRisk: getJobRiskScore(job?.riskLevel),
         exercise: result.exercise_score,
         smoking: result.smoking_score,
         bloodPressure: result.tekanan_darah_score,
