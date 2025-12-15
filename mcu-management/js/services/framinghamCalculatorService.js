@@ -490,12 +490,17 @@ class FraminghamCalculatorService {
    * Determine risk category based on total score
    * @param {number} totalScore - Total Framingham score
    * @returns {object} Object with risk_category and 10-year CVD risk percentage
+   *
+   * Scoring Criteria:
+   * - LOW: -7 to 0
+   * - MEDIUM: 1 to 8
+   * - HIGH: > 9
    */
   getRiskCategory(totalScore) {
     const score = parseInt(totalScore, 10);
 
-    // LOW RISK
-    if (score >= 0 && score <= 4) {
+    // LOW RISK: -7 to 0
+    if (score >= -7 && score <= 0) {
       return {
         risk_category: 'low',
         risk_category_id: 1,
@@ -506,8 +511,8 @@ class FraminghamCalculatorService {
       };
     }
 
-    // MEDIUM / MODERATE RISK
-    if (score >= 5 && score <= 11) {
+    // MEDIUM / MODERATE RISK: 1 to 8
+    if (score >= 1 && score <= 8) {
       return {
         risk_category: 'medium',
         risk_category_id: 2,
@@ -518,8 +523,8 @@ class FraminghamCalculatorService {
       };
     }
 
-    // HIGH RISK
-    if (score >= 12) {
+    // HIGH RISK: > 9
+    if (score > 9) {
       return {
         risk_category: 'high',
         risk_category_id: 3,
@@ -530,14 +535,14 @@ class FraminghamCalculatorService {
       };
     }
 
-    // Negative scores (very low risk - better than optimal) - still classified as LOW
+    // Fallback (shouldn't reach here with proper input)
     return {
       risk_category: 'low',
       risk_category_id: 1,
       cvd_risk_percentage: '< 5%',
       cvd_risk_percentage_numeric: 5,
       status: '✅ Optimal',
-      description: 'Very low 10-year cardiovascular disease risk'
+      description: 'Low 10-year cardiovascular disease risk'
     };
   }
 
