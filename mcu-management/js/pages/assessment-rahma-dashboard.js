@@ -257,7 +257,7 @@ async function loadVendors() {
  */
 async function loadLabItems() {
   try {
-    labItems = await masterDataService.getAll('lab_items');
+    labItems = await labService.getAllLabItems(false); // Get only active lab items
   } catch (error) {
     console.warn('Error loading lab items:', error);
     labItems = [];
@@ -347,14 +347,25 @@ function getLabValuesForMCU(mcuId) {
 /**
  * Get job title name by matching job_title text from employee
  * Since employees.job_title is text, we need to find matching job in job_titles
+ * Uses case-insensitive matching with whitespace trimming
  */
 function getJobTitleByName(jobTitleText) {
   if (!jobTitleText || !jobTitles || jobTitles.length === 0) {
     return null;
   }
 
-  // Exact match first
-  return jobTitles.find(j => j.name === jobTitleText);
+  // Normalize the search text
+  const normalizedSearch = String(jobTitleText).toLowerCase().trim();
+
+  // Try exact match first
+  let match = jobTitles.find(j => j.name && j.name.toLowerCase().trim() === normalizedSearch);
+
+  if (match) return match;
+
+  // If no exact match, try case-insensitive match (any casing)
+  match = jobTitles.find(j => j.name && j.name.toLowerCase() === normalizedSearch);
+
+  return match || null;
 }
 
 /**
