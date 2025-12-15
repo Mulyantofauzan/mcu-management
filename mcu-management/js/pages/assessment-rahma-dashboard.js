@@ -25,7 +25,6 @@ import { initSuperSearch } from '../components/superSearch.js';
 let allEmployees = [];
 let allMCUs = [];
 let allLabResults = []; // Lab results from pemeriksaan_lab table
-let labItems = []; // Lab item names for reference
 let assessmentData = [];
 let filteredData = [];
 let departments = [];
@@ -64,7 +63,6 @@ export async function initAssessmentRahmaDAshboard() {
       loadDepartments(),
       loadJobTitles(),
       loadVendors(),
-      loadLabItems(),
       loadLabResults()
     ]);
 
@@ -235,8 +233,9 @@ async function loadDepartments() {
  */
 async function loadJobTitles() {
   try {
-    jobTitles = await masterDataService.getAll('job_titles');
+    jobTitles = await masterDataService.getAllJobTitles();
   } catch (error) {
+    console.warn('Error loading job titles:', error);
     jobTitles = [];
   }
 }
@@ -249,18 +248,6 @@ async function loadVendors() {
     vendors = await masterDataService.getAll('vendors');
   } catch (error) {
     vendors = [];
-  }
-}
-
-/**
- * Load lab items (for reference to get item names)
- */
-async function loadLabItems() {
-  try {
-    labItems = await labService.getAllLabItems(false); // Get only active lab items
-  } catch (error) {
-    console.warn('Error loading lab items:', error);
-    labItems = [];
   }
 }
 
@@ -297,7 +284,8 @@ async function loadLabResults() {
 
 /**
  * Get lab values (glucose, cholesterol, triglycerides, HDL) from pemeriksaan_lab
- * Looks up lab results by mcuId and matches by lab item name
+ * Matches by lab item ID to correct names from database
+ * Framingham needs: Glucose, Cholesterol, Triglycerides, HDL
  */
 function getLabValuesForMCU(mcuId) {
   if (!mcuId || !allLabResults || allLabResults.length === 0) {
@@ -321,26 +309,22 @@ function getLabValuesForMCU(mcuId) {
     };
   }
 
-  // Map lab items
-  const labValuesByName = {};
+  // Build map of lab_item_id -> value for this MCU
+  const labValuesById = {};
   mcuLabResults.forEach(result => {
-    // Get lab item name from labItems array
-    const labItem = labItems.find(item => item.id === result.lab_item_id);
-    if (labItem) {
-      labValuesByName[labItem.name.toLowerCase()] = parseFloat(result.value) || null;
-    }
+    labValuesById[result.lab_item_id] = parseFloat(result.value) || null;
   });
 
-  // Extract specific lab values (Framingham uses these)
-  // Kolesterol = Cholesterol Total
-  // Trigliserid = Triglycerides
-  // HDL = HDL Cholesterol
-  // GDP/Glucose = Fasting Blood Glucose
+  // Extract specific lab values using lab_item_id from database
+  // ID 7 = "Gula Darah Puasa" (Fasting Blood Glucose)
+  // ID 8 = "Kolesterol Total" (Total Cholesterol)
+  // ID 9 = "Trigliserida" (Triglycerides)
+  // ID 10 = "HDL Kolestrol" (HDL Cholesterol)
   return {
-    glucose: labValuesByName['gdp'] || labValuesByName['glucose'] || labValuesByName['gdp (fasting blood glucose)'] || null,
-    cholesterol: labValuesByName['kolesterol total'] || labValuesByName['cholesterol'] || labValuesByName['total cholesterol'] || null,
-    triglycerides: labValuesByName['trigliserid'] || labValuesByName['triglycerides'] || null,
-    hdl: labValuesByName['hdl'] || labValuesByName['hdl cholesterol'] || null
+    glucose: labValuesById[7] || null,      // Gula Darah Puasa
+    cholesterol: labValuesById[8] || null,  // Kolesterol Total
+    triglycerides: labValuesById[9] || null, // Trigliserida
+    hdl: labValuesById[10] || null          // HDL Kolestrol
   };
 }
 
