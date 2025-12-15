@@ -1025,9 +1025,9 @@ function renderEmployeeTable() {
       <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.smoking}</td>
       <td class="px-2 py-2 text-xs text-center font-mono ${!item.mcu.bloodPressure ? 'text-gray-400 line-through' : ''}">${item.scores.bloodPressure}</td>
       <td class="px-2 py-2 text-xs text-center font-mono ${!item.mcu.bmi ? 'text-gray-400 line-through' : ''}">${item.scores.bmi}</td>
-      <td class="px-2 py-2 text-xs text-center font-mono text-gray-400">${item.scores.cholesterol}</td>
-      <td class="px-2 py-2 text-xs text-center font-mono text-gray-400">${item.scores.triglycerides}</td>
-      <td class="px-2 py-2 text-xs text-center font-mono text-gray-400">${item.scores.hdl}</td>
+      <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.cholesterol}</td>
+      <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.triglycerides}</td>
+      <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.hdl}</td>
       <td class="px-2 py-2 text-xs text-center font-bold">${item.totalScore > 0 ? '+' : ''}${item.totalScore}</td>
       <td class="px-2 py-2 text-xs text-center">
         <span class="px-1 py-0.5 rounded text-xs font-semibold ${riskBg}" title="${item.isIncomplete ? 'Data belum lengkap' : ''}">
