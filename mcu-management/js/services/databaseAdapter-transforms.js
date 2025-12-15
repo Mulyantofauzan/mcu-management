@@ -85,6 +85,11 @@ export function transformMCU(mcu) {
         sgot: mcu.sgot,
         sgpt: mcu.sgpt,
         cbc: mcu.cbc,
+        // Lab result fields (map from snake_case to camelCase)
+        glucose: mcu.glucose,
+        cholesterol: mcu.cholesterol,
+        triglycerides: mcu.triglycerides,
+        hdl: mcu.hdl,
         // Lifestyle fields (map from snake_case to camelCase)
         smokingStatus: mcu.smoking_status,
         exerciseFrequency: mcu.exercise_frequency,

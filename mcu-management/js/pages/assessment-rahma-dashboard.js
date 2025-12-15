@@ -446,7 +446,7 @@ function applyAllFilters() {
 
   // Filter by job risk level (low, moderate, high)
   if (filterByRiskLevel) {
-    filtered = filtered.filter(d => d.assessment.jobRiskLevel === filterByRiskLevel);
+    filtered = filtered.filter(d => d.employee.jobRiskLevel === filterByRiskLevel);
   }
 
   filteredData = filtered;
