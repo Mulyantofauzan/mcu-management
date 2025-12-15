@@ -276,47 +276,77 @@ async function loadLabResults() {
     }
 
     const supabase = getSupabaseClient();
-    const { data, error } = await supabase
-      .from('pemeriksaan_lab')
-      .select('*');
 
-    if (error) {
-      console.error('Error loading lab results:', error);
-      allLabResults = [];
-    } else {
-      allLabResults = data || [];
+    // Load ALL lab results - Supabase has a default limit of 1000,
+    // so we need to use range() to load all records
+    // Split into chunks to avoid memory issues
+    let allData = [];
+    let pageSize = 1000;
+    let pageNum = 0;
+    let hasMore = true;
 
-      // Comprehensive debug logging
-      console.log('=== LAB RESULTS LOADED ===');
-      console.log('Total Records:', allLabResults.length);
+    console.log('Loading ALL lab results from pemeriksaan_lab...');
 
-      if (allLabResults.length > 0) {
-        console.log('First Record:', allLabResults[0]);
-        console.log('First Record Keys:', Object.keys(allLabResults[0]));
+    while (hasMore) {
+      const from = pageNum * pageSize;
+      const to = from + pageSize - 1;
 
-        // Show field names
-        const fieldNames = Object.keys(allLabResults[0]);
-        console.log('Field Names:', fieldNames);
+      const { data, error, count } = await supabase
+        .from('pemeriksaan_lab')
+        .select('*', { count: 'exact' })
+        .range(from, to);
 
-        // Count by mcu_id
-        const mcuIdMap = {};
-        allLabResults.forEach(lab => {
-          const mcuId = lab.mcu_id;
-          mcuIdMap[mcuId] = (mcuIdMap[mcuId] || 0) + 1;
-        });
-        console.log('Records grouped by mcu_id:', mcuIdMap);
-
-        // Show sample records with their structure
-        console.log('Sample Records (first 3):');
-        allLabResults.slice(0, 3).forEach((record, idx) => {
-          console.log(`  Record ${idx}:`, {
-            mcu_id: record.mcu_id,
-            lab_item_id: record.lab_item_id,
-            lab_item_id_type: typeof record.lab_item_id,
-            value: record.value
-          });
-        });
+      if (error) {
+        console.error(`Error loading lab results page ${pageNum}:`, error);
+        break;
       }
+
+      if (!data || data.length === 0) {
+        hasMore = false;
+      } else {
+        allData = allData.concat(data);
+        pageNum++;
+
+        // If this is the first page, log the total count
+        if (pageNum === 1 && count) {
+          console.log(`Total lab records in database: ${count}`);
+        }
+      }
+    }
+
+    allLabResults = allData;
+
+    // Comprehensive debug logging
+    console.log('=== LAB RESULTS LOADED ===');
+    console.log('Total Records Loaded:', allLabResults.length);
+
+    if (allLabResults.length > 0) {
+      console.log('First Record:', allLabResults[0]);
+      console.log('First Record Keys:', Object.keys(allLabResults[0]));
+
+      // Show field names
+      const fieldNames = Object.keys(allLabResults[0]);
+      console.log('Field Names:', fieldNames);
+
+      // Count by mcu_id
+      const mcuIdMap = {};
+      allLabResults.forEach(lab => {
+        const mcuId = lab.mcu_id;
+        mcuIdMap[mcuId] = (mcuIdMap[mcuId] || 0) + 1;
+      });
+      console.log('Unique MCU IDs with lab data:', Object.keys(mcuIdMap).length);
+      console.log('Total records grouped by mcu_id:', Object.values(mcuIdMap).reduce((a, b) => a + b, 0));
+
+      // Show sample records with their structure
+      console.log('Sample Records (first 3):');
+      allLabResults.slice(0, 3).forEach((record, idx) => {
+        console.log(`  Record ${idx}:`, {
+          mcu_id: record.mcu_id,
+          lab_item_id: record.lab_item_id,
+          lab_item_id_type: typeof record.lab_item_id,
+          value: record.value
+        });
+      });
     }
   } catch (error) {
     console.error('Error loading lab results:', error);
