@@ -671,10 +671,10 @@ function renderDashboard() {
     </div>
 
     <!-- Search Bar -->
-    <div class="p-6 pb-0">
+    <div class="p-6 pt-4 pb-2 bg-white">
       <input type="text" id="rahma-search" placeholder="Cari Karyawan: Nama atau ID..."
         onkeyup="window.assessmentRAHMA.searchAssessments()"
-        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
     </div>
 
     <!-- Filter Controls -->
