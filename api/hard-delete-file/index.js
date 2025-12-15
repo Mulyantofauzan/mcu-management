@@ -7,22 +7,7 @@
  */
 
 const { createClient } = require('@supabase/supabase-js');
-
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-// Initialize R2 client
 const AWS = require('aws-sdk');
-const r2 = new AWS.S3({
-  accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
-  secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
-  endpoint: process.env.CLOUDFLARE_R2_ENDPOINT,
-  s3ForcePathStyle: true,
-  signatureVersion: 'v4'
-});
 
 module.exports = async (req, res) => {
   // Enable CORS
@@ -53,6 +38,20 @@ module.exports = async (req, res) => {
         error: 'Server configuration error: Missing R2 credentials'
       });
     }
+
+    // Initialize clients inside handler
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
+    const r2 = new AWS.S3({
+      accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
+      secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+      endpoint: process.env.CLOUDFLARE_R2_ENDPOINT,
+      s3ForcePathStyle: true,
+      signatureVersion: 'v4'
+    });
 
     const { fileId, storagePath: queryStoragePath } = req.query;
 
