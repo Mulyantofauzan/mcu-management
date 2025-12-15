@@ -60,7 +60,8 @@
       "Bash(do echo \"=== Checking $file ===\")",
       "Bash(for file in mcu-management/js/seedData.js js/services/auditLogService.js js/utils/totpManager.js api/config.js api/r2SignedUrlService.js api/r2StorageService.js)",
       "Bash(then node -c \"$file\")",
-      "Bash(__NEW_LINE__ echo \"=== 1. Checking Assessment RAHMA menu styling ===\" grep \"assessment-rahma\" /Users/mulyanto/Desktop/MCU-APP/mcu-management/pages/assessment-rahma.html)"
+      "Bash(__NEW_LINE__ echo \"=== 1. Checking Assessment RAHMA menu styling ===\" grep \"assessment-rahma\" /Users/mulyanto/Desktop/MCU-APP/mcu-management/pages/assessment-rahma.html)",
+      "Bash(git revert:*)"
     ],
     "deny": [],
     "ask": []

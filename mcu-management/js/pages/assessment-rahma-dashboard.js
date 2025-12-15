@@ -275,11 +275,38 @@ async function loadLabResults() {
       allLabResults = [];
     } else {
       allLabResults = data || [];
-      console.log('DEBUG: Lab Results Loaded:', {
-        totalRecords: allLabResults.length,
-        firstRecord: allLabResults[0],
-        sampleRecords: allLabResults.slice(0, 3)
-      });
+
+      // Comprehensive debug logging
+      console.log('=== LAB RESULTS LOADED ===');
+      console.log('Total Records:', allLabResults.length);
+
+      if (allLabResults.length > 0) {
+        console.log('First Record:', allLabResults[0]);
+        console.log('First Record Keys:', Object.keys(allLabResults[0]));
+
+        // Show field names
+        const fieldNames = Object.keys(allLabResults[0]);
+        console.log('Field Names:', fieldNames);
+
+        // Count by mcu_id
+        const mcuIdMap = {};
+        allLabResults.forEach(lab => {
+          const mcuId = lab.mcu_id;
+          mcuIdMap[mcuId] = (mcuIdMap[mcuId] || 0) + 1;
+        });
+        console.log('Records grouped by mcu_id:', mcuIdMap);
+
+        // Show sample records with their structure
+        console.log('Sample Records (first 3):');
+        allLabResults.slice(0, 3).forEach((record, idx) => {
+          console.log(`  Record ${idx}:`, {
+            mcu_id: record.mcu_id,
+            lab_item_id: record.lab_item_id,
+            lab_item_id_type: typeof record.lab_item_id,
+            value: record.value
+          });
+        });
+      }
     }
   } catch (error) {
     console.error('Error loading lab results:', error);
@@ -305,7 +332,40 @@ function getLabValuesForMCU(mcuId) {
   // Filter lab results for this MCU
   const mcuLabResults = allLabResults.filter(lab => lab.mcu_id === mcuId);
 
+  // DEBUG: Log every MCU lookup for first employee
+  const isFirstEmployee = mcuId === allMCUs[0]?.mcuId;
+  if (isFirstEmployee) {
+    console.log(`\n=== LAB LOOKUP FOR MCU: ${mcuId} ===`);
+    console.log('MCU ID Type:', typeof mcuId);
+    console.log('Searching in', allLabResults.length, 'lab records');
+
+    // Show what mcu_id values exist in database
+    const uniqueMcuIds = [...new Set(allLabResults.map(lab => lab.mcu_id))];
+    console.log('Unique mcu_id values in database:', uniqueMcuIds);
+
+    // Check if our mcuId exists in database
+    const mcuIdExists = uniqueMcuIds.includes(mcuId);
+    console.log(`MCU ${mcuId} exists in lab data: ${mcuIdExists}`);
+
+    // Try exact match
+    const exactMatches = allLabResults.filter(lab => lab.mcu_id === mcuId);
+    console.log(`Exact matches (===): ${exactMatches.length}`);
+
+    // Try loose match
+    const looseMatches = allLabResults.filter(lab => String(lab.mcu_id) === String(mcuId));
+    console.log(`String matches: ${looseMatches.length}`);
+
+    // Try case-insensitive
+    const caseInsensitiveMatches = allLabResults.filter(
+      lab => String(lab.mcu_id).toLowerCase() === String(mcuId).toLowerCase()
+    );
+    console.log(`Case-insensitive matches: ${caseInsensitiveMatches.length}`);
+  }
+
   if (mcuLabResults.length === 0) {
+    if (isFirstEmployee) {
+      console.log(`NO LAB RESULTS FOUND for MCU ${mcuId}`);
+    }
     return {
       glucose: null,
       cholesterol: null,
@@ -317,16 +377,31 @@ function getLabValuesForMCU(mcuId) {
   // Build map of lab_item_id -> value for this MCU
   const labValuesById = {};
   mcuLabResults.forEach(result => {
-    labValuesById[result.lab_item_id] = parseFloat(result.value) || null;
+    // Check lab_item_id type
+    const labItemId = result.lab_item_id;
+    const labItemIdNumeric = parseInt(labItemId);
+    labValuesById[labItemId] = parseFloat(result.value) || null;
+    labValuesById[labItemIdNumeric] = parseFloat(result.value) || null; // Also map as integer
+
+    if (isFirstEmployee) {
+      console.log(`  Lab record: lab_item_id=${labItemId} (type: ${typeof labItemId}, numeric: ${labItemIdNumeric}), value=${result.value}`);
+    }
   });
 
   // DEBUG: Log first time we find lab data for MCU
-  if (mcuId === allMCUs[0]?.mcuId) {
-    console.log(`DEBUG: Lab values for MCU ${mcuId}:`, {
-      mcuLabResultsCount: mcuLabResults.length,
-      labValuesById: labValuesById,
-      mcuLabResultsSample: mcuLabResults.slice(0, 3)
-    });
+  if (isFirstEmployee) {
+    console.log(`\n=== LAB VALUES MAPPED FOR MCU ${mcuId} ===`);
+    console.log('Lab Results Count:', mcuLabResults.length);
+    console.log('labValuesById:', labValuesById);
+    console.log('Checking lookups:');
+    console.log('  labValuesById[7]:', labValuesById[7]);
+    console.log('  labValuesById["7"]:', labValuesById["7"]);
+    console.log('  labValuesById[8]:', labValuesById[8]);
+    console.log('  labValuesById["8"]:', labValuesById["8"]);
+    console.log('  labValuesById[9]:', labValuesById[9]);
+    console.log('  labValuesById["9"]:', labValuesById["9"]);
+    console.log('  labValuesById[10]:', labValuesById[10]);
+    console.log('  labValuesById["10"]:', labValuesById["10"]);
   }
 
   // Extract specific lab values using lab_item_id from database
@@ -334,12 +409,19 @@ function getLabValuesForMCU(mcuId) {
   // ID 8 = "Kolesterol Total" (Total Cholesterol)
   // ID 9 = "Trigliserida" (Triglycerides)
   // ID 10 = "HDL Kolestrol" (HDL Cholesterol)
-  return {
-    glucose: labValuesById[7] || null,      // Gula Darah Puasa
-    cholesterol: labValuesById[8] || null,  // Kolesterol Total
-    triglycerides: labValuesById[9] || null, // Trigliserida
-    hdl: labValuesById[10] || null          // HDL Kolestrol
+  const result = {
+    glucose: labValuesById[7] || labValuesById["7"] || null,      // Gula Darah Puasa
+    cholesterol: labValuesById[8] || labValuesById["8"] || null,  // Kolesterol Total
+    triglycerides: labValuesById[9] || labValuesById["9"] || null, // Trigliserida
+    hdl: labValuesById[10] || labValuesById["10"] || null          // HDL Kolestrol
   };
+
+  if (isFirstEmployee) {
+    console.log('\n=== FINAL LAB VALUES ===');
+    console.log(result);
+  }
+
+  return result;
 }
 
 /**
