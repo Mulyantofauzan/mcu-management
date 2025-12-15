@@ -748,7 +748,7 @@ export function searchAssessments() {
   }
 
   currentPage = 1;
-  renderDashboard();
+  renderTableOnly();
 }
 
 /**
@@ -961,6 +961,13 @@ function renderDashboard() {
   page.innerHTML = html;
 
   // Populate table
+  renderEmployeeTable();
+}
+
+/**
+ * Render only the table and pagination (used for search to preserve input focus)
+ */
+function renderTableOnly() {
   renderEmployeeTable();
 }
 
