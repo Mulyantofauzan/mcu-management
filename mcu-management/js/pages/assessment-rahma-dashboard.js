@@ -833,16 +833,25 @@ function renderDashboard() {
           </select>
         </div>
 
-        <!-- Export Button -->
+        <!-- Export Buttons -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">&nbsp;</label>
-          <button onclick="window.assessmentRAHMA.exportToCSV()"
-                  class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-            Export CSV
-          </button>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Export</label>
+          <div class="flex gap-2">
+            <button onclick="window.assessmentRAHMA.exportToCSV()"
+                    class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+              CSV
+            </button>
+            <button onclick="window.assessmentRAHMA.exportToPDF()"
+                    class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+              </svg>
+              PDF
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1244,6 +1253,125 @@ export function exportToCSV() {
   showToast(`${filteredData.length} data berhasil diekspor ke CSV`, 'success');
 }
 
+/**
+ * Export filtered data to PDF
+ */
+export async function exportToPDF() {
+  if (filteredData.length === 0) {
+    showToast('Tidak ada data untuk diekspor', 'warning');
+    return;
+  }
+
+  try {
+    // Dynamically load jsPDF if not available
+    if (typeof jspdf === 'undefined') {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Title
+    doc.setFontSize(16);
+    doc.text('Assessment RAHMA Dashboard', 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Framingham CVD Risk Assessment - Tanggal: ${new Date().toLocaleDateString('id-ID')}`, 14, 22);
+
+    // Summary Statistics
+    doc.setFontSize(11);
+    doc.text('Ringkasan Statistik:', 14, 32);
+
+    const lowCount = filteredData.filter(d => d.riskCategory === 'low').length;
+    const mediumCount = filteredData.filter(d => d.riskCategory === 'medium').length;
+    const highCount = filteredData.filter(d => d.riskCategory === 'high').length;
+    const total = filteredData.length;
+
+    doc.setFontSize(10);
+    doc.text(`Total Data: ${total}`, 20, 39);
+    doc.text(`Low Risk: ${lowCount} (${((lowCount/total)*100).toFixed(1)}%)`, 20, 45);
+    doc.text(`Medium Risk: ${mediumCount} (${((mediumCount/total)*100).toFixed(1)}%)`, 20, 51);
+    doc.text(`High Risk: ${highCount} (${((highCount/total)*100).toFixed(1)}%)`, 20, 57);
+
+    // Table data
+    const tableData = filteredData.map((item, idx) => {
+      const genderDisplay = item.employee.gender === 'L' || item.employee.gender === 'Laki-laki' ? 'L' : 'P';
+      const birthDate = new Date(item.employee.birthDate);
+      const mcuDate = new Date(item.mcu.mcuDate);
+      let age = mcuDate.getFullYear() - birthDate.getFullYear();
+      const monthDiff = mcuDate.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && mcuDate.getDate() < birthDate.getDate())) {
+        age--;
+      }
+
+      const riskLabel = item.riskCategory === 'low' ? 'LOW' :
+                       item.riskCategory === 'medium' ? 'MEDIUM' : 'HIGH';
+
+      return [
+        idx + 1,
+        item.employee.name.substring(0, 20),
+        genderDisplay,
+        age,
+        item.scores.jobRisk,
+        item.scores.exercise,
+        item.scores.smoking,
+        item.scores.bloodPressure,
+        item.scores.bmi,
+        item.scores.cholesterol,
+        item.scores.triglycerides,
+        item.scores.hdl,
+        item.totalScore,
+        riskLabel
+      ];
+    });
+
+    // Add table
+    doc.autoTable({
+      head: [['No', 'Nama', 'JK', 'Umur', 'Job', 'Olahraga', 'Merokok', 'TD', 'BMI', 'Kolesterol', 'Trigliserid', 'HDL', 'Total', 'Hasil']],
+      body: tableData,
+      startY: 65,
+      margin: 10,
+      headerStyles: {
+        fillColor: [41, 128, 185],
+        textColor: 255,
+        fontSize: 9,
+        halign: 'center'
+      },
+      bodyStyles: {
+        fontSize: 8,
+        halign: 'center'
+      },
+      columnStyles: {
+        1: { halign: 'left', cellWidth: 25 }
+      },
+      didDrawPage: (data) => {
+        // Footer
+        const pageCount = doc.internal.getPages().length;
+        const pageSize = doc.internal.pageSize;
+        const pageHeight = pageSize.getHeight();
+        const pageWidth = pageSize.getWidth();
+
+        doc.setFontSize(10);
+        doc.text(`Halaman ${data.pageNumber} dari ${pageCount}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+      }
+    });
+
+    // Save PDF
+    const fileName = `assessment-rahma-${new Date().getTime()}.pdf`;
+    doc.save(fileName);
+
+    showToast(`${filteredData.length} data berhasil diekspor ke PDF`, 'success');
+  } catch (error) {
+    console.error('Error exporting PDF:', error);
+    showToast(`Error: ${error.message}`, 'error');
+  }
+}
+
 // Export to window
 window.assessmentRAHMA = {
   initAssessmentRahmaDAshboard,
@@ -1255,6 +1383,7 @@ window.assessmentRAHMA = {
   softDeleteEmployee,
   permanentDeleteEmployee,
   exportToCSV,
+  exportToPDF,
   nextPage,
   prevPage
 };
