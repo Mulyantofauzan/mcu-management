@@ -111,8 +111,8 @@ export async function initAssessmentRahmaDAshboard() {
 
     showToast(`Assessment RAHMA Dashboard dimuat - ${assessmentData.length} assessments`, 'success');
 
-    // Setup auto-refresh untuk detect data baru (every 30 seconds)
-    setupAutoRefresh();
+    // Listen untuk MCU baru melalui realtime subscription
+    setupRealtimeListener();
 
   } catch (error) {
     console.error('Error initializing RAHMA dashboard:', error);
@@ -121,36 +121,71 @@ export async function initAssessmentRahmaDAshboard() {
 }
 
 /**
- * Setup auto-refresh untuk detect MCU data baru
- * Refresh setiap 30 detik untuk calculate otomatis
+ * Setup realtime listener untuk detect MCU data baru
+ * Hanya update ketika ada MCU baru atau perubahan
  */
-let autoRefreshInterval = null;
-function setupAutoRefresh() {
-  // Clear existing interval if any
-  if (autoRefreshInterval) {
-    clearInterval(autoRefreshInterval);
+let realtimeSubscription = null;
+function setupRealtimeListener() {
+  try {
+    // Import supabase client dari config
+    import('../config/supabase.js').then(({ getSupabaseClient, isSupabaseEnabled }) => {
+      // Check if Supabase is enabled
+      if (!isSupabaseEnabled()) {
+        console.log('Supabase not enabled - realtime listener disabled');
+        return;
+      }
+
+      const supabase = getSupabaseClient();
+
+      // Unsubscribe dari listener yang lama jika ada
+      if (realtimeSubscription) {
+        try {
+          supabase.removeChannel(realtimeSubscription);
+        } catch (e) {
+          // Ignore unsubscribe errors
+        }
+      }
+
+      // Subscribe ke perubahan MCU table
+      realtimeSubscription = supabase
+        .channel('public:mcu')
+        .on(
+          'postgres_changes',
+          {
+            event: '*', // Listen ke INSERT, UPDATE, DELETE
+            schema: 'public',
+            table: 'mcu'
+          },
+          async (payload) => {
+            console.log('MCU change detected:', payload.eventType, payload.new);
+
+            try {
+              // Reload MCU data saja (fastest way)
+              await loadMCUs();
+
+              // Re-calculate assessments dengan data terbaru
+              calculateAllAssessments();
+
+              // Update UI tanpa reload page
+              renderDashboard();
+
+              showToast('Data MCU diperbarui', 'info');
+            } catch (error) {
+              console.error('Error processing MCU change:', error);
+            }
+          }
+        )
+        .subscribe();
+
+      console.log('Realtime listener setup: Listening untuk MCU changes');
+    }).catch(error => {
+      console.warn('Could not setup realtime listener:', error);
+      // Dashboard tetap berfungsi tanpa realtime listener
+    });
+  } catch (error) {
+    console.warn('Error setting up realtime listener:', error);
+    // Fallback: jika realtime listener error, jangan crash - dashboard tetap berfungsi
   }
-
-  // Refresh data setiap 30 detik
-  autoRefreshInterval = setInterval(async () => {
-    try {
-      // Reload MCU data saja (fastest way to detect changes)
-      await loadMCUs();
-
-      // Re-calculate assessments dengan data terbaru
-      calculateAllAssessments();
-
-      // Update UI tanpa reload page
-      renderDashboard();
-
-      console.log('Auto-refresh: Assessment data updated', {
-        totalMCUs: allMCUs.length,
-        assessmentsCalculated: assessmentData.length
-      });
-    } catch (error) {
-      console.error('Error in auto-refresh:', error);
-    }
-  }, 30000); // 30 detik
 }
 
 /**
