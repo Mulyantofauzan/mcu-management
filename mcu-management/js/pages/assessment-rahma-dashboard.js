@@ -795,7 +795,6 @@ function renderDashboard() {
             <tr>
               <th class="px-2 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">No</th>
               <th class="px-2 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">Nama</th>
-              <th class="px-2 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">Jabatan</th>
               <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">JK</th>
               <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Umur</th>
               <th class="px-2 py-2 text-center font-semibold text-gray-700 whitespace-nowrap">Job</th>
@@ -857,7 +856,7 @@ function renderEmployeeTable() {
   tbody.innerHTML = '';
 
   if (pageData.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="16" class="text-center text-gray-500 py-4">Tidak ada data</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="15" class="text-center text-gray-500 py-4">Tidak ada data</td></tr>';
     updatePagination();
     return;
   }
@@ -895,7 +894,6 @@ function renderEmployeeTable() {
     row.innerHTML = `
       <td class="px-2 py-2 text-xs text-gray-600">${startIdx + idx + 1}</td>
       <td class="px-2 py-2 text-xs font-medium text-gray-900">${item.employee.name} ${item.isIncomplete ? '<span title="Data tidak lengkap">⚠️</span>' : ''}</td>
-      <td class="px-2 py-2 text-xs text-gray-600">${item.employee.jobTitle}</td>
       <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.gender}</td>
       <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.age}</td>
       <td class="px-2 py-2 text-xs text-center font-mono">${item.scores.jobRisk}</td>
