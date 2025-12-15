@@ -275,6 +275,11 @@ async function loadLabResults() {
       allLabResults = [];
     } else {
       allLabResults = data || [];
+      console.log('DEBUG: Lab Results Loaded:', {
+        totalRecords: allLabResults.length,
+        firstRecord: allLabResults[0],
+        sampleRecords: allLabResults.slice(0, 3)
+      });
     }
   } catch (error) {
     console.error('Error loading lab results:', error);
@@ -314,6 +319,15 @@ function getLabValuesForMCU(mcuId) {
   mcuLabResults.forEach(result => {
     labValuesById[result.lab_item_id] = parseFloat(result.value) || null;
   });
+
+  // DEBUG: Log first time we find lab data for MCU
+  if (mcuId === allMCUs[0]?.mcuId) {
+    console.log(`DEBUG: Lab values for MCU ${mcuId}:`, {
+      mcuLabResultsCount: mcuLabResults.length,
+      labValuesById: labValuesById,
+      mcuLabResultsSample: mcuLabResults.slice(0, 3)
+    });
+  }
 
   // Extract specific lab values using lab_item_id from database
   // ID 7 = "Gula Darah Puasa" (Fasting Blood Glucose)
