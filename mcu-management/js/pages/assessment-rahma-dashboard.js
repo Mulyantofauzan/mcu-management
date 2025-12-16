@@ -69,40 +69,9 @@ export async function initAssessmentRahmaDAshboard() {
     // Calculate assessments for all active employees (latest MCU only)
     calculateAllAssessments();
 
-    console.log('Assessment Data:', {
-      totalEmployees: allEmployees.length,
-      totalMCUs: allMCUs.length,
-      assessmentsCalculated: assessmentData.length,
-      riskCounts: {
-        low: assessmentData.filter(d => d.riskCategory === 'low').length,
-        medium: assessmentData.filter(d => d.riskCategory === 'medium').length,
-        high: assessmentData.filter(d => d.riskCategory === 'high').length
-      }
-    });
-
     // Debug: Sample employee data for first assessment
     if (assessmentData.length > 0) {
       const sample = assessmentData[0];
-      console.log('Sample Assessment (First):', {
-        employeeName: sample.employee.name,
-        jobTitle: sample.employee.jobTitle,
-        jobRiskLevel: sample.employee.jobRiskLevel,
-        jobRiskScore: sample.scores.jobRisk,
-        age: sample.assessment.age,
-        ageScore: sample.scores.age,
-        exerciseFrequency: sample.assessment.exerciseFrequency,
-        exerciseScore: sample.scores.exercise,
-        smokingStatus: sample.assessment.smokingStatus,
-        smokingScore: sample.scores.smoking,
-        mcuGlucose: sample.mcu.glucose,
-        glucoseScore: sample.scores.glucose,
-        mcuCholesterol: sample.mcu.cholesterol,
-        cholesterolScore: sample.scores.cholesterol,
-        mcuTriglycerides: sample.mcu.triglycerides,
-        trigliceridScore: sample.scores.triglycerides,
-        mcuHdl: sample.mcu.hdl,
-        hdlScore: sample.scores.hdl
-      });
     }
 
     // Initialize super search
@@ -117,7 +86,6 @@ export async function initAssessmentRahmaDAshboard() {
     setupRealtimeListener();
 
   } catch (error) {
-    console.error('Error initializing RAHMA dashboard:', error);
     showToast(`Error: ${error.message}`, 'error');
   }
 }
@@ -133,7 +101,6 @@ function setupRealtimeListener() {
     import('../config/supabase.js').then(({ getSupabaseClient, isSupabaseEnabled }) => {
       // Check if Supabase is enabled
       if (!isSupabaseEnabled()) {
-        console.log('Supabase not enabled - realtime listener disabled');
         return;
       }
 
@@ -159,7 +126,6 @@ function setupRealtimeListener() {
             table: 'mcu'
           },
           async (payload) => {
-            console.log('MCU change detected:', payload.eventType, payload.new);
 
             try {
               // Reload MCU data saja (fastest way)
@@ -173,19 +139,14 @@ function setupRealtimeListener() {
 
               showToast('Data MCU diperbarui', 'info');
             } catch (error) {
-              console.error('Error processing MCU change:', error);
             }
           }
         )
         .subscribe();
-
-      console.log('Realtime listener setup: Listening untuk MCU changes');
     }).catch(error => {
-      console.warn('Could not setup realtime listener:', error);
       // Dashboard tetap berfungsi tanpa realtime listener
     });
   } catch (error) {
-    console.warn('Error setting up realtime listener:', error);
     // Fallback: jika realtime listener error, jangan crash - dashboard tetap berfungsi
   }
 }
@@ -200,7 +161,6 @@ async function loadEmployees() {
     // Note: employees are already transformed with camelCase field names
     allEmployees = all.filter(emp => emp.isActive && !emp.deletedAt);
   } catch (error) {
-    console.error('Error loading employees:', error);
     allEmployees = [];
   }
 }
@@ -215,14 +175,8 @@ async function loadMCUs() {
     // Debug: Show MCU date range
     if (allMCUs.length > 0) {
       const mcuDates = allMCUs.map(mcu => mcu.mcuDate).sort();
-      console.log('=== MCU DATA LOADED ===');
-      console.log('Total MCUs:', allMCUs.length);
-      console.log('Earliest MCU Date:', mcuDates[0]);
-      console.log('Latest MCU Date:', mcuDates[mcuDates.length - 1]);
-      console.log('First 5 MCU IDs:', allMCUs.slice(0, 5).map(m => ({ mcuId: m.mcuId, mcuDate: m.mcuDate })));
     }
   } catch (error) {
-    console.error('Error loading MCUs:', error);
     allMCUs = [];
   }
 }
@@ -245,7 +199,6 @@ async function loadJobTitles() {
   try {
     jobTitles = await masterDataService.getAllJobTitles();
   } catch (error) {
-    console.warn('Error loading job titles:', error);
     jobTitles = [];
   }
 }
@@ -270,7 +223,6 @@ async function loadLabResults() {
     const { getSupabaseClient, isSupabaseEnabled } = await import('../config/supabase.js');
 
     if (!isSupabaseEnabled()) {
-      console.warn('Supabase not enabled - lab results not loaded');
       allLabResults = [];
       return;
     }
@@ -285,8 +237,6 @@ async function loadLabResults() {
     let pageNum = 0;
     let hasMore = true;
 
-    console.log('Loading ALL lab results from pemeriksaan_lab...');
-
     while (hasMore) {
       const from = pageNum * pageSize;
       const to = from + pageSize - 1;
@@ -297,7 +247,6 @@ async function loadLabResults() {
         .range(from, to);
 
       if (error) {
-        console.error(`Error loading lab results page ${pageNum}:`, error);
         break;
       }
 
@@ -309,7 +258,6 @@ async function loadLabResults() {
 
         // If this is the first page, log the total count
         if (pageNum === 1 && count) {
-          console.log(`Total lab records in database: ${count}`);
         }
       }
     }
@@ -317,16 +265,11 @@ async function loadLabResults() {
     allLabResults = allData;
 
     // Comprehensive debug logging
-    console.log('=== LAB RESULTS LOADED ===');
-    console.log('Total Records Loaded:', allLabResults.length);
 
     if (allLabResults.length > 0) {
-      console.log('First Record:', allLabResults[0]);
-      console.log('First Record Keys:', Object.keys(allLabResults[0]));
 
       // Show field names
       const fieldNames = Object.keys(allLabResults[0]);
-      console.log('Field Names:', fieldNames);
 
       // Count by mcu_id
       const mcuIdMap = {};
@@ -334,22 +277,12 @@ async function loadLabResults() {
         const mcuId = lab.mcu_id;
         mcuIdMap[mcuId] = (mcuIdMap[mcuId] || 0) + 1;
       });
-      console.log('Unique MCU IDs with lab data:', Object.keys(mcuIdMap).length);
-      console.log('Total records grouped by mcu_id:', Object.values(mcuIdMap).reduce((a, b) => a + b, 0));
 
       // Show sample records with their structure
-      console.log('Sample Records (first 3):');
       allLabResults.slice(0, 3).forEach((record, idx) => {
-        console.log(`  Record ${idx}:`, {
-          mcu_id: record.mcu_id,
-          lab_item_id: record.lab_item_id,
-          lab_item_id_type: typeof record.lab_item_id,
-          value: record.value
-        });
       });
     }
   } catch (error) {
-    console.error('Error loading lab results:', error);
     allLabResults = [];
   }
 }
@@ -375,36 +308,27 @@ function getLabValuesForMCU(mcuId) {
   // DEBUG: Log every MCU lookup for first employee
   const isFirstEmployee = mcuId === allMCUs[0]?.mcuId;
   if (isFirstEmployee) {
-    console.log(`\n=== LAB LOOKUP FOR MCU: ${mcuId} ===`);
-    console.log('MCU ID Type:', typeof mcuId);
-    console.log('Searching in', allLabResults.length, 'lab records');
 
     // Show what mcu_id values exist in database
     const uniqueMcuIds = [...new Set(allLabResults.map(lab => lab.mcu_id))];
-    console.log('Unique mcu_id values in database:', uniqueMcuIds);
 
     // Check if our mcuId exists in database
     const mcuIdExists = uniqueMcuIds.includes(mcuId);
-    console.log(`MCU ${mcuId} exists in lab data: ${mcuIdExists}`);
 
     // Try exact match
     const exactMatches = allLabResults.filter(lab => lab.mcu_id === mcuId);
-    console.log(`Exact matches (===): ${exactMatches.length}`);
 
     // Try loose match
     const looseMatches = allLabResults.filter(lab => String(lab.mcu_id) === String(mcuId));
-    console.log(`String matches: ${looseMatches.length}`);
 
     // Try case-insensitive
     const caseInsensitiveMatches = allLabResults.filter(
       lab => String(lab.mcu_id).toLowerCase() === String(mcuId).toLowerCase()
     );
-    console.log(`Case-insensitive matches: ${caseInsensitiveMatches.length}`);
   }
 
   if (mcuLabResults.length === 0) {
     if (isFirstEmployee) {
-      console.log(`NO LAB RESULTS FOUND for MCU ${mcuId}`);
     }
     return {
       glucose: null,
@@ -424,24 +348,11 @@ function getLabValuesForMCU(mcuId) {
     labValuesById[labItemIdNumeric] = parseFloat(result.value) || null; // Also map as integer
 
     if (isFirstEmployee) {
-      console.log(`  Lab record: lab_item_id=${labItemId} (type: ${typeof labItemId}, numeric: ${labItemIdNumeric}), value=${result.value}`);
     }
   });
 
   // DEBUG: Log first time we find lab data for MCU
   if (isFirstEmployee) {
-    console.log(`\n=== LAB VALUES MAPPED FOR MCU ${mcuId} ===`);
-    console.log('Lab Results Count:', mcuLabResults.length);
-    console.log('labValuesById:', labValuesById);
-    console.log('Checking lookups:');
-    console.log('  labValuesById[7]:', labValuesById[7]);
-    console.log('  labValuesById["7"]:', labValuesById["7"]);
-    console.log('  labValuesById[8]:', labValuesById[8]);
-    console.log('  labValuesById["8"]:', labValuesById["8"]);
-    console.log('  labValuesById[9]:', labValuesById[9]);
-    console.log('  labValuesById["9"]:', labValuesById["9"]);
-    console.log('  labValuesById[10]:', labValuesById[10]);
-    console.log('  labValuesById["10"]:', labValuesById["10"]);
   }
 
   // Extract specific lab values using lab_item_id from database
@@ -457,8 +368,6 @@ function getLabValuesForMCU(mcuId) {
   };
 
   if (isFirstEmployee) {
-    console.log('\n=== FINAL LAB VALUES ===');
-    console.log(result);
   }
 
   return result;
@@ -566,7 +475,6 @@ function calculateAllAssessments() {
 
     // Debug: Log if job lookup fails
     if (!job && employee.jobTitle) {
-      console.warn(`Job not found for employee ${employee.employeeId}: jobTitle="${employee.jobTitle}"`);
     }
 
     const vendor = employee.vendorName
@@ -598,17 +506,6 @@ function calculateAllAssessments() {
 
     // Debug: Log MCU and lab values for first employee
     if (employee.employeeId === allEmployees[0]?.employeeId) {
-      console.log(`Lab Values from pemeriksaan_lab for ${employee.name} (MCU: ${latestMCU.mcuId}):`, {
-        glucose: labValues.glucose,
-        cholesterol: labValues.cholesterol,
-        triglycerides: labValues.triglycerides,
-        hdl: labValues.hdl,
-        bloodPressure: latestMCU.bloodPressure,
-        bmi: latestMCU.bmi,
-        jobTitle: employee.jobTitle,
-        jobFound: job !== null,
-        jobRiskLevel: job?.riskLevel || 'not found'
-      });
     }
 
     // Calculate Framingham score
@@ -616,7 +513,6 @@ function calculateAllAssessments() {
     try {
       result = framinghamCalculatorService.performCompleteAssessment(assessmentInput);
     } catch (err) {
-      console.warn(`Error calculating assessment for ${employee.employeeId}:`, err);
       return;
     }
 
@@ -757,7 +653,6 @@ export function searchAssessments() {
 function renderDashboard() {
   const page = document.getElementById('rahma-main-content');
   if (!page) {
-    console.error('rahma-main-content element not found');
     return;
   }
 
@@ -1118,7 +1013,6 @@ export async function toggleEmployeeActive(employeeId, isActive) {
     // Reload dashboard
     location.reload();
   } catch (error) {
-    console.error('Error toggling employee active status:', error);
     showToast(`Error: ${error.message}`, 'error');
   }
 }
@@ -1139,7 +1033,6 @@ export async function softDeleteEmployee(employeeId) {
     // Reload dashboard
     location.reload();
   } catch (error) {
-    console.error('Error soft deleting employee:', error);
     showToast(`Error: ${error.message}`, 'error');
   }
 }
@@ -1163,7 +1056,6 @@ export async function permanentDeleteEmployee(employeeId) {
     // Reload dashboard
     location.reload();
   } catch (error) {
-    console.error('Error permanently deleting employee:', error);
     showToast(`Error: ${error.message}`, 'error');
   }
 }
@@ -1275,7 +1167,12 @@ export async function exportToPDF() {
     }
 
     // Load autoTable plugin
-    if (!window.jspdf || !window.jspdf.jsPDF.prototype.autoTable) {
+    const hasAutoTable = window.jsPDF && (
+      (window.jsPDF.jsPDF && window.jsPDF.jsPDF.prototype.autoTable) ||
+      (window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.prototype.autoTable)
+    );
+
+    if (!hasAutoTable) {
       await new Promise((resolve, reject) => {
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.31/dist/jspdf.plugin.autotable.min.js';
@@ -1285,8 +1182,18 @@ export async function exportToPDF() {
       });
     }
 
-    // Get jsPDF constructor
-    const jsPDFConstructor = window.jsPDF.jsPDF || window.jsPDF;
+    // Get jsPDF constructor - handle multiple possible locations
+    let jsPDFConstructor;
+    if (window.jsPDF && window.jsPDF.jsPDF) {
+      jsPDFConstructor = window.jsPDF.jsPDF;
+    } else if (window.jsPDF) {
+      jsPDFConstructor = window.jsPDF;
+    } else if (window.jspdf && window.jspdf.jsPDF) {
+      jsPDFConstructor = window.jspdf.jsPDF;
+    } else {
+      throw new Error('jsPDF library failed to load');
+    }
+
     const doc = new jsPDFConstructor();
 
     // Title
@@ -1382,7 +1289,6 @@ export async function exportToPDF() {
 
     showToast(`${filteredData.length} data berhasil diekspor ke PDF`, 'success');
   } catch (error) {
-    console.error('Error exporting PDF:', error);
     showToast(`Error: ${error.message}`, 'error');
   }
 }
