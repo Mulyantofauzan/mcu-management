@@ -1096,15 +1096,6 @@ export function exportToCSV() {
 
   // CSV Data
   const rows = filteredData.map((item, idx) => {
-    const genderDisplay = item.employee.gender === 'L' || item.employee.gender === 'Laki-laki' ? 'L' : 'P';
-    const birthDate = new Date(item.employee.birthDate);
-    const mcuDate = new Date(item.mcu.mcuDate);
-    let age = mcuDate.getFullYear() - birthDate.getFullYear();
-    const monthDiff = mcuDate.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && mcuDate.getDate() < birthDate.getDate())) {
-      age--;
-    }
-
     const riskLabel = item.riskCategory === 'low' ? 'LOW' :
                      item.riskCategory === 'medium' ? 'MEDIUM' : 'HIGH';
 
@@ -1112,8 +1103,8 @@ export function exportToCSV() {
       idx + 1,
       item.employee.name,
       item.employee.jobTitle,      // Jabatan -> text
-      genderDisplay,               // Jenis Kelamin -> L/P
-      age,                         // Umur -> angka
+      item.scores.gender,          // Jenis Kelamin -> score
+      item.scores.age,             // Umur -> score
       item.scores.jobRisk,         // Job -> score
       item.scores.exercise,
       item.scores.smoking,
@@ -1223,15 +1214,6 @@ export async function exportToPDF() {
 
     // Table data
     const tableData = filteredData.map((item, idx) => {
-      const genderDisplay = item.employee.gender === 'L' || item.employee.gender === 'Laki-laki' ? 'L' : 'P';
-      const birthDate = new Date(item.employee.birthDate);
-      const mcuDate = new Date(item.mcu.mcuDate);
-      let age = mcuDate.getFullYear() - birthDate.getFullYear();
-      const monthDiff = mcuDate.getMonth() - birthDate.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && mcuDate.getDate() < birthDate.getDate())) {
-        age--;
-      }
-
       const riskLabel = item.riskCategory === 'low' ? 'LOW' :
                        item.riskCategory === 'medium' ? 'MEDIUM' : 'HIGH';
 
@@ -1239,9 +1221,9 @@ export async function exportToPDF() {
         idx + 1,
         item.employee.name.substring(0, 20),
         item.employee.jobTitle.substring(0, 15),
-        genderDisplay,
-        age,
-        item.scores.jobRisk,
+        item.scores.gender,         // Jenis Kelamin -> score
+        item.scores.age,            // Umur -> score
+        item.scores.jobRisk,        // Job -> score
         item.scores.exercise,
         item.scores.smoking,
         item.scores.bloodPressure,
