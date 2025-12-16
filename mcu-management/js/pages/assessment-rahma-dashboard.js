@@ -1075,11 +1075,13 @@ export function exportToCSV() {
     return;
   }
 
-  // CSV Header - Only scores and result
+  // CSV Header - Scores only
   const headers = [
     'No',
     'Nama',
-    'Job Risk',
+    'Jabatan',
+    'Jenis Kelamin',
+    'Umur',
     'Exercise',
     'Smoking',
     'Blood Pressure',
@@ -1091,7 +1093,7 @@ export function exportToCSV() {
     'Risk Category'
   ];
 
-  // CSV Data - Only scores
+  // CSV Data - Only score values
   const rows = filteredData.map((item, idx) => {
     const riskLabel = item.riskCategory === 'low' ? 'LOW' :
                      item.riskCategory === 'medium' ? 'MEDIUM' : 'HIGH';
@@ -1099,7 +1101,9 @@ export function exportToCSV() {
     return [
       idx + 1,
       item.employee.name,
-      item.scores.jobRisk,
+      item.scores.jobRisk,        // Jabatan -> score value
+      item.scores.gender,          // Jenis Kelamin -> score value
+      item.scores.age,             // Umur -> score value
       item.scores.exercise,
       item.scores.smoking,
       item.scores.bloodPressure,
