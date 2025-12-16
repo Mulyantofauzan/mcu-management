@@ -1075,47 +1075,30 @@ export function exportToCSV() {
     return;
   }
 
-  // CSV Header
+  // CSV Header - Only scores and result
   const headers = [
     'No',
     'Nama',
-    'Jabatan',
-    'Jenis Kelamin',
-    'Umur',
-    'Job',
-    'Olahraga',
-    'Merokok',
-    'Tekanan Darah',
+    'Job Risk',
+    'Exercise',
+    'Smoking',
+    'Blood Pressure',
     'BMI',
-    'Kolesterol',
-    'Trigliserid',
+    'Cholesterol',
+    'Triglycerides',
     'HDL',
-    'Nilai Total',
-    'Hasil'
+    'Total Score',
+    'Risk Category'
   ];
 
-  // CSV Data
+  // CSV Data - Only scores
   const rows = filteredData.map((item, idx) => {
-    const genderDisplay = item.employee.gender === 'L' || item.employee.gender === 'Laki-laki' ? 'L' : 'P';
-
-    // Calculate age
-    const birthDate = new Date(item.employee.birthDate);
-    const mcuDate = new Date(item.mcu.mcuDate);
-    let age = mcuDate.getFullYear() - birthDate.getFullYear();
-    const monthDiff = mcuDate.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && mcuDate.getDate() < birthDate.getDate())) {
-      age--;
-    }
-
     const riskLabel = item.riskCategory === 'low' ? 'LOW' :
                      item.riskCategory === 'medium' ? 'MEDIUM' : 'HIGH';
 
     return [
       idx + 1,
       item.employee.name,
-      item.employee.jobTitle,
-      genderDisplay,
-      age,
       item.scores.jobRisk,
       item.scores.exercise,
       item.scores.smoking,
