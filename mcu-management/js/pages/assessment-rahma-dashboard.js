@@ -1264,10 +1264,21 @@ export async function exportToPDF() {
 
   try {
     // Dynamically load jsPDF if not available
-    if (typeof jspdf === 'undefined') {
+    if (typeof window.jspdf === 'undefined') {
       await new Promise((resolve, reject) => {
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+
+    // Load autoTable plugin
+    if (typeof window.jspdfAutoTable === 'undefined') {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js';
         script.onload = resolve;
         script.onerror = reject;
         document.head.appendChild(script);
