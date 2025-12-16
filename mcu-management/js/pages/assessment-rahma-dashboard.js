@@ -1075,13 +1075,14 @@ export function exportToCSV() {
     return;
   }
 
-  // CSV Header - Scores only
+  // CSV Header
   const headers = [
     'No',
     'Nama',
     'Jabatan',
     'Jenis Kelamin',
     'Umur',
+    'Job',
     'Exercise',
     'Smoking',
     'Blood Pressure',
@@ -1093,17 +1094,27 @@ export function exportToCSV() {
     'Risk Category'
   ];
 
-  // CSV Data - Only score values
+  // CSV Data
   const rows = filteredData.map((item, idx) => {
+    const genderDisplay = item.employee.gender === 'L' || item.employee.gender === 'Laki-laki' ? 'L' : 'P';
+    const birthDate = new Date(item.employee.birthDate);
+    const mcuDate = new Date(item.mcu.mcuDate);
+    let age = mcuDate.getFullYear() - birthDate.getFullYear();
+    const monthDiff = mcuDate.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && mcuDate.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
     const riskLabel = item.riskCategory === 'low' ? 'LOW' :
                      item.riskCategory === 'medium' ? 'MEDIUM' : 'HIGH';
 
     return [
       idx + 1,
       item.employee.name,
-      item.scores.jobRisk,        // Jabatan -> score value
-      item.scores.gender,          // Jenis Kelamin -> score value
-      item.scores.age,             // Umur -> score value
+      item.employee.jobTitle,      // Jabatan -> text
+      genderDisplay,               // Jenis Kelamin -> L/P
+      age,                         // Umur -> angka
+      item.scores.jobRisk,         // Job -> score
       item.scores.exercise,
       item.scores.smoking,
       item.scores.bloodPressure,
@@ -1227,6 +1238,7 @@ export async function exportToPDF() {
       return [
         idx + 1,
         item.employee.name.substring(0, 20),
+        item.employee.jobTitle.substring(0, 15),
         genderDisplay,
         age,
         item.scores.jobRisk,
@@ -1244,7 +1256,7 @@ export async function exportToPDF() {
 
     // Add table with autoTable
     doc.autoTable({
-      head: [['No', 'Nama', 'JK', 'Umur', 'Job', 'Olahraga', 'Merokok', 'TD', 'BMI', 'Kolesterol', 'Trigliserid', 'HDL', 'Total', 'Hasil']],
+      head: [['No', 'Nama', 'Jabatan', 'JK', 'Umur', 'Job', 'Olahraga', 'Merokok', 'TD', 'BMI', 'Kolesterol', 'Trigliserid', 'HDL', 'Total', 'Hasil']],
       body: tableData,
       startY: 65,
       margin: 10,
