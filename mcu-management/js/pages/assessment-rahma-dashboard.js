@@ -247,6 +247,11 @@ async function loadLabResults() {
         .range(from, to);
 
       if (error) {
+        // 416 Range Not Satisfiable means we've gone past the end of data - this is normal
+        if (error.status === 416) {
+          hasMore = false;
+          break;
+        }
         break;
       }
 
@@ -256,8 +261,9 @@ async function loadLabResults() {
         allData = allData.concat(data);
         pageNum++;
 
-        // If this is the first page, log the total count
-        if (pageNum === 1 && count) {
+        // If we got fewer records than requested, we've reached the end
+        if (data.length < pageSize) {
+          hasMore = false;
         }
       }
     }
