@@ -1263,11 +1263,11 @@ export async function exportToPDF() {
   }
 
   try {
-    // Dynamically load jsPDF if not available
-    if (typeof window.jspdf === 'undefined') {
+    // Dynamically load jsPDF from a reliable CDN
+    if (typeof window.jsPDF === 'undefined') {
       await new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        script.src = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
         script.onload = resolve;
         script.onerror = reject;
         document.head.appendChild(script);
@@ -1275,18 +1275,19 @@ export async function exportToPDF() {
     }
 
     // Load autoTable plugin
-    if (typeof window.jspdfAutoTable === 'undefined') {
+    if (!window.jspdf || !window.jspdf.jsPDF.prototype.autoTable) {
       await new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js';
+        script.src = 'https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.31/dist/jspdf.plugin.autotable.min.js';
         script.onload = resolve;
         script.onerror = reject;
         document.head.appendChild(script);
       });
     }
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    // Get jsPDF constructor
+    const jsPDFConstructor = window.jsPDF.jsPDF || window.jsPDF;
+    const doc = new jsPDFConstructor();
 
     // Title
     doc.setFontSize(16);
@@ -1341,7 +1342,7 @@ export async function exportToPDF() {
       ];
     });
 
-    // Add table
+    // Add table with autoTable
     doc.autoTable({
       head: [['No', 'Nama', 'JK', 'Umur', 'Job', 'Olahraga', 'Merokok', 'TD', 'BMI', 'Kolesterol', 'Trigliserid', 'HDL', 'Total', 'Hasil']],
       body: tableData,
@@ -1359,18 +1360,21 @@ export async function exportToPDF() {
       },
       columnStyles: {
         1: { halign: 'left', cellWidth: 25 }
-      },
-      didDrawPage: (data) => {
-        // Footer
-        const pageCount = doc.internal.getPages().length;
-        const pageSize = doc.internal.pageSize;
-        const pageHeight = pageSize.getHeight();
-        const pageWidth = pageSize.getWidth();
-
-        doc.setFontSize(10);
-        doc.text(`Halaman ${data.pageNumber} dari ${pageCount}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
       }
     });
+
+    // Add page numbers at the bottom
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(10);
+      doc.text(
+        `Halaman ${i} dari ${pageCount}`,
+        doc.internal.pageSize.getWidth() / 2,
+        doc.internal.pageSize.getHeight() - 10,
+        { align: 'center' }
+      );
+    }
 
     // Save PDF
     const fileName = `assessment-rahma-${new Date().getTime()}.pdf`;
