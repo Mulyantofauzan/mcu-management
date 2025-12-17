@@ -458,7 +458,7 @@ class AnalysisDashboardService {
   }
 
   /**
-   * MCU Trend Chart by Status and Year
+   * MCU Trend Chart by Status and Year - Respects all active filters
    */
   renderMCUTrendChart() {
     const ctx = document.getElementById('chartMCUTrend')?.getContext('2d');
@@ -473,8 +473,8 @@ class AnalysisDashboardService {
       'Unfit': '#ef4444'
     };
 
-    // Get data based on filter mode
-    const dataToProcess = this.mcuPeriodFilter === 'all-years' ? this.allMCUData : this.allData;
+    // Use filteredData which already has all filters applied (year, department, job, status)
+    const dataToProcess = this.filteredData;
 
     // Group data by year and status
     const yearStatusMap = {};
@@ -497,6 +497,28 @@ class AnalysisDashboardService {
 
     // Sort years
     const years = Object.keys(yearStatusMap).map(Number).sort((a, b) => a - b);
+
+    // If no data, show empty chart
+    if (years.length === 0) {
+      this.destroyChart('chartMCUTrend');
+      this.charts.set('chartMCUTrend', new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: [],
+          datasets: []
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              position: 'bottom'
+            }
+          }
+        }
+      }));
+      return;
+    }
 
     // Create datasets for each status
     const datasets = [];
