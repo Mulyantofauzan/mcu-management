@@ -429,6 +429,7 @@ class AnalysisDashboardService {
   async renderAllCharts() {
     try {
       this.updateSummaryCards();
+      this.renderMCUTrendChart();
       this.renderBMIChart();
       this.renderBloodPressureChart();
       this.renderVisionChart();
@@ -454,6 +455,106 @@ class AnalysisDashboardService {
     document.getElementById('statFit').textContent = fit;
     document.getElementById('statFitWithNote').textContent = fitNote;
     document.getElementById('statUnfit').textContent = unfit;
+  }
+
+  /**
+   * MCU Trend Chart by Status and Year
+   */
+  renderMCUTrendChart() {
+    const ctx = document.getElementById('chartMCUTrend')?.getContext('2d');
+    if (!ctx) return;
+
+    // Status colors
+    const statusColors = {
+      'Fit': '#10b981',
+      'Fit With Note': '#3b82f6',
+      'Follow-Up': '#eab308',
+      'Temporary Unfit': '#f97316',
+      'Unfit': '#ef4444'
+    };
+
+    // Get data based on filter mode
+    const dataToProcess = this.mcuPeriodFilter === 'all-years' ? this.allMCUData : this.allData;
+
+    // Group data by year and status
+    const yearStatusMap = {};
+
+    dataToProcess.forEach(item => {
+      const mcu = item.mcu || item;
+      if (!mcu || !mcu.mcu_date) return;
+
+      const year = new Date(mcu.mcu_date).getFullYear();
+      const status = mcu.status || 'Unfit';
+
+      if (!yearStatusMap[year]) {
+        yearStatusMap[year] = {};
+      }
+      if (!yearStatusMap[year][status]) {
+        yearStatusMap[year][status] = 0;
+      }
+      yearStatusMap[year][status]++;
+    });
+
+    // Sort years
+    const years = Object.keys(yearStatusMap).map(Number).sort((a, b) => a - b);
+
+    // Create datasets for each status
+    const datasets = [];
+    const statuses = ['Fit', 'Fit With Note', 'Follow-Up', 'Temporary Unfit', 'Unfit'];
+
+    statuses.forEach(status => {
+      const data = years.map(year => yearStatusMap[year][status] || 0);
+      datasets.push({
+        label: status,
+        data: data,
+        backgroundColor: statusColors[status],
+        borderColor: statusColors[status],
+        borderWidth: 1,
+        borderRadius: 4
+      });
+    });
+
+    this.destroyChart('chartMCUTrend');
+    this.charts.set('chartMCUTrend', new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: years.map(y => y.toString()),
+        datasets: datasets
+      },
+      options: {
+        indexAxis: 'x',
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return context.dataset.label + ': ' + context.parsed.y;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            stacked: true,
+            grid: {
+              display: false
+            }
+          },
+          y: {
+            stacked: true,
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Jumlah MCU'
+            }
+          }
+        }
+      }
+    }));
   }
 
   /**

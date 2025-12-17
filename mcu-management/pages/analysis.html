@@ -208,6 +208,34 @@
                 </div>
             </div>
 
+            <!-- MCU Trend by Status and Year -->
+            <div class="card p-6 mb-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Trend MCU Berdasarkan Status & Tahun</h2>
+                <div class="mb-4 flex flex-wrap gap-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 bg-green-500 rounded"></div>
+                        <span class="text-xs text-gray-600">Fit</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 bg-blue-500 rounded"></div>
+                        <span class="text-xs text-gray-600">Fit With Note</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 bg-yellow-500 rounded"></div>
+                        <span class="text-xs text-gray-600">Follow-Up</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 bg-orange-500 rounded"></div>
+                        <span class="text-xs text-gray-600">Temporary Unfit</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 bg-red-500 rounded"></div>
+                        <span class="text-xs text-gray-600">Unfit</span>
+                    </div>
+                </div>
+                <canvas id="chartMCUTrend" height="100"></canvas>
+            </div>
+
             <!-- 2-3. BMI & Blood Pressure Charts (2 Columns) -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <!-- BMI Chart -->
