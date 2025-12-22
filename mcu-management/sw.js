@@ -100,6 +100,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // JavaScript modules - Network first (to ensure fresh code)
+  if (url.pathname.endsWith('.js')) {
+    event.respondWith(networkFirstStrategy(request));
+    return;
+  }
+
   // Static assets - Cache first
   if (isStaticAsset(url)) {
     event.respondWith(cacheFirstStrategy(request));
@@ -241,9 +247,10 @@ async function staleWhileRevalidateStrategy(request) {
 
 /**
  * Check if URL is a static asset
+ * Note: .js files are handled separately with network-first strategy
  */
 function isStaticAsset(url) {
-  const staticExtensions = ['.css', '.js', '.png', '.jpg', '.gif', '.svg', '.woff', '.woff2', '.ttf', '.eot', '.json', '.wasm'];
+  const staticExtensions = ['.css', '.png', '.jpg', '.gif', '.svg', '.woff', '.woff2', '.ttf', '.eot', '.json', '.wasm'];
   return staticExtensions.some((ext) => url.pathname.endsWith(ext));
 }
 
