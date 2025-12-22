@@ -159,36 +159,29 @@
                 </div>
 
                 <!-- Filters and Search -->
-                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
-                    <div>
-                        <label class="label">Departemen</label>
-                        <select id="filter-department" class="input" onchange="window.handleFilterChange()">
-                            <option value="">Semua Departemen</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="label">Status</label>
-                        <select id="filter-status" class="input" onchange="window.handleFilterChange()">
+                <div class="flex flex-wrap gap-2 mb-4 items-end">
+                    <div class="flex-1 min-w-40">
+                        <label class="text-xs font-semibold text-gray-600">Departemen</label>
+                        <select id="filter-department" class="w-full px-2 py-1 text-sm border border-gray-300 rounded" onchange="window.handleFilterChange()">
                             <option value="">Semua</option>
-                            <option value="EXPIRED">Expired Only</option>
-                            <option value="WARNING">Warning Only</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="label">Sort By</label>
-                        <div class="flex gap-2">
-                            <button id="sort-days-btn" onclick="window.handleSortChange('days')" class="flex-1 px-3 py-2 bg-primary-600 text-white text-xs rounded hover:bg-primary-700 transition">Hari Tersisa</button>
-                            <button id="sort-status-btn" onclick="window.handleSortChange('status')" class="flex-1 px-3 py-2 bg-gray-300 text-gray-700 text-xs rounded hover:bg-gray-400 transition">Status</button>
-                        </div>
+                    <div class="flex-1 min-w-32">
+                        <label class="text-xs font-semibold text-gray-600">Status</label>
+                        <select id="filter-status" class="w-full px-2 py-1 text-sm border border-gray-300 rounded" onchange="window.handleFilterChange()">
+                            <option value="">Semua</option>
+                            <option value="EXPIRED">Expired</option>
+                            <option value="WARNING">Warning</option>
+                        </select>
                     </div>
-                    <div>
-                        <label class="label">Cari</label>
-                        <input type="text" id="search-input" placeholder="Cari nama..." class="input" onkeyup="window.handleSearch()" />
+                    <div class="flex gap-1">
+                        <button id="sort-days-btn" onclick="window.handleSortChange('days')" class="px-2 py-1 bg-primary-600 text-white text-xs rounded hover:bg-primary-700 transition" title="Sort by Days Left">Hari</button>
+                        <button id="sort-status-btn" onclick="window.handleSortChange('status')" class="px-2 py-1 bg-gray-300 text-gray-700 text-xs rounded hover:bg-gray-400 transition" title="Sort by Status">Status</button>
                     </div>
-                    <div>
-                        <label class="label">&nbsp;</label>
-                        <button onclick="window.exportToCSV()" class="w-full px-3 py-2 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition">📥 Export CSV</button>
+                    <div class="flex-1 min-w-40">
+                        <input type="text" id="search-input" placeholder="Cari..." class="w-full px-2 py-1 text-sm border border-gray-300 rounded" onkeyup="window.handleSearch()" />
                     </div>
+                    <button onclick="window.exportToCSV()" class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition whitespace-nowrap">📥 CSV</button>
                 </div>
 
                 <!-- Table -->
