@@ -317,19 +317,26 @@ async function updateKPIs(filteredMCUs) {
   document.getElementById('kpi-followup').textContent = followUp;
   document.getElementById('kpi-unfit').textContent = unfit;
 
-  // MCU Expired count
+  // MCU Expired count (only EXPIRED, not WARNING)
   try {
     const expiryData = await mcuExpiryService.loadEmployeesWithMCU();
-    const expiredCount = expiryData.filter(emp => emp.expiryStatus === 'EXPIRED' || emp.expiryStatus === 'WARNING').length;
-    document.getElementById('kpi-mcu-expired').textContent = expiredCount;
+    const expiredCount = expiryData.filter(emp => emp.expiryStatus === 'EXPIRED').length;
+    const kpiEl = document.getElementById('kpi-mcu-expired');
+    if (kpiEl) {
+      kpiEl.textContent = expiredCount;
+    }
 
-    // Update badge in sidebar
+    // Update badge in sidebar (show total EXPIRED + WARNING)
     const badgeEl = document.getElementById('badge-mcu-expiry');
     if (badgeEl) {
-      badgeEl.textContent = expiredCount;
+      const totalExpiredWarning = expiryData.filter(emp => emp.expiryStatus === 'EXPIRED' || emp.expiryStatus === 'WARNING').length;
+      badgeEl.textContent = totalExpiredWarning;
     }
   } catch (error) {
-    document.getElementById('kpi-mcu-expired').textContent = '0';
+    const kpiEl = document.getElementById('kpi-mcu-expired');
+    if (kpiEl) {
+      kpiEl.textContent = '0';
+    }
   }
 }
 
