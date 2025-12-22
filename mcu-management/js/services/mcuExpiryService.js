@@ -3,7 +3,7 @@
  * Handles calculation of MCU expiry status and provides data for expiry management
  */
 
-import { supabase, supabaseReady } from '../config/supabase.js';
+import { supabaseReady, getSupabaseClient, isSupabaseEnabled } from '../config/supabase.js';
 
 class MCUExpiryService {
   constructor() {
@@ -19,6 +19,13 @@ class MCUExpiryService {
     try {
       // Wait for Supabase to be ready
       await supabaseReady;
+
+      // Check if Supabase is actually enabled
+      if (!isSupabaseEnabled()) {
+        throw new Error('Supabase is not configured or enabled');
+      }
+
+      const supabase = getSupabaseClient();
 
       // Get all employees
       const { data: employees, error: empError } = await supabase
@@ -96,7 +103,7 @@ class MCUExpiryService {
 
       return employeesMCUData;
     } catch (error) {
-      console.error('Error loading employees with MCU:', error);
+      console.error('Error loading employees with MCU:', error?.message || error);
       throw error;
     }
   }

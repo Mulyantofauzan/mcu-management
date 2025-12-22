@@ -337,6 +337,7 @@ async function updateKPIs(filteredMCUs) {
       badgeEl.textContent = totalExpiredWarning;
     }
   } catch (error) {
+    console.error('Error loading MCU expiry data:', error?.message || error);
     const kpiEl = document.getElementById('kpi-mcu-expired');
     if (kpiEl) {
       kpiEl.textContent = '0';
