@@ -61,7 +61,15 @@
       "Bash(for file in mcu-management/js/seedData.js js/services/auditLogService.js js/utils/totpManager.js api/config.js api/r2SignedUrlService.js api/r2StorageService.js)",
       "Bash(then node -c \"$file\")",
       "Bash(__NEW_LINE__ echo \"=== 1. Checking Assessment RAHMA menu styling ===\" grep \"assessment-rahma\" /Users/mulyanto/Desktop/MCU-APP/mcu-management/pages/assessment-rahma.html)",
-      "Bash(git revert:*)"
+      "Bash(git revert:*)",
+      "Bash(for file in activity-log.html analysis.html assessment-rahma.html data-master.html data-terhapus.html employee-health-history.html kelola-karyawan.html kelola-user.html report-period.html tambah-karyawan.html)",
+      "Bash(do if grep -q \"sidebar-manager.js\" \"$file\")",
+      "Bash(then echo \"✓ $file\")",
+      "Bash(else echo \"✗ $file\")",
+      "Bash(for:*)",
+      "Bash(do if grep -q \"data-toggle-submenu=\"\"laporan-submenu\"\"\" \"$file\")",
+      "Bash(then echo \"✓ Laporan submenu: $file\")",
+      "Bash(npm run build:css:*)"
     ],
     "deny": [],
     "ask": []

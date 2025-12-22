@@ -93,6 +93,10 @@ async function init() {
     } catch (error) {
     }
 
+    // ✅ FIX: Wait for Supabase to be ready before loading data
+    // This ensures MCU expiry service has fresh connection
+    await supabaseReady;
+
     // Set default date range (empty = show all)
     setDateRange('', '');
 

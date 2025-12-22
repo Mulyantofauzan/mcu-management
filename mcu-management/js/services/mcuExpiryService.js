@@ -51,7 +51,7 @@ class MCUExpiryService {
       });
 
       // Build employee data with MCU info
-      this.allEmployeesMCU = employees.map(emp => {
+      const employeesMCUData = employees.map(emp => {
         const latestMCU = latestMCUPerEmployee[emp.employee_id];
         const dept = departments?.find(d => d.name === emp.department);
         const job = jobTitles?.find(j => j.name === emp.job_title);
@@ -91,7 +91,10 @@ class MCUExpiryService {
         };
       });
 
-      return this.allEmployeesMCU;
+      // Always update cache with fresh data
+      this.allEmployeesMCU = employeesMCUData;
+
+      return employeesMCUData;
     } catch (error) {
       console.error('Error loading employees with MCU:', error);
       throw error;
@@ -99,7 +102,15 @@ class MCUExpiryService {
   }
 
   /**
-   * Get expired and warning MCU list
+   * Invalidate cache to force fresh data load on next call
+   */
+  invalidateCache() {
+    this.allEmployeesMCU = [];
+  }
+
+  /**
+   * Get expired and warning MCU list from cache
+   * Note: Ensure loadEmployeesWithMCU() is called first
    */
   getExpiryList() {
     return this.allEmployeesMCU.filter(item => {
@@ -108,21 +119,30 @@ class MCUExpiryService {
   }
 
   /**
-   * Get count of expired MCUs
+   * Get count of expired MCUs from cache
+   * Note: Ensure loadEmployeesWithMCU() is called first
    */
   getExpiredCount() {
+    if (!Array.isArray(this.allEmployeesMCU) || this.allEmployeesMCU.length === 0) {
+      return 0;
+    }
     return this.allEmployeesMCU.filter(item => item.expiryStatus === 'EXPIRED').length;
   }
 
   /**
-   * Get count of warning MCUs
+   * Get count of warning MCUs from cache
+   * Note: Ensure loadEmployeesWithMCU() is called first
    */
   getWarningCount() {
+    if (!Array.isArray(this.allEmployeesMCU) || this.allEmployeesMCU.length === 0) {
+      return 0;
+    }
     return this.allEmployeesMCU.filter(item => item.expiryStatus === 'WARNING').length;
   }
 
   /**
    * Get total expiry and warning count
+   * Note: Ensure loadEmployeesWithMCU() is called first
    */
   getTotalExpiryCount() {
     return this.getExpiredCount() + this.getWarningCount();
