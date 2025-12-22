@@ -25,6 +25,7 @@ import { initializeEnv, logEnvStatus } from '../config/envConfig.js';
 import { authService } from '../services/authService.js';
 import { employeeService } from '../services/employeeService.js';
 import { mcuService } from '../services/mcuService.js';
+import { mcuExpiryService } from '../services/mcuExpiryService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { database } from '../services/database.js';
 import { formatDateDisplay, isDateInRange } from '../utils/dateHelpers.js';
@@ -258,7 +259,7 @@ async function loadData() {
     });
 
     // Update KPIs
-    updateKPIs(filteredMCUs);
+    await updateKPIs(filteredMCUs);
 
     // Update charts
     updateCharts(filteredMCUs);
@@ -275,7 +276,7 @@ async function loadData() {
   }
 }
 
-function updateKPIs(filteredMCUs) {
+async function updateKPIs(filteredMCUs) {
   // Total employees (all non-deleted AND with activeStatus = 'Active')
   // ✅ FIX: Exclude inactive employees like we exclude soft-deleted employees
   const activeEmployees = employees.filter(e => !e.deletedAt && e.activeStatus === 'Active');
@@ -315,6 +316,21 @@ function updateKPIs(filteredMCUs) {
   document.getElementById('kpi-temporary-unfit').textContent = temporaryUnfit;
   document.getElementById('kpi-followup').textContent = followUp;
   document.getElementById('kpi-unfit').textContent = unfit;
+
+  // MCU Expired count
+  try {
+    const expiryData = await mcuExpiryService.loadEmployeesWithMCU();
+    const expiredCount = expiryData.filter(emp => emp.expiryStatus === 'EXPIRED' || emp.expiryStatus === 'WARNING').length;
+    document.getElementById('kpi-mcu-expired').textContent = expiredCount;
+
+    // Update badge in sidebar
+    const badgeEl = document.getElementById('badge-mcu-expiry');
+    if (badgeEl) {
+      badgeEl.textContent = expiredCount;
+    }
+  } catch (error) {
+    document.getElementById('kpi-mcu-expired').textContent = '0';
+  }
 }
 
 function updateCharts(filteredMCUs) {

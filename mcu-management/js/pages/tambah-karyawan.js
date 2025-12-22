@@ -249,6 +249,22 @@ async function init() {
         } catch (error) {
         }
 
+        // Check if coming from MCU Expiry Management page with prefilled employee
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('openMCUModal') === 'true') {
+            const employeeId = sessionStorage.getItem('prefilledEmployeeId');
+            const employeeName = sessionStorage.getItem('prefilledEmployeeName');
+            if (employeeId && employeeName) {
+                // Load the employee and open the Add MCU modal
+                setTimeout(() => {
+                    handleQuickMCUAdd(employeeId, employeeName);
+                }, 500);
+                // Clear sessionStorage
+                sessionStorage.removeItem('prefilledEmployeeId');
+                sessionStorage.removeItem('prefilledEmployeeName');
+            }
+        }
+
         // Show page content after initialization complete
         document.body.classList.add('initialized');
     } catch (error) {
@@ -424,6 +440,47 @@ function populateDropdowns() {
         });
 
         doctorSelect.appendChild(doctorFragment);  // Single DOM operation
+    }
+}
+
+/**
+ * Handle quick MCU add from MCU Expiry Management page
+ * Pre-selects the employee and opens the Add MCU modal
+ */
+async function handleQuickMCUAdd(employeeId, employeeName) {
+    try {
+        // Find the employee in the employees table
+        const { data: employee, error } = await supabase
+            .from('employees')
+            .select('*')
+            .eq('employee_id', employeeId)
+            .single();
+
+        if (error) throw error;
+
+        // Set the employee in currentEmployee
+        currentEmployee = employee;
+
+        // Populate the employee summary in the modal
+        document.getElementById('mcu-emp-name').textContent = employee.name || '-';
+        document.getElementById('mcu-emp-id').textContent = employee.employee_id || '-';
+        document.getElementById('mcu-emp-job').textContent = employee.job_title || '-';
+        document.getElementById('mcu-emp-dept').textContent = employee.department || '-';
+
+        // Set the hidden employee ID field
+        document.getElementById('mcu-employee-id').value = employee.employee_id;
+
+        // Reset the form fields
+        document.getElementById('mcu-form').reset();
+        document.getElementById('mcu-type').value = '';
+        document.getElementById('mcu-date').value = '';
+
+        // Open the modal
+        openModal('add-mcu-modal');
+
+        showToast(`Form MCU untuk ${employeeName} siap diisi`, 'success');
+    } catch (error) {
+        showToast('Error membuka form MCU: ' + error.message, 'error');
     }
 }
 

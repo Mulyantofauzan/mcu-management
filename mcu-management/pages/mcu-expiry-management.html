@@ -70,7 +70,9 @@
                     <li><a href="../pages/data-master.html" class="sidebar-link" data-page="data-master"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg><span>Data Master</span></a></li>
                     <li id="menu-kelola-user"><a href="../pages/kelola-user.html" class="sidebar-link" data-page="kelola-user"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg><span>Kelola User</span></a></li>
                     <li id="menu-activity-log"><a href="../pages/activity-log.html" class="sidebar-link" data-page="activity-log"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><span>Activity Log</span></a></li>
-                    <li><a href="../pages/mcu-expiry-management.html" class="sidebar-link active" data-page="mcu-expiry-management"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span>MCU Expiry Management</span></a></li>
+                    <li><a href="../pages/mcu-expiry-management.html" class="sidebar-link active" data-page="mcu-expiry-management"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span>MCU Expiry Management</span>
+                            <span class="ml-auto px-2 py-1 bg-red-500 text-white text-xs rounded-full font-semibold" id="badge-mcu-expiry">0</span>
+                        </a></li>
                     <li><button data-toggle-submenu="laporan-submenu" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition text-left"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><span>Laporan</span><svg data-submenu-arrow class="w-4 h-4 ml-auto transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg></button><ul id="laporan-submenu" class="hidden pl-8 space-y-1 mt-1"><li><a href="../pages/assessment-rahma.html" class="sidebar-link" data-page="assessment-rahma"><span>Assessment RAHMA</span></a></li><li><a href="../pages/analysis.html" class="sidebar-link" data-page="analysis"><span>Analysis</span></a></li><li><a href="../pages/report-period.html" class="sidebar-link" data-page="report-period"><span>Laporan Periode</span></a></li><li><a href="../pages/employee-health-history.html" class="sidebar-link" data-page="employee-health-history"><span>Riwayat Kesehatan</span></a></li></ul></li>
                     <li><a href="../pages/data-terhapus.html" class="sidebar-link" data-page="data-terhapus"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg><span>Data Terhapus</span></a></li>
                 </ul>
@@ -154,7 +156,39 @@
             <div class="card">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-semibold">Daftar MCU Expired / Warning</h2>
-                    <input type="text" id="search-input" placeholder="Cari nama..." class="input" style="width: 250px;" onkeyup="window.handleSearch()" />
+                </div>
+
+                <!-- Filters and Search -->
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+                    <div>
+                        <label class="label">Departemen</label>
+                        <select id="filter-department" class="input" onchange="window.handleFilterChange()">
+                            <option value="">Semua Departemen</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label">Status</label>
+                        <select id="filter-status" class="input" onchange="window.handleFilterChange()">
+                            <option value="">Semua</option>
+                            <option value="EXPIRED">Expired Only</option>
+                            <option value="WARNING">Warning Only</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label">Sort By</label>
+                        <div class="flex gap-2">
+                            <button id="sort-days-btn" onclick="window.handleSortChange('days')" class="flex-1 px-3 py-2 bg-primary-600 text-white text-xs rounded hover:bg-primary-700 transition">Hari Tersisa</button>
+                            <button id="sort-status-btn" onclick="window.handleSortChange('status')" class="flex-1 px-3 py-2 bg-gray-300 text-gray-700 text-xs rounded hover:bg-gray-400 transition">Status</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="label">Cari</label>
+                        <input type="text" id="search-input" placeholder="Cari nama..." class="input" onkeyup="window.handleSearch()" />
+                    </div>
+                    <div>
+                        <label class="label">&nbsp;</label>
+                        <button onclick="window.exportToCSV()" class="w-full px-3 py-2 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition">📥 Export CSV</button>
+                    </div>
                 </div>
 
                 <!-- Table -->
