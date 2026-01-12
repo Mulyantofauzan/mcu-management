@@ -873,21 +873,46 @@ export const MasterData = {
         return await indexedDB.db.vendors.add(fullData);
     },
 
-    async updateJobTitle(id, name) {
+    async updateJobTitle(id, data) {
         if (getUseSupabase()) {
             const supabase = getSupabaseClient();
-            const { data, error } = await supabase
+
+            // Handle both string (legacy) and object (new) formats
+            let updateData = {};
+            if (typeof data === 'string') {
+                // Legacy: just name
+                updateData = { name: data };
+            } else if (typeof data === 'object') {
+                // New: object with name and optional risk_level
+                updateData = {
+                    name: data.name || data,
+                    ...(data.risk_level && { risk_level: data.risk_level })
+                };
+            }
+
+            const { data: result, error } = await supabase
                 .from('job_titles')
-                .update({ name })
+                .update(updateData)
                 .eq('id', id)
                 .select()
                 .single();
 
             if (error) throw error;
-            return transformMasterDataItem(data, 'jobTitle');
+            return transformMasterDataItem(result, 'jobTitle');
         }
+
         // Dexie: use where().modify() for non-primary key fields
-        await indexedDB.db.jobTitles.where('jobTitleId').equals(id).modify({ name });
+        let updateData = {};
+        if (typeof data === 'string') {
+            updateData = { name: data };
+        } else if (typeof data === 'object') {
+            updateData = {
+                name: data.name || data,
+                ...(data.risk_level && { risk_level: data.risk_level })
+            };
+        }
+
+        await indexedDB.db.jobTitles.where('jobTitleId').equals(id).modify(updateData);
         return await indexedDB.db.jobTitles.where('jobTitleId').equals(id).first();
     },
 

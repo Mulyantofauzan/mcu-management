@@ -89,7 +89,7 @@ class DatabaseService {
             case 'mcufiles': return await adp.MCUFiles.update(id, data);
             case 'mcuChanges': return await adp.MCUChanges.update(id, data);
             case 'departments': return await adp.MasterData.updateDepartment(id, data.name);
-            case 'jobTitles': return await adp.MasterData.updateJobTitle(id, data.name);
+            case 'jobTitles': return await adp.MasterData.updateJobTitle(id, data);
             case 'vendors': return await adp.MasterData.updateVendor(id, data.name);
             case 'doctors': return await adp.MasterData.updateDoctor(id, data.name);
             default: throw new Error(`Unknown table: ${tableName}`);
