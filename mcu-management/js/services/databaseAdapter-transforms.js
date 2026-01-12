@@ -141,9 +141,12 @@ export function transformMasterDataItem(item, type) {
     // Add type-specific ID field for backward compatibility with IndexedDB format
     if (type === 'jobTitle') {
         transformed.jobTitleId = item.id;
-        // Include risk_level for Framingham assessment
-        if (item.risk_level) {
-            transformed.riskLevel = item.risk_level;
+        // Include risk_level for Framingham assessment (keep as snake_case for consistency)
+        if (item.risk_level !== undefined && item.risk_level !== null) {
+            transformed.risk_level = item.risk_level;
+        } else {
+            // Default to 'moderate' if not specified
+            transformed.risk_level = 'moderate';
         }
     }
     if (type === 'department') transformed.departmentId = item.id;
