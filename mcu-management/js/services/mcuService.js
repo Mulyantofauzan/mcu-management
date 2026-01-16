@@ -28,6 +28,7 @@ class MCUService {
       respiratoryRate: mcuData.respiratoryRate || null,
       pulse: mcuData.pulse || null,
       temperature: mcuData.temperature || null,
+      chestCircumference: mcuData.chestCircumference || null,
       // 8-field vision structure (MUST be camelCase - databaseAdapter will map to snake_case)
       visionDistantUnaideLeft: mcuData.visionDistantUnaideLeft || null,
       visionDistantUnaideRight: mcuData.visionDistantUnaideRight || null,
