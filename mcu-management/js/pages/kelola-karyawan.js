@@ -1358,11 +1358,6 @@ window.viewMCUDetail = async function(mcuId) {
 
         // Load change history
         const changes = await mcuService.getChangeHistory(mcuId);
-        console.log('📋 loadMCUDetail - changes loaded:', changes.length);
-        if (changes.length > 0) {
-          console.log('📋 loadMCUDetail - first change:', changes[0]);
-          console.log('📋 loadMCUDetail - last change:', changes[changes.length - 1]);
-        }
 
         if (changes && changes.length > 0) {
             const fieldLabels = {
