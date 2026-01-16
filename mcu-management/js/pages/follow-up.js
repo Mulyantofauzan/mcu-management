@@ -868,7 +868,12 @@ window.handleDetailMCUUpdate = async function(event) {
       const newValue = input?.value?.trim() || '';
 
       if (newValue !== '') {
-        updateData[fieldInfo.dataKey] = newValue;
+        // Convert numeric fields (bmi, temperature, chestCircumference) to float
+        if (['bmi', 'temperature', 'chestCircumference'].includes(fieldInfo.dataKey)) {
+          updateData[fieldInfo.dataKey] = parseFloat(newValue);
+        } else {
+          updateData[fieldInfo.dataKey] = newValue;
+        }
       }
     }
 
