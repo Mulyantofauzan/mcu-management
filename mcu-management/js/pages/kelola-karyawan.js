@@ -2113,13 +2113,16 @@ window.handleEditMCU = async function(event) {
 
         // ✅ Handle medical and family history updates
         try {
+            // Collect updated histories from EDIT form FIRST (before deleting old ones)
+            const medicalHistories = getEditMedicalHistoryData();
+            const familyHistories = getEditFamilyHistoryData();
+
+            console.log('Medical histories to save:', medicalHistories);
+            console.log('Family histories to save:', familyHistories);
+
             // Delete existing histories
             await database.MedicalHistories.deleteByMcuId(mcuId);
             await database.FamilyHistories.deleteByMcuId(mcuId);
-
-            // Collect updated histories from form
-            const medicalHistories = getMedicalHistoryData();
-            const familyHistories = getFamilyHistoryData();
 
             // Save new histories
             if (medicalHistories.length > 0) {
@@ -2128,7 +2131,9 @@ window.handleEditMCU = async function(event) {
                     mcu_id: mcuId,
                     mcuId: mcuId
                 }));
-                await database.MedicalHistories.create(medicalHistoriesWithMcuId);
+                console.log('Saving medical histories:', medicalHistoriesWithMcuId);
+                const result = await database.MedicalHistories.create(medicalHistoriesWithMcuId);
+                console.log('Medical history save result:', result);
             }
 
             if (familyHistories.length > 0) {
@@ -2137,10 +2142,13 @@ window.handleEditMCU = async function(event) {
                     mcu_id: mcuId,
                     mcuId: mcuId
                 }));
-                await database.FamilyHistories.create(familyHistoriesWithMcuId);
+                console.log('Saving family histories:', familyHistoriesWithMcuId);
+                const result = await database.FamilyHistories.create(familyHistoriesWithMcuId);
+                console.log('Family history save result:', result);
             }
         } catch (historyError) {
-            console.warn('Warning: Failed to update medical/family history:', historyError);
+            console.error('ERROR: Failed to update medical/family history:', historyError);
+            showToast('⚠️ Riwayat Kesehatan mungkin tidak tersimpan: ' + historyError.message, 'warning');
             // Continue with MCU update even if history save fails
         }
 
@@ -2149,7 +2157,7 @@ window.handleEditMCU = async function(event) {
 
         // ✅ IMPORTANT: Save lab changes to mcuChanges table so they appear in change history
         try {
-            const { database } = await import('../services/database.js');
+            // Note: database is already imported at top of file from databaseAdapter
             let labChanges = [];
 
             // Helper to get lab item name from ID
@@ -2422,10 +2430,37 @@ function getMedicalHistoryData() {
 }
 
 /**
+ * Collect Medical History from EDIT modal form
+ */
+function getEditMedicalHistoryData() {
+    const listContainer = document.getElementById('edit-mcu-medical-history-list');
+    if (!listContainer) return [];
+    const items = Array.from(listContainer.children).map(el => ({
+        disease_name: el.dataset.disease,
+        year_diagnosed: null
+    }));
+    return items;
+}
+
+/**
  * Collect Family History from form (for Tambah MCU modal)
  */
 function getFamilyHistoryData() {
     const listContainer = document.getElementById('mcu-family-history-list');
+    const items = Array.from(listContainer.children).map(el => ({
+        disease_name: el.dataset.disease,
+        family_member: el.dataset.member,
+        status: 'current'
+    }));
+    return items;
+}
+
+/**
+ * Collect Family History from EDIT modal form
+ */
+function getEditFamilyHistoryData() {
+    const listContainer = document.getElementById('edit-mcu-family-history-list');
+    if (!listContainer) return [];
     const items = Array.from(listContainer.children).map(el => ({
         disease_name: el.dataset.disease,
         family_member: el.dataset.member,
