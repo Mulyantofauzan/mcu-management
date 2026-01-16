@@ -117,14 +117,14 @@ async function loadMCUs() {
  * Load departments
  */
 async function loadDepartments() {
-    departments = await database.getAll('departments') || [];
+    departments = await database.MasterData.getDepartments() || [];
 }
 
 /**
  * Load job titles
  */
 async function loadJobTitles() {
-    jobTitles = await database.getAll('jobTitles') || [];
+    jobTitles = await database.MasterData.getJobTitles() || [];
 }
 
 /**
