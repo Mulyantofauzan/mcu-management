@@ -959,6 +959,9 @@ window.addMCUForEmployee = async function(employeeId) {
 
         openModal('add-mcu-modal');
 
+        // ✅ Setup custom disease handlers for medical/family history
+        setupCustomDiseaseHandlersForAdd();
+
         // ✅ CRITICAL: Reinitialize lab widget when modal opens to ensure fresh state
         // This prevents stale data from previous modal sessions
         if (!labResultWidgetAdd || !labResultWidgetAdd.container) {
@@ -977,6 +980,16 @@ window.closeAddMCUModal = function() {
     // ✅ Clear lab widget state to prevent residual data
     if (labResultWidgetAdd) {
         labResultWidgetAdd.clear();
+    }
+
+    // ✅ Clear medical and family history lists
+    const medicalHistoryList = document.getElementById('mcu-medical-history-list');
+    if (medicalHistoryList) {
+        medicalHistoryList.innerHTML = '';
+    }
+    const familyHistoryList = document.getElementById('mcu-family-history-list');
+    if (familyHistoryList) {
+        familyHistoryList.innerHTML = '';
     }
 
     // ✅ NOTE: Do NOT clear container innerHTML - static form HTML is permanent in the modal
@@ -1053,7 +1066,10 @@ window.handleAddMCU = async function(event) {
             diagnosisKerja: document.getElementById('mcu-diagnosis').value || null,
             alasanRujuk: document.getElementById('mcu-alasan').value || null,
             initialResult: document.getElementById('mcu-result').value,
-            initialNotes: document.getElementById('mcu-notes').value
+            initialNotes: document.getElementById('mcu-notes').value,
+            // ✅ Collect medical and family histories from Riwayat Kesehatan section
+            medicalHistories: getMedicalHistoryData(),
+            familyHistories: getFamilyHistoryData()
         };
 
         // 🔍 DEBUG: Log the collected data BEFORE passing to batch service
@@ -2208,6 +2224,160 @@ window.deleteEmployee = function(employeeId) {
         }
     );
 };
+
+/**
+ * Add Medical History Entry (for Tambah MCU modal)
+ */
+window.addMedicalHistory = function() {
+    const diseaseSelect = document.getElementById('mcu-medical-history-disease');
+    const customInput = document.getElementById('mcu-medical-history-custom');
+    const listContainer = document.getElementById('mcu-medical-history-list');
+
+    let diseaseName = diseaseSelect.value;
+    if (!diseaseName) {
+        showToast('Pilih penyakit terlebih dahulu', 'warning');
+        return;
+    }
+
+    // Handle custom disease entry
+    if (diseaseName === 'custom') {
+        diseaseName = customInput.value.trim();
+        if (!diseaseName) {
+            showToast('Sebutkan nama penyakit', 'warning');
+            return;
+        }
+        customInput.value = '';
+        customInput.classList.add('hidden');
+    }
+
+    // Prevent duplicates
+    const existingItems = Array.from(listContainer.children).map(el => el.dataset.disease);
+    if (existingItems.includes(diseaseName)) {
+        showToast('Penyakit sudah ditambahkan', 'warning');
+        return;
+    }
+
+    // Create and add item
+    const item = document.createElement('div');
+    item.className = 'flex items-center justify-between bg-blue-50 p-2 rounded border border-blue-200 text-sm';
+    item.dataset.disease = diseaseName;
+    item.innerHTML = `
+        <span class="font-medium">${diseaseName}</span>
+        <button type="button" onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-800 font-semibold">×</button>
+    `;
+    listContainer.appendChild(item);
+
+    // Reset select
+    diseaseSelect.value = '';
+};
+
+/**
+ * Add Family History Entry (for Tambah MCU modal)
+ */
+window.addFamilyHistory = function() {
+    const diseaseSelect = document.getElementById('mcu-family-history-disease');
+    const memberSelect = document.getElementById('mcu-family-history-member');
+    const customInput = document.getElementById('mcu-family-history-custom');
+    const listContainer = document.getElementById('mcu-family-history-list');
+
+    let diseaseName = diseaseSelect.value;
+    const familyMember = memberSelect.value;
+
+    if (!diseaseName || !familyMember) {
+        showToast('Pilih penyakit dan anggota keluarga', 'warning');
+        return;
+    }
+
+    // Handle custom disease entry
+    if (diseaseName === 'custom') {
+        diseaseName = customInput.value.trim();
+        if (!diseaseName) {
+            showToast('Sebutkan nama penyakit', 'warning');
+            return;
+        }
+        customInput.value = '';
+        customInput.classList.add('hidden');
+    }
+
+    // Prevent exact duplicates
+    const existingItems = Array.from(listContainer.children).map(el =>
+        `${el.dataset.disease}:${el.dataset.member}`
+    );
+    if (existingItems.includes(`${diseaseName}:${familyMember}`)) {
+        showToast('Kombinasi penyakit dan anggota keluarga sudah ditambahkan', 'warning');
+        return;
+    }
+
+    // Create and add item
+    const item = document.createElement('div');
+    item.className = 'flex items-center justify-between bg-green-50 p-2 rounded border border-green-200 text-sm';
+    item.dataset.disease = diseaseName;
+    item.dataset.member = familyMember;
+    item.innerHTML = `
+        <span class="font-medium">${familyMember}: ${diseaseName}</span>
+        <button type="button" onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-800 font-semibold">×</button>
+    `;
+    listContainer.appendChild(item);
+
+    // Reset selects
+    diseaseSelect.value = '';
+    memberSelect.value = '';
+};
+
+/**
+ * Collect Medical History from form (for Tambah MCU modal)
+ */
+function getMedicalHistoryData() {
+    const listContainer = document.getElementById('mcu-medical-history-list');
+    const items = Array.from(listContainer.children).map(el => ({
+        disease_name: el.dataset.disease,
+        year_diagnosed: null
+    }));
+    return items;
+}
+
+/**
+ * Collect Family History from form (for Tambah MCU modal)
+ */
+function getFamilyHistoryData() {
+    const listContainer = document.getElementById('mcu-family-history-list');
+    const items = Array.from(listContainer.children).map(el => ({
+        disease_name: el.dataset.disease,
+        family_member: el.dataset.member,
+        status: 'current'
+    }));
+    return items;
+}
+
+/**
+ * Handle custom disease input visibility (for Tambah MCU modal)
+ */
+function setupCustomDiseaseHandlersForAdd() {
+    const medicalDiseaseSelect = document.getElementById('mcu-medical-history-disease');
+    const medicalCustomInput = document.getElementById('mcu-medical-history-custom');
+    const familyDiseaseSelect = document.getElementById('mcu-family-history-disease');
+    const familyCustomInput = document.getElementById('mcu-family-history-custom');
+
+    if (medicalDiseaseSelect) {
+        medicalDiseaseSelect.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                medicalCustomInput.classList.remove('hidden');
+            } else {
+                medicalCustomInput.classList.add('hidden');
+            }
+        });
+    }
+
+    if (familyDiseaseSelect) {
+        familyDiseaseSelect.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                familyCustomInput.classList.remove('hidden');
+            } else {
+                familyCustomInput.classList.add('hidden');
+            }
+        });
+    }
+}
 
 window.exportData = function() {
     exportEmployeeData(filteredEmployees, jobTitles, departments, 'data_karyawan');
