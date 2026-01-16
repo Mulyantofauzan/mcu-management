@@ -210,6 +210,8 @@ class MCUBatchService {
     try {
       // ✅ STEP 1: Update MCU fields (if any provided)
       if (Object.keys(updateData).length > 0) {
+        console.log('📦 MCU Batch Service - updateData before updateFollowUp:', updateData);
+        console.log('📦 MCU Batch Service - chestCircumference in updateData:', updateData.chestCircumference);
         await mcuService.updateFollowUp(mcuId, updateData, currentUser);
         result.data.mcuUpdated = true;
       }
