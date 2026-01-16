@@ -231,6 +231,9 @@ async function init() {
         // ✅ Initialize lab forms ONCE on page load (truly permanent, like other form fields)
         await initLabForms();
 
+        // ✅ Populate disease dropdowns from Master Data
+        await populateDiseaseDropdowns();
+
         await loadData();
 
         // ✅ NEW: Setup toggle for inactive employees (if button exists)
@@ -2499,6 +2502,68 @@ function setupCustomDiseaseHandlersForAdd() {
                 familyCustomInput.classList.add('hidden');
             }
         });
+    }
+}
+
+/**
+ * Populate disease dropdowns from Master Data
+ */
+async function populateDiseaseDropdowns() {
+    try {
+        // Get all diseases from master data
+        const diseases = await database.MasterData.getDiseases();
+
+        if (!diseases || diseases.length === 0) {
+            console.warn('No diseases found in master data');
+            return;
+        }
+
+        // Create options from diseases
+        const diseaseOptions = diseases
+            .filter(d => d.is_active !== false) // Only active diseases
+            .map(d => `<option value="${d.name}">${d.name}</option>`)
+            .join('');
+
+        // IDs for add modal
+        const addMedicalSelect = document.getElementById('mcu-medical-history-disease');
+        const addFamilySelect = document.getElementById('mcu-family-history-disease');
+
+        // IDs for edit modal
+        const editMedicalSelect = document.getElementById('edit-mcu-medical-history-disease');
+        const editFamilySelect = document.getElementById('edit-mcu-family-history-disease');
+
+        // Update all dropdowns
+        [addMedicalSelect, addFamilySelect, editMedicalSelect, editFamilySelect].forEach(select => {
+            if (select) {
+                const placeholder = select.querySelector('option[value=""]');
+                const customOption = select.querySelector('option[value="custom"]');
+
+                // Remove all existing options except placeholder and custom
+                select.innerHTML = '';
+
+                // Add placeholder back
+                if (placeholder) {
+                    select.appendChild(placeholder.cloneNode(true));
+                }
+
+                // Add disease options
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = diseaseOptions;
+                while (tempDiv.firstChild) {
+                    select.appendChild(tempDiv.firstChild);
+                }
+
+                // Add custom option back
+                if (customOption) {
+                    select.appendChild(customOption.cloneNode(true));
+                }
+            }
+        });
+
+        console.log(`✓ Populated disease dropdowns with ${diseases.length} diseases from master data`);
+    } catch (error) {
+        console.error('Error populating disease dropdowns:', error);
+        // Continue with hardcoded list as fallback
     }
 }
 
