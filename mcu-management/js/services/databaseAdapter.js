@@ -715,9 +715,10 @@ export const MCUChanges = {
                 .from('mcu_changes')
                 .insert({
                     mcu_id: change.mcuId,
-                    field_name: change.fieldName,
+                    field_name: change.fieldName || change.fieldChanged,
                     old_value: change.oldValue,
                     new_value: change.newValue,
+                    changed_at: change.changedAt,
                     changed_by: change.changedBy
                 })
                 .select()
