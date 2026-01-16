@@ -1884,6 +1884,48 @@ window.editMCU = async function() {
                     }
                 });
 
+                // ✅ Load existing medical and family histories
+                try {
+                    const medicalHistories = await database.MedicalHistories.getByMcuId(window.currentMCUId);
+                    const familyHistories = await database.FamilyHistories.getByMcuId(window.currentMCUId);
+
+                    // Populate medical history list
+                    const medicalHistoryList = document.getElementById('edit-mcu-medical-history-list');
+                    if (medicalHistoryList && medicalHistories.length > 0) {
+                        medicalHistoryList.innerHTML = '';
+                        medicalHistories.forEach(history => {
+                            const item = document.createElement('div');
+                            item.className = 'flex items-center justify-between bg-blue-50 p-2 rounded border border-blue-200 text-sm';
+                            item.dataset.disease = history.disease_name || history.diseaseName;
+                            item.innerHTML = `
+                                <span class="font-medium">${history.disease_name || history.diseaseName}</span>
+                                <button type="button" onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-800 font-semibold">×</button>
+                            `;
+                            medicalHistoryList.appendChild(item);
+                        });
+                    }
+
+                    // Populate family history list
+                    const familyHistoryList = document.getElementById('edit-mcu-family-history-list');
+                    if (familyHistoryList && familyHistories.length > 0) {
+                        familyHistoryList.innerHTML = '';
+                        familyHistories.forEach(history => {
+                            const item = document.createElement('div');
+                            item.className = 'flex items-center justify-between bg-green-50 p-2 rounded border border-green-200 text-sm';
+                            item.dataset.disease = history.disease_name || history.diseaseName;
+                            item.dataset.member = history.family_member || history.familyMember;
+                            item.innerHTML = `
+                                <span class="font-medium">${history.family_member || history.familyMember}: ${history.disease_name || history.diseaseName}</span>
+                                <button type="button" onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-800 font-semibold">×</button>
+                            `;
+                            familyHistoryList.appendChild(item);
+                        });
+                    }
+                } catch (historyError) {
+                    // Continue even if history loading fails
+                    console.warn('Warning: Failed to load medical/family history:', historyError);
+                }
+
             } catch (error) {
             }
         }, 50);
@@ -1899,6 +1941,16 @@ window.closeEditMCUModal = function() {
     // ✅ Clear lab widget state to prevent residual data
     if (labResultWidgetEdit) {
         labResultWidgetEdit.clear();
+    }
+
+    // ✅ Clear medical and family history lists
+    const medicalHistoryList = document.getElementById('edit-mcu-medical-history-list');
+    if (medicalHistoryList) {
+        medicalHistoryList.innerHTML = '';
+    }
+    const familyHistoryList = document.getElementById('edit-mcu-family-history-list');
+    if (familyHistoryList) {
+        familyHistoryList.innerHTML = '';
     }
 
     // ✅ NOTE: Do NOT clear container innerHTML - static form HTML is permanent in the modal
@@ -2057,6 +2109,39 @@ window.handleEditMCU = async function(event) {
                 employeeId: employeeId
             }));
 
+        }
+
+        // ✅ Handle medical and family history updates
+        try {
+            // Delete existing histories
+            await database.MedicalHistories.deleteByMcuId(mcuId);
+            await database.FamilyHistories.deleteByMcuId(mcuId);
+
+            // Collect updated histories from form
+            const medicalHistories = getMedicalHistoryData();
+            const familyHistories = getFamilyHistoryData();
+
+            // Save new histories
+            if (medicalHistories.length > 0) {
+                const medicalHistoriesWithMcuId = medicalHistories.map(history => ({
+                    ...history,
+                    mcu_id: mcuId,
+                    mcuId: mcuId
+                }));
+                await database.MedicalHistories.create(medicalHistoriesWithMcuId);
+            }
+
+            if (familyHistories.length > 0) {
+                const familyHistoriesWithMcuId = familyHistories.map(history => ({
+                    ...history,
+                    mcu_id: mcuId,
+                    mcuId: mcuId
+                }));
+                await database.FamilyHistories.create(familyHistoriesWithMcuId);
+            }
+        } catch (historyError) {
+            console.warn('Warning: Failed to update medical/family history:', historyError);
+            // Continue with MCU update even if history save fails
         }
 
         // ✅ BATCH UPDATE: Use batch service for atomic MCU + lab update
