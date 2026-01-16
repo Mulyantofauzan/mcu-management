@@ -1069,6 +1069,154 @@ export const MasterData = {
             return true;
         }
         return await indexedDB.db.doctors.delete(id);
+    },
+
+    // Diseases
+    async getDiseases() {
+        if (getUseSupabase()) {
+            const supabase = getSupabaseClient();
+            const { data, error } = await supabase
+                .from('diseases')
+                .select('*')
+                .order('name', { ascending: true });
+
+            if (error) throw error;
+            return data || [];
+        }
+        return await indexedDB.db.diseases.toArray();
+    },
+
+    async addDisease(dataOrName) {
+        const isObject = typeof dataOrName === 'object' && dataOrName !== null;
+        const data = isObject ? dataOrName : { name: dataOrName };
+
+        if (getUseSupabase()) {
+            const supabase = getSupabaseClient();
+            const insertData = {
+                name: String(data.name).trim(),
+                category: data.category || 'other',
+                icd_10_code: data.icd_10_code || data.icd10Code || null,
+                is_active: data.is_active !== false
+            };
+
+            const { data: result, error } = await supabase
+                .from('diseases')
+                .insert([insertData])
+                .select('*')
+                .single();
+
+            if (error) throw error;
+            return result;
+        }
+        return await indexedDB.db.diseases.add(data);
+    },
+
+    async updateDisease(id, data) {
+        if (getUseSupabase()) {
+            const supabase = getSupabaseClient();
+            const updateData = {
+                name: data.name,
+                category: data.category,
+                icd_10_code: data.icd_10_code || data.icd10Code || null,
+                is_active: data.is_active !== false
+            };
+
+            const { data: result, error } = await supabase
+                .from('diseases')
+                .update(updateData)
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return result;
+        }
+        return await indexedDB.db.diseases.update(id, data);
+    },
+
+    async deleteDisease(id) {
+        if (getUseSupabase()) {
+            const supabase = getSupabaseClient();
+            const { error } = await supabase
+                .from('diseases')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            return true;
+        }
+        return await indexedDB.db.diseases.delete(id);
+    },
+
+    // Lab Items
+    async getLabItems() {
+        if (getUseSupabase()) {
+            const supabase = getSupabaseClient();
+            const { data, error } = await supabase
+                .from('lab_items')
+                .select('*')
+                .order('name', { ascending: true });
+
+            if (error) throw error;
+            return data || [];
+        }
+        return await indexedDB.db.labItems.toArray();
+    },
+
+    async addLabItem(dataOrName) {
+        const isObject = typeof dataOrName === 'object' && dataOrName !== null;
+        const data = isObject ? dataOrName : { name: dataOrName };
+
+        if (getUseSupabase()) {
+            const supabase = getSupabaseClient();
+            const insertData = {
+                name: String(data.name).trim()
+            };
+
+            const { data: result, error } = await supabase
+                .from('lab_items')
+                .insert([insertData])
+                .select('*')
+                .single();
+
+            if (error) throw error;
+            return result;
+        }
+        return await indexedDB.db.labItems.add(data);
+    },
+
+    async updateLabItem(id, data) {
+        if (getUseSupabase()) {
+            const supabase = getSupabaseClient();
+            const updateData = {
+                name: data.name || data
+            };
+
+            const { data: result, error } = await supabase
+                .from('lab_items')
+                .update(updateData)
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return result;
+        }
+        return await indexedDB.db.labItems.update(id, data);
+    },
+
+    async deleteLabItem(id) {
+        if (getUseSupabase()) {
+            const supabase = getSupabaseClient();
+            const { error } = await supabase
+                .from('lab_items')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            return true;
+        }
+        return await indexedDB.db.labItems.delete(id);
     }
 };
 

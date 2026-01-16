@@ -45,6 +45,8 @@ class DatabaseService {
             case 'jobTitles': return await adp.MasterData.getJobTitles();
             case 'vendors': return await adp.MasterData.getVendors();
             case 'doctors': return await adp.MasterData.getDoctors();
+            case 'labItems': return await adp.MasterData.getLabItems();
+            case 'diseases': return await adp.MasterData.getDiseases();
             case 'activityLog': return await adp.ActivityLog.getAll();
             default: throw new Error(`Unknown table: ${tableName}`);
         }
@@ -75,6 +77,14 @@ class DatabaseService {
                 return typeof data === 'object' && data.doctorId
                     ? await adp.MasterData.addDoctor(data)
                     : await adp.MasterData.addDoctor(data.name || data);
+            case 'labItems':
+                return typeof data === 'object' && data.labItemId
+                    ? await adp.MasterData.addLabItem(data)
+                    : await adp.MasterData.addLabItem(data.name || data);
+            case 'diseases':
+                return typeof data === 'object' && (data.diseaseId || data.id)
+                    ? await adp.MasterData.addDisease(data)
+                    : await adp.MasterData.addDisease(data.name || data);
             case 'activityLog': return await adp.ActivityLog.add(data);
             default: throw new Error(`Unknown table: ${tableName}`);
         }
@@ -92,6 +102,8 @@ class DatabaseService {
             case 'jobTitles': return await adp.MasterData.updateJobTitle(id, data);
             case 'vendors': return await adp.MasterData.updateVendor(id, data.name);
             case 'doctors': return await adp.MasterData.updateDoctor(id, data.name);
+            case 'labItems': return await adp.MasterData.updateLabItem(id, data);
+            case 'diseases': return await adp.MasterData.updateDisease(id, data);
             default: throw new Error(`Unknown table: ${tableName}`);
         }
     }
@@ -107,6 +119,8 @@ class DatabaseService {
             case 'departments': return await adp.MasterData.deleteDepartment(id);
             case 'vendors': return await adp.MasterData.deleteVendor(id);
             case 'doctors': return await adp.MasterData.deleteDoctor(id);
+            case 'labItems': return await adp.MasterData.deleteLabItem(id);
+            case 'diseases': return await adp.MasterData.deleteDisease(id);
             default: throw new Error(`Delete not supported for: ${tableName}`);
         }
     }
@@ -123,6 +137,8 @@ class DatabaseService {
             case 'departments': return await adp.MasterData.deleteDepartment(id);
             case 'vendors': return await adp.MasterData.deleteVendor(id);
             case 'doctors': return await adp.MasterData.deleteDoctor(id);
+            case 'labItems': return await adp.MasterData.deleteLabItem(id);
+            case 'diseases': return await adp.MasterData.deleteDisease(id);
             default: throw new Error(`Hard delete not supported for: ${tableName}`);
         }
     }
@@ -149,6 +165,14 @@ class DatabaseService {
             case 'doctors': {
                 const all = await adp.MasterData.getDoctors();
                 return all.find(item => item.id === id || item.doctorId === id);
+            }
+            case 'labItems': {
+                const all = await adp.MasterData.getLabItems();
+                return all.find(item => item.id === id || item.labItemId === id);
+            }
+            case 'diseases': {
+                const all = await adp.MasterData.getDiseases();
+                return all.find(item => item.id === id || item.diseaseId === id);
             }
             default: throw new Error(`Get not supported for: ${tableName}`);
         }
