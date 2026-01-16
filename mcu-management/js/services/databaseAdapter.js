@@ -1261,6 +1261,7 @@ const MedicalHistories = {
         if (!records || records.length === 0) return { success: true, data: [] };
 
         try {
+            const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('medical_histories')
                 .insert(
@@ -1288,6 +1289,7 @@ const MedicalHistories = {
 
     async getByMcuId(mcuId) {
         try {
+            const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('medical_histories')
                 .select('*')
@@ -1308,6 +1310,7 @@ const MedicalHistories = {
 
     async deleteByMcuId(mcuId) {
         try {
+            const supabase = getSupabaseClient();
             const { error } = await supabase
                 .from('medical_histories')
                 .delete()
@@ -1334,6 +1337,7 @@ const FamilyHistories = {
         if (!records || records.length === 0) return { success: true, data: [] };
 
         try {
+            const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('family_histories')
                 .insert(
@@ -1363,6 +1367,7 @@ const FamilyHistories = {
 
     async getByMcuId(mcuId) {
         try {
+            const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('family_histories')
                 .select('*')
@@ -1383,6 +1388,7 @@ const FamilyHistories = {
 
     async deleteByMcuId(mcuId) {
         try {
+            const supabase = getSupabaseClient();
             const { error } = await supabase
                 .from('family_histories')
                 .delete()
