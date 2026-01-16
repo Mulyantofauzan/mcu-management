@@ -9,32 +9,32 @@ CREATE TABLE IF NOT EXISTS diseases (
     category VARCHAR(50) NOT NULL, -- cardiovascular, metabolic, respiratory, infectious, cancer, other
     icd_10_code VARCHAR(10),
     is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- 2. Create medical history table (diseases the employee has/had)
 CREATE TABLE IF NOT EXISTS medical_histories (
     id SERIAL PRIMARY KEY,
-    mcu_id UUID NOT NULL REFERENCES mcus(id) ON DELETE CASCADE,
+    mcu_id VARCHAR(50) NOT NULL REFERENCES mcus(mcu_id) ON DELETE CASCADE,
     disease_id INTEGER REFERENCES diseases(id),
     disease_name VARCHAR(255) NOT NULL, -- For custom diseases not in master list
     year_diagnosed INTEGER,
     notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     CONSTRAINT unique_mcu_disease UNIQUE(mcu_id, disease_id, disease_name)
 );
 
 -- 3. Create family history table (diseases in family members)
 CREATE TABLE IF NOT EXISTS family_histories (
     id SERIAL PRIMARY KEY,
-    mcu_id UUID NOT NULL REFERENCES mcus(id) ON DELETE CASCADE,
+    mcu_id VARCHAR(50) NOT NULL REFERENCES mcus(mcu_id) ON DELETE CASCADE,
     disease_id INTEGER REFERENCES diseases(id),
     disease_name VARCHAR(255) NOT NULL, -- For custom diseases not in master list
     family_member VARCHAR(100) NOT NULL, -- Ayah, Ibu, Kakak, Adik, Anak, etc.
     age_at_diagnosis INTEGER,
     status VARCHAR(50) DEFAULT 'current', -- current, deceased
     notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Create indexes for better query performance
