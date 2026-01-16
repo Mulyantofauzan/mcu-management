@@ -354,6 +354,26 @@
                         <div><label class="label">Buta Warna <span class="text-red-500">*</span></label><input type="text" id="update-colorblind" class="input" placeholder="Contoh: Normal / Merah–Hijau / Total" required /></div>
                     </div>
 
+                    <!-- Medical History Section (Follow-Up/Read-Only) -->
+                    <h4 class="font-semibold text-gray-900 mb-3">Riwayat Kesehatan</h4>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <!-- Medical History -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <h5 class="font-medium text-gray-800 mb-3">Riwayat Penyakit</h5>
+                            <div id="followup-mcu-detail-medical-history" class="space-y-2 max-h-48 overflow-y-auto">
+                                <p class="text-sm text-gray-500">-</p>
+                            </div>
+                        </div>
+
+                        <!-- Family History -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <h5 class="font-medium text-gray-800 mb-3">Riwayat Penyakit Keluarga</h5>
+                            <div id="followup-mcu-detail-family-history" class="space-y-2 max-h-48 overflow-y-auto">
+                                <p class="text-sm text-gray-500">-</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <h4 class="font-semibold text-gray-900 mb-3">Data Rujukan (Opsional)</h4>
                     <div class="grid grid-cols-1 gap-4 mb-4">
                         <div><label class="label">Diberikan Oleh (Dokter)</label><select id="update-mcu-doctor" class="input" readonly disabled style="background-color: #f3f4f6; cursor: not-allowed;"><option value="">Pilih dokter pemeriksa</option></select></div>

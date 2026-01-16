@@ -704,6 +704,84 @@
                         </div>
                     </div>
 
+                    <!-- Medical History Section (Edit Modal) -->
+                    <h4 class="font-semibold text-gray-900 mb-3">Riwayat Kesehatan</h4>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <!-- Medical History -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <h5 class="font-medium text-gray-800 mb-3">Riwayat Penyakit</h5>
+                            <div class="flex gap-2 mb-3">
+                                <select id="edit-mcu-medical-history-disease" class="input flex-1 text-sm">
+                                    <option value="">Pilih penyakit...</option>
+                                    <option value="Hipertensi">Hipertensi</option>
+                                    <option value="Penyakit Jantung Koroner">Penyakit Jantung Koroner</option>
+                                    <option value="Stroke/Serangan Otak">Stroke/Serangan Otak</option>
+                                    <option value="Aritmia Jantung">Aritmia Jantung</option>
+                                    <option value="Diabetes Tipe 1">Diabetes Tipe 1</option>
+                                    <option value="Diabetes Tipe 2">Diabetes Tipe 2</option>
+                                    <option value="Hiperkolesterolemia">Hiperkolesterolemia</option>
+                                    <option value="Asma">Asma</option>
+                                    <option value="PPOK (Penyakit Paru Obstruktif Kronis)">PPOK</option>
+                                    <option value="Tuberkulosis">Tuberkulosis</option>
+                                    <option value="Hepatitis B">Hepatitis B</option>
+                                    <option value="Hepatitis C">Hepatitis C</option>
+                                    <option value="Kanker">Kanker</option>
+                                    <option value="Artritis/Radang Sendi">Artritis/Radang Sendi</option>
+                                    <option value="Gangguan Tiroid">Gangguan Tiroid</option>
+                                    <option value="custom">Lainnya (Sebutkan)</option>
+                                </select>
+                                <button type="button" onclick="window.editAddMedicalHistory()" class="btn btn-primary btn-sm">Tambah</button>
+                            </div>
+                            <input type="text" id="edit-mcu-medical-history-custom" class="input text-sm hidden w-full mb-2" placeholder="Sebutkan nama penyakit lainnya..." />
+                            <div id="edit-mcu-medical-history-list" class="space-y-2 max-h-48 overflow-y-auto"></div>
+                        </div>
+
+                        <!-- Family History -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <h5 class="font-medium text-gray-800 mb-3">Riwayat Penyakit Keluarga</h5>
+                            <div class="flex gap-2 mb-3 flex-col">
+                                <div class="flex gap-2">
+                                    <select id="edit-mcu-family-history-disease" class="input flex-1 text-sm">
+                                        <option value="">Pilih penyakit...</option>
+                                        <option value="Hipertensi">Hipertensi</option>
+                                        <option value="Penyakit Jantung Koroner">Penyakit Jantung Koroner</option>
+                                        <option value="Stroke/Serangan Otak">Stroke/Serangan Otak</option>
+                                        <option value="Aritmia Jantung">Aritmia Jantung</option>
+                                        <option value="Diabetes Tipe 1">Diabetes Tipe 1</option>
+                                        <option value="Diabetes Tipe 2">Diabetes Tipe 2</option>
+                                        <option value="Hiperkolesterolemia">Hiperkolesterolemia</option>
+                                        <option value="Asma">Asma</option>
+                                        <option value="PPOK (Penyakit Paru Obstruktif Kronis)">PPOK</option>
+                                        <option value="Tuberkulosis">Tuberkulosis</option>
+                                        <option value="Hepatitis B">Hepatitis B</option>
+                                        <option value="Hepatitis C">Hepatitis C</option>
+                                        <option value="Kanker">Kanker</option>
+                                        <option value="Artritis/Radang Sendi">Artritis/Radang Sendi</option>
+                                        <option value="Gangguan Tiroid">Gangguan Tiroid</option>
+                                        <option value="custom">Lainnya (Sebutkan)</option>
+                                    </select>
+                                </div>
+                                <div class="flex gap-2">
+                                    <select id="edit-mcu-family-history-member" class="input flex-1 text-sm">
+                                        <option value="">Anggota keluarga...</option>
+                                        <option value="Ayah">Ayah</option>
+                                        <option value="Ibu">Ibu</option>
+                                        <option value="Kakak">Kakak</option>
+                                        <option value="Adik">Adik</option>
+                                        <option value="Anak">Anak</option>
+                                        <option value="Kakek">Kakek</option>
+                                        <option value="Nenek">Nenek</option>
+                                        <option value="Paman/Bibi">Paman/Bibi</option>
+                                        <option value="Keluarga Lain">Keluarga Lain</option>
+                                    </select>
+                                    <button type="button" onclick="window.editAddFamilyHistory()" class="btn btn-primary btn-sm">Tambah</button>
+                                </div>
+                            </div>
+                            <input type="text" id="edit-mcu-family-history-custom" class="input text-sm hidden w-full mb-2" placeholder="Sebutkan nama penyakit lainnya..." />
+                            <div id="edit-mcu-family-history-list" class="space-y-2 max-h-48 overflow-y-auto"></div>
+                        </div>
+                    </div>
+
                     <h4 class="font-semibold text-gray-900 mb-3">Data Rujukan (Opsional)</h4>
                     <div class="grid grid-cols-1 gap-4 mb-4">
                         <div><label class="label">Diberikan Oleh (Dokter) <span class="text-red-500">*</span></label><select id="edit-mcu-doctor" class="input" required><option value="">Pilih dokter pemeriksa</option></select></div>
@@ -712,7 +790,6 @@
                         <div><label class="label">Diagnosis Kerja</label><textarea id="edit-mcu-diagnosis" class="input" rows="2" placeholder="Contoh: Hipertensi stage 2 / DM tipe 2"></textarea></div>
                         <div><label class="label">Alasan Dirujuk</label><textarea id="edit-mcu-alasan" class="input" rows="2" placeholder="Contoh: Perlu konsultasi spesialis jantung / pemeriksaan lanjutan"></textarea></div>
                     </div>
-
 
                     <h4 class="font-semibold text-gray-900 mb-3">Hasil Awal</h4>
                     <div class="grid grid-cols-2 gap-4 mb-4">

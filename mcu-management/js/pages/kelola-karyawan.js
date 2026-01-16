@@ -1545,6 +1545,105 @@ window.closeMCUDetailModal = function() {
     closeModal('mcu-detail-modal');
 };
 
+/**
+ * Add Medical History Entry in Edit Modal
+ */
+window.editAddMedicalHistory = function() {
+    const diseaseSelect = document.getElementById('edit-mcu-medical-history-disease');
+    const customInput = document.getElementById('edit-mcu-medical-history-custom');
+    const listContainer = document.getElementById('edit-mcu-medical-history-list');
+
+    let diseaseName = diseaseSelect.value;
+    if (!diseaseName) {
+        showToast('Pilih penyakit terlebih dahulu', 'warning');
+        return;
+    }
+
+    // Handle custom disease entry
+    if (diseaseName === 'custom') {
+        diseaseName = customInput.value.trim();
+        if (!diseaseName) {
+            showToast('Sebutkan nama penyakit', 'warning');
+            return;
+        }
+        customInput.value = '';
+        customInput.classList.add('hidden');
+    }
+
+    // Prevent duplicates
+    const existingItems = Array.from(listContainer.children).map(el => el.dataset.disease);
+    if (existingItems.includes(diseaseName)) {
+        showToast('Penyakit sudah ditambahkan', 'warning');
+        return;
+    }
+
+    // Create and add item
+    const item = document.createElement('div');
+    item.className = 'flex items-center justify-between bg-blue-50 p-2 rounded border border-blue-200 text-sm';
+    item.dataset.disease = diseaseName;
+    item.innerHTML = `
+        <span class="font-medium">${diseaseName}</span>
+        <button type="button" onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-800 font-semibold">×</button>
+    `;
+    listContainer.appendChild(item);
+
+    // Reset select
+    diseaseSelect.value = '';
+};
+
+/**
+ * Add Family History Entry in Edit Modal
+ */
+window.editAddFamilyHistory = function() {
+    const diseaseSelect = document.getElementById('edit-mcu-family-history-disease');
+    const memberSelect = document.getElementById('edit-mcu-family-history-member');
+    const customInput = document.getElementById('edit-mcu-family-history-custom');
+    const listContainer = document.getElementById('edit-mcu-family-history-list');
+
+    let diseaseName = diseaseSelect.value;
+    const familyMember = memberSelect.value;
+
+    if (!diseaseName || !familyMember) {
+        showToast('Pilih penyakit dan anggota keluarga', 'warning');
+        return;
+    }
+
+    // Handle custom disease entry
+    if (diseaseName === 'custom') {
+        diseaseName = customInput.value.trim();
+        if (!diseaseName) {
+            showToast('Sebutkan nama penyakit', 'warning');
+            return;
+        }
+        customInput.value = '';
+        customInput.classList.add('hidden');
+    }
+
+    // Prevent exact duplicates
+    const existingItems = Array.from(listContainer.children).map(el =>
+        `${el.dataset.disease}:${el.dataset.member}`
+    );
+    if (existingItems.includes(`${diseaseName}:${familyMember}`)) {
+        showToast('Kombinasi penyakit dan anggota keluarga sudah ditambahkan', 'warning');
+        return;
+    }
+
+    // Create and add item
+    const item = document.createElement('div');
+    item.className = 'flex items-center justify-between bg-green-50 p-2 rounded border border-green-200 text-sm';
+    item.dataset.disease = diseaseName;
+    item.dataset.member = familyMember;
+    item.innerHTML = `
+        <span class="font-medium">${familyMember}: ${diseaseName}</span>
+        <button type="button" onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-800 font-semibold">×</button>
+    `;
+    listContainer.appendChild(item);
+
+    // Reset selects
+    diseaseSelect.value = '';
+    memberSelect.value = '';
+};
+
 window.editMCU = async function() {
     if (!window.currentMCUId) return;
 
