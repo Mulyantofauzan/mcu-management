@@ -418,6 +418,97 @@ class MasterDataService {
     }
     return true;
   }
+
+  // Diseases (Penyakit)
+  async createDisease(data, currentUser) {
+    const disease = {
+      name: data.name,
+      category: data.category,
+      icd_10_code: data.icd10Code || null,
+      is_active: data.isActive !== false, // Default true
+      createdAt: getCurrentTimestamp()
+    };
+    const result = await database.add('diseases', disease);
+    // Invalidate cache
+    cacheManager.clear('diseases:all');
+    // ✅ Log activity with details
+    if (currentUser?.userId) {
+      const details = `Created disease: ${disease.name} (Category: ${disease.category}${disease.icd_10_code ? `, ICD-10: ${disease.icd_10_code}` : ''})`;
+      await database.logActivity('create', 'Disease', result, currentUser.userId, details);
+    }
+    return disease;
+  }
+
+  async getAllDiseases() {
+    // Check cache first
+    const cached = cacheManager.get('diseases:all');
+    if (cached) {
+      return cached;
+    }
+
+    // Cache miss - fetch from database
+    const data = await database.getAll('diseases');
+    cacheManager.set('diseases:all', data);
+    return data;
+  }
+
+  async getDiseaseById(id) {
+    // Check cache first
+    const cacheKey = `disease:${id}`;
+    const cached = cacheManager.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    // Cache miss - fetch from database
+    const data = await database.get('diseases', id);
+    cacheManager.set(cacheKey, data);
+    return data;
+  }
+
+  async updateDisease(id, data, currentUser) {
+    const updateData = {
+      name: data.name,
+      category: data.category,
+      icd_10_code: data.icd10Code || null,
+      is_active: data.isActive !== false
+    };
+    await database.update('diseases', id, updateData);
+    // Invalidate cache
+    cacheManager.clear('diseases:all');
+    cacheManager.clear(`disease:${id}`);
+    // ✅ Log activity with details
+    if (currentUser?.userId) {
+      const details = `Updated disease to: ${data.name} (Category: ${data.category}${data.icd10Code ? `, ICD-10: ${data.icd10Code}` : ''})`;
+      await database.logActivity('update', 'Disease', id, currentUser.userId, details);
+    }
+    return await this.getDiseaseById(id);
+  }
+
+  async deleteDisease(id, currentUser) {
+    // Get the disease name before deletion for audit trail
+    const disease = await this.getDiseaseById(id);
+    const diseaseName = disease?.name || 'Unknown';
+
+    // Check if in use
+    const medicalHistories = await database.query('medicalHistories', mh => mh.diseaseId === id);
+    const familyHistories = await database.query('familyHistories', fh => fh.diseaseId === id);
+    const totalUsage = medicalHistories.length + familyHistories.length;
+
+    if (totalUsage > 0) {
+      throw new Error(`Tidak dapat menghapus. Penyakit ini digunakan di ${totalUsage} catatan kesehatan.`);
+    }
+    await database.delete('diseases', id);
+    // Invalidate cache
+    cacheManager.clear('diseases:all');
+    cacheManager.clear(`disease:${id}`);
+    // ✅ Log activity with details
+    if (currentUser?.userId) {
+      await database.logActivity('delete', 'Disease', id, currentUser.userId,
+        `Deleted disease: ${diseaseName} (${id})`);
+    }
+    return true;
+  }
 }
 
 export const masterDataService = new MasterDataService();

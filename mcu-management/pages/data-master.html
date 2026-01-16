@@ -122,7 +122,7 @@
         </header>
 
         <main class="p-6">
-            <div class="mb-6"><h1 class="text-2xl font-bold text-gray-900">Data Master</h1><p class="text-gray-500">Kelola data master (Jabatan, Departemen, Vendor, Dokter)</p></div>
+            <div class="mb-6"><h1 class="text-2xl font-bold text-gray-900">Data Master</h1><p class="text-gray-500">Kelola data master (Jabatan, Departemen, Vendor, Dokter, Penyakit)</p></div>
 
             <!-- Tabs -->
             <div class="card">
@@ -132,6 +132,7 @@
                     <button onclick="window.switchTab('vendors')" id="tab-vendors" class="px-6 py-2 font-medium text-gray-500 hover:text-gray-700">Vendor</button>
                     <button onclick="window.switchTab('doctors')" id="tab-doctors" class="px-6 py-2 font-medium text-gray-500 hover:text-gray-700">Dokter</button>
                     <button onclick="window.switchTab('labItems')" id="tab-labItems" class="px-6 py-2 font-medium text-gray-500 hover:text-gray-700">Item Pemeriksaan Lab</button>
+                    <button onclick="window.switchTab('diseases')" id="tab-diseases" class="px-6 py-2 font-medium text-gray-500 hover:text-gray-700">Penyakit</button>
                 </div>
 
                 <div class="flex justify-between items-center mb-4">
@@ -169,6 +170,36 @@
                         </select>
                         <p class="text-xs text-gray-500 mt-1">Digunakan untuk penilaian Framingham CVD Risk Assessment</p>
                     </div>
+
+                    <!-- Category Field (only for Diseases) -->
+                    <div id="category-field" class="hidden">
+                        <label class="label">Kategori <span class="text-danger">*</span></label>
+                        <select id="item-category" class="input">
+                            <option value="">-- Pilih Kategori --</option>
+                            <option value="cardiovascular">Kardiovaskular</option>
+                            <option value="metabolic">Metabolik</option>
+                            <option value="respiratory">Respirasi</option>
+                            <option value="infectious">Infeksi</option>
+                            <option value="cancer">Kanker</option>
+                            <option value="other">Lainnya</option>
+                        </select>
+                    </div>
+
+                    <!-- ICD-10 Code Field (only for Diseases) -->
+                    <div id="icd10-field" class="hidden">
+                        <label class="label">Kode ICD-10</label>
+                        <input type="text" id="item-icd10" class="input" placeholder="Contoh: I10, E11" />
+                    </div>
+
+                    <!-- Active Status Field (only for Diseases) -->
+                    <div id="active-field" class="hidden">
+                        <label class="label">Status</label>
+                        <select id="item-active" class="input">
+                            <option value="true">Aktif</option>
+                            <option value="false">Tidak Aktif</option>
+                        </select>
+                    </div>
+
                     <div class="modal-footer">
                         <button type="button" onclick="window.closeCrudModal()" class="btn btn-secondary">Batal</button>
                         <button type="submit" class="btn btn-primary">Simpan</button>

@@ -188,7 +188,8 @@ const tabConfig = {
     departments: { title: 'Departemen', getAll: () => masterDataService.getAllDepartments(), create: (d) => masterDataService.createDepartment(d), update: (id, d) => masterDataService.updateDepartment(id, d), delete: (id) => masterDataService.deleteDepartment(id) },
     vendors: { title: 'Vendor', getAll: () => masterDataService.getAllVendors(), create: (d) => masterDataService.createVendor(d), update: (id, d) => masterDataService.updateVendor(id, d), delete: (id) => masterDataService.deleteVendor(id) },
     doctors: { title: 'Dokter', getAll: () => masterDataService.getAllDoctors(), create: (d) => masterDataService.createDoctor(d), update: (id, d) => masterDataService.updateDoctor(id, d), delete: (id) => masterDataService.deleteDoctor(id) },
-    labItems: { title: 'Item Pemeriksaan Lab', getAll: () => labService.getAllLabItems(), create: (d) => labService.createLabItem(d), update: (id, d) => labService.updateLabItem(id, d), delete: (id) => labService.deleteLabItem(id) }
+    labItems: { title: 'Item Pemeriksaan Lab', getAll: () => labService.getAllLabItems(), create: (d) => labService.createLabItem(d), update: (id, d) => labService.updateLabItem(id, d), delete: (id) => labService.deleteLabItem(id) },
+    diseases: { title: 'Penyakit', getAll: () => masterDataService.getAllDiseases(), create: (d) => masterDataService.createDisease(d), update: (id, d) => masterDataService.updateDisease(id, d), delete: (id) => masterDataService.deleteDisease(id) }
 };
 
 async function init() {
@@ -284,6 +285,8 @@ function renderTable() {
         html += '<th>Nama</th><th>Satuan</th><th>Rentang Min-Max</th><th>Status</th><th>Aksi</th>';
     } else if (currentTab === 'jobTitles') {
         html += '<th>ID</th><th>Nama</th><th>Tingkat Risiko</th><th>Aksi</th>';
+    } else if (currentTab === 'diseases') {
+        html += '<th>ID</th><th>Nama</th><th>Kategori</th><th>Kode ICD-10</th><th>Status</th><th>Aksi</th>';
     } else {
         html += '<th>ID</th><th>Nama</th><th>Aksi</th>';
     }
@@ -307,6 +310,14 @@ function renderTable() {
             const riskLevelDisplay = riskLevel === 'low' ? 'Rendah' : riskLevel === 'high' ? 'Tinggi' : 'Sedang';
             const riskColor = riskLevel === 'low' ? 'text-green-600' : riskLevel === 'high' ? 'text-red-600' : 'text-yellow-600';
             html += `<td><span class="text-sm font-medium ${riskColor}">${riskLevelDisplay}</span></td>`;
+        } else if (currentTab === 'diseases') {
+            // Diseases columns dengan category, ICD-10 code, dan status
+            html += `<td><span class="text-sm text-gray-600">${item.id}</span></td>`;
+            html += `<td><span class="font-medium text-gray-900">${item.name}</span></td>`;
+            const categoryMap = { cardiovascular: 'Kardiovaskular', metabolic: 'Metabolik', respiratory: 'Respirasi', infectious: 'Infeksi', cancer: 'Kanker', other: 'Lainnya' };
+            html += `<td><span class="text-sm text-gray-600">${categoryMap[item.category] || item.category}</span></td>`;
+            html += `<td><span class="text-sm text-gray-600">${item.icd_10_code || '-'}</span></td>`;
+            html += `<td><span class="text-sm ${item.is_active ? 'text-green-600' : 'text-red-600'}">${item.is_active ? 'Aktif' : 'Tidak Aktif'}</span></td>`;
         } else {
             // Standard columns untuk master data lainnya
             html += `<td><span class="text-sm text-gray-600">${item.id}</span></td>`;
@@ -328,7 +339,7 @@ window.switchTab = async function(tab) {
     currentTab = tab;
 
     // Update tab styling
-    ['jobTitles', 'departments', 'vendors', 'doctors', 'labItems'].forEach(t => {
+    ['jobTitles', 'departments', 'vendors', 'doctors', 'labItems', 'diseases'].forEach(t => {
         const tabEl = document.getElementById('tab-' + t);
         if (tabEl) {
             if (t === tab) {
@@ -355,30 +366,38 @@ window.openAddModal = function() {
 function setupFormFields() {
     const formBody = document.querySelector('.modal-body form');
 
-    // Hide risk_level field by default
+    // Hide conditional fields by default
     const riskLevelField = document.getElementById('risk-level-field');
-    if (riskLevelField) {
-        riskLevelField.classList.add('hidden');
-    }
+    const categoryField = document.getElementById('category-field');
+    const icd10Field = document.getElementById('icd10-field');
+    const activeField = document.getElementById('active-field');
 
-    // Clear all field containers except item-name and risk-level-field
-    const existingFields = formBody.querySelectorAll('div:not(:has(#item-name)):not(#risk-level-field)');
-    existingFields.forEach(field => {
-        if (!field.classList.contains('modal-footer')) {
-            field.remove();
-        }
-    });
+    if (riskLevelField) riskLevelField.classList.add('hidden');
+    if (categoryField) categoryField.classList.add('hidden');
+    if (icd10Field) icd10Field.classList.add('hidden');
+    if (activeField) activeField.classList.add('hidden');
 
     // Setup fields untuk jobTitles (show risk_level field)
     if (currentTab === 'jobTitles') {
         if (riskLevelField) {
             riskLevelField.classList.remove('hidden');
         }
-        // Set default value to 'moderate'
         const riskLevelSelect = document.getElementById('item-risk-level');
         if (riskLevelSelect) {
             riskLevelSelect.value = 'moderate';
         }
+    }
+
+    // Setup fields untuk diseases (show category, icd10, active fields)
+    if (currentTab === 'diseases') {
+        if (categoryField) categoryField.classList.remove('hidden');
+        if (icd10Field) icd10Field.classList.remove('hidden');
+        if (activeField) activeField.classList.remove('hidden');
+
+        const categorySelect = document.getElementById('item-category');
+        const activeSelect = document.getElementById('item-active');
+        if (categorySelect) categorySelect.value = '';
+        if (activeSelect) activeSelect.value = 'true';
     }
 
     // Setup fields untuk labItems
@@ -437,6 +456,18 @@ window.editItem = async function(id) {
         }
     }
 
+    // Populate diseases fields jika ada
+    if (currentTab === 'diseases') {
+        const categoryEl = document.getElementById('item-category');
+        if (categoryEl) categoryEl.value = item.category || '';
+
+        const icd10El = document.getElementById('item-icd10');
+        if (icd10El) icd10El.value = item.icd_10_code || '';
+
+        const activeEl = document.getElementById('item-active');
+        if (activeEl) activeEl.value = item.is_active ? 'true' : 'false';
+    }
+
     // Populate labItems fields jika ada
     if (currentTab === 'labItems') {
         const descEl = document.getElementById('item-description');
@@ -470,6 +501,25 @@ window.handleSubmit = async function(event) {
         formData = {
             name: document.getElementById('item-name').value,
             riskLevel: riskLevelEl?.value || 'moderate'
+        };
+    }
+
+    // Special handling untuk diseases dengan category, icd10, dan status
+    if (currentTab === 'diseases') {
+        const categoryEl = document.getElementById('item-category');
+        const icd10El = document.getElementById('item-icd10');
+        const activeEl = document.getElementById('item-active');
+
+        if (!categoryEl?.value) {
+            showToast('Kategori harus dipilih', 'error');
+            return;
+        }
+
+        formData = {
+            name: document.getElementById('item-name').value,
+            category: categoryEl.value,
+            icd10Code: icd10El?.value || null,
+            isActive: activeEl?.value === 'true'
         };
     }
 
