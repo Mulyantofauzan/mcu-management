@@ -172,3 +172,33 @@ export function transformActivityLog(log) {
         timestamp: log.timestamp
     };
 }
+
+// Transform Medical History: Supabase → App format
+export function transformMedicalHistory(record) {
+    if (!record) return record;
+    return {
+        id: record.id,
+        mcuId: record.mcu_id,
+        diseaseId: record.disease_id,
+        diseaseName: record.disease_name,
+        yearDiagnosed: record.year_diagnosed,
+        notes: record.notes,
+        createdAt: record.created_at
+    };
+}
+
+// Transform Family History: Supabase → App format
+export function transformFamilyHistory(record) {
+    if (!record) return record;
+    return {
+        id: record.id,
+        mcuId: record.mcu_id,
+        diseaseId: record.disease_id,
+        diseaseName: record.disease_name,
+        familyMember: record.family_member,
+        ageAtDiagnosis: record.age_at_diagnosis,
+        status: record.status,
+        notes: record.notes,
+        createdAt: record.created_at
+    };
+}

@@ -8,6 +8,7 @@ import { mcuService } from '../services/mcuService.js';
 import { labService } from '../services/labService.js';
 import { mcuBatchService } from '../services/mcuBatchService.js';
 import { masterDataService } from '../services/masterDataService.js';
+import database from '../services/databaseAdapter.js';
 import { generateMCUId } from '../utils/idGenerator.js';
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal, confirmDialog, getStatusBadge } from '../utils/uiHelpers.js';
@@ -1476,6 +1477,50 @@ window.viewMCUDetail = async function(mcuId) {
             }
         } catch (error) {
             document.getElementById('mcu-detail-lab-results-body').innerHTML = '<tr><td colspan="5" class="text-center text-red-500 py-3">Gagal memuat hasil lab</td></tr>';
+        }
+
+        // Load and display medical and family histories
+        try {
+            const { MedicalHistories, FamilyHistories } = database;
+            const medicalHistories = await MedicalHistories.getByMcuId(mcuId);
+            const familyHistories = await FamilyHistories.getByMcuId(mcuId);
+
+            const medicalHistoryEl = document.getElementById('mcu-detail-medical-history');
+            const familyHistoryEl = document.getElementById('mcu-detail-family-history');
+
+            // Display medical histories
+            if (medicalHistories && medicalHistories.length > 0) {
+                let medicalHtml = '';
+                medicalHistories.forEach(record => {
+                    const diseaseInfo = `<div class="bg-blue-50 p-2 rounded border border-blue-200 text-sm">
+                        <span class="font-medium">${record.disease_name || record.diseaseName}</span>
+                        ${record.year_diagnosed ? `<span class="text-gray-600 ml-2">(${record.year_diagnosed})</span>` : ''}
+                    </div>`;
+                    medicalHtml += diseaseInfo;
+                });
+                medicalHistoryEl.innerHTML = medicalHtml;
+            } else {
+                medicalHistoryEl.innerHTML = '<p class="text-sm text-gray-500">Tidak ada riwayat penyakit</p>';
+            }
+
+            // Display family histories
+            if (familyHistories && familyHistories.length > 0) {
+                let familyHtml = '';
+                familyHistories.forEach(record => {
+                    const diseaseInfo = `<div class="bg-green-50 p-2 rounded border border-green-200 text-sm">
+                        <span class="font-medium">${record.family_member || record.familyMember}:</span>
+                        <span class="ml-1">${record.disease_name || record.diseaseName}</span>
+                    </div>`;
+                    familyHtml += diseaseInfo;
+                });
+                familyHistoryEl.innerHTML = familyHtml;
+            } else {
+                familyHistoryEl.innerHTML = '<p class="text-sm text-gray-500">Tidak ada riwayat penyakit keluarga</p>';
+            }
+        } catch (error) {
+            console.warn('Warning: Failed to load medical/family histories:', error);
+            document.getElementById('mcu-detail-medical-history').innerHTML = '<p class="text-sm text-gray-500">-</p>';
+            document.getElementById('mcu-detail-family-history').innerHTML = '<p class="text-sm text-gray-500">-</p>';
         }
 
         // Initialize file list viewer for MCU documents

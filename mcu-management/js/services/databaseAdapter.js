@@ -1253,6 +1253,154 @@ export const ActivityLog = {
     }
 };
 
+/**
+ * Medical Histories - Track diseases the employee has/had
+ */
+const MedicalHistories = {
+    async create(records) {
+        if (!records || records.length === 0) return { success: true, data: [] };
+
+        try {
+            const { data, error } = await supabase
+                .from('medical_histories')
+                .insert(
+                    records.map(record => ({
+                        mcu_id: record.mcu_id || record.mcuId,
+                        disease_id: record.disease_id || null,
+                        disease_name: record.disease_name || record.diseaseName,
+                        year_diagnosed: record.year_diagnosed || record.yearDiagnosed || null,
+                        notes: record.notes || null
+                    }))
+                )
+                .select();
+
+            if (error) {
+                console.error('Error creating medical histories:', error);
+                return { success: false, error };
+            }
+
+            return { success: true, data };
+        } catch (err) {
+            console.error('Exception creating medical histories:', err);
+            return { success: false, error: err };
+        }
+    },
+
+    async getByMcuId(mcuId) {
+        try {
+            const { data, error } = await supabase
+                .from('medical_histories')
+                .select('*')
+                .eq('mcu_id', mcuId)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error fetching medical histories:', error);
+                return [];
+            }
+
+            return data || [];
+        } catch (err) {
+            console.error('Exception fetching medical histories:', err);
+            return [];
+        }
+    },
+
+    async deleteByMcuId(mcuId) {
+        try {
+            const { error } = await supabase
+                .from('medical_histories')
+                .delete()
+                .eq('mcu_id', mcuId);
+
+            if (error) {
+                console.error('Error deleting medical histories:', error);
+                return { success: false, error };
+            }
+
+            return { success: true };
+        } catch (err) {
+            console.error('Exception deleting medical histories:', err);
+            return { success: false, error: err };
+        }
+    }
+};
+
+/**
+ * Family Histories - Track diseases in family members
+ */
+const FamilyHistories = {
+    async create(records) {
+        if (!records || records.length === 0) return { success: true, data: [] };
+
+        try {
+            const { data, error } = await supabase
+                .from('family_histories')
+                .insert(
+                    records.map(record => ({
+                        mcu_id: record.mcu_id || record.mcuId,
+                        disease_id: record.disease_id || null,
+                        disease_name: record.disease_name || record.diseaseName,
+                        family_member: record.family_member || record.familyMember,
+                        age_at_diagnosis: record.age_at_diagnosis || record.ageAtDiagnosis || null,
+                        status: record.status || 'current',
+                        notes: record.notes || null
+                    }))
+                )
+                .select();
+
+            if (error) {
+                console.error('Error creating family histories:', error);
+                return { success: false, error };
+            }
+
+            return { success: true, data };
+        } catch (err) {
+            console.error('Exception creating family histories:', err);
+            return { success: false, error: err };
+        }
+    },
+
+    async getByMcuId(mcuId) {
+        try {
+            const { data, error } = await supabase
+                .from('family_histories')
+                .select('*')
+                .eq('mcu_id', mcuId)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error fetching family histories:', error);
+                return [];
+            }
+
+            return data || [];
+        } catch (err) {
+            console.error('Exception fetching family histories:', err);
+            return [];
+        }
+    },
+
+    async deleteByMcuId(mcuId) {
+        try {
+            const { error } = await supabase
+                .from('family_histories')
+                .delete()
+                .eq('mcu_id', mcuId);
+
+            if (error) {
+                console.error('Error deleting family histories:', error);
+                return { success: false, error };
+            }
+
+            return { success: true };
+        } catch (err) {
+            console.error('Exception deleting family histories:', err);
+            return { success: false, error: err };
+        }
+    }
+};
+
 export default {
     Users,
     Employees,
@@ -1261,6 +1409,8 @@ export default {
     MCUChanges,
     MasterData,
     ActivityLog,
+    MedicalHistories,
+    FamilyHistories,
     getDatabase,
     isUsingSupabase
 };

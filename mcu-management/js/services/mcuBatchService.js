@@ -7,6 +7,7 @@
 import { mcuService } from './mcuService.js';
 import { labService } from './labService.js';
 import { isValidLabItemId, validateLabResult, getExpectedLabItemCount, LAB_ITEMS_MAPPING } from '../data/labItemsMapping.js';
+import database from './databaseAdapter.js';
 
 class MCUBatchService {
   /**
@@ -82,6 +83,32 @@ class MCUBatchService {
         await labService.cleanupPhantomLabRecords(createdMCU.mcuId);
       } catch (cleanupError) {
         // Phantom cleanup failed (non-critical)
+      }
+
+      // ✅ STEP 7: Save medical and family histories
+      try {
+        // Save medical histories
+        if (mcuData.medicalHistories && mcuData.medicalHistories.length > 0) {
+          const medicalHistoriesWithMcuId = mcuData.medicalHistories.map(history => ({
+            ...history,
+            mcu_id: createdMCU.mcuId,
+            mcuId: createdMCU.mcuId
+          }));
+          await database.MedicalHistories.create(medicalHistoriesWithMcuId);
+        }
+
+        // Save family histories
+        if (mcuData.familyHistories && mcuData.familyHistories.length > 0) {
+          const familyHistoriesWithMcuId = mcuData.familyHistories.map(history => ({
+            ...history,
+            mcu_id: createdMCU.mcuId,
+            mcuId: createdMCU.mcuId
+          }));
+          await database.FamilyHistories.create(familyHistoriesWithMcuId);
+        }
+      } catch (historyError) {
+        // Non-critical: medical/family history save failures don't block MCU creation
+        console.warn('Warning: Medical/family history save failed:', historyError);
       }
 
       // ✅ FINAL: Determine overall success
