@@ -769,6 +769,7 @@ window.handleAddMCU = async function(event) {
             respiratoryRate: document.getElementById('mcu-rr').value || null,
             pulse: document.getElementById('mcu-pulse').value || null,
             temperature: document.getElementById('mcu-temp').value || null,
+            chestCircumference: document.getElementById('mcu-chest-circumference').value ? parseFloat(document.getElementById('mcu-chest-circumference').value) : null,
             // 8-field vision structure with "Lainnya" support
             visionDistantUnaideLeft: getFieldValue('mcu-vision-distant-unaided-left', 'mcu-vision-distant-unaided-left-other'),
             visionDistantUnaideRight: getFieldValue('mcu-vision-distant-unaided-right', 'mcu-vision-distant-unaided-right-other'),
