@@ -670,7 +670,16 @@ export const MCUChanges = {
                 .order('changed_at', { ascending: false });
 
             if (error) throw error;
-            return data.map(transformMCUChange);
+            console.log('🗄️ MCUChanges.getAll - raw data count:', data?.length || 0);
+            if (data && data.length > 0) {
+              console.log('🗄️ MCUChanges.getAll - first raw record:', data[0]);
+            }
+            const transformed = data.map(transformMCUChange);
+            console.log('🗄️ MCUChanges.getAll - after transform:', transformed.length);
+            if (transformed.length > 0) {
+              console.log('🗄️ MCUChanges.getAll - first transformed:', transformed[0]);
+            }
+            return transformed;
         }
         return await indexedDB.db.mcuChanges.toArray();
     },

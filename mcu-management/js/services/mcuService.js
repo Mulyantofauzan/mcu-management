@@ -450,6 +450,10 @@ class MCUService {
 
   async getChangeHistory(mcuId) {
     const changes = await database.query('mcuChanges', change => change.mcuId === mcuId);
+    console.log('🔍 getChangeHistory - mcuId:', mcuId, 'found changes:', changes.length);
+    if (changes.length > 0) {
+      console.log('🔍 getChangeHistory - first change:', changes[0]);
+    }
     return changes.sort((a, b) => new Date(b.changedAt) - new Date(a.changedAt));
   }
 
