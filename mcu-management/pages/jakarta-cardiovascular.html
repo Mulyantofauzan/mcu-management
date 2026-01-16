@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jakarta Cardiovascular - MADIS</title>
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="../assets/images/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+    <link rel="manifest" href="../assets/site.webmanifest">
+
+    <link rel="stylesheet" href="../css/output.css">
+
+    <!-- Environment Configuration (must load first!) -->
+    <script src="../env-config.js"></script>
+
+    <!-- Dexie (IndexedDB) - Fallback -->
+    <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js" defer></script>
+
+    <!-- Supabase - Production Database -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+
+    <style>
+        body {
+            opacity: 0;
+            transition: opacity 0.2s ease-in;
+        }
+
+        body.initialized {
+            opacity: 1;
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            body {
+                animation: safariShow 5s forwards;
+            }
+        }
+
+        @keyframes safariShow {
+            0% { opacity: 0; }
+            99% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        body.initialized {
+            animation: none;
+            opacity: 1 !important;
+        }
+
+        /* Risk Card Colors */
+        .risk-card-low { border-top: 4px solid #10b981; }
+        .risk-card-medium { border-top: 4px solid #f59e0b; }
+        .risk-card-high { border-top: 4px solid #ef4444; }
+        .risk-card-critical { border-top: 4px solid #7c3aed; }
+
+        .risk-badge-1 { background-color: #10b981; color: white; }
+        .risk-badge-2 { background-color: #f59e0b; color: white; }
+        .risk-badge-3 { background-color: #ef4444; color: white; }
+
+        /* Table styling */
+        .table-striped tbody tr:nth-child(odd) {
+            background-color: #f9fafb;
+        }
+
+        .score-cell {
+            text-align: center;
+            font-weight: 600;
+            padding: 0.5rem;
+        }
+
+        .score-red {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .score-yellow {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .score-green {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 z-30">
+        <div class="flex flex-col h-full">
+            <div class="p-6 border-b border-gray-200"><h1 class="text-xl font-bold text-primary-600">MADIS</h1><p class="text-xs text-gray-500 mt-1">Medical Check-Up Analysis & Data Information System</p></div>
+            <nav class="flex-1 overflow-y-auto p-4"><ul class="space-y-1">
+                <li><a href="../index.html" class="sidebar-link" data-page="dashboard"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span>Dashboard</span></a></li>
+                <li><a href="../pages/kelola-karyawan.html" class="sidebar-link" data-page="kelola-karyawan"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg><span>Kelola Karyawan</span></a></li>
+                <li><a href="../pages/jakarta-cardiovascular.html" class="sidebar-link active" data-page="jakarta-cardiovascular"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span>Jakarta Cardiovascular</span></a></li>
+            </ul></nav>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-64 p-6">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Jakarta Cardiovascular Score</h1>
+            <p class="text-gray-600 mt-2">Penilaian risiko cardiovascular berdasarkan kriteria Jakarta Cardiovascular</p>
+        </div>
+
+        <!-- Risk Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="card risk-card-low">
+                <div class="card-body">
+                    <h3 class="text-gray-600 text-sm font-medium">Low Risk</h3>
+                    <p class="text-3xl font-bold text-green-600 mt-2" id="count-low">0</p>
+                    <p class="text-xs text-gray-500 mt-1">Skor: -7 hingga -1</p>
+                </div>
+            </div>
+            <div class="card risk-card-medium">
+                <div class="card-body">
+                    <h3 class="text-gray-600 text-sm font-medium">Medium Risk</h3>
+                    <p class="text-3xl font-bold text-yellow-600 mt-2" id="count-medium">0</p>
+                    <p class="text-xs text-gray-500 mt-1">Skor: 2 hingga 4</p>
+                </div>
+            </div>
+            <div class="card risk-card-high">
+                <div class="card-body">
+                    <h3 class="text-gray-600 text-sm font-medium">High Risk</h3>
+                    <p class="text-3xl font-bold text-red-600 mt-2" id="count-high">0</p>
+                    <p class="text-xs text-gray-500 mt-1">Skor: 5</p>
+                </div>
+            </div>
+            <div class="card risk-card-critical">
+                <div class="card-body">
+                    <h3 class="text-gray-600 text-sm font-medium">Critical</h3>
+                    <p class="text-3xl font-bold text-purple-600 mt-2" id="count-critical">0</p>
+                    <p class="text-xs text-gray-500 mt-1">Skor: ≥ 6</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="card mb-6">
+            <div class="card-header">
+                <h2 class="card-title">Filter</h2>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="label">Departemen</label>
+                        <select id="filter-department" class="input">
+                            <option value="">Semua Departemen</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label">Jabatan</label>
+                        <select id="filter-job-title" class="input">
+                            <option value="">Semua Jabatan</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label">Risk Level</label>
+                        <select id="filter-risk" class="input">
+                            <option value="">Semua Risk</option>
+                            <option value="1">Low Risk</option>
+                            <option value="2">Medium Risk</option>
+                            <option value="3">High Risk</option>
+                            <option value="4">Critical</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label">Pencarian</label>
+                        <input type="text" id="filter-search" class="input" placeholder="Cari nama karyawan...">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Data Jakarta Cardiovascular</h2>
+            </div>
+            <div class="card-body">
+                <div class="overflow-x-auto">
+                    <table class="w-full table-striped text-sm">
+                        <thead class="bg-gray-100 border-b border-gray-200">
+                            <tr>
+                                <th class="px-4 py-3 text-left font-semibold">No</th>
+                                <th class="px-4 py-3 text-left font-semibold">Nama</th>
+                                <th class="px-4 py-3 text-center font-semibold">JK</th>
+                                <th class="px-4 py-3 text-center font-semibold">Umur</th>
+                                <th class="px-4 py-3 text-center font-semibold">TD</th>
+                                <th colspan="7" class="px-4 py-3 text-center font-semibold border-l border-gray-300">Jakarta Cardiovascular Score</th>
+                                <th colspan="6" class="px-4 py-3 text-center font-semibold border-l border-gray-300">Sindrom Metabolik</th>
+                                <th class="px-4 py-3 text-center font-semibold border-l border-gray-300">Risk</th>
+                            </tr>
+                            <tr class="border-b border-gray-200">
+                                <th colspan="5"></th>
+                                <th class="px-2 py-2 text-center font-semibold text-xs border-l border-gray-300">IMT</th>
+                                <th class="px-2 py-2 text-center font-semibold text-xs">Merokok</th>
+                                <th class="px-2 py-2 text-center font-semibold text-xs">Diabetes</th>
+                                <th class="px-2 py-2 text-center font-semibold text-xs">Aktivitas</th>
+                                <th class="px-2 py-2 text-center font-semibold text-xs">Kolesterol</th>
+                                <th class="px-2 py-2 text-center font-semibold text-xs">HDL</th>
+                                <th class="px-2 py-2 text-center font-semibold text-xs">Nilai</th>
+                                <th class="px-2 py-2 text-center font-semibold text-xs border-l border-gray-300">Gula</th>
+                                <th class="px-2 py-2 text-center font-semibold text-xs">LP</th>
+                                <th class="px-2 py-2 text-center font-semibold text-xs">TG</th>
+                                <th class="px-2 py-2 text-center font-semibold text-xs">HDL</th>
+                                <th class="px-2 py-2 text-center font-semibold text-xs">Nilai</th>
+                                <th class="px-2 py-2 text-center font-semibold text-xs border-l border-gray-300">Risk</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-table">
+                            <tr>
+                                <td colspan="18" class="px-4 py-6 text-center text-gray-500">Memuat data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50"></div>
+
+    <script type="module" src="../js/pages/jakarta-cardiovascular.js"></script>
+</body>
+</html>
