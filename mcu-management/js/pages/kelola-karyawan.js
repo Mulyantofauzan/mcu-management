@@ -1681,6 +1681,9 @@ window.editMCU = async function() {
         // Open the modal FIRST so DOM elements are visible
         openModal('edit-mcu-modal');
 
+        // ✅ Setup custom disease input handlers for edit modal
+        setupCustomDiseaseHandlersForEdit();
+
         // ✅ Use pre-initialized lab form (initialized once on page load)
         // No need to reinit - form is permanent like other form fields
 
@@ -2477,6 +2480,36 @@ function setupCustomDiseaseHandlersForAdd() {
     const medicalCustomInput = document.getElementById('mcu-medical-history-custom');
     const familyDiseaseSelect = document.getElementById('mcu-family-history-disease');
     const familyCustomInput = document.getElementById('mcu-family-history-custom');
+
+    if (medicalDiseaseSelect) {
+        medicalDiseaseSelect.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                medicalCustomInput.classList.remove('hidden');
+            } else {
+                medicalCustomInput.classList.add('hidden');
+            }
+        });
+    }
+
+    if (familyDiseaseSelect) {
+        familyDiseaseSelect.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                familyCustomInput.classList.remove('hidden');
+            } else {
+                familyCustomInput.classList.add('hidden');
+            }
+        });
+    }
+}
+
+/**
+ * Setup custom disease input handlers for EDIT modal
+ */
+function setupCustomDiseaseHandlersForEdit() {
+    const medicalDiseaseSelect = document.getElementById('edit-mcu-medical-history-disease');
+    const medicalCustomInput = document.getElementById('edit-mcu-medical-history-custom');
+    const familyDiseaseSelect = document.getElementById('edit-mcu-family-history-disease');
+    const familyCustomInput = document.getElementById('edit-mcu-family-history-custom');
 
     if (medicalDiseaseSelect) {
         medicalDiseaseSelect.addEventListener('change', function() {
