@@ -2118,6 +2118,7 @@ window.handleEditMCU = async function(event) {
         }
 
         // ✅ Handle medical and family history updates
+        let historyChanges = []; // Track changes for mcuChanges table
         try {
             // Collect updated histories from EDIT form FIRST (before deleting old ones)
             const medicalHistories = getEditMedicalHistoryData();
@@ -2125,6 +2126,65 @@ window.handleEditMCU = async function(event) {
 
             console.log('Medical histories to save:', medicalHistories);
             console.log('Family histories to save:', familyHistories);
+
+            // Get existing histories for comparison
+            const existingMedicalHistories = await database.MedicalHistories.getByMcuId(mcuId);
+            const existingFamilyHistories = await database.FamilyHistories.getByMcuId(mcuId);
+
+            // Track medical history changes
+            const existingMedicalNames = existingMedicalHistories.map(h => h.disease_name || h.diseaseName);
+            const newMedicalNames = medicalHistories.map(h => h.disease_name);
+
+            // Find added/removed medical histories
+            const addedMedical = newMedicalNames.filter(name => !existingMedicalNames.includes(name));
+            const removedMedical = existingMedicalNames.filter(name => !newMedicalNames.includes(name));
+
+            // Track family history changes
+            const existingFamilyKeys = existingFamilyHistories.map(h => `${h.disease_name || h.diseaseName}:${h.family_member || h.familyMember}`);
+            const newFamilyKeys = familyHistories.map(h => `${h.disease_name}:${h.family_member}`);
+
+            const addedFamily = newFamilyKeys.filter(key => !existingFamilyKeys.includes(key));
+            const removedFamily = existingFamilyKeys.filter(key => !newFamilyKeys.includes(key));
+
+            // Log added medical histories
+            for (const disease of addedMedical) {
+                historyChanges.push({
+                    fieldLabel: `Riwayat Penyakit (Ditambah): ${disease}`,
+                    fieldChanged: 'medicalHistory',
+                    oldValue: '-',
+                    newValue: disease
+                });
+            }
+
+            // Log removed medical histories
+            for (const disease of removedMedical) {
+                historyChanges.push({
+                    fieldLabel: `Riwayat Penyakit (Dihapus): ${disease}`,
+                    fieldChanged: 'medicalHistory',
+                    oldValue: disease,
+                    newValue: '-'
+                });
+            }
+
+            // Log added family histories
+            for (const familyKey of addedFamily) {
+                historyChanges.push({
+                    fieldLabel: `Riwayat Penyakit Keluarga (Ditambah): ${familyKey}`,
+                    fieldChanged: 'familyHistory',
+                    oldValue: '-',
+                    newValue: familyKey
+                });
+            }
+
+            // Log removed family histories
+            for (const familyKey of removedFamily) {
+                historyChanges.push({
+                    fieldLabel: `Riwayat Penyakit Keluarga (Dihapus): ${familyKey}`,
+                    fieldChanged: 'familyHistory',
+                    oldValue: familyKey,
+                    newValue: '-'
+                });
+            }
 
             // Delete existing histories
             await database.MedicalHistories.deleteByMcuId(mcuId);
@@ -2208,19 +2268,22 @@ window.handleEditMCU = async function(event) {
                 }
             }
 
-            for (const labChange of labChanges) {
+            // Combine lab and history changes
+            const allChanges = [...labChanges, ...historyChanges];
+
+            for (const change of allChanges) {
                 await database.add('mcuChanges', {
                     mcuId: mcuId,
-                    fieldName: labChange.fieldLabel,
-                    fieldChanged: labChange.fieldChanged,
-                    oldValue: labChange.oldValue,
-                    newValue: labChange.newValue,
+                    fieldName: change.fieldLabel,
+                    fieldChanged: change.fieldChanged,
+                    oldValue: change.oldValue,
+                    newValue: change.newValue,
                     changedBy: currentUser?.userId || currentUser?.id,
                     changedAt: new Date().toISOString()
                 });
             }
         } catch (labChangeError) {
-            // Silently fail - lab save succeeded but change tracking failed (non-critical)
+            // Silently fail - MCU save succeeded but change tracking failed (non-critical)
         }
 
         completeSaveStep();
