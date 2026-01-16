@@ -50,6 +50,7 @@ const fieldLabels = {
   respiratoryRate: 'Frekuensi Nafas',
   pulse: 'Nadi',
   temperature: 'Suhu',
+  chestCircumference: 'Lingkar Dada',
   vision: 'Penglihatan',
   visionDistantUnaideLeft: 'Visus Jauh Mata Kiri (Tanpa Koreksi)',
   visionDistantUnaideRight: 'Visus Jauh Mata Kanan (Tanpa Koreksi)',
@@ -98,7 +99,7 @@ const mcuTrackableFields = [
   // Basic info
   'mcuType', 'mcuDate',
   // Vital signs
-  'bmi', 'bloodPressure', 'respiratoryRate', 'pulse', 'temperature',
+  'bmi', 'bloodPressure', 'respiratoryRate', 'pulse', 'temperature', 'chestCircumference',
   // Vision - legacy single field and new 8-field structure
   'vision',
   'visionDistantUnaideLeft', 'visionDistantUnaideRight',
