@@ -63,6 +63,7 @@ export function transformMCU(mcu) {
         respiratoryRate: mcu.respiratory_rate,
         pulse: mcu.pulse,
         temperature: mcu.temperature,
+        chestCircumference: mcu.chest_circumference,
         // 8-field vision structure (map from snake_case to camelCase)
         visionDistantUnaideLeft: mcu.vision_distant_unaided_left,
         visionDistantUnaideRight: mcu.vision_distant_unaided_right,
