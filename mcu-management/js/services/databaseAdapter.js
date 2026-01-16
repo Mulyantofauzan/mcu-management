@@ -400,6 +400,7 @@ export const MCUs = {
                 respiratory_rate: mcu.respiratoryRate,
                 pulse: mcu.pulse,
                 temperature: mcu.temperature,
+                chest_circumference: mcu.chestCircumference,
                 // 8-field vision structure (map camelCase to snake_case)
                 vision_distant_unaided_left: mcu.visionDistantUnaideLeft,
                 vision_distant_unaided_right: mcu.visionDistantUnaideRight,
@@ -470,6 +471,7 @@ export const MCUs = {
                 respiratoryRate: 'respiratory_rate',
                 pulse: 'pulse',
                 temperature: 'temperature',
+                chestCircumference: 'chest_circumference',
                 // 8-field vision structure
                 visionDistantUnaideLeft: 'vision_distant_unaided_left',
                 visionDistantUnaideRight: 'vision_distant_unaided_right',

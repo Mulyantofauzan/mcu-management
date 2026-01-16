@@ -1026,6 +1026,7 @@ window.handleAddMCU = async function(event) {
             respiratoryRate: document.getElementById('mcu-rr').value || null,
             pulse: document.getElementById('mcu-pulse').value || null,
             temperature: document.getElementById('mcu-temp').value || null,
+            chestCircumference: document.getElementById('mcu-chest-circumference').value || null,
             // 8-field vision structure with "Lainnya" support
             visionDistantUnaideLeft: getFieldValue('mcu-vision-distant-unaided-left', 'mcu-vision-distant-unaided-left-other'),
             visionDistantUnaideRight: getFieldValue('mcu-vision-distant-unaided-right', 'mcu-vision-distant-unaided-right-other'),
@@ -1237,6 +1238,7 @@ window.viewMCUDetail = async function(mcuId) {
             'mcu-detail-rr': mcu.respiratoryRate,
             'mcu-detail-pulse': mcu.pulse,
             'mcu-detail-temp': mcu.temperature,
+            'mcu-detail-chest-circumference': mcu.chestCircumference,
             'mcu-detail-audio': mcu.audiometry,
             'mcu-detail-spiro': mcu.spirometry,
             'mcu-detail-hbsag': mcu.hbsag,
@@ -1581,6 +1583,7 @@ window.editMCU = async function() {
                     'edit-mcu-rr': mcu.respiratoryRate,
                     'edit-mcu-pulse': mcu.pulse,
                     'edit-mcu-temp': mcu.temperature,
+                    'edit-mcu-chest-circumference': mcu.chestCircumference,
                     'edit-mcu-smoking-status': mcu.smokingStatus,
                     'edit-mcu-exercise-frequency': mcu.exerciseFrequency,
                     'edit-mcu-vision-distant': mcu.visionDistant,
@@ -1780,6 +1783,7 @@ window.handleEditMCU = async function(event) {
             respiratoryRate: document.getElementById('edit-mcu-rr').value || null,
             pulse: document.getElementById('edit-mcu-pulse').value || null,
             temperature: document.getElementById('edit-mcu-temp').value || null,
+            chestCircumference: document.getElementById('edit-mcu-chest-circumference').value || null,
             smokingStatus: document.getElementById('edit-mcu-smoking-status').value || null,
             exerciseFrequency: document.getElementById('edit-mcu-exercise-frequency').value || null,
             // 8-field vision structure with "Lainnya" support
