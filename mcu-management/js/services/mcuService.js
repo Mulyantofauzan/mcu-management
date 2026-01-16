@@ -251,6 +251,7 @@ class MCUService {
       'respiratoryRate',
       'pulse',
       'temperature',
+      'chestCircumference',
 
       // Vision fields (8-field structure)
       'visionDistantUnaideLeft',
