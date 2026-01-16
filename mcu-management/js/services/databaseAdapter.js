@@ -523,12 +523,6 @@ export const MCUs = {
                 updateData[dbKey] = updates[key];
             });
 
-            // ✅ DEBUG: Log what we're sending to Supabase
-            console.log('🗄️ DatabaseAdapter UPDATE - updateData being sent:', updateData);
-            if (updateData.chest_circumference !== undefined) {
-                console.log('🗄️ DatabaseAdapter - chest_circumference value:', updateData.chest_circumference, 'type:', typeof updateData.chest_circumference);
-            }
-
             const { data, error } = await supabase
                 .from('mcus')
                 .update(updateData)
@@ -536,15 +530,11 @@ export const MCUs = {
                 .select();
 
             if (error) {
-                console.error('🗄️ DatabaseAdapter UPDATE ERROR:', error);
                 throw error;
             }
 
-            console.log('🗄️ DatabaseAdapter UPDATE SUCCESS - data returned:', data);
-
             if (!data || data.length === 0) {
                 // If update didn't return data, fetch it directly
-                console.log('🗄️ DatabaseAdapter - No data in response, fetching updated record...');
                 const { data: fetchedData, error: fetchError } = await supabase
                     .from('mcus')
                     .select()
@@ -552,15 +542,12 @@ export const MCUs = {
                     .single();
 
                 if (fetchError) {
-                    console.error('🗄️ DatabaseAdapter FETCH ERROR:', fetchError);
                     throw fetchError;
                 }
 
-                console.log('🗄️ DatabaseAdapter - Fetched data chest_circumference:', fetchedData?.chest_circumference);
                 return transformMCU(fetchedData);
             }
 
-            console.log('🗄️ DatabaseAdapter - Returning data[0] chest_circumference:', data[0]?.chest_circumference);
             return transformMCU(data[0]);
         }
         return await indexedDB.db.mcus.where('mcuId').equals(mcuId).modify(updates);

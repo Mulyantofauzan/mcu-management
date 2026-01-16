@@ -301,10 +301,6 @@ class MCUService {
       }
     });
 
-    // ✅ DEBUG: Log what we're about to send to database
-    console.log('🔍 MCU Update - chestCircumference value:', updateData.chestCircumference);
-    console.log('🔍 MCU Update - Full updateData keys:', Object.keys(updateData));
-
     await database.update('mcus', mcuId, updateData);
 
     // Get updated MCU

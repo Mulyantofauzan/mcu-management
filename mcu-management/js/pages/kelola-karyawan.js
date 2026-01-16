@@ -1819,10 +1819,6 @@ window.handleEditMCU = async function(event) {
             updateData.finalNotes = document.getElementById('edit-mcu-final-notes').value || null;
         }
 
-        // ✅ DEBUG: Log updateData before sending
-        console.log('🎯 handleEditMCU - updateData collected:', updateData);
-        console.log('🎯 handleEditMCU - chestCircumference value in updateData:', updateData.chestCircumference);
-
         // Show unified loading with step tracking
         const tempFiles = tempFileStorage.getFiles(mcuId);
         showUnifiedLoading('Memproses...', 'Mengunggah file dan menyimpan data');
