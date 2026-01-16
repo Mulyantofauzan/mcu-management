@@ -449,12 +449,12 @@ class MCUService {
   }
 
   async getChangeHistory(mcuId) {
-    const changes = await database.query('mcuChanges', change => change.mcuId === mcuId);
-    console.log('🔍 getChangeHistory - mcuId:', mcuId, 'found changes:', changes.length);
-    if (changes.length > 0) {
-      console.log('🔍 getChangeHistory - first change:', changes[0]);
-    }
-    return changes.sort((a, b) => new Date(b.changedAt) - new Date(a.changedAt));
+    // Use direct getByMcuId for better performance instead of fetching all 1000+ records
+    const adp = await import('../services/databaseAdapter.js').then(m => ({
+      MCUChanges: m.MCUChanges
+    }));
+    const changes = await adp.MCUChanges.getByMcuId(mcuId);
+    return changes ? changes.sort((a, b) => new Date(b.changedAt) - new Date(a.changedAt)) : [];
   }
 
   async getFollowUpList() {
