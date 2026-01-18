@@ -249,7 +249,7 @@ function renderTable() {
     const paginatedData = filteredData.slice(start, end);
 
     if (paginatedData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="19" class="px-4 py-6 text-center text-gray-500">Tidak ada data</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="24" class="px-4 py-6 text-center text-gray-500">Tidak ada data</td></tr>';
         return;
     }
 
@@ -257,21 +257,45 @@ function renderTable() {
         const badge = getRiskBadge(item.riskLevel);
         const rowBgColor = badge.bgColor;
 
+        // Default values for Sindrom Metabolik (currently empty, will be populated if data exists)
+        const lp = item.mcu?.waistCircumference || '-';
+        const tg = item.mcu?.triglycerides || '-';
+        const hdl = item.mcu?.hdlCholesterol || '-';
+        const tdMetabolik = item.mcu?.bloodPressure || '-';
+        const gdp = item.mcu?.fastingGlucose || '-';
+        const nilaiMetabolik = '-';
+        const riskMetabolik = '-';
+        const riskTotal = item.score;
+
         return `
             <tr class="${rowBgColor}">
-                <td class="px-4 py-3 text-sm text-center">${start + index + 1}</td>
-                <td class="px-4 py-3 text-sm font-medium">${item.name}</td>
-                <td class="px-4 py-3 text-sm text-center">${item.scores.jk}</td>
-                <td class="px-4 py-3 text-sm text-center">${item.age}</td>
-                <td class="px-4 py-3 text-sm text-center">${item.scores.td}</td>
-                <td class="px-4 py-3 text-sm text-center">${item.scores.imt}</td>
-                <td class="px-4 py-3 text-sm text-center">${item.bloodPressure || '-'}</td>
-                <td class="px-4 py-3 text-sm text-center">${item.bmi || '-'}</td>
-                <td class="px-4 py-3 text-sm text-center">${item.scores.merokok}</td>
-                <td class="px-4 py-3 text-sm text-center">${item.scores.diabetes}</td>
-                <td class="px-4 py-3 text-sm text-center">${getRiskFactorLabel(item.riskLevel)}</td>
-                <td class="px-4 py-3 text-sm text-center">${item.score}</td>
-                <td class="px-4 py-3 text-sm text-center">
+                <td class="px-3 py-3 text-sm text-center border border-gray-300">${start + index + 1}</td>
+                <td class="px-3 py-3 text-sm font-medium border border-gray-300">${item.name}</td>
+
+                <!-- Jakarta Cardiovascular Score Columns -->
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.jk}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.age}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.td}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.imt}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.bloodPressure || '-'}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.bmi || '-'}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.merokok}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.diabetes}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${getRiskFactorLabel(item.riskLevel)}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.score}</td>
+
+                <!-- Sindrom Metabolik Columns -->
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #f0f9ff;">${lp}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #f0f9ff;">${tg}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #f0f9ff;">${hdl}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #f0f9ff;">${tdMetabolik}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #f0f9ff;">${gdp}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #f0f9ff;">${nilaiMetabolik}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #f0f9ff;">${riskMetabolik}</td>
+
+                <!-- Summary Columns -->
+                <td class="px-3 py-3 text-sm text-center border border-gray-300 font-semibold">${riskTotal}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300">
                     <span class="px-2 py-1 rounded text-xs font-semibold ${badge.color}">
                         ${badge.label}
                     </span>
@@ -469,34 +493,55 @@ function renderDashboard() {
 
         <!-- Data Table -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm border-collapse">
-                    <thead class="bg-gray-100 border-b border-gray-200">
+            <div class="overflow-x-auto" style="min-height: 400px;">
+                <table class="text-sm border-collapse" style="min-width: 2400px; width: 100%;">
+                    <thead class="bg-gray-100 border-b-2 border-gray-300 sticky top-0 z-10">
                         <tr>
-                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">No</th>
-                            <th class="px-4 py-3 text-left font-semibold border border-gray-300">Nama</th>
-                            <th class="px-4 py-3 text-center font-semibold border border-gray-300" colspan="10">Jakarta Cardiovascular Score</th>
-                            <th class="px-4 py-3 text-center font-semibold border border-gray-300" colspan="2">Sindrom Metabolik</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 50px; background-color: #f3f4f6;">No</th>
+                            <th class="px-3 py-3 text-left font-semibold border border-gray-300" style="min-width: 150px; background-color: #f3f4f6;">Nama</th>
+
+                            <!-- Jakarta Cardiovascular Score Header -->
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" colspan="10" style="background-color: #fcd34d;">Jakarta Cardiovascular Score</th>
+
+                            <!-- Sindrom Metabolik Header -->
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" colspan="7" style="background-color: #93c5fd;">Sindrom Metabolik</th>
+
+                            <!-- Summary Columns -->
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" colspan="2" style="background-color: #e5e7eb;">Summary</th>
                         </tr>
                         <tr>
-                            <th class="px-4 py-3 text-center font-semibold border border-gray-300"></th>
-                            <th class="px-4 py-3 text-center font-semibold border border-gray-300"></th>
-                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">JK</th>
-                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">Umur</th>
-                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">TD</th>
-                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">IMT</th>
-                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">Tekanan Darah</th>
-                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">BMI</th>
-                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">Merokok</th>
-                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">Diabetes</th>
-                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">Akt/Faktor Risiko</th>
-                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">Nilai</th>
-                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">Risk Level</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 50px;"></th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 150px;"></th>
+
+                            <!-- Jakarta Cardiovascular Score Sub-headers -->
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 60px; background-color: #fef3c7;">JK</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 60px; background-color: #fef3c7;">Umur</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 60px; background-color: #fef3c7;">TD</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 60px; background-color: #fef3c7;">IMT</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 100px; background-color: #fef3c7;">Tekanan Darah</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 60px; background-color: #fef3c7;">BMI</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 80px; background-color: #fef3c7;">Merokok</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 80px; background-color: #fef3c7;">Diabetes</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 120px; background-color: #fef3c7;">Akt/Faktor Risiko</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 70px; background-color: #fef3c7;">Nilai</th>
+
+                            <!-- Sindrom Metabolik Sub-headers -->
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 60px; background-color: #dbeafe;">LP</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 60px; background-color: #dbeafe;">TG</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 60px; background-color: #dbeafe;">HDL</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 60px; background-color: #dbeafe;">TD</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 80px; background-color: #dbeafe;">GDP</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 60px; background-color: #dbeafe;">Nilai</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 80px; background-color: #dbeafe;">Risk</th>
+
+                            <!-- Summary Sub-headers -->
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 80px; background-color: #f3f4f6;">Risk Total</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 100px; background-color: #f3f4f6;">Risk Level</th>
                         </tr>
                     </thead>
                     <tbody id="data-table">
                         <tr>
-                            <td colspan="13" class="px-4 py-6 text-center text-gray-500">Memuat data...</td>
+                            <td colspan="24" class="px-4 py-6 text-center text-gray-500">Memuat data...</td>
                         </tr>
                     </tbody>
                 </table>
