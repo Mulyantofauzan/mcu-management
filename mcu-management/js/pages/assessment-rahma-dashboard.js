@@ -497,8 +497,8 @@ function renderDashboard() {
                 <table class="text-sm border-collapse" style="min-width: 2400px; width: 100%;">
                     <thead class="bg-gray-100 border-b-2 border-gray-300">
                         <tr>
-                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 50px; background-color: #f3f4f6; position: sticky; left: 0; z-index: 20;">No</th>
-                            <th class="px-3 py-3 text-left font-semibold border border-gray-300" style="min-width: 150px; background-color: #f3f4f6; position: sticky; left: 50px; z-index: 20;">Nama</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" rowspan="2" style="min-width: 50px; background-color: #f3f4f6; position: sticky; left: 0; z-index: 20;">No</th>
+                            <th class="px-3 py-3 text-left font-semibold border border-gray-300" rowspan="2" style="min-width: 150px; background-color: #f3f4f6; position: sticky; left: 50px; z-index: 20;">Nama</th>
 
                             <!-- Jakarta Cardiovascular Score Header -->
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" colspan="10" style="background-color: #fcd34d;">Jakarta Cardiovascular Score</th>
@@ -510,8 +510,6 @@ function renderDashboard() {
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" colspan="2" style="background-color: #e5e7eb;">Summary</th>
                         </tr>
                         <tr>
-                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 50px; position: sticky; left: 0; z-index: 20; background-color: #f3f4f6;"></th>
-                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 150px; position: sticky; left: 50px; z-index: 20; background-color: #f3f4f6;"></th>
 
                             <!-- Jakarta Cardiovascular Score Sub-headers -->
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 60px; background-color: #fef3c7;">JK</th>
