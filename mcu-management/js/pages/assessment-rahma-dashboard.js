@@ -496,9 +496,9 @@ function renderDashboard() {
             <div class="overflow-x-auto" style="min-height: 400px;">
                 <table class="text-sm border-collapse" style="min-width: 2400px; width: 100%;">
                     <thead class="bg-gray-100 border-b-2 border-gray-300">
-                        <tr>
-                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" rowspan="2" style="min-width: 50px; background-color: #f3f4f6; position: sticky; left: 0; z-index: 20;">No</th>
-                            <th class="px-3 py-3 text-left font-semibold border border-gray-300" rowspan="2" style="min-width: 150px; background-color: #f3f4f6; position: sticky; left: 50px; z-index: 20;">Nama</th>
+                        <tr style="height: 60px; vertical-align: middle;">
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" rowspan="2" style="min-width: 50px; background-color: #f3f4f6; position: sticky; left: 0; z-index: 20; vertical-align: middle;">No</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" rowspan="2" style="min-width: 150px; background-color: #f3f4f6; position: sticky; left: 50px; z-index: 20; vertical-align: middle;">Nama</th>
 
                             <!-- Jakarta Cardiovascular Score Header -->
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" colspan="10" style="background-color: #fcd34d;">Jakarta Cardiovascular Score</th>
@@ -509,7 +509,7 @@ function renderDashboard() {
                             <!-- Summary Columns -->
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" colspan="2" style="background-color: #e5e7eb;">Summary</th>
                         </tr>
-                        <tr>
+                        <tr style="height: 40px; vertical-align: middle;">
 
                             <!-- Jakarta Cardiovascular Score Sub-headers -->
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 60px; background-color: #fef3c7;">JK</th>
