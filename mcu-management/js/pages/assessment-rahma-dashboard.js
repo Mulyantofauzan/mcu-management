@@ -176,7 +176,20 @@ function calculateJakartaCardiovascularScore(employee, mcu, hasDiabetes) {
 }
 
 /**
- * Determine risk level based on score
+ * Get Jakarta Cardiovascular Risk Level (3 levels with colors)
+ * Score -7 to -1: Level 1 (Green)
+ * Score 2 to 4: Level 2 (Yellow)
+ * Score ≥5: Level 3 (Red)
+ */
+function getJakartaCVRiskLevel(score) {
+    if (score >= -7 && score <= -1) return { level: 1, color: 'bg-green-100', text: '1' };
+    if (score >= 2 && score <= 4) return { level: 2, color: 'bg-yellow-100', text: '2' };
+    if (score >= 5) return { level: 3, color: 'bg-red-100', text: '3' };
+    return { level: 0, color: 'bg-gray-100', text: '-' };
+}
+
+/**
+ * Determine overall risk level based on score (for filter/cards - will be 4 levels after combining with Sindrom Metabolik)
  * Score -7 to -1: Level 1 (Low Risk)
  * Score 2 to 4: Level 2 (Medium Risk)
  * Score 5: Level 3 (High Risk)
@@ -357,6 +370,9 @@ function renderTable() {
         const badge = getRiskBadge(item.riskLevel);
         const rowBgColor = badge.bgColor;
 
+        // Jakarta Cardiovascular Risk Level (3 levels with colors)
+        const cvRisk = getJakartaCVRiskLevel(item.score);
+
         // Default values for Sindrom Metabolik (currently empty, will be populated if data exists)
         const lp = item.mcu?.waistCircumference || '-';
         const tg = item.mcu?.triglycerides || '-';
@@ -379,7 +395,7 @@ function renderTable() {
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.merokok}</td>
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.diabetes}</td>
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.aktivitasFisik}</td>
-                <td class="px-3 py-3 text-sm text-center border border-gray-300 font-semibold" style="background-color: #fffbeb;">${item.score}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300 font-semibold ${cvRisk.color}" style="border: 1px solid #d1d5db;">${item.score}</td>
 
                 <!-- Sindrom Metabolik Columns -->
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #f0f9ff;">${lp}</td>
