@@ -269,8 +269,8 @@ function renderTable() {
 
         return `
             <tr class="${rowBgColor}">
-                <td class="px-3 py-3 text-sm text-center border border-gray-300">${start + index + 1}</td>
-                <td class="px-3 py-3 text-sm font-medium border border-gray-300">${item.name}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="position: sticky; left: 0; z-index: 10; background-color: inherit;">${start + index + 1}</td>
+                <td class="px-3 py-3 text-sm font-medium border border-gray-300" style="position: sticky; left: 50px; z-index: 10; background-color: inherit;">${item.name}</td>
 
                 <!-- Jakarta Cardiovascular Score Columns -->
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.jk}</td>
@@ -495,10 +495,10 @@ function renderDashboard() {
         <div class="bg-white rounded-lg shadow overflow-hidden">
             <div class="overflow-x-auto" style="min-height: 400px;">
                 <table class="text-sm border-collapse" style="min-width: 2400px; width: 100%;">
-                    <thead class="bg-gray-100 border-b-2 border-gray-300 sticky top-0 z-10">
+                    <thead class="bg-gray-100 border-b-2 border-gray-300">
                         <tr>
-                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 50px; background-color: #f3f4f6;">No</th>
-                            <th class="px-3 py-3 text-left font-semibold border border-gray-300" style="min-width: 150px; background-color: #f3f4f6;">Nama</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 50px; background-color: #f3f4f6; position: sticky; left: 0; z-index: 20;">No</th>
+                            <th class="px-3 py-3 text-left font-semibold border border-gray-300" style="min-width: 150px; background-color: #f3f4f6; position: sticky; left: 50px; z-index: 20;">Nama</th>
 
                             <!-- Jakarta Cardiovascular Score Header -->
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" colspan="10" style="background-color: #fcd34d;">Jakarta Cardiovascular Score</th>
@@ -510,8 +510,8 @@ function renderDashboard() {
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" colspan="2" style="background-color: #e5e7eb;">Summary</th>
                         </tr>
                         <tr>
-                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 50px;"></th>
-                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 150px;"></th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 50px; position: sticky; left: 0; z-index: 20; background-color: #f3f4f6;"></th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 150px; position: sticky; left: 50px; z-index: 20; background-color: #f3f4f6;"></th>
 
                             <!-- Jakarta Cardiovascular Score Sub-headers -->
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 60px; background-color: #fef3c7;">JK</th>
