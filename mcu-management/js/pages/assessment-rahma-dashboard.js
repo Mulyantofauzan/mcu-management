@@ -24,17 +24,25 @@ let filteredData = [];
 let departments = [];
 let jobTitles = [];
 let currentPage = 1;
-const itemsPerPage = 15;
+const itemsPerPage = 10;
 
 /**
  * Calculate Jakarta Cardiovascular Score for a single employee
  */
 function calculateJakartaCardiovascularScore(employee, mcu, hasDiabetes) {
     let score = 0;
+    let scores = {
+        jk: 0,
+        td: 0,
+        imt: 0,
+        merokok: 0,
+        diabetes: 0
+    };
 
     // 1. Jenis Kelamin (JK)
     // Pria: 1, Wanita: 0
     if (employee.gender?.toLowerCase() === 'pria' || employee.gender?.toLowerCase() === 'male' || employee.gender === 'M') {
+        scores.jk = 1;
         score += 1;
     }
 
@@ -45,6 +53,7 @@ function calculateJakartaCardiovascularScore(employee, mcu, hasDiabetes) {
         const systolic = parseInt(bpParts[0]);
         const diastolic = parseInt(bpParts[1]);
         if (systolic >= 140 || diastolic >= 90) {
+            scores.td = 3;
             score += 3;
         }
     }
@@ -52,6 +61,7 @@ function calculateJakartaCardiovascularScore(employee, mcu, hasDiabetes) {
     // 3. IMT (same as BMI)
     // If BMI ≥ 25: +1, else: 0
     if (mcu?.bmi && parseFloat(mcu.bmi) >= 25) {
+        scores.imt = 1;
         score += 1;
     }
 
@@ -60,8 +70,10 @@ function calculateJakartaCardiovascularScore(employee, mcu, hasDiabetes) {
     if (mcu?.smokingStatus) {
         const status = mcu.smokingStatus.toLowerCase();
         if (status.includes('aktif') || status.includes('current')) {
+            scores.merokok = 4;
             score += 4;
         } else if (status.includes('bekas') || status.includes('mantan') || status.includes('former')) {
+            scores.merokok = 3;
             score += 3;
         }
     }
@@ -69,10 +81,11 @@ function calculateJakartaCardiovascularScore(employee, mcu, hasDiabetes) {
     // 5. Diabetes
     // If has diabetes: 2, else: 0
     if (hasDiabetes) {
+        scores.diabetes = 2;
         score += 2;
     }
 
-    return score;
+    return { score, scores };
 }
 
 /**
@@ -91,12 +104,12 @@ function getRiskLevel(score) {
  */
 function getRiskBadge(riskLevel) {
     const badges = {
-        1: { label: 'Low Risk', color: 'bg-green-100 text-green-800' },
-        2: { label: 'Medium Risk', color: 'bg-yellow-100 text-yellow-800' },
-        3: { label: 'High Risk', color: 'bg-red-100 text-red-800' },
-        4: { label: 'Critical', color: 'bg-purple-100 text-purple-800' }
+        1: { label: 'Low', color: 'bg-green-100 text-green-800', bgColor: 'bg-green-50' },
+        2: { label: 'Medium', color: 'bg-yellow-100 text-yellow-800', bgColor: 'bg-yellow-50' },
+        3: { label: 'High', color: 'bg-red-100 text-red-800', bgColor: 'bg-red-50' },
+        4: { label: 'Critical', color: 'bg-purple-100 text-purple-800', bgColor: 'bg-purple-50' }
     };
-    return badges[riskLevel] || { label: 'Unknown', color: 'bg-gray-100 text-gray-800' };
+    return badges[riskLevel] || { label: 'Unknown', color: 'bg-gray-100 text-gray-800', bgColor: 'bg-gray-50' };
 }
 
 /**
@@ -151,7 +164,7 @@ async function calculateAllAssessments() {
             });
 
             // Calculate score
-            const score = calculateJakartaCardiovascularScore(employee, latestMCU, hasDiabetes);
+            const { score, scores } = calculateJakartaCardiovascularScore(employee, latestMCU, hasDiabetes);
             const riskLevel = getRiskLevel(score);
 
             // Calculate age
@@ -170,6 +183,7 @@ async function calculateAllAssessments() {
                 diabetes: hasDiabetes,
                 score: score,
                 riskLevel: riskLevel,
+                scores: scores,
                 mcu: latestMCU
             });
         } catch (error) {
@@ -203,6 +217,7 @@ function applyFilters() {
     currentPage = 1;
     updateRiskCounters();
     renderTable();
+    renderPagination();
 }
 
 /**
@@ -234,30 +249,28 @@ function renderTable() {
     const paginatedData = filteredData.slice(start, end);
 
     if (paginatedData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" class="px-4 py-6 text-center text-gray-500">Tidak ada data</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="19" class="px-4 py-6 text-center text-gray-500">Tidak ada data</td></tr>';
         return;
     }
 
     tbody.innerHTML = paginatedData.map((item, index) => {
         const badge = getRiskBadge(item.riskLevel);
-        const scoreColor = item.score <= -1 ? 'bg-red-50' : item.score >= 2 && item.score <= 4 ? 'bg-yellow-50' : item.score === 5 ? 'bg-orange-50' : 'bg-purple-50';
-        const smokeScore = getSmokeScore(item.smoking);
-        const bmiScore = item.bmi && parseFloat(item.bmi) >= 25 ? '1' : '0';
-        const diabetesScore = item.diabetes ? '2' : '0';
-        const genderScore = item.gender?.toLowerCase() === 'pria' || item.gender?.toLowerCase() === 'male' ? '1' : '0';
-        const bpScore = item.bloodPressure ? (item.bloodPressure.split('/')[0] >= 140 ? '3' : '0') : '0';
+        const rowBgColor = badge.bgColor;
 
         return `
-            <tr class="${scoreColor}">
-                <td class="px-4 py-3 text-sm">${start + index + 1}</td>
+            <tr class="${rowBgColor}">
+                <td class="px-4 py-3 text-sm text-center">${start + index + 1}</td>
                 <td class="px-4 py-3 text-sm font-medium">${item.name}</td>
-                <td class="px-4 py-3 text-sm text-center">${genderScore}</td>
-                <td class="px-4 py-3 text-sm text-center">${bpScore}</td>
+                <td class="px-4 py-3 text-sm text-center">${item.scores.jk}</td>
+                <td class="px-4 py-3 text-sm text-center">${item.age}</td>
+                <td class="px-4 py-3 text-sm text-center">${item.scores.td}</td>
+                <td class="px-4 py-3 text-sm text-center">${item.scores.imt}</td>
                 <td class="px-4 py-3 text-sm text-center">${item.bloodPressure || '-'}</td>
-                <td class="px-4 py-3 text-sm text-center">${bmiScore}</td>
-                <td class="px-4 py-3 text-sm text-center">${smokeScore}</td>
-                <td class="px-4 py-3 text-sm text-center">${diabetesScore}</td>
-                <td class="px-4 py-3 text-sm text-center font-semibold">${item.score}</td>
+                <td class="px-4 py-3 text-sm text-center">${item.bmi || '-'}</td>
+                <td class="px-4 py-3 text-sm text-center">${item.scores.merokok}</td>
+                <td class="px-4 py-3 text-sm text-center">${item.scores.diabetes}</td>
+                <td class="px-4 py-3 text-sm text-center">${getRiskFactorLabel(item.riskLevel)}</td>
+                <td class="px-4 py-3 text-sm text-center">${item.score}</td>
                 <td class="px-4 py-3 text-sm text-center">
                     <span class="px-2 py-1 rounded text-xs font-semibold ${badge.color}">
                         ${badge.label}
@@ -269,14 +282,56 @@ function renderTable() {
 }
 
 /**
- * Helper: Get smoking score
+ * Get risk factor label based on score
  */
-function getSmokeScore(smokingStatus) {
-    if (!smokingStatus) return '0';
-    const status = smokingStatus.toLowerCase();
-    if (status.includes('aktif') || status.includes('current')) return '4';
-    if (status.includes('bekas') || status.includes('mantan') || status.includes('former')) return '3';
-    return '0';
+function getRiskFactorLabel(riskLevel) {
+    const labels = {
+        1: '0',
+        2: '1',
+        3: '1',
+        4: '1'
+    };
+    return labels[riskLevel] || '-';
+}
+
+/**
+ * Render pagination controls
+ */
+function renderPagination() {
+    const paginationDiv = document.getElementById('pagination-controls');
+    if (!paginationDiv) return;
+
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+    let html = '<div class="flex items-center justify-between mt-4">';
+    html += `<p class="text-sm text-gray-600">Halaman <span class="font-semibold">${currentPage}</span> dari <span class="font-semibold">${totalPages || 1}</span> | Total: <span class="font-semibold">${filteredData.length}</span> data</p>`;
+
+    html += '<div class="flex gap-2">';
+
+    // Previous button
+    if (currentPage > 1) {
+        html += `<button onclick="window.goToPreviousPage()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">← Sebelumnya</button>`;
+    }
+
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === currentPage) {
+            html += `<button onclick="window.goToPage(${i})" class="px-3 py-2 bg-primary-600 text-white rounded-lg text-sm">${i}</button>`;
+        } else if (i <= 3 || i > totalPages - 3 || Math.abs(i - currentPage) <= 1) {
+            html += `<button onclick="window.goToPage(${i})" class="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">${i}</button>`;
+        } else if (i === 4 || i === totalPages - 3) {
+            html += `<span class="px-3 py-2">...</span>`;
+        }
+    }
+
+    // Next button
+    if (currentPage < totalPages) {
+        html += `<button onclick="window.goToNextPage()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100">Selanjutnya →</button>`;
+    }
+
+    html += '</div></div>';
+
+    paginationDiv.innerHTML = html;
 }
 
 /**
@@ -318,6 +373,27 @@ function setupFilters() {
     if (filterJob) filterJob.addEventListener('change', applyFilters);
     if (filterRisk) filterRisk.addEventListener('change', applyFilters);
     if (filterSearch) filterSearch.addEventListener('input', applyFilters);
+
+    // Pagination functions
+    window.goToPage = (page) => {
+        currentPage = page;
+        renderTable();
+        renderPagination();
+        document.getElementById('data-table')?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    window.goToNextPage = () => {
+        const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+        if (currentPage < totalPages) {
+            window.goToPage(currentPage + 1);
+        }
+    };
+
+    window.goToPreviousPage = () => {
+        if (currentPage > 1) {
+            window.goToPage(currentPage - 1);
+        }
+    };
 }
 
 /**
@@ -394,35 +470,48 @@ function renderDashboard() {
         <!-- Data Table -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="w-full text-sm">
+                <table class="w-full text-sm border-collapse">
                     <thead class="bg-gray-100 border-b border-gray-200">
                         <tr>
-                            <th class="px-4 py-3 text-left font-semibold">No</th>
-                            <th class="px-4 py-3 text-left font-semibold">Nama</th>
-                            <th class="px-4 py-3 text-center font-semibold">JK</th>
-                            <th class="px-4 py-3 text-center font-semibold">TD</th>
-                            <th class="px-4 py-3 text-center font-semibold">Tekanan Darah</th>
-                            <th class="px-4 py-3 text-center font-semibold">IMT</th>
-                            <th class="px-4 py-3 text-center font-semibold">Merokok</th>
-                            <th class="px-4 py-3 text-center font-semibold">Diabetes</th>
-                            <th class="px-4 py-3 text-center font-semibold">Score</th>
-                            <th class="px-4 py-3 text-center font-semibold">Risk Level</th>
+                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">No</th>
+                            <th class="px-4 py-3 text-left font-semibold border border-gray-300">Nama</th>
+                            <th class="px-4 py-3 text-center font-semibold border border-gray-300" colspan="10">Jakarta Cardiovascular Score</th>
+                            <th class="px-4 py-3 text-center font-semibold border border-gray-300" colspan="2">Sindrom Metabolik</th>
+                        </tr>
+                        <tr>
+                            <th class="px-4 py-3 text-center font-semibold border border-gray-300"></th>
+                            <th class="px-4 py-3 text-center font-semibold border border-gray-300"></th>
+                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">JK</th>
+                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">Umur</th>
+                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">TD</th>
+                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">IMT</th>
+                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">Tekanan Darah</th>
+                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">BMI</th>
+                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">Merokok</th>
+                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">Diabetes</th>
+                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">Akt/Faktor Risiko</th>
+                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">Nilai</th>
+                            <th class="px-4 py-3 text-center font-semibold border border-gray-300">Risk Level</th>
                         </tr>
                     </thead>
                     <tbody id="data-table">
                         <tr>
-                            <td colspan="10" class="px-4 py-6 text-center text-gray-500">Memuat data...</td>
+                            <td colspan="13" class="px-4 py-6 text-center text-gray-500">Memuat data...</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
+
+        <!-- Pagination -->
+        <div id="pagination-controls" class="mt-6"></div>
     `;
 
     populateFilters();
     setupFilters();
     updateRiskCounters();
     renderTable();
+    renderPagination();
 }
 
 /**
