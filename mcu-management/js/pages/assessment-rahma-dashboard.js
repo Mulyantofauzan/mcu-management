@@ -90,14 +90,16 @@ function calculateJakartaCardiovascularScore(employee, mcu, hasDiabetes) {
 
     // 1. Jenis Kelamin (JK)
     // Laki-laki: 1, Perempuan: 0
-    if (employee.jenis_kelamin?.toLowerCase() === 'laki-laki' || employee.jenis_kelamin?.toLowerCase() === 'male' || employee.jenis_kelamin === 'M') {
+    const gender = (employee.gender || employee.jenis_kelamin || '').toLowerCase();
+    if (gender === 'laki-laki' || gender === 'male' || gender === 'm') {
         scores.jk = 1;
         totalScore += 1;
     }
 
     // 2. Umur (dari tanggal lahir)
-    if (employee.date_of_birth) {
-        const birthDate = new Date(employee.date_of_birth);
+    const dob = employee.dateOfBirth || employee.date_of_birth;
+    if (dob) {
+        const birthDate = new Date(dob);
         const today = new Date();
         let age = today.getFullYear() - birthDate.getFullYear();
         const monthDiff = today.getMonth() - birthDate.getMonth();
@@ -117,8 +119,9 @@ function calculateJakartaCardiovascularScore(employee, mcu, hasDiabetes) {
     }
 
     // 3. Tekanan Darah (TD)
-    if (mcu?.blood_pressure) {
-        const bpParts = mcu.blood_pressure.toString().split('/');
+    const bp = mcu?.bloodPressure || mcu?.blood_pressure;
+    if (bp) {
+        const bpParts = bp.toString().split('/');
         const systolic = parseInt(bpParts[0]);
         const diastolic = parseInt(bpParts[1]);
 
@@ -142,8 +145,9 @@ function calculateJakartaCardiovascularScore(employee, mcu, hasDiabetes) {
     }
 
     // 5. Merokok (Smoking Status)
-    if (mcu?.smoking_status) {
-        const status = mcu.smoking_status.toLowerCase();
+    const smokingStatus = mcu?.smokingStatus || mcu?.smoking_status;
+    if (smokingStatus) {
+        const status = smokingStatus.toLowerCase();
         if (status.includes('tidak') || status.includes('none') || status.includes('no')) {
             scores.merokok = 0;
         } else if (status.includes('mantan') || status.includes('bekas') || status.includes('former')) {
@@ -162,12 +166,13 @@ function calculateJakartaCardiovascularScore(employee, mcu, hasDiabetes) {
     totalScore += scores.diabetes;
 
     // 7. Aktivitas Fisik (Exercise Frequency)
-    if (mcu?.exercise_frequency) {
-        const freq = mcu.exercise_frequency.toLowerCase();
+    const exerciseFreq = mcu?.exerciseFrequency || mcu?.exercise_frequency;
+    if (exerciseFreq) {
+        const freq = exerciseFreq.toLowerCase();
         if (freq.includes('tidak pernah')) scores.aktivitasFisik = 2;
         else if (freq.includes('1-2x sebulan')) scores.aktivitasFisik = 1;
         else if (freq.includes('1-2x seminggu')) scores.aktivitasFisik = 0;
-        else if (freq.includes('2x seminggu') || freq.includes('>2x seminggu')) scores.aktivitasFisik = -3;
+        else if (freq.includes('2x seminggu') || freq.includes('>2x seminggu') || freq.includes('>2')) scores.aktivitasFisik = -3;
 
         totalScore += scores.aktivitasFisik;
     }
@@ -362,7 +367,7 @@ function renderTable() {
     const paginatedData = filteredData.slice(start, end);
 
     if (paginatedData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="18" class="px-4 py-6 text-center text-gray-500">Tidak ada data</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="19" class="px-4 py-6 text-center text-gray-500">Tidak ada data</td></tr>';
         return;
     }
 
@@ -396,6 +401,7 @@ function renderTable() {
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.diabetes}</td>
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.aktivitasFisik}</td>
                 <td class="px-3 py-3 text-sm text-center border border-gray-300 font-semibold ${cvRisk.color}" style="border: 1px solid #d1d5db;">${item.score}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300 font-semibold ${cvRisk.color}" style="border: 1px solid #d1d5db;">${cvRisk.text}</td>
 
                 <!-- Sindrom Metabolik Columns -->
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #f0f9ff;">${lp}</td>
@@ -613,7 +619,7 @@ function renderDashboard() {
                             <th class="px-3 py-3 text-center font-semibold" rowspan="2" style="min-width: 200px; width: 200px; background-color: #ffffff; position: sticky; left: 50px; z-index: 20; vertical-align: middle; border: 1px solid #d1d5db; border-left: none;">Nama</th>
 
                             <!-- Jakarta Cardiovascular Score Header -->
-                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" colspan="8" style="background-color: #fcd34d;">Jakarta Cardiovascular Score</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" colspan="9" style="background-color: #fcd34d;">Jakarta Cardiovascular Score</th>
 
                             <!-- Sindrom Metabolik Header -->
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" colspan="7" style="background-color: #93c5fd;">Sindrom Metabolik</th>
@@ -632,6 +638,7 @@ function renderDashboard() {
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 80px; background-color: #fef3c7;">Diabetes</th>
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 120px; background-color: #fef3c7;">Aktivitas Fisik</th>
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 70px; background-color: #fef3c7;">Nilai</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 60px; background-color: #fef3c7;">Risk</th>
 
                             <!-- Sindrom Metabolik Sub-headers -->
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 60px; background-color: #dbeafe;">LP</th>
@@ -645,7 +652,7 @@ function renderDashboard() {
                     </thead>
                     <tbody id="data-table">
                         <tr>
-                            <td colspan="18" class="px-4 py-6 text-center text-gray-500">Memuat data...</td>
+                            <td colspan="19" class="px-4 py-6 text-center text-gray-500">Memuat data...</td>
                         </tr>
                     </tbody>
                 </table>
