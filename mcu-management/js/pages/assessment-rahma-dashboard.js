@@ -186,12 +186,12 @@ function calculateJakartaCardiovascularScore(employee, mcu, hasDiabetes) {
 
 /**
  * Get Jakarta Cardiovascular Risk Level (3 levels with colors)
- * Score -7 to -1: Level 1 (Green)
+ * Score -7 to 1: Level 1 (Green)
  * Score 2 to 4: Level 2 (Yellow)
  * Score ≥5: Level 3 (Red)
  */
 function getJakartaCVRiskLevel(score) {
-    if (score >= -7 && score <= -1) return { level: 1, color: 'bg-green-100', text: '1' };
+    if (score >= -7 && score <= 1) return { level: 1, color: 'bg-green-100', text: '1' };
     if (score >= 2 && score <= 4) return { level: 2, color: 'bg-yellow-100', text: '2' };
     if (score >= 5) return { level: 3, color: 'bg-red-100', text: '3' };
     return { level: 0, color: 'bg-gray-100', text: '-' };
@@ -199,13 +199,13 @@ function getJakartaCVRiskLevel(score) {
 
 /**
  * Determine overall risk level based on score (for filter/cards - will be 4 levels after combining with Sindrom Metabolik)
- * Score -7 to -1: Level 1 (Low Risk)
+ * Score -7 to 1: Level 1 (Low Risk)
  * Score 2 to 4: Level 2 (Medium Risk)
  * Score 5: Level 3 (High Risk)
  * Score ≥6: Level 4 (Critical)
  */
 function getRiskLevel(score) {
-    if (score >= -7 && score <= -1) return 1; // Low Risk
+    if (score >= -7 && score <= 1) return 1; // Low Risk
     if (score >= 2 && score <= 4) return 2; // Medium Risk
     if (score === 5) return 3; // High Risk
     if (score >= 6) return 4; // Critical
