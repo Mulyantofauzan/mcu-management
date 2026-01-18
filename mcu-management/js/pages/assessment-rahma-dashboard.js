@@ -77,84 +77,125 @@ function hideLoadingModal() {
  * Calculate Jakarta Cardiovascular Score for a single employee
  */
 function calculateJakartaCardiovascularScore(employee, mcu, hasDiabetes) {
-    let score = 0;
+    let totalScore = 0;
     let scores = {
         jk: 0,
+        umur: 0,
         td: 0,
         imt: 0,
         merokok: 0,
-        diabetes: 0
+        diabetes: 0,
+        aktivitasFisik: 0
     };
 
     // 1. Jenis Kelamin (JK)
-    // Pria: 1, Wanita: 0
-    if (employee.gender?.toLowerCase() === 'pria' || employee.gender?.toLowerCase() === 'male' || employee.gender === 'M') {
+    // Laki-laki: 1, Perempuan: 0
+    if (employee.jenis_kelamin?.toLowerCase() === 'laki-laki' || employee.jenis_kelamin?.toLowerCase() === 'male' || employee.jenis_kelamin === 'M') {
         scores.jk = 1;
-        score += 1;
+        totalScore += 1;
     }
 
-    // 2. Tekanan Darah (TD)
-    // If TD ≥ 140/90: +3, else: 0
-    if (mcu?.bloodPressure) {
-        const bpParts = mcu.bloodPressure.toString().split('/');
+    // 2. Umur (dari tanggal lahir)
+    if (employee.date_of_birth) {
+        const birthDate = new Date(employee.date_of_birth);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+
+        if (age >= 25 && age <= 34) scores.umur = -4;
+        else if (age >= 35 && age <= 39) scores.umur = -3;
+        else if (age >= 40 && age <= 44) scores.umur = -2;
+        else if (age >= 45 && age <= 49) scores.umur = 0;
+        else if (age >= 50 && age <= 54) scores.umur = 1;
+        else if (age >= 55 && age <= 59) scores.umur = 2;
+        else if (age >= 60 && age <= 64) scores.umur = 3;
+
+        totalScore += scores.umur;
+    }
+
+    // 3. Tekanan Darah (TD)
+    if (mcu?.blood_pressure) {
+        const bpParts = mcu.blood_pressure.toString().split('/');
         const systolic = parseInt(bpParts[0]);
         const diastolic = parseInt(bpParts[1]);
-        if (systolic >= 140 || diastolic >= 90) {
-            scores.td = 3;
-            score += 3;
-        }
+
+        if (systolic < 130 && diastolic < 85) scores.td = 0;
+        else if (systolic >= 130 && systolic <= 139 && diastolic >= 85 && diastolic <= 89) scores.td = 1;
+        else if (systolic >= 140 && systolic <= 159 && diastolic >= 90 && diastolic <= 99) scores.td = 2;
+        else if (systolic >= 160 && systolic <= 179 && diastolic >= 100 && diastolic <= 109) scores.td = 3;
+        else if (systolic >= 180 || diastolic >= 110) scores.td = 4;
+
+        totalScore += scores.td;
     }
 
-    // 3. IMT (same as BMI)
-    // If BMI ≥ 25: +1, else: 0
-    if (mcu?.bmi && parseFloat(mcu.bmi) >= 25) {
-        scores.imt = 1;
-        score += 1;
+    // 4. IMT (BMI)
+    if (mcu?.bmi) {
+        const bmi = parseFloat(mcu.bmi);
+        if (bmi >= 13.79 && bmi <= 25.99) scores.imt = 0;
+        else if (bmi >= 26.00 && bmi <= 29.99) scores.imt = 1;
+        else if (bmi >= 30.00 && bmi <= 35.58) scores.imt = 2;
+
+        totalScore += scores.imt;
     }
 
-    // 4. Merokok (Smoking Status)
-    // Tidak merokok: 0, Bekas/Mantan merokok: 3, Perokok aktif: 4
-    if (mcu?.smokingStatus) {
-        const status = mcu.smokingStatus.toLowerCase();
-        if (status.includes('aktif') || status.includes('current')) {
-            scores.merokok = 4;
-            score += 4;
-        } else if (status.includes('bekas') || status.includes('mantan') || status.includes('former')) {
+    // 5. Merokok (Smoking Status)
+    if (mcu?.smoking_status) {
+        const status = mcu.smoking_status.toLowerCase();
+        if (status.includes('tidak') || status.includes('none') || status.includes('no')) {
+            scores.merokok = 0;
+        } else if (status.includes('mantan') || status.includes('bekas') || status.includes('former')) {
             scores.merokok = 3;
-            score += 3;
+        } else if (status.includes('aktif') || status.includes('current')) {
+            scores.merokok = 4;
         }
+
+        totalScore += scores.merokok;
     }
 
-    // 5. Diabetes
-    // If has diabetes: 2, else: 0
+    // 6. Diabetes
     if (hasDiabetes) {
         scores.diabetes = 2;
-        score += 2;
+    }
+    totalScore += scores.diabetes;
+
+    // 7. Aktivitas Fisik (Exercise Frequency)
+    if (mcu?.exercise_frequency) {
+        const freq = mcu.exercise_frequency.toLowerCase();
+        if (freq.includes('tidak pernah')) scores.aktivitasFisik = 2;
+        else if (freq.includes('1-2x sebulan')) scores.aktivitasFisik = 1;
+        else if (freq.includes('1-2x seminggu')) scores.aktivitasFisik = 0;
+        else if (freq.includes('2x seminggu') || freq.includes('>2x seminggu')) scores.aktivitasFisik = -3;
+
+        totalScore += scores.aktivitasFisik;
     }
 
-    return { score, scores };
+    return { score: totalScore, scores };
 }
 
 /**
- * Determine risk level based on score
+ * Determine risk level based on score (3 levels)
+ * Risk 1: Score -7 to -1 (Green)
+ * Risk 2: Score 2 to 4 (Yellow)
+ * Risk 3: Score ≥5 (Red)
  */
 function getRiskLevel(score) {
-    if (score >= -7 && score <= -1) return 1; // Low Risk
-    if (score >= 2 && score <= 4) return 2; // Medium Risk
-    if (score === 5) return 3; // High Risk
-    if (score >= 6) return 4; // Critical
+    if (score >= -7 && score <= -1) return 1; // Risk 1 (Green)
+    if (score >= 2 && score <= 4) return 2; // Risk 2 (Yellow)
+    if (score >= 5) return 3; // Risk 3 (Red)
     return 0; // Unknown
 }
 
 /**
- * Get risk level label and color
+ * Get risk level label and color (3 levels)
  */
 function getRiskBadge(riskLevel) {
     const badges = {
-        1: { label: 'Low', color: 'bg-green-100 text-green-800', bgColor: 'bg-green-50' },
-        2: { label: 'Medium', color: 'bg-yellow-100 text-yellow-800', bgColor: 'bg-yellow-50' },
-        3: { label: 'High', color: 'bg-red-100 text-red-800', bgColor: 'bg-red-50' },
-        4: { label: 'Critical', color: 'bg-purple-100 text-purple-800', bgColor: 'bg-purple-50' }
+        1: { label: 'Risk 1', color: 'bg-green-100 text-green-800', bgColor: 'bg-green-50' },
+        2: { label: 'Risk 2', color: 'bg-yellow-100 text-yellow-800', bgColor: 'bg-yellow-50' },
+        3: { label: 'Risk 3', color: 'bg-red-100 text-red-800', bgColor: 'bg-red-50' }
     };
     return badges[riskLevel] || { label: 'Unknown', color: 'bg-gray-100 text-gray-800', bgColor: 'bg-gray-50' };
 }
@@ -277,10 +318,10 @@ function applyFilters() {
 }
 
 /**
- * Update risk counters
+ * Update risk counters (3 levels)
  */
 function updateRiskCounters() {
-    const counts = { 1: 0, 2: 0, 3: 0, 4: 0 };
+    const counts = { 1: 0, 2: 0, 3: 0 };
 
     filteredData.forEach(item => {
         counts[item.riskLevel]++;
@@ -289,7 +330,6 @@ function updateRiskCounters() {
     document.getElementById('count-low').textContent = counts[1];
     document.getElementById('count-medium').textContent = counts[2];
     document.getElementById('count-high').textContent = counts[3];
-    document.getElementById('count-critical').textContent = counts[4];
 }
 
 /**
@@ -305,7 +345,7 @@ function renderTable() {
     const paginatedData = filteredData.slice(start, end);
 
     if (paginatedData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="24" class="px-4 py-6 text-center text-gray-500">Tidak ada data</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="18" class="px-4 py-6 text-center text-gray-500">Tidak ada data</td></tr>';
         return;
     }
 
@@ -317,28 +357,25 @@ function renderTable() {
         const lp = item.mcu?.waistCircumference || '-';
         const tg = item.mcu?.triglycerides || '-';
         const hdl = item.mcu?.hdlCholesterol || '-';
-        const tdMetabolik = item.mcu?.bloodPressure || '-';
+        const tdMetabolik = item.mcu?.blood_pressure || '-';
         const gdp = item.mcu?.fastingGlucose || '-';
         const nilaiMetabolik = '-';
         const riskMetabolik = '-';
-        const riskTotal = item.score;
 
         return `
             <tr class="${rowBgColor}">
                 <td class="px-3 py-3 text-sm text-center" style="position: sticky; left: 0; z-index: 10; background-color: #ffffff; min-width: 50px; width: 50px; border: 1px solid #d1d5db; border-right: 2px solid #d1d5db;">${start + index + 1}</td>
                 <td class="px-3 py-3 text-sm font-medium text-center" style="position: sticky; left: 50px; z-index: 10; background-color: #ffffff; min-width: 200px; width: 200px; white-space: normal; word-wrap: break-word; border: 1px solid #d1d5db; border-left: none;">${item.name}</td>
 
-                <!-- Jakarta Cardiovascular Score Columns -->
+                <!-- Jakarta Cardiovascular Score Columns (scores only) -->
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.jk}</td>
-                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.age}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.umur}</td>
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.td}</td>
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.imt}</td>
-                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.bloodPressure || '-'}</td>
-                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.bmi || '-'}</td>
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.merokok}</td>
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.diabetes}</td>
-                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${getRiskFactorLabel(item.riskLevel)}</td>
-                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.score}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.aktivitasFisik}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300 font-semibold" style="background-color: #fffbeb;">${item.score}</td>
 
                 <!-- Sindrom Metabolik Columns -->
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #f0f9ff;">${lp}</td>
@@ -350,7 +387,6 @@ function renderTable() {
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #f0f9ff;">${riskMetabolik}</td>
 
                 <!-- Summary Columns -->
-                <td class="px-3 py-3 text-sm text-center border border-gray-300 font-semibold">${riskTotal}</td>
                 <td class="px-3 py-3 text-sm text-center border border-gray-300">
                     <span class="px-2 py-1 rounded text-xs font-semibold ${badge.color}">
                         ${badge.label}
@@ -491,26 +527,21 @@ function renderDashboard() {
         </div>
 
         <!-- Risk Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <div class="bg-white rounded-lg border-l-4 border-green-500 p-6 shadow">
-                <h3 class="text-gray-600 text-sm font-medium">Low Risk</h3>
+                <h3 class="text-gray-600 text-sm font-medium">Risk 1</h3>
                 <p class="text-3xl font-bold text-green-600 mt-2" id="count-low">0</p>
                 <p class="text-xs text-gray-500 mt-1">Score: -7 to -1</p>
             </div>
             <div class="bg-white rounded-lg border-l-4 border-yellow-500 p-6 shadow">
-                <h3 class="text-gray-600 text-sm font-medium">Medium Risk</h3>
+                <h3 class="text-gray-600 text-sm font-medium">Risk 2</h3>
                 <p class="text-3xl font-bold text-yellow-600 mt-2" id="count-medium">0</p>
                 <p class="text-xs text-gray-500 mt-1">Score: 2 to 4</p>
             </div>
             <div class="bg-white rounded-lg border-l-4 border-red-500 p-6 shadow">
-                <h3 class="text-gray-600 text-sm font-medium">High Risk</h3>
+                <h3 class="text-gray-600 text-sm font-medium">Risk 3</h3>
                 <p class="text-3xl font-bold text-red-600 mt-2" id="count-high">0</p>
-                <p class="text-xs text-gray-500 mt-1">Score: 5</p>
-            </div>
-            <div class="bg-white rounded-lg border-l-4 border-purple-500 p-6 shadow">
-                <h3 class="text-gray-600 text-sm font-medium">Critical</h3>
-                <p class="text-3xl font-bold text-purple-600 mt-2" id="count-critical">0</p>
-                <p class="text-xs text-gray-500 mt-1">Score: ≥ 6</p>
+                <p class="text-xs text-gray-500 mt-1">Score: ≥ 5</p>
             </div>
         </div>
 
@@ -534,10 +565,9 @@ function renderDashboard() {
                     <label class="block text-sm font-medium text-gray-700 mb-2">Risk Level</label>
                     <select id="filter-risk" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary-500">
                         <option value="">Semua Risk</option>
-                        <option value="1">Low Risk</option>
-                        <option value="2">Medium Risk</option>
-                        <option value="3">High Risk</option>
-                        <option value="4">Critical</option>
+                        <option value="1">Risk 1</option>
+                        <option value="2">Risk 2</option>
+                        <option value="3">Risk 3</option>
                     </select>
                 </div>
                 <div>
@@ -557,13 +587,13 @@ function renderDashboard() {
                             <th class="px-3 py-3 text-center font-semibold" rowspan="2" style="min-width: 200px; width: 200px; background-color: #ffffff; position: sticky; left: 50px; z-index: 20; vertical-align: middle; border: 1px solid #d1d5db; border-left: none;">Nama</th>
 
                             <!-- Jakarta Cardiovascular Score Header -->
-                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" colspan="10" style="background-color: #fcd34d;">Jakarta Cardiovascular Score</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" colspan="8" style="background-color: #fcd34d;">Jakarta Cardiovascular Score</th>
 
                             <!-- Sindrom Metabolik Header -->
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" colspan="7" style="background-color: #93c5fd;">Sindrom Metabolik</th>
 
                             <!-- Summary Columns -->
-                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" colspan="2" style="background-color: #e5e7eb;">Summary</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" rowspan="2" style="background-color: #e5e7eb;">Risk Level</th>
                         </tr>
                         <tr style="height: 40px; vertical-align: middle;">
 
@@ -572,11 +602,9 @@ function renderDashboard() {
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 60px; background-color: #fef3c7;">Umur</th>
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 60px; background-color: #fef3c7;">TD</th>
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 60px; background-color: #fef3c7;">IMT</th>
-                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 100px; background-color: #fef3c7;">Tekanan Darah</th>
-                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 60px; background-color: #fef3c7;">BMI</th>
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 80px; background-color: #fef3c7;">Merokok</th>
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 80px; background-color: #fef3c7;">Diabetes</th>
-                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 120px; background-color: #fef3c7;">Akt/Faktor Risiko</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 120px; background-color: #fef3c7;">Aktivitas Fisik</th>
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 70px; background-color: #fef3c7;">Nilai</th>
 
                             <!-- Sindrom Metabolik Sub-headers -->
@@ -587,15 +615,11 @@ function renderDashboard() {
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 80px; background-color: #dbeafe;">GDP</th>
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 60px; background-color: #dbeafe;">Nilai</th>
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 80px; background-color: #dbeafe;">Risk</th>
-
-                            <!-- Summary Sub-headers -->
-                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 80px; background-color: #f3f4f6;">Risk Total</th>
-                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" style="min-width: 100px; background-color: #f3f4f6;">Risk Level</th>
                         </tr>
                     </thead>
                     <tbody id="data-table">
                         <tr>
-                            <td colspan="24" class="px-4 py-6 text-center text-gray-500">Memuat data...</td>
+                            <td colspan="18" class="px-4 py-6 text-center text-gray-500">Memuat data...</td>
                         </tr>
                     </tbody>
                 </table>
