@@ -176,26 +176,29 @@ function calculateJakartaCardiovascularScore(employee, mcu, hasDiabetes) {
 }
 
 /**
- * Determine risk level based on score (3 levels)
- * Risk 1: Score -7 to -1 (Green)
- * Risk 2: Score 2 to 4 (Yellow)
- * Risk 3: Score ≥5 (Red)
+ * Determine risk level based on score
+ * Score -7 to -1: Level 1 (Low Risk)
+ * Score 2 to 4: Level 2 (Medium Risk)
+ * Score 5: Level 3 (High Risk)
+ * Score ≥6: Level 4 (Critical)
  */
 function getRiskLevel(score) {
-    if (score >= -7 && score <= -1) return 1; // Risk 1 (Green)
-    if (score >= 2 && score <= 4) return 2; // Risk 2 (Yellow)
-    if (score >= 5) return 3; // Risk 3 (Red)
+    if (score >= -7 && score <= -1) return 1; // Low Risk
+    if (score >= 2 && score <= 4) return 2; // Medium Risk
+    if (score === 5) return 3; // High Risk
+    if (score >= 6) return 4; // Critical
     return 0; // Unknown
 }
 
 /**
- * Get risk level label and color (3 levels)
+ * Get risk level label and color
  */
 function getRiskBadge(riskLevel) {
     const badges = {
-        1: { label: 'Risk 1', color: 'bg-green-100 text-green-800', bgColor: 'bg-green-50' },
-        2: { label: 'Risk 2', color: 'bg-yellow-100 text-yellow-800', bgColor: 'bg-yellow-50' },
-        3: { label: 'Risk 3', color: 'bg-red-100 text-red-800', bgColor: 'bg-red-50' }
+        1: { label: 'Low', color: 'bg-green-100 text-green-800', bgColor: 'bg-green-50' },
+        2: { label: 'Medium', color: 'bg-yellow-100 text-yellow-800', bgColor: 'bg-yellow-50' },
+        3: { label: 'High', color: 'bg-red-100 text-red-800', bgColor: 'bg-red-50' },
+        4: { label: 'Critical', color: 'bg-purple-100 text-purple-800', bgColor: 'bg-purple-50' }
     };
     return badges[riskLevel] || { label: 'Unknown', color: 'bg-gray-100 text-gray-800', bgColor: 'bg-gray-50' };
 }
@@ -318,10 +321,10 @@ function applyFilters() {
 }
 
 /**
- * Update risk counters (3 levels)
+ * Update risk counters
  */
 function updateRiskCounters() {
-    const counts = { 1: 0, 2: 0, 3: 0 };
+    const counts = { 1: 0, 2: 0, 3: 0, 4: 0 };
 
     filteredData.forEach(item => {
         counts[item.riskLevel]++;
@@ -330,6 +333,7 @@ function updateRiskCounters() {
     document.getElementById('count-low').textContent = counts[1];
     document.getElementById('count-medium').textContent = counts[2];
     document.getElementById('count-high').textContent = counts[3];
+    document.getElementById('count-critical').textContent = counts[4];
 }
 
 /**
@@ -527,21 +531,26 @@ function renderDashboard() {
         </div>
 
         <!-- Risk Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div class="bg-white rounded-lg border-l-4 border-green-500 p-6 shadow">
-                <h3 class="text-gray-600 text-sm font-medium">Risk 1</h3>
+                <h3 class="text-gray-600 text-sm font-medium">Low Risk</h3>
                 <p class="text-3xl font-bold text-green-600 mt-2" id="count-low">0</p>
                 <p class="text-xs text-gray-500 mt-1">Score: -7 to -1</p>
             </div>
             <div class="bg-white rounded-lg border-l-4 border-yellow-500 p-6 shadow">
-                <h3 class="text-gray-600 text-sm font-medium">Risk 2</h3>
+                <h3 class="text-gray-600 text-sm font-medium">Medium Risk</h3>
                 <p class="text-3xl font-bold text-yellow-600 mt-2" id="count-medium">0</p>
                 <p class="text-xs text-gray-500 mt-1">Score: 2 to 4</p>
             </div>
             <div class="bg-white rounded-lg border-l-4 border-red-500 p-6 shadow">
-                <h3 class="text-gray-600 text-sm font-medium">Risk 3</h3>
+                <h3 class="text-gray-600 text-sm font-medium">High Risk</h3>
                 <p class="text-3xl font-bold text-red-600 mt-2" id="count-high">0</p>
-                <p class="text-xs text-gray-500 mt-1">Score: ≥ 5</p>
+                <p class="text-xs text-gray-500 mt-1">Score: 5</p>
+            </div>
+            <div class="bg-white rounded-lg border-l-4 border-purple-500 p-6 shadow">
+                <h3 class="text-gray-600 text-sm font-medium">Critical</h3>
+                <p class="text-3xl font-bold text-purple-600 mt-2" id="count-critical">0</p>
+                <p class="text-xs text-gray-500 mt-1">Score: ≥ 6</p>
             </div>
         </div>
 
@@ -565,9 +574,10 @@ function renderDashboard() {
                     <label class="block text-sm font-medium text-gray-700 mb-2">Risk Level</label>
                     <select id="filter-risk" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary-500">
                         <option value="">Semua Risk</option>
-                        <option value="1">Risk 1</option>
-                        <option value="2">Risk 2</option>
-                        <option value="3">Risk 3</option>
+                        <option value="1">Low Risk</option>
+                        <option value="2">Medium Risk</option>
+                        <option value="3">High Risk</option>
+                        <option value="4">Critical</option>
                     </select>
                 </div>
                 <div>
