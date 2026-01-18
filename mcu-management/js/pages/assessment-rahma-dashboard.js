@@ -259,6 +259,12 @@ async function calculateAllAssessments() {
     for (let i = 0; i < allEmployees.length; i++) {
         const employee = allEmployees[i];
         try {
+            // Skip inactive employees
+            if (employee.activeStatus !== 'Active' && employee.activeStatus !== 'Aktif') {
+                updateLoadingProgress(((i + 1) / totalEmployees) * 100);
+                continue;
+            }
+
             // Get latest MCU for this employee
             const employeeMCUs = allMCUs.filter(m => m.employeeId === employee.employeeId);
             if (employeeMCUs.length === 0) {
