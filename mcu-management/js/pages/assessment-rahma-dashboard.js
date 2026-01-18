@@ -90,14 +90,14 @@ function calculateJakartaCardiovascularScore(employee, mcu, hasDiabetes) {
 
     // 1. Jenis Kelamin (JK)
     // Laki-laki: 1, Perempuan: 0
-    const gender = (employee.gender || employee.jenis_kelamin || '').toLowerCase();
+    const gender = (employee.jenisKelamin || employee.gender || employee.jenis_kelamin || '').toLowerCase();
     if (gender === 'laki-laki' || gender === 'male' || gender === 'm') {
         scores.jk = 1;
         totalScore += 1;
     }
 
     // 2. Umur (dari tanggal lahir)
-    const dob = employee.dateOfBirth || employee.date_of_birth;
+    const dob = employee.birthDate || employee.dateOfBirth || employee.date_of_birth;
     if (dob) {
         const birthDate = new Date(dob);
         const today = new Date();
@@ -107,7 +107,7 @@ function calculateJakartaCardiovascularScore(employee, mcu, hasDiabetes) {
             age--;
         }
 
-        if (age >= 25 && age <= 34) scores.umur = -4;
+        if (age < 25 || (age >= 25 && age <= 34)) scores.umur = -4;
         else if (age >= 35 && age <= 39) scores.umur = -3;
         else if (age >= 40 && age <= 44) scores.umur = -2;
         else if (age >= 45 && age <= 49) scores.umur = 0;
@@ -282,12 +282,13 @@ async function calculateAllAssessments() {
             const riskLevel = getRiskLevel(score);
 
             // Calculate age
-            const age = new Date().getFullYear() - new Date(employee.dateOfBirth).getFullYear();
+            const dob = employee.birthDate || employee.dateOfBirth;
+            const age = dob ? new Date().getFullYear() - new Date(dob).getFullYear() : 0;
 
             cardiovascularData.push({
                 employeeId: employee.employeeId,
                 name: employee.name,
-                gender: employee.gender,
+                gender: employee.jenisKelamin || employee.gender,
                 age: age,
                 department: employee.department,
                 jobTitle: employee.jobTitle,
@@ -400,7 +401,7 @@ function renderTable() {
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.merokok}</td>
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.diabetes}</td>
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.aktivitasFisik}</td>
-                <td class="px-3 py-3 text-sm text-center border border-gray-300 font-semibold ${cvRisk.color}" style="border: 1px solid #d1d5db;">${item.score}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300 font-semibold" style="border: 1px solid #d1d5db; background-color: #ffffff;">${item.score}</td>
                 <td class="px-3 py-3 text-sm text-center border border-gray-300 font-semibold ${cvRisk.color}" style="border: 1px solid #d1d5db;">${cvRisk.text}</td>
 
                 <!-- Sindrom Metabolik Columns -->
