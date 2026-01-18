@@ -263,10 +263,11 @@ async function loadAllMedicalHistories() {
         const allHistories = await database.MedicalHistories.getAll() || [];
         // Group by mcuId for fast lookup
         allHistories.forEach(history => {
-            if (!allMedicalHistories[history.mcuId]) {
-                allMedicalHistories[history.mcuId] = [];
+            const mcuId = history.mcuId || history.mcu_id;
+            if (!allMedicalHistories[mcuId]) {
+                allMedicalHistories[mcuId] = [];
             }
-            allMedicalHistories[history.mcuId].push(history);
+            allMedicalHistories[mcuId].push(history);
         });
     } catch (error) {
         console.error('Error loading medical histories:', error);
@@ -301,7 +302,8 @@ async function calculateAllAssessments() {
             )[0];
 
             // Check for diabetes from cached medical histories
-            const medicalHistories = allMedicalHistories[latestMCU.mcuId] || [];
+            const mcuId = latestMCU.mcuId || latestMCU.mcu_id;
+            const medicalHistories = allMedicalHistories[mcuId] || [];
             const hasDiabetes = medicalHistories.some(h => {
                 const disease = (h.disease_name || h.diseaseName || '').toLowerCase();
                 return disease.includes('diabetes') || disease.includes('dm');
