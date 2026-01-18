@@ -851,7 +851,7 @@ window.handleDetailMCUUpdate = async function(event) {
       'update-rr': { label: 'RR (Frekuensi Nafas)', dataKey: 'respiratoryRate' },
       'update-pulse': { label: 'Nadi', dataKey: 'pulse' },
       'update-temp': { label: 'Suhu', dataKey: 'temperature' },
-      'update-chest-circumference': { label: 'Lingkar Dada', dataKey: 'chestCircumference' },
+      'update-chest-circumference': { label: 'Lingkar Perut', dataKey: 'chestCircumference' },
       'update-vision': { label: 'Penglihatan', dataKey: 'vision' },
       'update-audio': { label: 'Audiometri', dataKey: 'audiometry' },
       'update-spiro': { label: 'Spirometri', dataKey: 'spirometry' },

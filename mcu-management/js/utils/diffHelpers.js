@@ -50,7 +50,7 @@ const fieldLabels = {
   respiratoryRate: 'Frekuensi Nafas',
   pulse: 'Nadi',
   temperature: 'Suhu',
-  chestCircumference: 'Lingkar Dada',
+  chestCircumference: 'Lingkar Perut',
   vision: 'Penglihatan',
   visionDistantUnaideLeft: 'Visus Jauh Mata Kiri (Tanpa Koreksi)',
   visionDistantUnaideRight: 'Visus Jauh Mata Kanan (Tanpa Koreksi)',

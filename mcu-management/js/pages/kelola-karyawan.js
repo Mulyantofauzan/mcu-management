@@ -1388,7 +1388,7 @@ window.viewMCUDetail = async function(mcuId) {
                 'respiratoryRate': 'RR (Frekuensi Nafas)',
                 'pulse': 'Nadi',
                 'temperature': 'Suhu',
-                'chestCircumference': 'Lingkar Dada',
+                'chestCircumference': 'Lingkar Perut',
                 'vision': 'Penglihatan',
                 'audiometry': 'Audiometri',
                 'spirometry': 'Spirometri',
