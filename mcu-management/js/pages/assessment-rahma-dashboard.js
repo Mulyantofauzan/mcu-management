@@ -269,8 +269,8 @@ function renderTable() {
 
         return `
             <tr class="${rowBgColor}">
-                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="position: sticky; left: 0; z-index: 10; background-color: inherit;">${start + index + 1}</td>
-                <td class="px-3 py-3 text-sm font-medium border border-gray-300" style="position: sticky; left: 50px; z-index: 10; background-color: inherit;">${item.name}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="position: sticky; left: 0; z-index: 10; background-color: inherit; min-width: 50px; width: 50px;">${start + index + 1}</td>
+                <td class="px-3 py-3 text-sm font-medium text-center border border-gray-300" style="position: sticky; left: 50px; z-index: 10; background-color: inherit; min-width: 150px; width: 150px;">${item.name}</td>
 
                 <!-- Jakarta Cardiovascular Score Columns -->
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.jk}</td>
@@ -497,8 +497,8 @@ function renderDashboard() {
                 <table class="text-sm border-collapse" style="min-width: 2400px; width: 100%;">
                     <thead class="bg-gray-100 border-b-2 border-gray-300">
                         <tr style="height: 60px; vertical-align: middle;">
-                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" rowspan="2" style="min-width: 50px; background-color: #f3f4f6; position: sticky; left: 0; z-index: 20; vertical-align: middle;">No</th>
-                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" rowspan="2" style="min-width: 150px; background-color: #f3f4f6; position: sticky; left: 50px; z-index: 20; vertical-align: middle;">Nama</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" rowspan="2" style="min-width: 50px; width: 50px; background-color: #f3f4f6; position: sticky; left: 0; z-index: 20; vertical-align: middle;">No</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" rowspan="2" style="min-width: 150px; width: 150px; background-color: #f3f4f6; position: sticky; left: 50px; z-index: 20; vertical-align: middle;">Nama</th>
 
                             <!-- Jakarta Cardiovascular Score Header -->
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" colspan="10" style="background-color: #fcd34d;">Jakarta Cardiovascular Score</th>
