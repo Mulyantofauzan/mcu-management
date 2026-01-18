@@ -115,6 +115,7 @@ function calculateJakartaCardiovascularScore(employee, mcu, hasDiabetes) {
         else if (age >= 50 && age <= 54) scores.umur = 1;
         else if (age >= 55 && age <= 59) scores.umur = 2;
         else if (age >= 60 && age <= 64) scores.umur = 3;
+        else if (age > 64) scores.umur = 3;
 
         totalScore += scores.umur;
     }
@@ -138,9 +139,11 @@ function calculateJakartaCardiovascularScore(employee, mcu, hasDiabetes) {
     // 4. IMT (BMI)
     if (mcu?.bmi) {
         const bmi = parseFloat(mcu.bmi);
-        if (bmi >= 13.79 && bmi <= 25.99) scores.imt = 0;
+        if (bmi < 13.79) scores.imt = 0;
+        else if (bmi >= 13.79 && bmi <= 25.99) scores.imt = 0;
         else if (bmi >= 26.00 && bmi <= 29.99) scores.imt = 1;
         else if (bmi >= 30.00 && bmi <= 35.58) scores.imt = 2;
+        else if (bmi > 35.58) scores.imt = 2;
 
         totalScore += scores.imt;
     }
