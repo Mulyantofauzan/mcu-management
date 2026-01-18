@@ -27,6 +27,53 @@ let currentPage = 1;
 const itemsPerPage = 10;
 
 /**
+ * Show loading modal with progress
+ */
+function showLoadingModal(message = 'Data sedang dihitung, harap tunggu sebentar...') {
+    const existingModal = document.getElementById('loading-modal');
+    if (existingModal) existingModal.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'loading-modal';
+    modal.innerHTML = `
+        <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+            <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); min-width: 400px;">
+                <p style="text-align: center; font-size: 16px; color: #333; margin-bottom: 20px; font-weight: 500;">${message}</p>
+                <div style="background-color: #e5e7eb; border-radius: 4px; height: 8px; margin-bottom: 10px; overflow: hidden;">
+                    <div id="progress-bar" style="background-color: #3b82f6; height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+                </div>
+                <p style="text-align: center; font-size: 14px; color: #666;"><span id="progress-text">0</span>%</p>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+/**
+ * Update loading progress
+ */
+function updateLoadingProgress(percentage) {
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+    if (progressBar) {
+        progressBar.style.width = percentage + '%';
+    }
+    if (progressText) {
+        progressText.textContent = Math.round(percentage);
+    }
+}
+
+/**
+ * Hide loading modal
+ */
+function hideLoadingModal() {
+    const modal = document.getElementById('loading-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+/**
  * Calculate Jakarta Cardiovascular Score for a single employee
  */
 function calculateJakartaCardiovascularScore(employee, mcu, hasDiabetes) {
@@ -145,12 +192,17 @@ async function loadJobTitles() {
  */
 async function calculateAllAssessments() {
     cardiovascularData = [];
+    const totalEmployees = allEmployees.length;
 
-    for (const employee of allEmployees) {
+    for (let i = 0; i < allEmployees.length; i++) {
+        const employee = allEmployees[i];
         try {
             // Get latest MCU for this employee
             const employeeMCUs = allMCUs.filter(m => m.employeeId === employee.employeeId);
-            if (employeeMCUs.length === 0) continue;
+            if (employeeMCUs.length === 0) {
+                updateLoadingProgress(((i + 1) / totalEmployees) * 100);
+                continue;
+            }
 
             const latestMCU = employeeMCUs.sort((a, b) =>
                 new Date(b.mcuDate) - new Date(a.mcuDate)
@@ -186,8 +238,12 @@ async function calculateAllAssessments() {
                 scores: scores,
                 mcu: latestMCU
             });
+
+            // Update progress
+            updateLoadingProgress(((i + 1) / totalEmployees) * 100);
         } catch (error) {
             console.error(`Error processing employee ${employee.name}:`, error);
+            updateLoadingProgress(((i + 1) / totalEmployees) * 100);
         }
     }
 
@@ -269,8 +325,8 @@ function renderTable() {
 
         return `
             <tr class="${rowBgColor}">
-                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="position: sticky; left: 0; z-index: 10; background-color: inherit; min-width: 50px; width: 50px;">${start + index + 1}</td>
-                <td class="px-3 py-3 text-sm font-medium text-center border border-gray-300" style="position: sticky; left: 50px; z-index: 10; background-color: inherit; min-width: 150px; width: 150px;">${item.name}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="position: sticky; left: 0; z-index: 10; background-color: #ffffff; min-width: 50px; width: 50px;">${start + index + 1}</td>
+                <td class="px-3 py-3 text-sm font-medium text-center border border-gray-300" style="position: sticky; left: 50px; z-index: 10; background-color: #ffffff; min-width: 200px; width: 200px; white-space: normal; word-wrap: break-word;">${item.name}</td>
 
                 <!-- Jakarta Cardiovascular Score Columns -->
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.jk}</td>
@@ -497,8 +553,8 @@ function renderDashboard() {
                 <table class="text-sm border-collapse" style="min-width: 2400px; width: 100%;">
                     <thead class="bg-gray-100 border-b-2 border-gray-300">
                         <tr style="height: 60px; vertical-align: middle;">
-                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" rowspan="2" style="min-width: 50px; width: 50px; background-color: #f3f4f6; position: sticky; left: 0; z-index: 20; vertical-align: middle;">No</th>
-                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" rowspan="2" style="min-width: 150px; width: 150px; background-color: #f3f4f6; position: sticky; left: 50px; z-index: 20; vertical-align: middle;">Nama</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" rowspan="2" style="min-width: 50px; width: 50px; background-color: #ffffff; position: sticky; left: 0; z-index: 20; vertical-align: middle;">No</th>
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" rowspan="2" style="min-width: 200px; width: 200px; background-color: #ffffff; position: sticky; left: 50px; z-index: 20; vertical-align: middle;">Nama</th>
 
                             <!-- Jakarta Cardiovascular Score Header -->
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" colspan="10" style="background-color: #fcd34d;">Jakarta Cardiovascular Score</th>
@@ -571,11 +627,8 @@ export async function initAssessmentRahmaDAshboard() {
             return;
         }
 
-        // Show loading
-        const page = document.getElementById('rahma-main-content');
-        if (page) {
-            page.innerHTML = '<div class="p-6"><p class="text-gray-600">Loading...</p></div>';
-        }
+        // Show loading modal
+        showLoadingModal('Data sedang dihitung, harap tunggu sebentar...');
 
         // Load all data
         await Promise.all([
@@ -588,12 +641,16 @@ export async function initAssessmentRahmaDAshboard() {
         // Calculate scores for all active employees
         await calculateAllAssessments();
 
+        // Hide loading modal
+        hideLoadingModal();
+
         // Render dashboard
         renderDashboard();
 
         document.body.classList.add('initialized');
     } catch (error) {
         console.error('Error initializing Jakarta Cardiovascular:', error);
+        hideLoadingModal();
         showToast('Gagal memuat data: ' + error.message, 'error');
         document.body.classList.add('initialized');
     }
