@@ -126,11 +126,11 @@ function calculateJakartaCardiovascularScore(employee, mcu, hasDiabetes) {
         const systolic = parseInt(bpParts[0]);
         const diastolic = parseInt(bpParts[1]);
 
-        if (systolic < 130 && diastolic < 85) scores.td = 0;
-        else if ((systolic >= 130 && systolic <= 139) || (diastolic >= 85 && diastolic <= 89)) scores.td = 1;
-        else if ((systolic >= 140 && systolic <= 159) || (diastolic >= 90 && diastolic <= 99)) scores.td = 2;
+        if (systolic >= 180 || diastolic >= 110) scores.td = 4;
         else if ((systolic >= 160 && systolic <= 179) || (diastolic >= 100 && diastolic <= 109)) scores.td = 3;
-        else if (systolic >= 180 || diastolic >= 110) scores.td = 4;
+        else if ((systolic >= 140 && systolic <= 159) || (diastolic >= 90 && diastolic <= 99)) scores.td = 2;
+        else if ((systolic >= 130 && systolic <= 139) || (diastolic >= 85 && diastolic <= 89)) scores.td = 1;
+        else scores.td = 0;
 
         totalScore += scores.td;
     }
