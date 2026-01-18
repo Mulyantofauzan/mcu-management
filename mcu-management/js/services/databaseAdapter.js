@@ -1474,6 +1474,26 @@ const MedicalHistories = {
             console.error('Exception deleting medical histories:', err);
             return { success: false, error: err };
         }
+    },
+
+    async getAll() {
+        try {
+            const supabase = getSupabaseClient();
+            const { data, error } = await supabase
+                .from('medical_histories')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error fetching all medical histories:', error);
+                return [];
+            }
+
+            return data || [];
+        } catch (err) {
+            console.error('Exception fetching all medical histories:', err);
+            return [];
+        }
     }
 };
 
