@@ -23,6 +23,7 @@ let cardiovascularData = [];
 let filteredData = [];
 let departments = [];
 let jobTitles = [];
+let allMedicalHistories = {}; // Cache: mcuId -> [medical histories]
 let currentPage = 1;
 const itemsPerPage = 10;
 
@@ -250,6 +251,26 @@ async function loadJobTitles() {
 }
 
 /**
+ * Load all medical histories and cache by mcuId
+ * This is much faster than loading per MCU
+ */
+async function loadAllMedicalHistories() {
+    allMedicalHistories = {};
+    try {
+        const allHistories = await database.MedicalHistories.getAll() || [];
+        // Group by mcuId for fast lookup
+        allHistories.forEach(history => {
+            if (!allMedicalHistories[history.mcuId]) {
+                allMedicalHistories[history.mcuId] = [];
+            }
+            allMedicalHistories[history.mcuId].push(history);
+        });
+    } catch (error) {
+        console.error('Error loading medical histories:', error);
+    }
+}
+
+/**
  * Calculate all cardiovascular scores
  */
 async function calculateAllAssessments() {
@@ -276,8 +297,8 @@ async function calculateAllAssessments() {
                 new Date(b.mcuDate) - new Date(a.mcuDate)
             )[0];
 
-            // Check for diabetes
-            const medicalHistories = await database.MedicalHistories.getByMcuId(latestMCU.mcuId);
+            // Check for diabetes from cached medical histories
+            const medicalHistories = allMedicalHistories[latestMCU.mcuId] || [];
             const hasDiabetes = medicalHistories.some(h => {
                 const disease = (h.disease_name || h.diseaseName || '').toLowerCase();
                 return disease.includes('diabetes') || disease.includes('dm');
@@ -694,12 +715,13 @@ export async function initAssessmentRahmaDAshboard() {
         // Show loading modal
         showLoadingModal('Data sedang dihitung, harap tunggu sebentar...');
 
-        // Load all data
+        // Load all data in parallel
         await Promise.all([
             loadEmployees(),
             loadMCUs(),
             loadDepartments(),
-            loadJobTitles()
+            loadJobTitles(),
+            loadAllMedicalHistories()
         ]);
 
         // Calculate scores for all active employees
