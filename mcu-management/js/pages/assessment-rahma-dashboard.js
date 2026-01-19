@@ -26,8 +26,17 @@ let filteredData = [];
 let departments = [];
 let jobTitles = [];
 let allMedicalHistories = {}; // Cache: mcuId -> [medical histories]
+let allLabResults = {}; // Cache: mcuId -> [lab results]
 let currentPage = 1;
 const itemsPerPage = 10;
+
+// Cache management
+const CACHE_KEYS = {
+    ASSESSMENTS: 'assessment_rahma_cache',
+    LAB_RESULTS: 'lab_results_cache',
+    TIMESTAMP: 'assessment_cache_timestamp'
+};
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
 /**
  * Show loading modal with progress
@@ -277,6 +286,96 @@ async function loadAllMedicalHistories() {
 }
 
 /**
+ * Pre-load all lab results for all MCUs and cache by mcuId
+ * This is much faster than loading per MCU during calculation
+ */
+async function loadAllLabResults() {
+    allLabResults = {};
+    try {
+        // Get all unique MCU IDs from allMCUs
+        const mcuIds = [...new Set(allMCUs.map(mcu => mcu.mcuId || mcu.mcu_id))];
+
+        // Load lab results for all MCUs in parallel
+        const labPromises = mcuIds.map(mcuId =>
+            labService.getPemeriksaanLabByMcuId(mcuId)
+                .then(results => ({ mcuId, results }))
+                .catch(() => ({ mcuId, results: [] }))
+        );
+
+        const allResults = await Promise.all(labPromises);
+
+        // Cache by mcuId for fast lookup
+        allResults.forEach(({ mcuId, results }) => {
+            allLabResults[mcuId] = results || [];
+        });
+
+        console.log(`Pre-cached lab results for ${mcuIds.length} MCUs`);
+    } catch (error) {
+        console.error('Error pre-loading lab results:', error);
+    }
+}
+
+/**
+ * Check if assessment cache is valid
+ */
+function isCacheValid() {
+    try {
+        const timestamp = localStorage.getItem(CACHE_KEYS.TIMESTAMP);
+        if (!timestamp) return false;
+
+        const cacheAge = Date.now() - parseInt(timestamp);
+        return cacheAge < CACHE_TTL;
+    } catch (error) {
+        return false;
+    }
+}
+
+/**
+ * Load assessment from cache
+ */
+function loadFromCache() {
+    try {
+        if (!isCacheValid()) return null;
+
+        const cached = localStorage.getItem(CACHE_KEYS.ASSESSMENTS);
+        if (!cached) return null;
+
+        const data = JSON.parse(cached);
+        console.log(`Loaded ${data.length} assessments from cache`);
+        return data;
+    } catch (error) {
+        console.warn('Error loading from cache:', error);
+        return null;
+    }
+}
+
+/**
+ * Save assessment to cache
+ */
+function saveToCache(data) {
+    try {
+        localStorage.setItem(CACHE_KEYS.ASSESSMENTS, JSON.stringify(data));
+        localStorage.setItem(CACHE_KEYS.TIMESTAMP, Date.now().toString());
+        console.log(`Saved ${data.length} assessments to cache`);
+    } catch (error) {
+        console.warn('Cache storage failed (quota exceeded?):', error);
+    }
+}
+
+/**
+ * Clear assessment cache
+ */
+function clearCache() {
+    try {
+        localStorage.removeItem(CACHE_KEYS.ASSESSMENTS);
+        localStorage.removeItem(CACHE_KEYS.TIMESTAMP);
+        console.log('Assessment cache cleared');
+    } catch (error) {
+        console.warn('Error clearing cache:', error);
+    }
+}
+
+/**
  * Calculate all cardiovascular scores
  */
 async function calculateAllAssessments() {
@@ -319,14 +418,8 @@ async function calculateAllAssessments() {
             const dob = employee.birthDate || employee.dateOfBirth;
             const age = dob ? new Date().getFullYear() - new Date(dob).getFullYear() : 0;
 
-            // Load lab results for metabolic syndrome calculation
-            let labResults = [];
-            try {
-                labResults = await labService.getPemeriksaanLabByMcuId(mcuId) || [];
-            } catch (error) {
-                console.warn(`Could not load lab results for MCU ${mcuId}:`, error);
-                labResults = [];
-            }
+            // Use pre-cached lab results (no await needed - already in memory)
+            const labResults = allLabResults[mcuId] || [];
 
             // Calculate metabolic syndrome
             let metabolicSyndromeData = {
@@ -379,6 +472,9 @@ async function calculateAllAssessments() {
     // Sort by score descending
     cardiovascularData.sort((a, b) => b.score - a.score);
     filteredData = [...cardiovascularData];
+
+    // Save to localStorage cache
+    saveToCache(cardiovascularData);
 }
 
 /**
@@ -771,11 +867,25 @@ export async function initAssessmentRahmaDAshboard() {
             loadMCUs(),
             loadDepartments(),
             loadJobTitles(),
-            loadAllMedicalHistories()
+            loadAllMedicalHistories(),
+            loadAllLabResults()  // Pre-load all lab results for fast lookup during calculation
         ]);
 
-        // Calculate scores for all active employees
-        await calculateAllAssessments();
+        // Check if cached data is still valid
+        if (isCacheValid()) {
+            console.log('Using cached assessment data');
+            const cachedData = loadFromCache();
+            if (cachedData && cachedData.length > 0) {
+                cardiovascularData = cachedData;
+            } else {
+                // Cache exists but is empty, calculate fresh
+                await calculateAllAssessments();
+            }
+        } else {
+            // Cache expired or doesn't exist, calculate fresh
+            console.log('Cache expired or not found, calculating fresh data');
+            await calculateAllAssessments();
+        }
 
         // Debug: Log loaded data
         console.log('Employees loaded:', allEmployees.length);
