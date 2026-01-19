@@ -810,15 +810,17 @@ export async function initAssessmentRahmaDAshboard() {
         // Show loading modal
         showLoadingModal('Data sedang dihitung, harap tunggu sebentar...');
 
-        // Load all data in parallel
+        // Load employees, MCUs, departments, job titles in parallel
         await Promise.all([
             loadEmployees(),
             loadMCUs(),
             loadDepartments(),
             loadJobTitles(),
-            loadAllMedicalHistories(),
-            loadAllLabResults()  // Pre-load all lab results for fast lookup during calculation
+            loadAllMedicalHistories()
         ]);
+
+        // Load lab results AFTER MCUs are loaded (depends on allMCUs)
+        await loadAllLabResults();
 
         // Always calculate fresh - parallel loading + pre-cached lab results already makes it fast
         // Caching localStorage can cause data to disappear, so we skip it for stability
