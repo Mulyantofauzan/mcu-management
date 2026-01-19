@@ -187,9 +187,21 @@ if (currentUser) {
 
 ## Viewing Change History
 
-### For Individual MCU
+### For Individual MCU (User Interface)
 
-Query `mcu_changes` table:
+**Path:** Kelola Karyawan → Cari Karyawan → Klik "Detail" → Tab "Riwayat Perubahan"
+
+**Steps:**
+1. Buka menu "Kelola Karyawan"
+2. Cari dan buka detail karyawan
+3. Di modal detail, lihat tab "Riwayat Perubahan"
+4. Akan menampilkan timeline lengkap:
+   - Item MCU yang berubah (nama field)
+   - Nilai awal (sebelum)
+   - Nilai akhir (sesudah)
+   - Status (Diubah/Tidak diubah)
+
+**Query via Database:**
 ```sql
 SELECT * FROM mcu_changes
 WHERE mcu_id = 'MCU-20240115-0001'
@@ -425,13 +437,28 @@ When implementing **NEW MCU update features**, ensure:
 
 ---
 
+## How to Access Change History
+
+### User-Friendly Interface ✅
+Kelola Karyawan → Detail Karyawan → Riwayat Perubahan Section
+- Shows all MCU changes in readable format
+- Before/after comparison for each field
+- Organized by date (newest first)
+- User-friendly field names (Bahasa Indonesia)
+
+### Database Query
+Direct SQL query to `mcu_changes` table for integration/reporting
+
+---
+
 ## Summary
 
 ✅ **Change tracking is AUTOMATIC** - no additional code needed
 ✅ **All MCU updates are logged** - field-level and system-level
+✅ **User-friendly interface** - Riwayat Perubahan in Kelola Karyawan detail
 ✅ **Immutable audit trail** - cannot be deleted or modified
 ✅ **Compliance ready** - HIPAA & UU-PDP compliant
 ✅ **Performance optimized** - indexed for fast queries
 ✅ **User accountability** - who, what, when, where tracked
 
-**Bottom line:** Every change to MCU data is automatically recorded with full audit trail for compliance and transparency. ✨
+**Bottom line:** Every change to MCU data is automatically recorded with full audit trail accessible via Kelola Karyawan → Detail → Riwayat Perubahan for compliance and transparency. ✨
