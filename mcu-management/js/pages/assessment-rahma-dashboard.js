@@ -11,6 +11,8 @@
 import { authService } from '../services/authService.js';
 import { employeeService } from '../services/employeeService.js';
 import { mcuService } from '../services/mcuService.js';
+import { labService } from '../services/labService.js';
+import * as metabolicSyndromeService from '../services/metabolicSyndromeService.js';
 import database from '../services/databaseAdapter.js';
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast } from '../utils/uiHelpers.js';
@@ -317,6 +319,37 @@ async function calculateAllAssessments() {
             const dob = employee.birthDate || employee.dateOfBirth;
             const age = dob ? new Date().getFullYear() - new Date(dob).getFullYear() : 0;
 
+            // Load lab results for metabolic syndrome calculation
+            let labResults = [];
+            try {
+                labResults = await labService.getPemeriksaanLabByMcuId(mcuId) || [];
+            } catch (error) {
+                console.warn(`Could not load lab results for MCU ${mcuId}:`, error);
+                labResults = [];
+            }
+
+            // Calculate metabolic syndrome
+            let metabolicSyndromeData = {
+                scores: { lp: undefined, tg: undefined, hdl: undefined, td: undefined, gdp: undefined },
+                totalScore: undefined,
+                risk: undefined
+            };
+
+            try {
+                const metabolicResult = metabolicSyndromeService.performMetabolicSyndromeAssessment(
+                    employee,
+                    latestMCU,
+                    labResults,
+                    hasDiabetes
+                );
+
+                if (metabolicResult) {
+                    metabolicSyndromeData = metabolicResult;
+                }
+            } catch (error) {
+                console.warn(`Could not calculate metabolic syndrome for employee ${employee.name}:`, error);
+            }
+
             cardiovascularData.push({
                 employeeId: employee.employeeId,
                 name: employee.name,
@@ -331,7 +364,8 @@ async function calculateAllAssessments() {
                 score: score,
                 riskLevel: riskLevel,
                 scores: scores,
-                mcu: latestMCU
+                mcu: latestMCU,
+                metabolicSyndrome: metabolicSyndromeData
             });
 
             // Update progress
@@ -411,14 +445,15 @@ function renderTable() {
         // Jakarta Cardiovascular Risk Level (3 levels with colors)
         const cvRisk = getJakartaCVRiskLevel(item.score);
 
-        // Default values for Sindrom Metabolik (currently empty, will be populated if data exists)
-        const lp = item.mcu?.waistCircumference || '-';
-        const tg = item.mcu?.triglycerides || '-';
-        const hdl = item.mcu?.hdlCholesterol || '-';
-        const tdMetabolik = item.mcu?.blood_pressure || '-';
-        const gdp = item.mcu?.fastingGlucose || '-';
-        const nilaiMetabolik = '-';
-        const riskMetabolik = '-';
+        // Sindrom Metabolik values from calculation
+        const lp = item.metabolicSyndrome?.scores.lp !== undefined ? item.metabolicSyndrome.scores.lp : '-';
+        const tg = item.metabolicSyndrome?.scores.tg !== undefined ? item.metabolicSyndrome.scores.tg : '-';
+        const hdl = item.metabolicSyndrome?.scores.hdl !== undefined ? item.metabolicSyndrome.scores.hdl : '-';
+        const tdMetabolik = item.metabolicSyndrome?.scores.td !== undefined ? item.metabolicSyndrome.scores.td : '-';
+        const gdp = item.metabolicSyndrome?.scores.gdp !== undefined ? item.metabolicSyndrome.scores.gdp : '-';
+        const nilaiMetabolik = item.metabolicSyndrome?.totalScore !== undefined ? item.metabolicSyndrome.totalScore : '-';
+        const metabolikRiskData = item.metabolicSyndrome?.risk ? getMetabolicSyndromeRiskLabel(item.metabolicSyndrome.risk) : { text: '-', color: 'bg-gray-100', label: 'Unknown' };
+        const riskMetabolik = metabolikRiskData.text;
 
         return `
             <tr class="${rowBgColor}">
@@ -442,8 +477,8 @@ function renderTable() {
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #f0f9ff;">${hdl}</td>
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #f0f9ff;">${tdMetabolik}</td>
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #f0f9ff;">${gdp}</td>
-                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #f0f9ff;">${nilaiMetabolik}</td>
-                <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #f0f9ff;">${riskMetabolik}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300 font-semibold" style="background-color: #f0f9ff;">${nilaiMetabolik}</td>
+                <td class="px-3 py-3 text-sm text-center border border-gray-300 font-semibold ${metabolikRiskData.color}" style="border: 1px solid #d1d5db;">${riskMetabolik}</td>
 
                 <!-- Summary Columns -->
                 <td class="px-3 py-3 text-sm text-center border border-gray-300">
@@ -467,6 +502,16 @@ function getRiskFactorLabel(riskLevel) {
         4: '1'
     };
     return labels[riskLevel] || '-';
+}
+
+/**
+ * Get metabolic syndrome risk label and color
+ */
+function getMetabolicSyndromeRiskLabel(risk) {
+    if (risk === 1) return { text: '1', color: 'bg-green-100', label: 'Normal' };
+    if (risk === 2) return { text: '2', color: 'bg-yellow-100', label: 'Medium' };
+    if (risk === 3) return { text: '3', color: 'bg-red-100', label: 'Sindrom Metabolik' };
+    return { text: '-', color: 'bg-gray-100', label: 'Unknown' };
 }
 
 /**
@@ -731,6 +776,14 @@ export async function initAssessmentRahmaDAshboard() {
 
         // Calculate scores for all active employees
         await calculateAllAssessments();
+
+        // Debug: Log loaded data
+        console.log('Employees loaded:', allEmployees.length);
+        console.log('MCUs loaded:', allMCUs.length);
+        console.log('Cardiovascular data calculated:', cardiovascularData.length);
+        if (cardiovascularData.length > 0) {
+            console.log('Sample data:', cardiovascularData[0]);
+        }
 
         // Hide loading modal
         hideLoadingModal();
