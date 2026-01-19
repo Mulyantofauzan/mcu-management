@@ -479,7 +479,7 @@ function renderTable() {
     const paginatedData = filteredData.slice(start, end);
 
     if (paginatedData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="19" class="px-4 py-6 text-center text-gray-500">Tidak ada data</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="20" class="px-4 py-6 text-center text-gray-500">Tidak ada data</td></tr>';
         return;
     }
 
@@ -499,6 +499,12 @@ function renderTable() {
         const nilaiMetabolik = item.metabolicSyndrome?.totalScore !== undefined ? item.metabolicSyndrome.totalScore : '-';
         const metabolikRiskData = item.metabolicSyndrome?.risk ? getMetabolicSyndromeRiskLabel(item.metabolicSyndrome.risk) : { text: '-', color: 'bg-gray-100', label: 'Unknown' };
         const riskMetabolik = metabolikRiskData.text;
+
+        // Calculate Risk Total (Jakarta CV Risk * Metabolic Syndrome Risk)
+        const cvRiskLevel = cvRisk.level || 0;
+        const metabolicRiskLevel = item.metabolicSyndrome?.risk || 0;
+        const riskTotal = (cvRiskLevel > 0 && metabolicRiskLevel > 0) ? cvRiskLevel * metabolicRiskLevel : 0;
+        const riskTotalData = getRiskTotalLabel(riskTotal);
 
         return `
             <tr class="${rowBgColor}">
@@ -524,6 +530,9 @@ function renderTable() {
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #f0f9ff;">${gdp}</td>
                 <td class="px-3 py-3 text-sm text-center border border-gray-300 font-semibold" style="background-color: #f0f9ff;">${nilaiMetabolik}</td>
                 <td class="px-3 py-3 text-sm text-center border border-gray-300 font-semibold ${metabolikRiskData.color}" style="border: 1px solid #d1d5db;">${riskMetabolik}</td>
+
+                <!-- Risk Total Column -->
+                <td class="px-3 py-3 text-sm text-center border border-gray-300 font-semibold ${riskTotalData.color}" style="border: 1px solid #d1d5db;">${riskTotalData.text}</td>
 
                 <!-- Summary Columns -->
                 <td class="px-3 py-3 text-sm text-center border border-gray-300">
@@ -557,6 +566,34 @@ function getMetabolicSyndromeRiskLabel(risk) {
     if (risk === 2) return { text: '2', color: 'bg-yellow-100', label: 'Medium' };
     if (risk === 3) return { text: '3', color: 'bg-red-100', label: 'Sindrom Metabolik' };
     return { text: '-', color: 'bg-gray-100', label: 'Unknown' };
+}
+
+/**
+ * Get Risk Total (Jakarta CV Risk * Metabolic Syndrome Risk)
+ * Maps to risk matrix:
+ * 1 = Low, 2 = Low, 3 = Medium
+ * 2 = Low, 4 = Medium, 6 = High
+ * 3 = Medium, 6 = High, 9 = Critical
+ */
+function getRiskTotalLabel(riskTotal) {
+    if (!riskTotal || riskTotal === 0 || riskTotal === '-') {
+        return { text: '-', color: 'bg-gray-100', label: 'Unknown' };
+    }
+
+    switch (riskTotal) {
+        case 1:
+        case 2:
+        case 3:
+            return { text: riskTotal.toString(), color: 'bg-green-100', label: 'Low' };
+        case 4:
+            return { text: '4', color: 'bg-yellow-100', label: 'Medium' };
+        case 6:
+            return { text: '6', color: 'bg-orange-100', label: 'High' };
+        case 9:
+            return { text: '9', color: 'bg-red-100', label: 'Critical' };
+        default:
+            return { text: riskTotal.toString(), color: 'bg-gray-100', label: 'Unknown' };
+    }
 }
 
 /**
@@ -747,6 +784,9 @@ function renderDashboard() {
                             <!-- Sindrom Metabolik Header -->
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" colspan="7" style="background-color: #93c5fd;">Sindrom Metabolik</th>
 
+                            <!-- Risk Total Header -->
+                            <th class="px-3 py-3 text-center font-semibold border border-gray-300" rowspan="2" style="min-width: 80px; background-color: #fecaca;">Risk Total</th>
+
                             <!-- Summary Columns -->
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" rowspan="2" style="background-color: #e5e7eb;">Risk Level</th>
                         </tr>
@@ -775,7 +815,7 @@ function renderDashboard() {
                     </thead>
                     <tbody id="data-table">
                         <tr>
-                            <td colspan="19" class="px-4 py-6 text-center text-gray-500">Memuat data...</td>
+                            <td colspan="20" class="px-4 py-6 text-center text-gray-500">Memuat data...</td>
                         </tr>
                     </tbody>
                 </table>
