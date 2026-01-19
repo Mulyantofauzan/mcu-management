@@ -216,6 +216,32 @@ function getRiskLevel(score) {
 }
 
 /**
+ * Get risk level based on Risk Total (from risk matrix)
+ * Risk Total: 1, 2, 3 = Low
+ *             4 = Medium
+ *             6 = High
+ *             9 = Critical
+ */
+function getRiskLevelFromRiskTotal(riskTotal) {
+    if (!riskTotal || riskTotal === 0 || riskTotal === '-') return 0; // Unknown
+
+    switch (riskTotal) {
+        case 1:
+        case 2:
+        case 3:
+            return 1; // Low
+        case 4:
+            return 2; // Medium
+        case 6:
+            return 3; // High
+        case 9:
+            return 4; // Critical
+        default:
+            return 0; // Unknown
+    }
+}
+
+/**
  * Get risk level label and color
  */
 function getRiskBadge(riskLevel) {
@@ -354,7 +380,6 @@ async function calculateAllAssessments() {
 
             // Calculate score
             const { score, scores } = calculateJakartaCardiovascularScore(employee, latestMCU, hasDiabetes);
-            const riskLevel = getRiskLevel(score);
 
             // Calculate age
             const dob = employee.birthDate || employee.dateOfBirth;
@@ -395,6 +420,14 @@ async function calculateAllAssessments() {
                 console.warn(`Could not calculate metabolic syndrome for employee ${employee.name}:`, error);
             }
 
+            // Calculate Risk Total based on Jakarta CV Risk × Metabolic Syndrome Risk
+            const cvRisk = getJakartaCVRiskLevel(score);
+            const metabolicRisk = metabolicSyndromeData.risk || 0;
+            const riskTotal = (cvRisk.level > 0 && metabolicRisk > 0) ? cvRisk.level * metabolicRisk : 0;
+
+            // Determine final risk level based on Risk Total (from risk matrix)
+            const riskLevel = getRiskLevelFromRiskTotal(riskTotal);
+
             cardiovascularData.push({
                 employeeId: employee.employeeId,
                 name: employee.name,
@@ -408,6 +441,7 @@ async function calculateAllAssessments() {
                 diabetes: hasDiabetes,
                 score: score,
                 riskLevel: riskLevel,
+                riskTotal: riskTotal,
                 scores: scores,
                 mcu: latestMCU,
                 metabolicSyndrome: metabolicSyndromeData
