@@ -217,8 +217,8 @@ function getRiskLevel(score) {
 
 /**
  * Get risk level based on Risk Total (from risk matrix)
- * Risk Total: 1, 2, 3 = Low
- *             4 = Medium
+ * Risk Total: 1, 2 = Low
+ *             3, 4 = Medium
  *             6 = High
  *             9 = Critical
  */
@@ -228,8 +228,8 @@ function getRiskLevelFromRiskTotal(riskTotal) {
     switch (riskTotal) {
         case 1:
         case 2:
-        case 3:
             return 1; // Low
+        case 3:
         case 4:
             return 2; // Medium
         case 6:
@@ -605,9 +605,10 @@ function getMetabolicSyndromeRiskLabel(risk) {
 /**
  * Get Risk Total (Jakarta CV Risk * Metabolic Syndrome Risk)
  * Maps to risk matrix:
- * 1 = Low, 2 = Low, 3 = Medium
- * 2 = Low, 4 = Medium, 6 = High
- * 3 = Medium, 6 = High, 9 = Critical
+ * 1, 2 = Low (Green)
+ * 3, 4 = Medium (Yellow)
+ * 6 = High (Orange/Red)
+ * 9 = Critical (Dark Red)
  */
 function getRiskTotalLabel(riskTotal) {
     if (!riskTotal || riskTotal === 0 || riskTotal === '-') {
@@ -617,14 +618,14 @@ function getRiskTotalLabel(riskTotal) {
     switch (riskTotal) {
         case 1:
         case 2:
-        case 3:
             return { text: riskTotal.toString(), color: 'bg-green-100', label: 'Low' };
+        case 3:
         case 4:
-            return { text: '4', color: 'bg-yellow-100', label: 'Medium' };
+            return { text: riskTotal.toString(), color: 'bg-yellow-100', label: 'Medium' };
         case 6:
-            return { text: '6', color: 'bg-orange-100', label: 'High' };
+            return { text: '6', color: 'bg-red-100', label: 'High' };
         case 9:
-            return { text: '9', color: 'bg-red-100', label: 'Critical' };
+            return { text: '9', color: 'bg-red-600 text-white', label: 'Critical' };
         default:
             return { text: riskTotal.toString(), color: 'bg-gray-100', label: 'Unknown' };
     }
