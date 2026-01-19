@@ -17,6 +17,7 @@ import database from '../services/databaseAdapter.js';
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast } from '../utils/uiHelpers.js';
 import { supabaseReady } from '../config/supabase.js';
+import { exportToExcel } from '../services/excelExportService.js';
 
 // State
 let allEmployees = [];
@@ -804,6 +805,16 @@ function renderDashboard() {
             </div>
         </div>
 
+        <!-- Export Button -->
+        <div class="mb-6">
+            <button id="export-excel-btn" onclick="window.handleExportExcel()" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg shadow transition duration-200 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16v-4m0 0V8m0 4h4m-4 0H8m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Export ke Excel
+            </button>
+        </div>
+
         <!-- Data Table -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
             <div class="overflow-x-auto" style="min-height: 400px;">
@@ -924,3 +935,29 @@ export async function initAssessmentRahmaDAshboard() {
         document.body.classList.add('initialized');
     }
 }
+
+/**
+ * Handle Excel export - called from window global
+ */
+window.handleExportExcel = async function() {
+    try {
+        const btn = document.getElementById('export-excel-btn');
+
+        // Show loading state
+        btn.disabled = true;
+        btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> Sedang export...';
+
+        // Export all data (use filteredData or cardiovascularData based on current filters)
+        await exportToExcel(filteredData);
+
+        showToast('Data berhasil diexport ke Excel', 'success');
+    } catch (error) {
+        console.error('Error exporting to Excel:', error);
+        showToast('Gagal export data: ' + error.message, 'error');
+    } finally {
+        // Restore button state
+        const btn = document.getElementById('export-excel-btn');
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16v-4m0 0V8m0 4h4m-4 0H8m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Export ke Excel';
+    }
+};
