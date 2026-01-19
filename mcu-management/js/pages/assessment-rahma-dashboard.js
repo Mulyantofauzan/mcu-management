@@ -30,14 +30,6 @@ let allLabResults = {}; // Cache: mcuId -> [lab results]
 let currentPage = 1;
 const itemsPerPage = 10;
 
-// Cache management
-const CACHE_KEYS = {
-    ASSESSMENTS: 'assessment_rahma_cache',
-    LAB_RESULTS: 'lab_results_cache',
-    TIMESTAMP: 'assessment_cache_timestamp'
-};
-const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
-
 /**
  * Show loading modal with progress
  */
@@ -294,12 +286,19 @@ async function loadAllLabResults() {
     try {
         // Get all unique MCU IDs from allMCUs
         const mcuIds = [...new Set(allMCUs.map(mcu => mcu.mcuId || mcu.mcu_id))];
+        console.log(`Loading lab results for ${mcuIds.length} MCUs:`, mcuIds.slice(0, 5), '...');
 
         // Load lab results for all MCUs in parallel
         const labPromises = mcuIds.map(mcuId =>
             labService.getPemeriksaanLabByMcuId(mcuId)
-                .then(results => ({ mcuId, results }))
-                .catch(() => ({ mcuId, results: [] }))
+                .then(results => {
+                    console.log(`Lab results for MCU ${mcuId}:`, results);
+                    return { mcuId, results };
+                })
+                .catch(error => {
+                    console.warn(`Error loading lab for MCU ${mcuId}:`, error);
+                    return { mcuId, results: [] };
+                })
         );
 
         const allResults = await Promise.all(labPromises);
@@ -309,71 +308,14 @@ async function loadAllLabResults() {
             allLabResults[mcuId] = results || [];
         });
 
-        console.log(`Pre-cached lab results for ${mcuIds.length} MCUs`);
+        const totalLabCount = Object.values(allLabResults).reduce((sum, arr) => sum + arr.length, 0);
+        console.log(`Pre-cached ${totalLabCount} lab results for ${mcuIds.length} MCUs`);
+        console.log('Sample allLabResults:', Object.entries(allLabResults).slice(0, 3));
     } catch (error) {
         console.error('Error pre-loading lab results:', error);
     }
 }
 
-/**
- * Check if assessment cache is valid
- */
-function isCacheValid() {
-    try {
-        const timestamp = localStorage.getItem(CACHE_KEYS.TIMESTAMP);
-        if (!timestamp) return false;
-
-        const cacheAge = Date.now() - parseInt(timestamp);
-        return cacheAge < CACHE_TTL;
-    } catch (error) {
-        return false;
-    }
-}
-
-/**
- * Load assessment from cache
- */
-function loadFromCache() {
-    try {
-        if (!isCacheValid()) return null;
-
-        const cached = localStorage.getItem(CACHE_KEYS.ASSESSMENTS);
-        if (!cached) return null;
-
-        const data = JSON.parse(cached);
-        console.log(`Loaded ${data.length} assessments from cache`);
-        return data;
-    } catch (error) {
-        console.warn('Error loading from cache:', error);
-        return null;
-    }
-}
-
-/**
- * Save assessment to cache
- */
-function saveToCache(data) {
-    try {
-        localStorage.setItem(CACHE_KEYS.ASSESSMENTS, JSON.stringify(data));
-        localStorage.setItem(CACHE_KEYS.TIMESTAMP, Date.now().toString());
-        console.log(`Saved ${data.length} assessments to cache`);
-    } catch (error) {
-        console.warn('Cache storage failed (quota exceeded?):', error);
-    }
-}
-
-/**
- * Clear assessment cache
- */
-function clearCache() {
-    try {
-        localStorage.removeItem(CACHE_KEYS.ASSESSMENTS);
-        localStorage.removeItem(CACHE_KEYS.TIMESTAMP);
-        console.log('Assessment cache cleared');
-    } catch (error) {
-        console.warn('Error clearing cache:', error);
-    }
-}
 
 /**
  * Calculate all cardiovascular scores
@@ -421,6 +363,11 @@ async function calculateAllAssessments() {
             // Use pre-cached lab results (no await needed - already in memory)
             const labResults = allLabResults[mcuId] || [];
 
+            // Debug: Log first few employees to see if lab results are loaded
+            if (i < 3) {
+                console.log(`Employee ${i}: ${employee.name}, MCU ID: ${mcuId}, Lab Results:`, labResults);
+            }
+
             // Calculate metabolic syndrome
             let metabolicSyndromeData = {
                 scores: { lp: undefined, tg: undefined, hdl: undefined, td: undefined, gdp: undefined },
@@ -438,6 +385,11 @@ async function calculateAllAssessments() {
 
                 if (metabolicResult) {
                     metabolicSyndromeData = metabolicResult;
+                }
+
+                // Debug: Log first few results
+                if (i < 3) {
+                    console.log(`Metabolic syndrome for ${employee.name}:`, metabolicSyndromeData);
                 }
             } catch (error) {
                 console.warn(`Could not calculate metabolic syndrome for employee ${employee.name}:`, error);
@@ -472,9 +424,6 @@ async function calculateAllAssessments() {
     // Sort by score descending
     cardiovascularData.sort((a, b) => b.score - a.score);
     filteredData = [...cardiovascularData];
-
-    // Save to localStorage cache
-    saveToCache(cardiovascularData);
 }
 
 /**
@@ -871,21 +820,10 @@ export async function initAssessmentRahmaDAshboard() {
             loadAllLabResults()  // Pre-load all lab results for fast lookup during calculation
         ]);
 
-        // Check if cached data is still valid
-        if (isCacheValid()) {
-            console.log('Using cached assessment data');
-            const cachedData = loadFromCache();
-            if (cachedData && cachedData.length > 0) {
-                cardiovascularData = cachedData;
-            } else {
-                // Cache exists but is empty, calculate fresh
-                await calculateAllAssessments();
-            }
-        } else {
-            // Cache expired or doesn't exist, calculate fresh
-            console.log('Cache expired or not found, calculating fresh data');
-            await calculateAllAssessments();
-        }
+        // Always calculate fresh - parallel loading + pre-cached lab results already makes it fast
+        // Caching localStorage can cause data to disappear, so we skip it for stability
+        console.log('Calculating fresh assessment data (parallel lab loading ensures speed)');
+        await calculateAllAssessments();
 
         // Debug: Log loaded data
         console.log('Employees loaded:', allEmployees.length);
