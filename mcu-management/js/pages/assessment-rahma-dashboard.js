@@ -806,12 +806,12 @@ function renderDashboard() {
         </div>
 
         <!-- Export Button -->
-        <div class="mb-6">
-            <button id="export-excel-btn" onclick="window.handleExportExcel()" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg shadow transition duration-200 flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div style="margin-bottom: 1.5rem;">
+            <button id="export-excel-btn" onclick="window.handleExportExcel()" style="padding: 0.5rem 1rem; background-color: #10b981; color: white; font-weight: 500; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: background-color 200ms; display: flex; align-items: center; gap: 0.5rem; border: none; cursor: pointer;">
+                <svg style="width: 1rem; height: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16v-4m0 0V8m0 4h4m-4 0H8m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                Export ke Excel
+                <span>Export ke Excel</span>
             </button>
         </div>
 
@@ -945,7 +945,8 @@ window.handleExportExcel = async function() {
 
         // Show loading state
         btn.disabled = true;
-        btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> Sedang export...';
+        btn.style.backgroundColor = '#059669';
+        btn.innerHTML = '<svg style="width: 1rem; height: 1rem; animation: spin 1s linear infinite;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><span>Sedang export...</span>';
 
         // Export all data (use filteredData or cardiovascularData based on current filters)
         await exportToExcel(filteredData);
@@ -958,6 +959,22 @@ window.handleExportExcel = async function() {
         // Restore button state
         const btn = document.getElementById('export-excel-btn');
         btn.disabled = false;
-        btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16v-4m0 0V8m0 4h4m-4 0H8m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Export ke Excel';
+        btn.style.backgroundColor = '#10b981';
+        btn.innerHTML = '<svg style="width: 1rem; height: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16v-4m0 0V8m0 4h4m-4 0H8m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span>Export ke Excel</span>';
     }
 };
+
+// Add hover effect to button
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('export-excel-btn');
+    if (btn) {
+        btn.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#059669';
+        });
+        btn.addEventListener('mouseleave', function() {
+            if (!this.disabled) {
+                this.style.backgroundColor = '#10b981';
+            }
+        });
+    }
+});
