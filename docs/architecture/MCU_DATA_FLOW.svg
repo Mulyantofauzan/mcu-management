@@ -17,7 +17,7 @@
   </defs>
 
   <!-- Title -->
-  <text x="700" y="30" text-anchor="middle" class="title">MCU Data Entry & Update Flow</text>
+  <text x="700" y="30" text-anchor="middle" class="title">MCU Data Entry and Update Flow</text>
 
   <!-- START -->
   <circle cx="100" cy="80" r="20" fill="#3b82f6" stroke="#1f2937" stroke-width="2"/>
@@ -62,7 +62,7 @@
   <!-- Step 7: Diagnostic Tests -->
   <rect x="950" y="130" width="100" height="60" class="box" rx="5"/>
   <text x="1000" y="155" text-anchor="middle" class="label">Diagnostics</text>
-  <text x="1000" y="175" text-anchor="middle" class="text">Tests & Results</text>
+  <text x="1000" y="175" text-anchor="middle" class="text">Tests and Results</text>
   <path d="M 900 160 L 950 160" class="arrow"/>
 
   <!-- Step 8: Submit -->
@@ -183,7 +183,7 @@
   <text x="70" y="760" class="text">✓ Changed field name</text>
   <text x="70" y="780" class="text">✓ Changed by (user ID)</text>
   <text x="70" y="800" class="text">✓ Timestamp (server-generated)</text>
-  <text x="70" y="820" class="text">✓ IP address & User Agent</text>
+  <text x="70" y="820" class="text">✓ IP address and User Agent</text>
   <text x="70" y="840" class="text">✓ Hash for tamper detection</text>
   <text x="70" y="860" class="text">✓ Immutable (cannot delete)</text>
 </svg>

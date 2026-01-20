@@ -19,10 +19,10 @@
   </defs>
 
   <!-- Title -->
-  <text x="700" y="30" text-anchor="middle" class="title">Risk Assessment & Calculation Flow</text>
+  <text x="700" y="30" text-anchor="middle" class="title">Risk Assessment and Calculation Flow</text>
 
   <!-- SECTION 1: Data Input -->
-  <text x="50" y="80" class="subtitle">1. DATA INPUT & PREPARATION</text>
+  <text x="50" y="80" class="subtitle">1. DATA INPUT and PREPARATION</text>
   <rect x="40" y="90" width="1320" height="1" fill="#d1d5db"/>
 
   <!-- MCU Data -->
@@ -115,16 +115,16 @@
   <rect x="50" y="760" width="110" height="120" class="input-box" rx="5"/>
   <text x="105" y="775" text-anchor="middle" class="label">1. Waist</text>
   <text x="105" y="795" text-anchor="middle" class="text">Male:</text>
-  <text x="105" y="810" text-anchor="middle" class="text">&lt;90=0</text>
+  <text x="105" y="810" text-anchor="middle" class="text">andlt;90=0</text>
   <text x="105" y="825" text-anchor="middle" class="text">≥90=1</text>
   <text x="105" y="840" text-anchor="middle" class="text">Female:</text>
-  <text x="105" y="855" text-anchor="middle" class="text">&lt;80=0</text>
+  <text x="105" y="855" text-anchor="middle" class="text">andlt;80=0</text>
   <text x="105" y="870" text-anchor="middle" class="text">≥80=1</text>
 
   <!-- Parameter 2: Triglycerides -->
   <rect x="170" y="760" width="110" height="120" class="input-box" rx="5"/>
   <text x="225" y="775" text-anchor="middle" class="label">2. Triglycerides</text>
-  <text x="225" y="800" text-anchor="middle" class="text">&lt;150=0</text>
+  <text x="225" y="800" text-anchor="middle" class="text">andlt;150=0</text>
   <text x="225" y="815" text-anchor="middle" class="text">≥150=1</text>
   <text x="225" y="835" text-anchor="middle" class="text" font-size="9">(mg/dL)</text>
 
@@ -132,16 +132,16 @@
   <rect x="290" y="760" width="110" height="120" class="input-box" rx="5"/>
   <text x="345" y="775" text-anchor="middle" class="label">3. HDL</text>
   <text x="345" y="795" text-anchor="middle" class="text">Male:</text>
-  <text x="345" y="810" text-anchor="middle" class="text">&lt;40=1</text>
+  <text x="345" y="810" text-anchor="middle" class="text">andlt;40=1</text>
   <text x="345" y="825" text-anchor="middle" class="text">≥40=0</text>
   <text x="345" y="840" text-anchor="middle" class="text">Female:</text>
-  <text x="345" y="855" text-anchor="middle" class="text">&lt;50=1</text>
+  <text x="345" y="855" text-anchor="middle" class="text">andlt;50=1</text>
   <text x="345" y="870" text-anchor="middle" class="text">≥50=0</text>
 
   <!-- Parameter 4: Blood Pressure -->
   <rect x="410" y="760" width="110" height="120" class="input-box" rx="5"/>
   <text x="465" y="775" text-anchor="middle" class="label">4. Blood Pressure</text>
-  <text x="465" y="800" text-anchor="middle" class="text">&lt;130/85=0</text>
+  <text x="465" y="800" text-anchor="middle" class="text">andlt;130/85=0</text>
   <text x="465" y="820" text-anchor="middle" class="text">≥130 OR</text>
   <text x="465" y="835" text-anchor="middle" class="text">≥85=1</text>
   <text x="465" y="855" text-anchor="middle" class="text">(mmHg)</text>
@@ -150,7 +150,7 @@
   <rect x="530" y="760" width="110" height="120" class="input-box" rx="5"/>
   <text x="585" y="775" text-anchor="middle" class="label">5. Fasting</text>
   <text x="585" y="790" text-anchor="middle" class="label">Glucose</text>
-  <text x="585" y="810" text-anchor="middle" class="text">&lt;100 (no</text>
+  <text x="585" y="810" text-anchor="middle" class="text">andlt;100 (no</text>
   <text x="585" y="825" text-anchor="middle" class="text">diabetes)=0</text>
   <text x="585" y="840" text-anchor="middle" class="text">≥100 (or</text>
   <text x="585" y="855" text-anchor="middle" class="text">diabetic)=1</text>
