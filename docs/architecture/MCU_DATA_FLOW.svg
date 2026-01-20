@@ -1,0 +1,189 @@
+<svg viewBox="0 0 1400 1000" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .box { fill: #f0f9ff; stroke: #3b82f6; stroke-width: 2; }
+      .process { fill: #dbeafe; stroke: #2563eb; stroke-width: 2; }
+      .database { fill: #dcfce7; stroke: #16a34a; stroke-width: 2; }
+      .decision { fill: #fef3c7; stroke: #f59e0b; stroke-width: 2; }
+      .title { fill: #1f2937; font-size: 20px; font-weight: bold; }
+      .label { fill: #1f2937; font-size: 12px; font-weight: bold; }
+      .text { fill: #4b5563; font-size: 11px; }
+      .arrow { stroke: #333; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .dashed { stroke: #999; stroke-width: 1; stroke-dasharray: 5,5; fill: none; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0 10 3 0 6" fill="#333" />
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="700" y="30" text-anchor="middle" class="title">MCU Data Entry & Update Flow</text>
+
+  <!-- START -->
+  <circle cx="100" cy="80" r="20" fill="#3b82f6" stroke="#1f2937" stroke-width="2"/>
+  <text x="100" y="85" text-anchor="middle" fill="white" font-weight="bold">START</text>
+
+  <!-- Step 1: Dashboard -->
+  <rect x="50" y="130" width="100" height="60" class="box" rx="5"/>
+  <text x="100" y="155" text-anchor="middle" class="label">Dashboard</text>
+  <text x="100" y="175" text-anchor="middle" class="text">Open MCU Mgmt</text>
+  <path d="M 100 80 L 100 130" class="arrow"/>
+
+  <!-- Step 2: Search Employee -->
+  <rect x="200" y="130" width="100" height="60" class="process" rx="5"/>
+  <text x="250" y="155" text-anchor="middle" class="label">Search</text>
+  <text x="250" y="175" text-anchor="middle" class="text">Find Employee</text>
+  <path d="M 150 160 L 200 160" class="arrow"/>
+
+  <!-- Step 3: Create MCU -->
+  <rect x="350" y="130" width="100" height="60" class="process" rx="5"/>
+  <text x="400" y="155" text-anchor="middle" class="label">Create MCU</text>
+  <text x="400" y="175" text-anchor="middle" class="text">Assign MCU ID</text>
+  <path d="M 300 160 L 350 160" class="arrow"/>
+
+  <!-- Step 4: Enter Basic Info -->
+  <rect x="500" y="130" width="100" height="60" class="box" rx="5"/>
+  <text x="550" y="155" text-anchor="middle" class="label">Basic Info</text>
+  <text x="550" y="175" text-anchor="middle" class="text">Type, Date, Result</text>
+  <path d="M 450 160 L 500 160" class="arrow"/>
+
+  <!-- Step 5: Medical Exam -->
+  <rect x="650" y="130" width="100" height="60" class="box" rx="5"/>
+  <text x="700" y="155" text-anchor="middle" class="label">Medical Exam</text>
+  <text x="700" y="175" text-anchor="middle" class="text">Vital Signs</text>
+  <path d="M 600 160 L 650 160" class="arrow"/>
+
+  <!-- Step 6: Vision Test -->
+  <rect x="800" y="130" width="100" height="60" class="box" rx="5"/>
+  <text x="850" y="155" text-anchor="middle" class="label">Vision Test</text>
+  <text x="850" y="175" text-anchor="middle" class="text">8 Parameters</text>
+  <path d="M 750 160 L 800 160" class="arrow"/>
+
+  <!-- Step 7: Diagnostic Tests -->
+  <rect x="950" y="130" width="100" height="60" class="box" rx="5"/>
+  <text x="1000" y="155" text-anchor="middle" class="label">Diagnostics</text>
+  <text x="1000" y="175" text-anchor="middle" class="text">Tests & Results</text>
+  <path d="M 900 160 L 950 160" class="arrow"/>
+
+  <!-- Step 8: Submit -->
+  <rect x="1100" y="130" width="100" height="60" class="process" rx="5"/>
+  <text x="1150" y="155" text-anchor="middle" class="label">Submit</text>
+  <text x="1150" y="175" text-anchor="middle" class="text">Save to DB</text>
+  <path d="M 1050 160 L 1100 160" class="arrow"/>
+
+  <!-- Database Storage -->
+  <path d="M 1150 190 L 1150 250" class="arrow"/>
+  <rect x="1100" y="250" width="100" height="60" class="database" rx="5"/>
+  <text x="1150" y="270" text-anchor="middle" class="label">Database</text>
+  <text x="1150" y="290" text-anchor="middle" class="text">mcus table</text>
+
+  <!-- Activity Log -->
+  <path d="M 1100 280 L 1050 280 L 1050 330" class="arrow"/>
+  <rect x="1000" y="330" width="100" height="60" class="database" rx="5"/>
+  <text x="1050" y="350" text-anchor="middle" class="label">Activity Log</text>
+  <text x="1050" y="370" text-anchor="middle" class="text">Log Creation</text>
+
+  <!-- Lab Results Path -->
+  <path d="M 1150 190 L 1200 190 L 1200 330" class="dashed"/>
+  <path d="M 1200 330 L 1150 330" class="arrow"/>
+  <rect x="1100" y="330" width="100" height="60" class="process" rx="5"/>
+  <text x="1150" y="350" text-anchor="middle" class="label">Lab Service</text>
+  <text x="1150" y="370" text-anchor="middle" class="text">Load Results</text>
+
+  <!-- Decision: Follow-Up -->
+  <path d="M 700 190 L 700 250" class="arrow"/>
+  <path d="M 700 280 L 700 320" class="arrow"/>
+
+  <!-- Diamond for decision -->
+  <polygon points="700,250 750,280 700,310 650,280" class="decision"/>
+  <text x="700" y="285" text-anchor="middle" class="text">Follow-Up?</text>
+
+  <!-- YES path - Follow-Up -->
+  <path d="M 750 280 L 900 280" class="arrow"/>
+  <text x="820" y="270" class="text" font-weight="bold">YES</text>
+
+  <!-- NO path - End -->
+  <path d="M 700 320 L 700 380" class="arrow"/>
+  <text x="710" y="350" class="text" font-weight="bold">NO</text>
+  <circle cx="700" cy="400" r="20" fill="#3b82f6" stroke="#1f2937" stroke-width="2"/>
+  <text x="700" y="407" text-anchor="middle" fill="white" font-weight="bold" font-size="14">END</text>
+
+  <!-- Follow-Up Process -->
+  <rect x="900" y="250" width="100" height="60" class="process" rx="5"/>
+  <text x="950" y="270" text-anchor="middle" class="label">Follow-Up</text>
+  <text x="950" y="290" text-anchor="middle" class="text">Get Old MCU</text>
+
+  <!-- Update Form -->
+  <path d="M 950 310 L 950 350" class="arrow"/>
+  <rect x="900" y="350" width="100" height="60" class="box" rx="5"/>
+  <text x="950" y="370" text-anchor="middle" class="label">Update Form</text>
+  <text x="950" y="390" text-anchor="middle" class="text">Modify Data</text>
+
+  <!-- Submit Changes -->
+  <path d="M 950 410 L 950 450" class="arrow"/>
+  <rect x="900" y="450" width="100" height="60" class="process" rx="5"/>
+  <text x="950" y="470" text-anchor="middle" class="label">Submit</text>
+  <text x="950" y="490" text-anchor="middle" class="text">Send Update</text>
+
+  <!-- Service Layer -->
+  <path d="M 950 510 L 950 550" class="arrow"/>
+  <rect x="850" y="550" width="200" height="80" class="process" rx="5"/>
+  <text x="950" y="570" text-anchor="middle" class="label">MCU Service</text>
+  <text x="950" y="590" text-anchor="middle" class="text">1. Fetch New MCU</text>
+  <text x="950" y="610" text-anchor="middle" class="text">2. Compare (Old vs New)</text>
+
+  <!-- Diff Calculation -->
+  <path d="M 950 630 L 950 670" class="arrow"/>
+  <rect x="850" y="670" width="200" height="60" class="decision" rx="5"/>
+  <text x="950" y="690" text-anchor="middle" class="label">Calculate Diff</text>
+  <text x="950" y="710" text-anchor="middle" class="text">Field-by-field comparison</text>
+
+  <!-- Create Change Records -->
+  <path d="M 950 730 L 950 770" class="arrow"/>
+  <rect x="800" y="770" width="300" height="60" class="database" rx="5"/>
+  <text x="950" y="785" text-anchor="middle" class="label">mcu_changes Table</text>
+  <text x="950" y="805" text-anchor="middle" class="text">Insert: old_value, new_value, changed_by, timestamp</text>
+
+  <!-- Activity Log Entry -->
+  <path d="M 800 800 L 700 800 L 700 770" class="arrow"/>
+  <rect x="600" y="770" width="100" height="60" class="database" rx="5"/>
+  <text x="650" y="785" text-anchor="middle" class="label">Activity Log</text>
+  <text x="650" y="805" text-anchor="middle" class="text">Log Update</text>
+
+  <!-- Immutable Trail -->
+  <path d="M 650 830 L 650 870" class="arrow"/>
+  <rect x="600" y="870" width="100" height="60" class="decision" rx="5"/>
+  <text x="650" y="890" text-anchor="middle" class="label" font-size="10">Immutable</text>
+  <text x="650" y="910" text-anchor="middle" class="text">No delete/edit</text>
+
+  <!-- Show History -->
+  <path d="M 700 900 L 800 900 L 800 880" class="arrow"/>
+  <rect x="750" y="870" width="100" height="60" class="box" rx="5"/>
+  <text x="800" y="885" text-anchor="middle" class="label" font-size="10">Change History</text>
+  <text x="800" y="905" text-anchor="middle" class="text" font-size="10">Visible in UI</text>
+
+  <!-- Legend -->
+  <rect x="50" y="450" width="30" height="30" class="box" rx="3"/>
+  <text x="90" y="470" class="text">Data Input</text>
+
+  <rect x="50" y="490" width="30" height="30" class="process" rx="3"/>
+  <text x="90" y="510" class="text">Process/Logic</text>
+
+  <rect x="50" y="530" width="30" height="30" class="database" rx="3"/>
+  <text x="90" y="550" class="text">Database/Storage</text>
+
+  <rect x="50" y="570" width="30" height="30" class="decision" rx="3"/>
+  <text x="90" y="590" class="text">Decision/Logic</text>
+
+  <!-- Key Info Box -->
+  <rect x="50" y="680" width="350" height="200" fill="#f9fafb" stroke="#d1d5db" stroke-width="1" rx="5"/>
+  <text x="70" y="700" class="label">Key Data Captured:</text>
+  <text x="70" y="720" class="text">✓ Old value (before change)</text>
+  <text x="70" y="740" class="text">✓ New value (after change)</text>
+  <text x="70" y="760" class="text">✓ Changed field name</text>
+  <text x="70" y="780" class="text">✓ Changed by (user ID)</text>
+  <text x="70" y="800" class="text">✓ Timestamp (server-generated)</text>
+  <text x="70" y="820" class="text">✓ IP address & User Agent</text>
+  <text x="70" y="840" class="text">✓ Hash for tamper detection</text>
+  <text x="70" y="860" class="text">✓ Immutable (cannot delete)</text>
+</svg>
