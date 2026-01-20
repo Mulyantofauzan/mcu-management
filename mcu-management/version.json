@@ -1,3 +1,10 @@
 {
-  "version": "1.0.11"
+  "version": "1.0.12",
+  "releaseDate": "2026-01-20",
+  "features": [
+    "Excel export functionality for Jakarta Cardiovascular assessments",
+    "MCU change history tracking (Riwayat Perubahan)",
+    "Automatic cache invalidation on new versions",
+    "Version management system"
+  ]
 }

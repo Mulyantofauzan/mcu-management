@@ -518,6 +518,16 @@
 
     <!-- Scripts -->
     <script src="js/sidebar-manager.js"></script>
+
+    <!-- Version Check & Cache Management -->
+    <script type="module">
+        import { initVersionService } from './js/services/versionService.js';
+
+        // Initialize version service to check for updates
+        // This will automatically clear cache if a new version is available
+        initVersionService();
+    </script>
+
     <script type="module" src="js/pages/dashboard.js"></script>
 
     <!-- Display App Version -->
