@@ -753,22 +753,18 @@ function renderDashboard() {
             <div class="bg-white rounded-lg border-l-4 border-green-500 p-6 shadow">
                 <h3 class="text-gray-600 text-sm font-medium">Low Risk</h3>
                 <p class="text-3xl font-bold text-green-600 mt-2" id="count-low">0</p>
-                <p class="text-xs text-gray-500 mt-1">Score: -7 to -1</p>
             </div>
             <div class="bg-white rounded-lg border-l-4 border-yellow-500 p-6 shadow">
                 <h3 class="text-gray-600 text-sm font-medium">Medium Risk</h3>
                 <p class="text-3xl font-bold text-yellow-600 mt-2" id="count-medium">0</p>
-                <p class="text-xs text-gray-500 mt-1">Score: 2 to 4</p>
             </div>
             <div class="bg-white rounded-lg border-l-4 border-red-500 p-6 shadow">
                 <h3 class="text-gray-600 text-sm font-medium">High Risk</h3>
                 <p class="text-3xl font-bold text-red-600 mt-2" id="count-high">0</p>
-                <p class="text-xs text-gray-500 mt-1">Score: 5</p>
             </div>
             <div class="bg-white rounded-lg border-l-4 border-purple-500 p-6 shadow">
                 <h3 class="text-gray-600 text-sm font-medium">Critical</h3>
                 <p class="text-3xl font-bold text-purple-600 mt-2" id="count-critical">0</p>
-                <p class="text-xs text-gray-500 mt-1">Score: ≥ 6</p>
             </div>
         </div>
 
