@@ -1,0 +1,140 @@
+<svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+  <!-- Define styles -->
+  <defs>
+    <style>
+      .box { fill: #ffffff; stroke: #333; stroke-width: 2; }
+      .box-header { fill: #3b82f6; }
+      .box-text { fill: #1f2937; font-size: 13px; font-family: Arial; }
+      .box-text-white { fill: #ffffff; font-size: 12px; font-weight: bold; font-family: Arial; }
+      .title { fill: #1f2937; font-size: 24px; font-weight: bold; font-family: Arial; }
+      .section-title { fill: #1f2937; font-size: 16px; font-weight: bold; font-family: Arial; }
+      .arrow { stroke: #666; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .line { stroke: #ccc; stroke-width: 1; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#666" />
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="600" y="30" text-anchor="middle" class="title">MADIS System Architecture Overview</text>
+
+  <!-- Frontend Layer -->
+  <rect x="20" y="80" width="350" height="680" class="box" rx="5"/>
+  <rect x="20" y="80" width="350" height="35" class="box-header" rx="5" ry="0"/>
+  <text x="195" y="104" text-anchor="middle" class="box-text-white">FRONTEND LAYER (Browser)</text>
+
+  <!-- Frontend Components -->
+  <rect x="35" y="130" width="320" height="60" class="box" rx="3"/>
+  <text x="195" y="155" text-anchor="middle" class="section-title">SPA Pages</text>
+  <text x="195" y="180" text-anchor="middle" class="box-text">Dashboard • Kelola Karyawan • Follow-Up</text>
+
+  <rect x="35" y="210" width="320" height="60" class="box" rx="3"/>
+  <text x="195" y="235" text-anchor="middle" class="section-title">Services</text>
+  <text x="195" y="260" text-anchor="middle" class="box-text">Auth • Employee • MCU • Lab • Metabolic</text>
+
+  <rect x="35" y="290" width="320" height="60" class="box" rx="3"/>
+  <text x="195" y="315" text-anchor="middle" class="section-title">Utils & Helpers</text>
+  <text x="195" y="340" text-anchor="middle" class="box-text">Database Adapter • Validation • Diff Helpers</text>
+
+  <rect x="35" y="370" width="320" height="50" class="box" rx="3"/>
+  <text x="195" y="395" text-anchor="middle" class="section-title">Service Worker (PWA)</text>
+  <text x="195" y="415" text-anchor="middle" class="box-text">Offline Support • Caching</text>
+
+  <rect x="35" y="440" width="320" height="50" class="box" rx="3"/>
+  <text x="195" y="465" text-anchor="middle" class="section-title">Local Storage</text>
+  <text x="195" y="485" text-anchor="middle" class="box-text">Cache • Version Info</text>
+
+  <rect x="35" y="510" width="320" height="230" class="box" rx="3"/>
+  <text x="195" y="535" text-anchor="middle" class="section-title">Features</text>
+  <text x="50" y="560" class="box-text">✓ Jakarta CV Assessment</text>
+  <text x="50" y="580" class="box-text">✓ Metabolic Syndrome Scoring</text>
+  <text x="50" y="600" class="box-text">✓ Change History Tracking</text>
+  <text x="50" y="620" class="box-text">✓ Excel Export</text>
+  <text x="50" y="640" class="box-text">✓ Risk Assessment Matrix</text>
+  <text x="50" y="660" class="box-text">✓ Medical History</text>
+  <text x="50" y="680" class="box-text">✓ Activity Logging</text>
+  <text x="50" y="700" class="box-text">✓ User Management</text>
+  <text x="50" y="720" class="box-text">✓ Version Management</text>
+
+  <!-- Database Layer -->
+  <rect x="420" y="80" width="350" height="680" class="box" rx="5"/>
+  <rect x="420" y="80" width="350" height="35" class="box-header" rx="5" ry="0"/>
+  <text x="595" y="104" text-anchor="middle" class="box-text-white">DATABASE LAYER (Supabase)</text>
+
+  <!-- Database Tables -->
+  <rect x="435" y="130" width="320" height="60" class="box" rx="3"/>
+  <text x="595" y="155" text-anchor="middle" class="section-title">Core Data</text>
+  <text x="595" y="180" text-anchor="middle" class="box-text">employees • departments • job_titles</text>
+
+  <rect x="435" y="210" width="320" height="60" class="box" rx="3"/>
+  <text x="595" y="235" text-anchor="middle" class="section-title">MCU Data</text>
+  <text x="595" y="260" text-anchor="middle" class="box-text">mcus • mcu_changes • mcu_files</text>
+
+  <rect x="435" y="290" width="320" height="60" class="box" rx="3"/>
+  <text x="595" y="315" text-anchor="middle" class="section-title">Lab Results</text>
+  <text x="595" y="340" text-anchor="middle" class="box-text">pemeriksaan_lab • lab_items</text>
+
+  <rect x="435" y="370" width="320" height="60" class="box" rx="3"/>
+  <text x="595" y="395" text-anchor="middle" class="section-title">Medical History</text>
+  <text x="595" y="420" text-anchor="middle" class="box-text">medical_histories • family_histories</text>
+
+  <rect x="435" y="450" width="320" height="80" class="box" rx="3"/>
+  <text x="595" y="475" text-anchor="middle" class="section-title">Audit & Security</text>
+  <text x="595" y="500" text-anchor="middle" class="box-text">activity_log • audit_logs</text>
+  <text x="595" y="520" text-anchor="middle" class="box-text">users • user_roles</text>
+
+  <rect x="435" y="550" width="320" height="180" class="box" rx="3"/>
+  <text x="595" y="575" text-anchor="middle" class="section-title">Compliance & Performance</text>
+  <text x="450" y="600" class="box-text">✓ Row Level Security (RLS)</text>
+  <text x="450" y="620" class="box-text">✓ PostgreSQL Indexes</text>
+  <text x="450" y="640" class="box-text">✓ HIPAA Ready</text>
+  <text x="450" y="660" class="box-text">✓ UU-PDP Compliant</text>
+  <text x="450" y="680" class="box-text">✓ Immutable Audit Trail</text>
+  <text x="450" y="700" class="box-text">✓ Data Encryption</text>
+  <text x="450" y="720" class="box-text">✓ Backup & Recovery</text>
+
+  <!-- API & Services Layer -->
+  <rect x="820" y="80" width="350" height="680" class="box" rx="5"/>
+  <rect x="820" y="80" width="350" height="35" class="box-header" rx="5" ry="0"/>
+  <text x="995" y="104" text-anchor="middle" class="box-text-white">API & EXTERNAL SERVICES</text>
+
+  <!-- External Services -->
+  <rect x="835" y="130" width="320" height="50" class="box" rx="3"/>
+  <text x="995" y="160" text-anchor="middle" class="box-text">Supabase Auth (OAuth, Magic Links)</text>
+
+  <rect x="835" y="200" width="320" height="50" class="box" rx="3"/>
+  <text x="995" y="230" text-anchor="middle" class="box-text">PostgREST API</text>
+
+  <rect x="835" y="270" width="320" height="50" class="box" rx="3"/>
+  <text x="995" y="300" text-anchor="middle" class="box-text">ExcelJS (Excel Generation)</text>
+
+  <rect x="835" y="340" width="320" height="50" class="box" rx="3"/>
+  <text x="995" y="370" text-anchor="middle" class="box-text">Dexie (IndexedDB)</text>
+
+  <rect x="835" y="410" width="320" height="50" class="box" rx="3"/>
+  <text x="995" y="440" text-anchor="middle" class="box-text">Chart.js (Visualization)</text>
+
+  <rect x="835" y="480" width="320" height="80" class="box" rx="3"/>
+  <text x="995" y="510" text-anchor="middle" class="section-title">Deployment</text>
+  <text x="995" y="535" text-anchor="middle" class="box-text">GitHub (Source)</text>
+  <text x="995" y="555" text-anchor="middle" class="box-text">Static Hosting (Vercel/Netlify)</text>
+
+  <rect x="835" y="580" width="320" height="170" class="box" rx="3"/>
+  <text x="995" y="605" text-anchor="middle" class="section-title">Version Management</text>
+  <text x="850" y="630" class="box-text">✓ Automatic version checks</text>
+  <text x="850" y="650" class="box-text">✓ Cache invalidation</text>
+  <text x="850" y="670" class="box-text">✓ User notifications</text>
+  <text x="850" y="690" class="box-text">✓ Silent updates</text>
+  <text x="850" y="710" class="box-text">✓ No manual intervention</text>
+  <text x="850" y="730" class="box-text">✓ Production ready</text>
+
+  <!-- Arrows showing data flow -->
+  <path d="M 370 300 L 420 300" class="arrow"/>
+  <path d="M 770 300 L 820 300" class="arrow"/>
+  <path d="M 420 500 L 370 500" class="arrow"/>
+  <path d="M 820 600 L 770 600" class="arrow"/>
+
+  <!-- Legend/Footer -->
+  <text x="20" y="790" class="box-text">✓ Production Ready • ✓ HIPAA Compliant • ✓ Offline Capable • ✓ Auto-Updating</text>
+</svg>
