@@ -24,6 +24,8 @@ export class UnifiedLoadingManager {
             this.messageElement.textContent = message;
         }
 
+        // Show using both methods for compatibility
+        this.loadingElement.classList.remove('hidden');
         this.loadingElement.style.display = 'flex';
         this.isVisible = true;
         document.body.style.overflow = 'hidden';
@@ -34,6 +36,7 @@ export class UnifiedLoadingManager {
      */
     hide() {
         if (this.loadingElement) {
+            this.loadingElement.classList.add('hidden');
             this.loadingElement.style.display = 'none';
         }
         this.isVisible = false;
@@ -55,25 +58,32 @@ export class UnifiedLoadingManager {
      * @private
      */
     _createLoadingElement() {
-        this.loadingElement = document.createElement('div');
-        this.loadingElement.id = 'unified-loading-manager';
-        this.loadingElement.innerHTML = `
-            <div class="fixed top-0 left-0 right-0 bottom-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center">
-                <div class="flex flex-col items-center gap-4">
-                    <!-- Animated Spinner -->
-                    <div class="animate-spin">
-                        <svg class="w-10 h-10 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
+        // Try to use existing element from HTML first (for dashboard)
+        this.loadingElement = document.getElementById('unified-loading-overlay');
+
+        // If not found, create a new one (for other pages)
+        if (!this.loadingElement) {
+            this.loadingElement = document.createElement('div');
+            this.loadingElement.id = 'unified-loading-manager';
+            this.loadingElement.innerHTML = `
+                <div class="fixed top-0 left-0 right-0 bottom-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center">
+                    <div class="flex flex-col items-center gap-4">
+                        <!-- Animated Spinner -->
+                        <div class="animate-spin">
+                            <svg class="w-10 h-10 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <!-- Message -->
+                        <p class="text-sm text-gray-700 font-medium" id="unified-loading-message">Memproses...</p>
                     </div>
-                    <!-- Message -->
-                    <p class="text-sm text-gray-700 font-medium" id="unified-loading-message">Memproses...</p>
                 </div>
-            </div>
-        `;
-        document.body.appendChild(this.loadingElement);
+            `;
+            document.body.appendChild(this.loadingElement);
+        }
+
         this.messageElement = this.loadingElement.querySelector('#unified-loading-message');
-        this.loadingElement.style.display = 'none';
+        this.loadingElement.classList.add('hidden');
     }
 
     /**
