@@ -452,7 +452,59 @@ class AnalysisDashboardService {
       }))
     });
 
+    // Load missing lab data for filtered MCUs
+    await this.loadMissingLabData();
+
     await this.renderAllCharts();
+  }
+
+  /**
+   * Load lab data for MCUs that don't have it
+   * This happens when filtering to non-latest years where lab data wasn't pre-loaded
+   */
+  async loadMissingLabData() {
+    try {
+      // Find MCU IDs that don't have lab data
+      const mcuIdsNeedingLabs = this.filteredData
+        .filter(item => Object.keys(item.labs).length === 0)
+        .map(item => item.mcu.mcu_id);
+
+      if (mcuIdsNeedingLabs.length === 0) {
+        console.log('All filtered MCUs have lab data');
+        return;
+      }
+
+      console.log(`Loading lab data for ${mcuIdsNeedingLabs.length} MCUs without lab data`);
+
+      // Load lab data in batches
+      const batchSize = 100;
+      for (let i = 0; i < mcuIdsNeedingLabs.length; i += batchSize) {
+        const batch = mcuIdsNeedingLabs.slice(i, i + batchSize);
+        const { data: labs, error } = await supabase
+          .from('pemeriksaan_lab')
+          .select('*')
+          .in('mcu_id', batch)
+          .is('deleted_at', null);
+
+        if (error) {
+          console.warn('Error loading lab data:', error);
+          continue;
+        }
+
+        // Add lab data to filtered items
+        labs?.forEach(lab => {
+          const item = this.filteredData.find(d => d.mcu.mcu_id === lab.mcu_id);
+          if (item) {
+            if (!item.labs) item.labs = {};
+            item.labs[lab.lab_item_id] = lab;
+          }
+        });
+      }
+
+      console.log('Lab data loading complete');
+    } catch (error) {
+      console.error('Error in loadMissingLabData:', error);
+    }
   }
 
   /**
