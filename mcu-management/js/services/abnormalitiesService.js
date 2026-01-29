@@ -302,14 +302,12 @@ export const abnormalitiesService = {
           // Skip BP checking on error
         }
 
-        // Check Vision (Audiometri)
+        // Check Vision (Pemeriksaan Mata)
         try {
-          const visionLeft = mcu.visionDistantLeft || mcu.vision_distant_left;
-          const visionRight = mcu.visionDistantRight || mcu.vision_distant_right;
+          const vision = mcu.vision;
 
-          if ((visionLeft && this.isVisionAbnormal(visionLeft)) ||
-              (visionRight && this.isVisionAbnormal(visionRight))) {
-            const conditionKey = 'Gangguan Penglihatan';
+          if (vision && this.isVisionAbnormal(vision)) {
+            const conditionKey = `Gangguan Penglihatan: ${vision}`;
 
             if (!abnormalities[conditionKey]) {
               abnormalities[conditionKey] = {
@@ -329,7 +327,7 @@ export const abnormalitiesService = {
 
         // Check Spirometri (hasil pemeriksaan paru)
         try {
-          const spirometri = mcu.spirometriResult || mcu.spirometri_result;
+          const spirometri = mcu.spirometry;
           if (spirometri && spirometri !== 'Normal') {
             const conditionKey = `Spirometri: ${spirometri}`;
 
@@ -351,7 +349,7 @@ export const abnormalitiesService = {
 
         // Check Audiometri (hasil pemeriksaan pendengaran)
         try {
-          const audiometri = mcu.audiometriResult || mcu.audiometri_result;
+          const audiometri = mcu.audiometry;
           if (audiometri && audiometri !== 'Normal') {
             const conditionKey = `Audiometri: ${audiometri}`;
 
@@ -373,7 +371,7 @@ export const abnormalitiesService = {
 
         // Check X-ray hasil
         try {
-          const xrayResult = mcu.xrayResult || mcu.xray_result;
+          const xrayResult = mcu.xray;
           if (xrayResult && xrayResult !== 'Normal') {
             const conditionKey = `X-ray: ${xrayResult}`;
 
@@ -395,7 +393,7 @@ export const abnormalitiesService = {
 
         // Check EKG hasil
         try {
-          const ekgResult = mcu.ekgResult || mcu.ekg_result;
+          const ekgResult = mcu.ekg;
           if (ekgResult && ekgResult !== 'Normal') {
             const conditionKey = `EKG: ${ekgResult}`;
 
@@ -417,7 +415,7 @@ export const abnormalitiesService = {
 
         // Check Treadmill hasil
         try {
-          const treadmillResult = mcu.treadmillResult || mcu.treadmill_result;
+          const treadmillResult = mcu.treadmill;
           if (treadmillResult && treadmillResult !== 'Normal') {
             const conditionKey = `Treadmill: ${treadmillResult}`;
 
