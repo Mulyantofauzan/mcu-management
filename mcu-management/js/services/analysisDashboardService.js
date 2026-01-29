@@ -271,6 +271,16 @@ class AnalysisDashboardService {
         }
       });
 
+      // Debug: Check lab loading
+      console.log('Lab loading debug:', {
+        totalLabResults: allLabResults.length,
+        sampleLabs: allLabResults.slice(0, 5).map(l => ({
+          lab_item_id: l.lab_item_id,
+          mcu_id: l.mcu_id,
+          notes: l.notes
+        }))
+      });
+
       this.allMCUData = employees
         .filter(emp => emp.is_active === true && latestMCUByEmployee[emp.employee_id])
         .map(emp => {
@@ -973,8 +983,10 @@ class AnalysisDashboardService {
         if (!hasData) {
           smokingCanvas.parentElement.innerHTML = '<p class="text-gray-500 text-sm">No Data Recorded</p>';
         } else {
+          // Destroy existing chart if it exists
+          this.destroyChart('chartSmokingStatus');
           const smokingCtx = smokingCanvas.getContext('2d');
-          new Chart(smokingCtx, {
+          this.charts.set('chartSmokingStatus', new Chart(smokingCtx, {
             type: 'pie',
             data: {
               labels: smokingLabels,
@@ -1016,7 +1028,7 @@ class AnalysisDashboardService {
               }
             },
             plugins: [window.ChartDataLabels || {}]
-          });
+          }));
         }
       }
 
@@ -1039,8 +1051,10 @@ class AnalysisDashboardService {
         if (!hasData) {
           exerciseCanvas.parentElement.innerHTML = '<p class="text-gray-500 text-sm">No Data Recorded</p>';
         } else {
+          // Destroy existing chart if it exists
+          this.destroyChart('chartExerciseFrequency');
           const exerciseCtx = exerciseCanvas.getContext('2d');
-          new Chart(exerciseCtx, {
+          this.charts.set('chartExerciseFrequency', new Chart(exerciseCtx, {
             type: 'pie',
             data: {
               labels: exerciseLabels,
@@ -1082,7 +1096,7 @@ class AnalysisDashboardService {
               }
             },
             plugins: [window.ChartDataLabels || {}]
-          });
+          }));
         }
       }
     } catch (error) {
