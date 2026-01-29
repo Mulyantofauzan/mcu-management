@@ -162,7 +162,20 @@ export const abnormalitiesService = {
         for (const lab of labs) {
           if (lab.deleted_at) continue; // Skip soft-deleted records
 
-          const status = this.determineLabStatus(lab.value, lab.min_range_reference, lab.max_range_reference);
+          // Get lab item info for reference ranges
+          let minRange = lab.min_range_reference;
+          let maxRange = lab.max_range_reference;
+
+          // If database ranges are NULL, use defaults from labItemsMapping
+          if (!minRange || !maxRange) {
+            const labItemInfo = getLabItemInfo(lab.lab_item_id);
+            if (labItemInfo) {
+              minRange = minRange || labItemInfo.min;
+              maxRange = maxRange || labItemInfo.max;
+            }
+          }
+
+          const status = this.determineLabStatus(lab.value, minRange, maxRange);
 
           if (status === 'normal') continue; // Skip normal results
 
