@@ -177,17 +177,18 @@ export const abnormalitiesService = {
             continue; // Skip soft-deleted records
           }
 
-          // Get lab item info for reference ranges
-          let minRange = lab.min_range_reference;
-          let maxRange = lab.max_range_reference;
+          // Get lab item info for reference ranges - convert lab_item_id to number
+          const labItemId = parseInt(lab.lab_item_id, 10);
+          let minRange = lab.min_range_reference !== null && lab.min_range_reference !== undefined ? parseFloat(lab.min_range_reference) : null;
+          let maxRange = lab.max_range_reference !== null && lab.max_range_reference !== undefined ? parseFloat(lab.max_range_reference) : null;
           let rangeSource = 'database';
 
-          // If database ranges are NULL, use defaults from labItemsMapping
-          if (!minRange || !maxRange) {
-            const labItemInfo = getLabItemInfo(lab.lab_item_id);
+          // If database ranges are NULL or NaN, use defaults from labItemsMapping
+          if (minRange === null || maxRange === null || isNaN(minRange) || isNaN(maxRange)) {
+            const labItemInfo = getLabItemInfo(labItemId);
             if (labItemInfo) {
-              minRange = minRange || labItemInfo.min;
-              maxRange = maxRange || labItemInfo.max;
+              minRange = minRange !== null && !isNaN(minRange) ? minRange : labItemInfo.min;
+              maxRange = maxRange !== null && !isNaN(maxRange) ? maxRange : labItemInfo.max;
               rangeSource = 'mapping';
             }
           }
@@ -196,11 +197,11 @@ export const abnormalitiesService = {
           const status = this.determineLabStatus(lab.value, minRange, maxRange);
 
           // Debug: Log each lab result processing
-          const labItemInfo = getLabItemInfo(lab.lab_item_id);
-          const displayName = labItemInfo?.name || `Lab Item ${lab.lab_item_id}`;
+          const labItemInfo = getLabItemInfo(labItemId);
+          const displayName = labItemInfo?.name || `Lab Item ${labItemId}`;
 
           debugLog.labsSkipped.push({
-            labId: lab.lab_item_id,
+            labId: labItemId,
             name: displayName,
             value: value,
             min: minRange,
@@ -220,7 +221,7 @@ export const abnormalitiesService = {
               name: conditionKey,
               count: 0,
               type: 'lab',
-              labItemId: lab.lab_item_id,
+              labItemId: labItemId,
               displayName: displayName,
               status: status,
               unit: lab.unit,
