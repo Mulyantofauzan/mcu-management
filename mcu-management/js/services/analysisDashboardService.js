@@ -1280,8 +1280,12 @@ class AnalysisDashboardService {
       // This ensures chart data matches exactly what's in the database
       this.filteredData.forEach(item => {
         const lab = item.labs[labId];
-        if (lab && lab.value) {
-          values.push(lab.value);
+        if (lab) {
+          // Lab record exists - count based on status field
+          if (lab.value || lab.value === 0) {
+            // Has numeric value
+            values.push(lab.value);
+          }
 
           // ✅ Get status directly from notes column (already calculated when lab result was saved)
           let status = 'Not Recorded';
@@ -1295,6 +1299,7 @@ class AnalysisDashboardService {
 
           statusCounts[status]++;
         } else {
+          // No lab record for this item
           statusCounts['Not Recorded']++;
         }
       });
