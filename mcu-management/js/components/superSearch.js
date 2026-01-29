@@ -335,10 +335,10 @@ class SuperSearch {
 
       let mcuStatus = '<span class="text-xs text-gray-400">Belum Ada MCU</span>';
       if (mcuCount && mcuCount > 0) {
-        const statusBadgeColor = mcu?.mcuStatus === 'Complete' || mcu?.mcuStatus === 'Completed'
+        const statusBadgeColor = mcu?.status === 'Complete' || mcu?.status === 'Completed'
           ? 'bg-green-100 text-green-800'
           : 'bg-yellow-100 text-yellow-800';
-        mcuStatus = `<span class="text-xs font-semibold px-2 py-1 rounded ${statusBadgeColor}">${mcu?.mcuStatus || 'Pending'} (${mcuCount})</span>`;
+        mcuStatus = `<span class="text-xs font-semibold px-2 py-1 rounded ${statusBadgeColor}">${mcu?.status || 'Pending'} (${mcuCount})</span>`;
       }
 
       html += `
@@ -479,7 +479,7 @@ class SuperSearch {
       const mcuId = mcu.mcuId || mcu.mcu_id || '-';
       const mcuDate = new Date(mcu.mcuDate || mcu.mcu_date);
       const mcuType = mcu.mcuType || mcu.mcu_type || 'Rutin';
-      const mcuStatus = mcu.mcuStatus || mcu.mcu_status || 'Pending';
+      const mcuStatus = mcu.status || 'Pending';
       const finalResult = mcu.finalResult || mcu.final_result || '-';
 
       // Determine status badge color
