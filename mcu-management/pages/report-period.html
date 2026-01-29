@@ -288,7 +288,6 @@
                 // Mark page as initialized (triggers CSS fade-in)
                 document.body.classList.add('initialized');
             } catch (error) {
-                console.error('Init error:', error);
                 showToast('Gagal memuat halaman: ' + error.message, 'error');
                 // Still mark as initialized to prevent stuck blank screen
                 document.body.classList.add('initialized');
@@ -408,7 +407,6 @@
                 showToast('Laporan berhasil dibuat (' + report.length + ' data)', 'success');
                 document.getElementById('export-btn').disabled = false;
             } catch (error) {
-                console.error('Error generating report:', error);
                 showToast('Gagal membuat laporan: ' + error.message, 'error');
                 document.getElementById('results-table').innerHTML = '<p class="text-center text-red-500 py-8">Terjadi kesalahan saat membuat laporan</p>';
             }
@@ -547,7 +545,6 @@
                     showToast('Gagal export: ' + result.message, 'error');
                 }
             } catch (error) {
-                console.error('Export error:', error);
                 const loadingModal = document.getElementById('export-loading-modal');
                 loadingModal.style.display = 'none';
                 showToast('Gagal export: ' + error.message, 'error');
@@ -577,7 +574,6 @@
         supabaseReady.then(() => {
             init();
         }).catch(err => {
-            console.error('Failed to wait for Supabase:', err);
             init();  // Fallback: still run init even if Supabase fails
         });
     </script>

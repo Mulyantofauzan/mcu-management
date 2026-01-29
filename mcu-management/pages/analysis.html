@@ -489,7 +489,6 @@
             // Mark page as initialized (triggers CSS fade-in)
             document.body.classList.add('initialized');
         } catch (error) {
-            console.error('Analysis page init error:', error);
             // Still mark as initialized to prevent stuck blank screen
             document.body.classList.add('initialized');
         }

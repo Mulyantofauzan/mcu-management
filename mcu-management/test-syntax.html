@@ -8,27 +8,19 @@
     <pre id="output"></pre>
 
     <script>
-        console.log('[test-syntax.html] Page starting...');
 
         // Test setiap import secara individual
         (async () => {
             try {
-                console.log('[test] Loading env-config.js...');
                 // env-config.js sudah diload sebagai script, jadi skip
 
-                console.log('[test] Loading envConfig.js...');
                 const envConfig = await import('../js/config/envConfig.js');
-                console.log('[test] envConfig loaded:', envConfig);
 
-                console.log('[test] Loading supabase.js...');
                 const supabase = await import('../js/config/supabase.js');
-                console.log('[test] supabase loaded:', supabase);
 
-                console.log('[test] All imports successful!');
                 document.getElementById('output').textContent = 'All imports successful!\n\nCheck console for details.';
 
             } catch (error) {
-                console.error('[test] IMPORT ERROR:', error);
                 document.getElementById('output').textContent = 'ERROR: ' + error.message + '\n\n' + error.stack;
             }
         })();

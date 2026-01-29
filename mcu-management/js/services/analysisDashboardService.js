@@ -503,11 +503,6 @@ class AnalysisDashboardService {
    */
   async renderAllCharts() {
     try {
-        employee_id: d.employee.employee_id,
-        name: d.employee.name,
-        mcu_date: d.mcu.mcu_date || d.mcu.mcuDate
-      })));
-
       this.updateSummaryCards();
       this.renderMCUTrendChart();
       this.renderBMIChart();
@@ -1321,16 +1316,7 @@ class AnalysisDashboardService {
     // Debug: Check first filtered item's labs
     if (this.filteredData.length > 0) {
       const firstItem = this.filteredData[0];
-        employee: firstItem.employee.name,
-        mcu_id: firstItem.mcu.mcu_id,
-        labsKeys: Object.keys(firstItem.labs),
-        labsCount: Object.keys(firstItem.labs).length,
-        sampleLabs: Object.entries(firstItem.labs).slice(0, 3).map(([key, val]) => ({
-          lab_item_id: key,
-          notes: val.notes,
-          value: val.value
-        }))
-      });
+      // Lab data check would go here
     }
 
     labItems.forEach(labItem => {

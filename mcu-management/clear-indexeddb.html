@@ -23,10 +23,8 @@
             try {
                 // Delete IndexedDB
                 const dbs = await indexedDB.databases();
-                console.log('Found databases:', dbs);
                 
                 for (let db of dbs) {
-                    console.log('Deleting database:', db.name);
                     indexedDB.deleteDatabase(db.name);
                 }
 
@@ -43,10 +41,8 @@
                 }
 
                 status.innerHTML = '<p class="success">✅ All caches cleared!</p><p>You can now close this page and refresh the app.</p>';
-                console.log('✅ Clear complete');
             } catch (error) {
                 status.innerHTML = '<p style="color: red;">❌ Error: ' + error.message + '</p>';
-                console.error('Error clearing:', error);
             }
         }
     </script>

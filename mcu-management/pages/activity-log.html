@@ -338,7 +338,6 @@
                 document.body.classList.add('initialized');
 
             } catch (error) {
-                console.error('Init error:', error);
                 showToast('Gagal memuat halaman: ' + error.message, 'error');
                 // Still mark as initialized to prevent stuck blank screen
                 document.body.classList.add('initialized');
@@ -350,13 +349,11 @@
             try {
                 // Check if service is initialized
                 if (!activityLogService) {
-                    console.error('❌ ActivityLogService not initialized');
                     showToast('Service belum siap, silakan tunggu...', 'warning');
                     return;
                 }
 
                 const filters = getFilters();
-                console.log('📊 Loading activity log with filters:', filters);
                 const result = await activityLogService.getActivities({
                     ...filters,
                     page: currentPage,
@@ -367,7 +364,6 @@
                 renderPagination(result.totalPages, currentPage);
 
             } catch (error) {
-                console.error('❌ Load error:', error);
                 showToast('Gagal memuat activity log: ' + error.message, 'error');
             }
         }
@@ -503,9 +499,7 @@
         };
 
         // Initialize immediately (module script runs after DOM is ready)
-        console.log('🚀 Initializing Activity Log page...');
         init().catch(err => {
-            console.error('❌ Fatal init error:', err);
             showToast('Gagal inisialisasi halaman: ' + err.message, 'error');
             document.body.classList.add('initialized');
         });
