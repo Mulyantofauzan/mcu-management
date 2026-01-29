@@ -38,6 +38,7 @@ import { initVersionManager } from '../utils/versionManager.js';  // ✅ Version
 import { initThemeManager } from '../utils/themeManager.js';  // ✅ Dark mode / Light mode manager
 import { networkStatusManager } from '../utils/networkStatusManager.js';  // ✅ Network status monitoring
 import { topAbnormalitiesChartInstance } from '../components/topAbnormalitiesChart.js';  // ✅ Top abnormalities chart
+import { topDiseasesChartInstance } from '../components/topDiseasesChart.js';  // ✅ Top comorbid diseases chart
 // Initialize environment variables immediately (before other module code runs)
 initializeEnv().then(() => {
   logEnvStatus();
@@ -363,6 +364,12 @@ async function updateCharts(filteredMCUs) {
   // Chart 8: Top Abnormalities (Lab + MCU) - Load asynchronously to prevent blocking
   // Don't await - let it load in background
   updateTopAbnormalitiesChart(filteredMCUs).catch(err => {
+    // Silently fail if chart loading errors
+  });
+
+  // Chart 9: Top Comorbid Diseases - Load asynchronously to prevent blocking
+  // Don't await - let it load in background
+  updateTopDiseasesChart(filteredMCUs).catch(err => {
     // Silently fail if chart loading errors
   });
 }
@@ -902,6 +909,24 @@ async function updateTopAbnormalitiesChart(filteredMCUs) {
     const container = document.getElementById('top-abnormalities-container');
     if (container) {
       container.innerHTML = `<p class="text-red-600">Error loading abnormalities chart: ${error.message}</p>`;
+    }
+  }
+}
+
+async function updateTopDiseasesChart(filteredMCUs) {
+  try {
+    // Render top diseases chart
+    await topDiseasesChartInstance.render(filteredMCUs, {
+      limit: 10, // Default top 10
+      view: 'bar' // Default view is bar chart
+    });
+
+    // Store reference for later updates
+    window.topDiseasesChartInstance = topDiseasesChartInstance;
+  } catch (error) {
+    const container = document.getElementById('top-diseases-container');
+    if (container) {
+      container.innerHTML = `<p class="text-red-600">Error loading diseases chart: ${error.message}</p>`;
     }
   }
 }

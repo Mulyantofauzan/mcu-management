@@ -1,5 +1,5 @@
 {
-  "version": "1.0.20",
+  "version": "1.0.21",
   "releaseDate": "2026-01-29",
   "features": [
     "Excel export functionality for Jakarta Cardiovascular assessments",
@@ -7,6 +7,7 @@
     "Automatic cache invalidation on new versions",
     "Version management system",
     "Top Abnormalities Chart feature (Lab + MCU analysis) - optimized with parallel batch loading",
-    "Top 10 Abnormalities with bar chart and list view display"
+    "Top 10 Abnormalities with bar chart and list view display",
+    "Top 10 Comorbid Diseases Chart - from latest MCU medical history data"
   ]
 }
