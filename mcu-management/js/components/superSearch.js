@@ -82,7 +82,7 @@ class SuperSearch {
 
     // Detail Modal HTML
     const detailModalHTML = `
-      <div id="super-search-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+      <div id="super-search-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 backdrop-blur-sm" style="z-index: 9999;">
         <div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
           <!-- Detail Header -->
           <div class="sticky top-0 flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
@@ -267,11 +267,23 @@ class SuperSearch {
     this.allEmployees.forEach(emp => {
       const matchScore = this.calculateMatchScore(emp, query);
       if (matchScore > 0) {
-        const mcuData = this.allMCURecords.find(m => m.employeeId === emp.id);
+        // Get the most recent MCU for this employee (not just first one)
+        const employeeMCUs = this.allMCURecords.filter(m => m.employeeId === emp.id || m.employee_id === emp.id);
+        let mcuData = null;
+        if (employeeMCUs.length > 0) {
+          // Sort by date and get most recent
+          mcuData = employeeMCUs.sort((a, b) => {
+            const dateA = new Date(a.mcuDate || a.mcu_date || 0);
+            const dateB = new Date(b.mcuDate || b.mcu_date || 0);
+            return dateB - dateA;
+          })[0];
+        }
+
         this.searchResults.push({
           type: 'employee',
           employee: emp,
           mcu: mcuData,
+          mcuCount: employeeMCUs.length,
           matchScore: matchScore,
           isDeleted: emp.deletedAt ? true : false
         });
@@ -324,9 +336,16 @@ class SuperSearch {
     let html = '<div class="divide-y divide-gray-200">';
 
     this.searchResults.forEach((result, index) => {
-      const { employee, mcu, isDeleted } = result;
+      const { employee, mcu, mcuCount, isDeleted } = result;
       const deletedBadge = isDeleted ? '<span class="ml-2 inline-block px-2 py-1 text-xs font-semibold text-danger bg-danger-light rounded">TERHAPUS</span>' : '';
-      const mcuStatus = mcu ? `<span class="text-xs text-gray-600">${mcu.mcuStatus}</span>` : '<span class="text-xs text-gray-400">Belum Ada MCU</span>';
+
+      let mcuStatus = '<span class="text-xs text-gray-400">Belum Ada MCU</span>';
+      if (mcuCount && mcuCount > 0) {
+        const statusBadgeColor = mcu?.mcuStatus === 'Complete' || mcu?.mcuStatus === 'Completed'
+          ? 'bg-green-100 text-green-800'
+          : 'bg-yellow-100 text-yellow-800';
+        mcuStatus = `<span class="text-xs font-semibold px-2 py-1 rounded ${statusBadgeColor}">${mcu?.mcuStatus || 'Pending'} (${mcuCount})</span>`;
+      }
 
       html += `
         <div class="px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors result-item" data-index="${index}">
