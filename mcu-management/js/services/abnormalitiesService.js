@@ -173,6 +173,13 @@ export const abnormalitiesService = {
     // Process MCUs with cached lab results
     let totalAbnormalFound = 0;
     let debugMCUIds = [];
+    console.log('DEBUG: First 5 MCU IDs from filteredMCUs:', filteredMCUs.slice(0, 5).map(m => ({
+      mcu_id: m.mcu_id,
+      mcuId: m.mcuId,
+      selected: m.mcu_id || m.mcuId
+    })));
+    console.log('DEBUG: First 5 MCU IDs from labResultsMap:', Array.from(labResultsMap.keys()).slice(0, 5));
+
     for (const mcu of filteredMCUs) {
       try {
         const mcuId = mcu.mcu_id || mcu.mcuId;
@@ -183,8 +190,6 @@ export const abnormalitiesService = {
         }
 
         if (!Array.isArray(labs)) continue;
-
-        console.log(`MCU ${mcuId}: Found ${labs.length} labs`);
 
         for (const lab of labs) {
           debugLog.labsProcessed++;
