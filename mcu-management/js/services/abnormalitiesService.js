@@ -300,7 +300,9 @@ export const abnormalitiesService = {
       if (includeTypes.includes('lab')) {
         try {
           const labAbnormalities = await this.collectLabAbnormalities(filteredMCUs);
-          abnormalities = abnormalities.concat(labAbnormalities);
+          if (Array.isArray(labAbnormalities)) {
+            abnormalities = abnormalities.concat(labAbnormalities);
+          }
         } catch (labError) {
           // Continue even if lab collection fails
         }
@@ -308,8 +310,19 @@ export const abnormalitiesService = {
 
       // Collect MCU abnormalities
       if (includeTypes.includes('mcu')) {
-        const mcuAbnormalities = this.collectMCUAbnormalities(filteredMCUs);
-        abnormalities = abnormalities.concat(mcuAbnormalities);
+        try {
+          const mcuAbnormalities = this.collectMCUAbnormalities(filteredMCUs);
+          if (Array.isArray(mcuAbnormalities)) {
+            abnormalities = abnormalities.concat(mcuAbnormalities);
+          }
+        } catch (mcuError) {
+          // Continue even if MCU collection fails
+        }
+      }
+
+      // If no abnormalities found, return empty array
+      if (!Array.isArray(abnormalities) || abnormalities.length === 0) {
+        return [];
       }
 
       // Sort by count (frequency) descending
@@ -354,20 +367,40 @@ export const abnormalitiesService = {
    */
   async getAbnormalitiesSummary(filteredMCUs) {
     try {
-      const labAbnormalities = await this.collectLabAbnormalities(filteredMCUs);
-      const mcuAbnormalities = this.collectMCUAbnormalities(filteredMCUs);
+      let labAbnormalities = [];
+      let mcuAbnormalities = [];
+
+      // Collect lab abnormalities safely
+      try {
+        const labs = await this.collectLabAbnormalities(filteredMCUs);
+        labAbnormalities = Array.isArray(labs) ? labs : [];
+      } catch (labError) {
+        // Use empty array if lab collection fails
+        labAbnormalities = [];
+      }
+
+      // Collect MCU abnormalities safely
+      try {
+        const mcus = this.collectMCUAbnormalities(filteredMCUs);
+        mcuAbnormalities = Array.isArray(mcus) ? mcus : [];
+      } catch (mcuError) {
+        // Use empty array if MCU collection fails
+        mcuAbnormalities = [];
+      }
 
       const totalAbnormalities = labAbnormalities.length + mcuAbnormalities.length;
-      const totalOccurrences = labAbnormalities.reduce((sum, a) => sum + a.count, 0) +
-                               mcuAbnormalities.reduce((sum, a) => sum + a.count, 0);
+      const totalOccurrences = labAbnormalities.reduce((sum, a) => sum + (a?.count || 0), 0) +
+                               mcuAbnormalities.reduce((sum, a) => sum + (a?.count || 0), 0);
+
+      const allAbnormalities = [...labAbnormalities, ...mcuAbnormalities];
+      const sorted = allAbnormalities.sort((a, b) => (b?.count || 0) - (a?.count || 0));
 
       return {
         totalConditions: totalAbnormalities,
         totalOccurrences: totalOccurrences,
         labConditions: labAbnormalities.length,
         mcuConditions: mcuAbnormalities.length,
-        mostCommon: [...labAbnormalities, ...mcuAbnormalities]
-          .sort((a, b) => b.count - a.count)[0]
+        mostCommon: sorted.length > 0 ? sorted[0] : null
       };
     } catch (error) {
       // Return default summary on error
