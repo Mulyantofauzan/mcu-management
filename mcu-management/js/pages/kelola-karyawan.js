@@ -25,6 +25,7 @@ import { deleteOrphanedFiles } from '../services/supabaseStorageService.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';
 import { StaticLabForm } from '../components/staticLabForm.js';
 import { LAB_ITEMS_MAPPING, sortLabResultsByDisplayOrder } from '../data/labItemsMapping.js';
+import { mcuSuccessModal } from '../components/mcuSuccessModal.js';
 
 let employees = [];
 let filteredEmployees = [];
@@ -1158,20 +1159,35 @@ window.handleAddMCU = async function(event) {
         const labSaved = batchResult.data.labSaved.length;
         const labFailed = batchResult.data.labFailed.length;
 
-        if (labFailed > 0) {
-            showToast(`✅ MCU berhasil! Lab: ${labSaved}/${labSaved + labFailed} tersimpan (${labFailed} gagal).`, 'warning');
-        } else {
-            const labMsg = labSaved > 0 ? ` & ${labSaved} hasil lab` : '';
-            showToast(`✅ MCU${labMsg} berhasil disimpan!`, 'success');
-        }
+        // Get employee name for success modal
+        const employeeId = mcuData.employeeId;
+        const employee = employees.find(emp => emp.employee_id === employeeId);
+        const employeeName = employee ? employee.name : 'Unknown';
 
         // Hide loading after a brief delay to show completion
         setTimeout(() => {
             hideUnifiedLoading();
         }, 500);
 
-        // Close modal and reload data
+        // Close add modal
         closeAddMCUModal();
+
+        // Show success modal with MCU details
+        mcuSuccessModal.show(
+            employeeName,
+            mcuData.mcuType,
+            mcuData.initialResult,
+            4  // Auto-dismiss after 4 seconds
+        );
+
+        // Show warning toast if lab failed (in addition to success modal)
+        if (labFailed > 0) {
+            setTimeout(() => {
+                showToast(`⚠️ ${labFailed} hasil lab gagal disimpan`, 'warning');
+            }, 500);
+        }
+
+        // Reload data
         await loadData();
 
     } catch (error) {

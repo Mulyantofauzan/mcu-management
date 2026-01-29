@@ -38,6 +38,7 @@ import { initVersionManager } from '../utils/versionManager.js';  // ✅ Version
 import { initThemeManager } from '../utils/themeManager.js';  // ✅ Dark mode / Light mode manager
 import { networkStatusManager } from '../utils/networkStatusManager.js';  // ✅ Network status monitoring
 import { topAbnormalitiesChartInstance } from '../components/topAbnormalitiesChart.js';  // ✅ Top abnormalities chart
+import { unifiedLoadingManager } from '../utils/unifiedLoadingManager.js';  // ✅ Loading animation
 // Initialize environment variables immediately (before other module code runs)
 initializeEnv().then(() => {
   logEnvStatus();
@@ -59,8 +60,12 @@ let charts = {};
 // Initialize
 async function init() {
   try {
+    // Show loading overlay immediately
+    unifiedLoadingManager.show('Memuat Dashboard...');
+
     // Check auth - SECURITY: Require proper authentication
     if (!authService.isAuthenticated()) {
+      unifiedLoadingManager.hide();
       window.location.href = 'pages/login.html';
       return;
     }
@@ -100,11 +105,14 @@ async function init() {
     // Initialize filter dropdowns after data loads
     await initializeFilters();
 
+    // Hide loading overlay
+    unifiedLoadingManager.hide();
+
     // Show page content after initialization complete
     document.body.classList.add('initialized');
 
   } catch (error) {
-
+    unifiedLoadingManager.hide();
     showToast('Error initializing dashboard: ' + error.message, 'error');
     // Still show page even on error
     document.body.classList.add('initialized');
