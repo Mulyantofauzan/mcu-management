@@ -156,18 +156,30 @@ export const abnormalitiesService = {
             debugLog.totalLabsLoaded += result.labs.length;
           }
         });
+
+        // Debug: Log lab loading results
+        console.log('Lab loading results:', {
+          totalPromises: labPromises.length,
+          resultsWithLabs: results.filter(r => r.labs && r.labs.length > 0).length,
+          labResultsMapSize: labResultsMap.size,
+          totalLabsLoaded: debugLog.totalLabsLoaded
+        });
       }
     } catch (err) {
+      console.error('Error loading labs in parallel:', err);
       // If batch load fails, continue with empty results
     }
 
     // Process MCUs with cached lab results
+    let totalAbnormalFound = 0;
     for (const mcu of filteredMCUs) {
       try {
         const mcuId = mcu.mcu_id || mcu.mcuId;
         const labs = labResultsMap.get(mcuId) || [];
 
         if (!Array.isArray(labs)) continue;
+
+        console.log(`MCU ${mcuId}: Found ${labs.length} labs`);
 
         for (const lab of labs) {
           debugLog.labsProcessed++;
@@ -230,6 +242,7 @@ export const abnormalitiesService = {
               category: 'Lab Results'
             };
             debugLog.abnormalitiesFound.push(conditionKey);
+            totalAbnormalFound++;
           }
 
           abnormalities[conditionKey].count++;
@@ -241,6 +254,15 @@ export const abnormalitiesService = {
 
     // Store debug info
     window.__abnormalitiesLabDebug = debugLog;
+
+    console.log('Lab abnormalities collection complete:', {
+      totalMCUs: debugLog.totalMCUs,
+      mcusWithLabs: debugLog.mcusWithLabs,
+      totalLabsLoaded: debugLog.totalLabsLoaded,
+      labsProcessed: debugLog.labsProcessed,
+      abnormalitiesFound: totalAbnormalFound,
+      abnormalitiesCount: Object.keys(abnormalities).length
+    });
 
     return Object.values(abnormalities);
   },
