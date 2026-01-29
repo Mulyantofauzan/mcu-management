@@ -125,39 +125,43 @@ export const abnormalitiesService = {
     const abnormalities = {};
 
     for (const mcu of filteredMCUs) {
-      // Get lab results for this MCU
-      const labs = await labService.getPemeriksaanLabByMcuId(mcu.mcu_id || mcu.mcuId);
+      try {
+        // Get lab results for this MCU
+        const labs = await labService.getPemeriksaanLabByMcuId(mcu.mcu_id || mcu.mcuId);
 
-      if (!Array.isArray(labs)) continue;
+        if (!Array.isArray(labs)) continue;
 
-      for (const lab of labs) {
-        if (lab.deleted_at) continue; // Skip soft-deleted records
+        for (const lab of labs) {
+          if (lab.deleted_at) continue; // Skip soft-deleted records
 
-        const status = this.determineLabStatus(lab.value, lab.min_range_reference, lab.max_range_reference);
+          const status = this.determineLabStatus(lab.value, lab.min_range_reference, lab.max_range_reference);
 
-        if (status === 'normal') continue; // Skip normal results
+          if (status === 'normal') continue; // Skip normal results
 
-        // Get lab item info for display name
-        const labItemInfo = getLabItemInfo(lab.lab_item_id);
-        const displayName = labItemInfo?.name || `Lab Item ${lab.lab_item_id}`;
+          // Get lab item info for display name
+          const labItemInfo = getLabItemInfo(lab.lab_item_id);
+          const displayName = labItemInfo?.name || `Lab Item ${lab.lab_item_id}`;
 
-        // Create condition key: "Lab Name - Status"
-        const conditionKey = `${displayName} (${status === 'high' ? 'Tinggi' : 'Rendah'})`;
+          // Create condition key: "Lab Name - Status"
+          const conditionKey = `${displayName} (${status === 'high' ? 'Tinggi' : 'Rendah'})`;
 
-        if (!abnormalities[conditionKey]) {
-          abnormalities[conditionKey] = {
-            name: conditionKey,
-            count: 0,
-            type: 'lab',
-            labItemId: lab.lab_item_id,
-            displayName: displayName,
-            status: status,
-            unit: lab.unit,
-            category: 'Lab Results'
-          };
+          if (!abnormalities[conditionKey]) {
+            abnormalities[conditionKey] = {
+              name: conditionKey,
+              count: 0,
+              type: 'lab',
+              labItemId: lab.lab_item_id,
+              displayName: displayName,
+              status: status,
+              unit: lab.unit,
+              category: 'Lab Results'
+            };
+          }
+
+          abnormalities[conditionKey].count++;
         }
-
-        abnormalities[conditionKey].count++;
+      } catch (error) {
+        // Log error but continue processing other MCUs
       }
     }
 
