@@ -271,9 +271,18 @@ class AnalysisDashboardService {
         }
       });
 
-      // Debug: Check lab loading
+      // Build a map for quick lab lookup: mcu_id -> labMap
+      const labMapByMcuId = {};
+      allLabResults.forEach(lab => {
+        if (!labMapByMcuId[lab.mcu_id]) {
+          labMapByMcuId[lab.mcu_id] = {};
+        }
+        labMapByMcuId[lab.mcu_id][lab.lab_item_id] = lab;
+      });
+
       console.log('Lab loading debug:', {
         totalLabResults: allLabResults.length,
+        totalMCUsWithLabData: Object.keys(labMapByMcuId).length,
         sampleLabs: allLabResults.slice(0, 5).map(l => ({
           lab_item_id: l.lab_item_id,
           mcu_id: l.mcu_id,
@@ -288,12 +297,8 @@ class AnalysisDashboardService {
           const dept = departments?.find(d => d.name === emp.department);
           const job = jobTitles?.find(j => j.name === emp.job_title);
 
-          // Get lab results for this MCU
-          const mcuLabResults = allLabResults?.filter(l => l.mcu_id === mcu.mcu_id) || [];
-          const labMap = {};
-          mcuLabResults.forEach(lab => {
-            labMap[lab.lab_item_id] = lab;
-          });
+          // Get lab results for this MCU from the pre-built map
+          const labMap = labMapByMcuId[mcu.mcu_id] || {};
 
           return {
             employee: emp,
@@ -1298,6 +1303,22 @@ class AnalysisDashboardService {
     ];
 
     console.log('renderLabResultsCharts() processing filteredData count:', this.filteredData.length);
+
+    // Debug: Check first filtered item's labs
+    if (this.filteredData.length > 0) {
+      const firstItem = this.filteredData[0];
+      console.log('Sample filtered item labs:', {
+        employee: firstItem.employee.name,
+        mcu_id: firstItem.mcu.mcu_id,
+        labsKeys: Object.keys(firstItem.labs),
+        labsCount: Object.keys(firstItem.labs).length,
+        sampleLabs: Object.entries(firstItem.labs).slice(0, 3).map(([key, val]) => ({
+          lab_item_id: key,
+          notes: val.notes,
+          value: val.value
+        }))
+      });
+    }
 
     labItems.forEach(labItem => {
       const ctx = document.getElementById(labItem.canvasId)?.getContext('2d');
