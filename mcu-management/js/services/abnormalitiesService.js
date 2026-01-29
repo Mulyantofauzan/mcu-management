@@ -196,22 +196,24 @@ export const abnormalitiesService = {
           const value = parseFloat(lab.value);
           const status = this.determineLabStatus(lab.value, minRange, maxRange);
 
-          // Debug: Log each lab result processing
+          // Get lab item info for display name
           const labItemInfo = getLabItemInfo(labItemId);
           const displayName = labItemInfo?.name || `Lab Item ${labItemId}`;
 
-          debugLog.labsSkipped.push({
-            labId: labItemId,
-            name: displayName,
-            value: value,
-            min: minRange,
-            max: maxRange,
-            rangeSource: rangeSource,
-            status: status,
-            reason: status === 'normal' ? 'Normal value' : 'Abnormal'
-          });
-
-          if (status === 'normal') continue; // Skip normal results
+          // Skip normal or null results - only process abnormal
+          if (status === 'normal' || status === null) {
+            debugLog.labsSkipped.push({
+              labId: labItemId,
+              name: displayName,
+              value: value,
+              min: minRange,
+              max: maxRange,
+              rangeSource: rangeSource,
+              status: status,
+              reason: status === 'normal' ? 'Normal value' : (status === null ? 'Invalid ranges' : 'Abnormal')
+            });
+            continue;
+          }
 
           // Create condition key: "Lab Name - Status"
           const conditionKey = `${displayName} (${status === 'high' ? 'Tinggi' : 'Rendah'})`;
