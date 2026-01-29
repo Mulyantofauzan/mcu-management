@@ -261,13 +261,18 @@ class AnalysisDashboardService {
         }
       }
 
-      // Build consolidated data for LATEST MCU per employee only
-      // Even in "all-years" mode, we only use latest MCU per employee to avoid double-counting
-      // Year filtering will still work by checking the mcu_date field
-      const latestMCUByEmployee = {};
+      // Build consolidated data for ALL MCUs per employee
+      // This allows year-based filtering to show MCU from specific year
+      // Key: "employee_id-year", Value: MCU record (latest for that employee-year combination)
+      const mcuByEmployeeYear = {};
+
       allMcus.forEach(mcu => {
-        if (!latestMCUByEmployee[mcu.employee_id]) {
-          latestMCUByEmployee[mcu.employee_id] = mcu;
+        const year = new Date(mcu.mcu_date || mcu.mcuDate).getFullYear();
+        const key = `${mcu.employee_id}-${year}`;
+
+        // Keep latest MCU for each employee-year combo
+        if (!mcuByEmployeeYear[key]) {
+          mcuByEmployeeYear[key] = mcu;
         }
       });
 
@@ -283,6 +288,7 @@ class AnalysisDashboardService {
       console.log('Lab loading debug:', {
         totalLabResults: allLabResults.length,
         totalMCUsWithLabData: Object.keys(labMapByMcuId).length,
+        totalMCUsByEmployeeYear: Object.keys(mcuByEmployeeYear).length,
         sampleLabs: allLabResults.slice(0, 5).map(l => ({
           lab_item_id: l.lab_item_id,
           mcu_id: l.mcu_id,
@@ -290,10 +296,12 @@ class AnalysisDashboardService {
         }))
       });
 
-      this.allMCUData = employees
-        .filter(emp => emp.is_active === true && latestMCUByEmployee[emp.employee_id])
-        .map(emp => {
-          const mcu = latestMCUByEmployee[emp.employee_id];
+      // Build allMCUData from ALL MCU records (not just latest per employee)
+      this.allMCUData = Object.values(mcuByEmployeeYear)
+        .map(mcu => {
+          const emp = employees.find(e => e.employee_id === mcu.employee_id && e.is_active === true);
+          if (!emp) return null;
+
           const dept = departments?.find(d => d.name === emp.department);
           const job = jobTitles?.find(j => j.name === emp.job_title);
 
@@ -307,7 +315,8 @@ class AnalysisDashboardService {
             jobTitle: job,
             labs: labMap
           };
-        });
+        })
+        .filter(item => item !== null);
 
       // Extract available years from ALL MCU records
       const yearSet = new Set();
