@@ -11,7 +11,7 @@
  * - Respect dashboard filters (department, year, employee type)
  */
 
-import { database } from './database.js';
+import { labService } from './labService.js';
 import { getLabItemInfo } from '../data/labItemsMapping.js';
 
 export const abnormalitiesService = {
@@ -126,7 +126,7 @@ export const abnormalitiesService = {
 
     for (const mcu of filteredMCUs) {
       // Get lab results for this MCU
-      const labs = await database.getByIndex('pemeriksaan_lab', 'mcu_id', mcu.mcu_id || mcu.mcuId);
+      const labs = await labService.getPemeriksaanLabByMcuId(mcu.mcu_id || mcu.mcuId);
 
       if (!Array.isArray(labs)) continue;
 
