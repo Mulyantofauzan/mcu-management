@@ -123,158 +123,71 @@ export const abnormalitiesService = {
    */
   async collectLabAbnormalities(filteredMCUs) {
     const abnormalities = {};
-    const debugLog = {
-      totalMCUs: filteredMCUs?.length || 0,
-      mcusWithLabs: 0,
-      totalLabsLoaded: 0,
-      labsProcessed: 0,
-      labsSkipped: [],
-      abnormalitiesFound: []
-    };
 
     if (!Array.isArray(filteredMCUs) || filteredMCUs.length === 0) {
       return [];
     }
 
     try {
-      // Batch-load lab results for all MCUs in parallel (not sequential!)
-      const labResultsMap = new Map();
-
-      if (labService && typeof labService.getPemeriksaanLabByMcuId === 'function') {
-        // Load all lab results in parallel
-        const labPromises = filteredMCUs.map(mcu =>
-          labService.getPemeriksaanLabByMcuId(mcu.mcu_id || mcu.mcuId)
-            .then(labs => ({ mcuId: mcu.mcu_id || mcu.mcuId, labs: Array.isArray(labs) ? labs : [] }))
-            .catch(err => ({ mcuId: mcu.mcu_id || mcu.mcuId, labs: [] }))
-        );
-
-        const results = await Promise.all(labPromises);
-        results.forEach(result => {
-          if (result.labs && result.labs.length > 0) {
-            labResultsMap.set(result.mcuId, result.labs);
-            debugLog.mcusWithLabs++;
-            debugLog.totalLabsLoaded += result.labs.length;
-          }
-        });
-
-        // Debug: Log lab loading results
-        console.log('Lab loading results:', {
-          totalPromises: labPromises.length,
-          resultsWithLabs: results.filter(r => r.labs && r.labs.length > 0).length,
-          labResultsMapSize: labResultsMap.size,
-          totalLabsLoaded: debugLog.totalLabsLoaded
-        });
-      }
-    } catch (err) {
-      console.error('Error loading labs in parallel:', err);
-      // If batch load fails, continue with empty results
-    }
-
-    // Process MCUs with cached lab results
-    let totalAbnormalFound = 0;
-    let debugMCUIds = [];
-    console.log('DEBUG: First 5 MCU IDs from filteredMCUs:', filteredMCUs.slice(0, 5).map(m => ({
-      mcu_id: m.mcu_id,
-      mcuId: m.mcuId,
-      selected: m.mcu_id || m.mcuId
-    })));
-    console.log('DEBUG: First 5 MCU IDs from labResultsMap:', Array.from(labResultsMap.keys()).slice(0, 5));
-
-    for (const mcu of filteredMCUs) {
-      try {
+      // Batch-load lab results for all MCUs in parallel
+      const labPromises = filteredMCUs.map(mcu => {
         const mcuId = mcu.mcu_id || mcu.mcuId;
-        const labs = labResultsMap.get(mcuId) || [];
+        return labService.getPemeriksaanLabByMcuId(mcuId)
+          .then(labs => {
+            // Process labs immediately - count only HIGH/LOW abnormalities
+            if (Array.isArray(labs)) {
+              for (const lab of labs) {
+                // Skip deleted
+                if (lab.deleted_at) continue;
 
-        if (debugMCUIds.length < 5) {
-          debugMCUIds.push({ mcuId, found: labs.length > 0, labCount: labs.length });
-        }
+                // Get lab item info for display name
+                const labItemId = parseInt(lab.lab_item_id, 10);
+                const labItemInfo = getLabItemInfo(labItemId);
+                const displayName = labItemInfo?.name || `Lab Item ${labItemId}`;
 
-        if (!Array.isArray(labs)) continue;
+                // Determine status (HIGH/LOW/Normal)
+                let minRange = lab.min_range_reference !== null && lab.min_range_reference !== undefined ? parseFloat(lab.min_range_reference) : null;
+                let maxRange = lab.max_range_reference !== null && lab.max_range_reference !== undefined ? parseFloat(lab.max_range_reference) : null;
 
-        for (const lab of labs) {
-          debugLog.labsProcessed++;
+                // Fallback to defaults if NULL
+                if (minRange === null || maxRange === null || isNaN(minRange) || isNaN(maxRange)) {
+                  if (labItemInfo) {
+                    minRange = minRange !== null && !isNaN(minRange) ? minRange : labItemInfo.min;
+                    maxRange = maxRange !== null && !isNaN(maxRange) ? maxRange : labItemInfo.max;
+                  }
+                }
 
-          if (lab.deleted_at) {
-            debugLog.labsSkipped.push(`Lab ${lab.lab_item_id}: Deleted`);
-            continue; // Skip soft-deleted records
-          }
+                const status = this.determineLabStatus(lab.value, minRange, maxRange);
 
-          // Get lab item info for reference ranges - convert lab_item_id to number
-          const labItemId = parseInt(lab.lab_item_id, 10);
-          let minRange = lab.min_range_reference !== null && lab.min_range_reference !== undefined ? parseFloat(lab.min_range_reference) : null;
-          let maxRange = lab.max_range_reference !== null && lab.max_range_reference !== undefined ? parseFloat(lab.max_range_reference) : null;
-          let rangeSource = 'database';
+                // Only count HIGH or LOW (skip NORMAL)
+                if (status === 'high' || status === 'low') {
+                  const conditionKey = `${displayName} (${status === 'high' ? 'Tinggi' : 'Rendah'})`;
 
-          // If database ranges are NULL or NaN, use defaults from labItemsMapping
-          if (minRange === null || maxRange === null || isNaN(minRange) || isNaN(maxRange)) {
-            const labItemInfo = getLabItemInfo(labItemId);
-            if (labItemInfo) {
-              minRange = minRange !== null && !isNaN(minRange) ? minRange : labItemInfo.min;
-              maxRange = maxRange !== null && !isNaN(maxRange) ? maxRange : labItemInfo.max;
-              rangeSource = 'mapping';
+                  if (!abnormalities[conditionKey]) {
+                    abnormalities[conditionKey] = {
+                      name: conditionKey,
+                      count: 0,
+                      type: 'lab',
+                      labItemId: labItemId,
+                      displayName: displayName,
+                      status: status,
+                      unit: lab.unit,
+                      category: 'Lab Results'
+                    };
+                  }
+                  abnormalities[conditionKey].count++;
+                }
+              }
             }
-          }
+            return labs ? labs.length : 0;
+          })
+          .catch(err => 0);
+      });
 
-          const value = parseFloat(lab.value);
-          const status = this.determineLabStatus(lab.value, minRange, maxRange);
-
-          // Get lab item info for display name
-          const labItemInfo = getLabItemInfo(labItemId);
-          const displayName = labItemInfo?.name || `Lab Item ${labItemId}`;
-
-          // Skip normal or null results - only process abnormal
-          if (status === 'normal' || status === null) {
-            debugLog.labsSkipped.push({
-              labId: labItemId,
-              name: displayName,
-              value: value,
-              min: minRange,
-              max: maxRange,
-              rangeSource: rangeSource,
-              status: status,
-              reason: status === 'normal' ? 'Normal value' : (status === null ? 'Invalid ranges' : 'Abnormal')
-            });
-            continue;
-          }
-
-          // Create condition key: "Lab Name - Status"
-          const conditionKey = `${displayName} (${status === 'high' ? 'Tinggi' : 'Rendah'})`;
-
-          if (!abnormalities[conditionKey]) {
-            abnormalities[conditionKey] = {
-              name: conditionKey,
-              count: 0,
-              type: 'lab',
-              labItemId: labItemId,
-              displayName: displayName,
-              status: status,
-              unit: lab.unit,
-              category: 'Lab Results'
-            };
-            debugLog.abnormalitiesFound.push(conditionKey);
-            totalAbnormalFound++;
-          }
-
-          abnormalities[conditionKey].count++;
-        }
-      } catch (error) {
-        // Log error but continue processing other MCUs
-      }
+      await Promise.all(labPromises);
+    } catch (err) {
+      console.error('Error loading labs:', err);
     }
-
-    // Store debug info
-    window.__abnormalitiesLabDebug = debugLog;
-
-    console.log('Lab abnormalities collection complete:', {
-      totalMCUs: debugLog.totalMCUs,
-      mcusWithLabs: debugLog.mcusWithLabs,
-      totalLabsLoaded: debugLog.totalLabsLoaded,
-      labsProcessed: debugLog.labsProcessed,
-      abnormalitiesFound: totalAbnormalFound,
-      abnormalitiesCount: Object.keys(abnormalities).length,
-      sampleMCUIds: debugMCUIds,
-      labResultsMapKeys: Array.from(labResultsMap.keys()).slice(0, 5)
-    });
 
     return Object.values(abnormalities);
   },
