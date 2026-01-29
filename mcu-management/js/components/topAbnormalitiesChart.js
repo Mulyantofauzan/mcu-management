@@ -116,7 +116,8 @@ class TopAbnormalitiesChart {
           },
           datalabels: {
             anchor: 'end',
-            align: 'end',
+            align: 'right',
+            offset: -5,
             color: '#1f2937',
             font: {
               weight: 'bold',
