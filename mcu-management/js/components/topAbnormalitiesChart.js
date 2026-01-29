@@ -21,6 +21,7 @@ class TopAbnormalitiesChart {
     this.currentView = 'bar'; // 'bar' or 'list'
     this.limit = 10; // Default top 10
     this.containerId = 'top-abnormalities-container';
+    this.filteredMCUs = []; // Store filtered MCUs for dropdown updates
   }
 
   /**
@@ -185,6 +186,7 @@ class TopAbnormalitiesChart {
 
       this.limit = limit;
       this.currentView = view;
+      this.filteredMCUs = filteredMCUs; // Store for dropdown updates
 
       // Get abnormalities data
       this.data = await abnormalitiesService.getTopAbnormalities(
@@ -209,7 +211,7 @@ class TopAbnormalitiesChart {
           <!-- Header with title and controls -->
           <div class="flex items-center justify-between mb-6 pb-4 border-b">
             <div>
-              <h3 class="text-lg font-semibold text-gray-900">Top ${limit} Kondisi Tidak Normal</h3>
+              <h3 class="text-lg font-semibold text-gray-900">Top ${limit} Penyakit Komorbid berdasarkan hasil MCU</h3>
               <p class="text-sm text-gray-500 mt-1">
                 Total: ${summaryStats.totalConditions} kondisi, ${summaryStats.totalOccurrences} kasus
               </p>
@@ -300,7 +302,7 @@ class TopAbnormalitiesChart {
     if (limitSelect) {
       limitSelect.addEventListener('change', (e) => {
         this.limit = parseInt(e.target.value);
-        window.topAbnormalitiesChartInstance?.updateView();
+        window.topAbnormalitiesChartInstance?.updateView(this.filteredMCUs);
       });
     }
 
