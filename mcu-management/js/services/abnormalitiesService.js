@@ -124,13 +124,38 @@ export const abnormalitiesService = {
   async collectLabAbnormalities(filteredMCUs) {
     const abnormalities = {};
 
+    if (!Array.isArray(filteredMCUs) || filteredMCUs.length === 0) {
+      return [];
+    }
+
+    try {
+      // Batch-load lab results for all MCUs in parallel (not sequential!)
+      const labResultsMap = new Map();
+
+      if (labService && typeof labService.getPemeriksaanLabByMcuId === 'function') {
+        // Load all lab results in parallel
+        const labPromises = filteredMCUs.map(mcu =>
+          labService.getPemeriksaanLabByMcuId(mcu.mcu_id || mcu.mcuId)
+            .then(labs => ({ mcuId: mcu.mcu_id || mcu.mcuId, labs: Array.isArray(labs) ? labs : [] }))
+            .catch(err => ({ mcuId: mcu.mcu_id || mcu.mcuId, labs: [] }))
+        );
+
+        const results = await Promise.all(labPromises);
+        results.forEach(result => {
+          if (result.labs && result.labs.length > 0) {
+            labResultsMap.set(result.mcuId, result.labs);
+          }
+        });
+      }
+    } catch (err) {
+      // If batch load fails, continue with empty results
+    }
+
+    // Process MCUs with cached lab results
     for (const mcu of filteredMCUs) {
       try {
-        // Get lab results for this MCU
-        if (!labService || typeof labService.getPemeriksaanLabByMcuId !== 'function') {
-          throw new Error(`labService not available or getPemeriksaanLabByMcuId is not a function. labService type: ${typeof labService}`);
-        }
-        const labs = await labService.getPemeriksaanLabByMcuId(mcu.mcu_id || mcu.mcuId);
+        const mcuId = mcu.mcu_id || mcu.mcuId;
+        const labs = labResultsMap.get(mcuId) || [];
 
         if (!Array.isArray(labs)) continue;
 
