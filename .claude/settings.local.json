@@ -72,7 +72,9 @@
       "Bash(npm run build:css:*)",
       "Bash(__NEW_LINE_4af56c2c02e6ed21__ sed -i '' 's|<li><a href=\"\"../pages/assessment-rahma.html\"\" class=\"\"sidebar-link\"\" data-page=\"\"assessment-rahma\"\"><span>Assessment RAHMA</span></a></li>|<li><a href=\"\"../pages/assessment-rahma.html\"\" class=\"\"sidebar-link\"\" data-page=\"\"assessment-rahma\"\"><span>Assessment RAHMA</span></a></li>\\\\n                    <li><a href=\"\"../pages/jakarta-cardiovascular.html\"\" class=\"\"sidebar-link\"\" data-page=\"\"jakarta-cardiovascular\"\"><span>Jakarta Cardiovascular</span></a></li>|g' \"$file\")",
       "Bash(__NEW_LINE_4af56c2c02e6ed21__ echo \"Updated all pages\")",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(tree:*)",
+      "Bash(xmllint:*)"
     ],
     "deny": [],
     "ask": []

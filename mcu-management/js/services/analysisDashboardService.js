@@ -424,6 +424,19 @@ class AnalysisDashboardService {
       return true;
     });
 
+    // Debug logging
+    console.log('Filters applied:', {
+      mcuPeriod,
+      selectedYear,
+      baseDataLength: baseData.length,
+      filteredDataLength: this.filteredData.length,
+      filteredRecords: this.filteredData.map(d => ({
+        employee_id: d.employee.employee_id,
+        name: d.employee.name,
+        mcu_date: d.mcu.mcu_date || d.mcu.mcuDate
+      }))
+    });
+
     await this.renderAllCharts();
   }
 
@@ -452,6 +465,13 @@ class AnalysisDashboardService {
    */
   async renderAllCharts() {
     try {
+      console.log('renderAllCharts() called with filteredData count:', this.filteredData.length);
+      console.log('filteredData sample:', this.filteredData.slice(0, 3).map(d => ({
+        employee_id: d.employee.employee_id,
+        name: d.employee.name,
+        mcu_date: d.mcu.mcu_date || d.mcu.mcuDate
+      })));
+
       this.updateSummaryCards();
       this.renderMCUTrendChart();
       this.renderBMIChart();
@@ -828,6 +848,8 @@ class AnalysisDashboardService {
       'Gangguan Berat': '#ef4444',
       'Tidak Terukur': '#9ca3af'
     };
+
+    console.log('renderVisionChart() processing filteredData count:', this.filteredData.length);
 
     // Evaluate vision status for each employee
     this.filteredData.forEach(item => {
@@ -1261,6 +1283,7 @@ class AnalysisDashboardService {
       { id: 32, name: 'Asam Urat', canvasId: 'chartLabAsamUrat', statusEl: 'asamuratStatus' }
     ];
 
+    console.log('renderLabResultsCharts() processing filteredData count:', this.filteredData.length);
 
     labItems.forEach(labItem => {
       const ctx = document.getElementById(labItem.canvasId)?.getContext('2d');
