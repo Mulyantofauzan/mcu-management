@@ -117,11 +117,11 @@ class TopAbnormalitiesChart {
           datalabels: {
             anchor: 'end',
             align: 'right',
-            offset: -5,
-            color: '#1f2937',
+            offset: -25,
+            color: '#ffffff',
             font: {
               weight: 'bold',
-              size: 12
+              size: 13
             },
             formatter: function(value) {
               return value;
