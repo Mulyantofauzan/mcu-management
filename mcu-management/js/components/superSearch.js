@@ -83,7 +83,7 @@ class SuperSearch {
     // Detail Modal HTML
     const detailModalHTML = `
       <div id="super-search-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 backdrop-blur-sm" style="z-index: 9999;">
-        <div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
           <!-- Detail Header -->
           <div class="sticky top-0 flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
             <div>
@@ -99,53 +99,47 @@ class SuperSearch {
 
           <!-- Detail Content -->
           <div class="px-6 py-6 space-y-6">
-            <!-- Employee Info Section -->
-            <div class="grid grid-cols-2 gap-6">
+            <!-- Employee Header Info -->
+            <div class="grid grid-cols-4 gap-4 text-sm">
               <div>
-                <h3 class="text-sm font-semibold text-gray-700 mb-3">Informasi Karyawan</h3>
-                <div class="space-y-2">
-                  <div>
-                    <p class="text-xs text-gray-600">Email</p>
-                    <p id="detail-email" class="text-sm text-gray-900 font-mono">-</p>
-                  </div>
-                  <div>
-                    <p class="text-xs text-gray-600">Telepon</p>
-                    <p id="detail-phone" class="text-sm text-gray-900">-</p>
-                  </div>
-                  <div>
-                    <p class="text-xs text-gray-600">Departemen</p>
-                    <p id="detail-department" class="text-sm text-gray-900">-</p>
-                  </div>
-                  <div>
-                    <p class="text-xs text-gray-600">Posisi</p>
-                    <p id="detail-position" class="text-sm text-gray-900">-</p>
-                  </div>
-                </div>
+                <p class="text-xs text-gray-600">Jabatan</p>
+                <p id="detail-position" class="font-semibold text-gray-900">-</p>
               </div>
               <div>
-                <h3 class="text-sm font-semibold text-gray-700 mb-3">Status & Tanggal</h3>
-                <div class="space-y-2">
-                  <div>
-                    <p class="text-xs text-gray-600">Status</p>
-                    <p id="detail-status" class="text-sm text-gray-900">-</p>
-                  </div>
-                  <div>
-                    <p class="text-xs text-gray-600">Tanggal Bergabung</p>
-                    <p id="detail-join-date" class="text-sm text-gray-900">-</p>
-                  </div>
-                  <div id="detail-deleted-section" class="hidden">
-                    <p class="text-xs text-red-600 font-semibold">Status: TERHAPUS</p>
-                    <p id="detail-delete-date" class="text-xs text-gray-600">-</p>
-                  </div>
-                </div>
+                <p class="text-xs text-gray-600">Departemen</p>
+                <p id="detail-department" class="font-semibold text-gray-900">-</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-600">Tanggal Lahir</p>
+                <p id="detail-dob" class="font-semibold text-gray-900">-</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-600">Golongan Darah</p>
+                <p id="detail-blood-type" class="font-semibold text-gray-900">-</p>
               </div>
             </div>
 
-            <!-- MCU Records Section -->
+            <!-- MCU Records Table Section -->
             <div>
               <h3 class="text-sm font-semibold text-gray-700 mb-3">Riwayat MCU</h3>
-              <div id="detail-mcu-records" class="space-y-3">
-                <p class="text-sm text-gray-500">Tidak ada data MCU</p>
+              <div id="detail-mcu-records" class="border border-gray-200 rounded-lg overflow-hidden">
+                <table class="w-full text-sm">
+                  <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th class="px-4 py-3 text-left font-semibold text-gray-700">ID MCU</th>
+                      <th class="px-4 py-3 text-left font-semibold text-gray-700">Tanggal</th>
+                      <th class="px-4 py-3 text-left font-semibold text-gray-700">Jenis</th>
+                      <th class="px-4 py-3 text-left font-semibold text-gray-700">Hasil</th>
+                      <th class="px-4 py-3 text-left font-semibold text-gray-700">Status</th>
+                      <th class="px-4 py-3 text-center font-semibold text-gray-700">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="detail-mcu-table-body">
+                    <tr>
+                      <td colspan="6" class="px-4 py-6 text-center text-gray-500">Tidak ada data MCU</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
 
@@ -438,27 +432,18 @@ class SuperSearch {
     // Populate employee info
     document.getElementById('detail-employee-name').textContent = employee.name || 'N/A';
     document.getElementById('detail-employee-id').textContent = `ID: ${employee.employeeId || '-'}`;
-    document.getElementById('detail-email').textContent = employee.email || '-';
-    document.getElementById('detail-phone').textContent = employee.phoneNumber || '-';
     document.getElementById('detail-department').textContent = employee.department || '-';
     document.getElementById('detail-position').textContent = employee.jobTitle || '-';
-    document.getElementById('detail-status').textContent = employee.status || '-';
 
-    // Handle deleted status
-    if (employee.deletedAt) {
-      document.getElementById('detail-deleted-section').classList.remove('hidden');
-      document.getElementById('detail-delete-date').textContent = `Dihapus: ${new Date(employee.deletedAt).toLocaleDateString('id-ID')}`;
+    // Format DOB
+    if (employee.dateOfBirth) {
+      const dob = new Date(employee.dateOfBirth);
+      document.getElementById('detail-dob').textContent = dob.toLocaleDateString('id-ID');
     } else {
-      document.getElementById('detail-deleted-section').classList.add('hidden');
+      document.getElementById('detail-dob').textContent = '-';
     }
 
-    // Format join date
-    if (employee.joinDate) {
-      const joinDate = new Date(employee.joinDate);
-      document.getElementById('detail-join-date').textContent = joinDate.toLocaleDateString('id-ID');
-    } else {
-      document.getElementById('detail-join-date').textContent = '-';
-    }
+    document.getElementById('detail-blood-type').textContent = employee.bloodType || '-';
 
     // Load MCU records
     this.displayMCURecords(employee.id);
@@ -471,13 +456,14 @@ class SuperSearch {
   }
 
   /**
-   * Display MCU records for employee in detail view
+   * Display MCU records for employee in detail view as table
    */
   displayMCURecords(employeeId) {
     const mcuRecords = this.allMCURecords.filter(m => m.employeeId === employeeId || m.employee_id === employeeId);
+    const tbody = document.getElementById('detail-mcu-table-body');
 
     if (mcuRecords.length === 0) {
-      document.getElementById('detail-mcu-records').innerHTML = '<p class="text-sm text-gray-500">Tidak ada data MCU</p>';
+      tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">Tidak ada data MCU</td></tr>';
       return;
     }
 
@@ -489,34 +475,46 @@ class SuperSearch {
     });
 
     let html = '';
-    mcuRecords.forEach((mcu, index) => {
+    mcuRecords.forEach((mcu) => {
+      const mcuId = mcu.mcuId || mcu.mcu_id || '-';
       const mcuDate = new Date(mcu.mcuDate || mcu.mcu_date);
       const mcuType = mcu.mcuType || mcu.mcu_type || 'Rutin';
       const mcuStatus = mcu.mcuStatus || mcu.mcu_status || 'Pending';
       const finalResult = mcu.finalResult || mcu.final_result || '-';
 
       // Determine status badge color
-      let statusColor = 'bg-yellow-100 text-yellow-800';
-      if (mcuStatus === 'Complete' || mcuStatus === 'Completed') statusColor = 'bg-green-100 text-green-800';
-      if (mcuStatus === 'Cancelled') statusColor = 'bg-red-100 text-red-800';
+      let statusBgColor = 'bg-yellow-100';
+      let statusTextColor = 'text-yellow-800';
+      if (mcuStatus === 'Complete' || mcuStatus === 'Completed') {
+        statusBgColor = 'bg-green-100';
+        statusTextColor = 'text-green-800';
+      }
+      if (mcuStatus === 'Cancelled') {
+        statusBgColor = 'bg-red-100';
+        statusTextColor = 'text-red-800';
+      }
 
       html += `
-        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-          <div class="flex items-start justify-between mb-2">
-            <div>
-              <p class="font-semibold text-gray-900">${mcuDate.toLocaleDateString('id-ID')}</p>
-              <p class="text-xs text-gray-600">Tipe: ${mcuType}</p>
-            </div>
-            <span class="inline-block px-2 py-1 text-xs font-semibold rounded ${statusColor}">
+        <tr class="border-b border-gray-200 hover:bg-gray-50">
+          <td class="px-4 py-3 text-gray-900 font-mono text-xs">${this.escapeHtml(mcuId)}</td>
+          <td class="px-4 py-3 text-gray-900">${mcuDate.toLocaleDateString('id-ID')}</td>
+          <td class="px-4 py-3 text-gray-900">${mcuType}</td>
+          <td class="px-4 py-3 text-gray-900 font-semibold">${finalResult}</td>
+          <td class="px-4 py-3">
+            <span class="inline-block px-3 py-1 text-xs font-semibold rounded ${statusBgColor} ${statusTextColor}">
               ${mcuStatus}
             </span>
-          </div>
-          <p class="text-sm text-gray-700">Hasil Akhir: <span class="font-semibold">${finalResult}</span></p>
-        </div>
+          </td>
+          <td class="px-4 py-3 text-center">
+            <button class="px-3 py-1 bg-gray-200 text-gray-900 rounded text-xs font-medium hover:bg-gray-300 transition-colors">
+              Detail
+            </button>
+          </td>
+        </tr>
       `;
     });
 
-    document.getElementById('detail-mcu-records').innerHTML = html;
+    tbody.innerHTML = html;
   }
 
   /**
