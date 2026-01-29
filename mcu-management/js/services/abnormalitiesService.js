@@ -320,6 +320,13 @@ export const abnormalitiesService = {
         }
       }
 
+      // Debug logging
+      window.__abnormalitiesDebug = {
+        filteredMCUsCount: filteredMCUs?.length || 0,
+        abnormalitiesCount: abnormalities?.length || 0,
+        abnormalities: abnormalities
+      };
+
       // If no abnormalities found, return empty array
       if (!Array.isArray(abnormalities) || abnormalities.length === 0) {
         return [];
