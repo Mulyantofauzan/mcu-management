@@ -278,7 +278,15 @@ class TopAbnormalitiesChart {
     } catch (error) {
       const container = document.getElementById(this.containerId);
       if (container) {
-        container.innerHTML = `<div class="text-red-600 p-4">Error loading abnormalities: ${error.message}</div>`;
+        const errorDetails = error?.stack || error?.toString() || 'Unknown error';
+        const errorMsg = error?.message || 'Unknown error';
+        container.innerHTML = `<div class="text-red-600 p-4">
+          <p><strong>Error loading abnormalities:</strong> ${errorMsg}</p>
+          <details style="margin-top: 8px; font-size: 12px; color: #666;">
+            <summary>Details</summary>
+            <pre style="background: #f5f5f5; padding: 8px; border-radius: 4px; overflow-x: auto; max-width: 400px;">${errorDetails}</pre>
+          </details>
+        </div>`;
       }
     }
   }
