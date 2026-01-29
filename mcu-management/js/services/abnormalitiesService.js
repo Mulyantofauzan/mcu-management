@@ -263,6 +263,16 @@ export const abnormalitiesService = {
   },
 
   /**
+   * Check if exam result is normal (case-insensitive, includes variants)
+   */
+  isExamResultNormal(result) {
+    if (!result) return true; // Empty/null = skip
+    const resultStr = String(result).toLowerCase().trim();
+    // Check if contains "normal" (catches "Normal", "NORMAL", "normal resting ecg", etc.)
+    return resultStr.includes('normal') || resultStr === '-' || resultStr === '';
+  },
+
+  /**
    * Collect all abnormalities from MCU exam findings
    * Returns array of {conditionName, count, type: 'mcu', ...}
    */
@@ -330,7 +340,7 @@ export const abnormalitiesService = {
         // Check Spirometri (hasil pemeriksaan paru)
         try {
           const spirometri = mcu.spirometry;
-          if (spirometri && spirometri !== 'Normal') {
+          if (spirometri && !this.isExamResultNormal(spirometri)) {
             const conditionKey = `Spirometri: ${spirometri}`;
 
             if (!abnormalities[conditionKey]) {
@@ -352,7 +362,7 @@ export const abnormalitiesService = {
         // Check Audiometri (hasil pemeriksaan pendengaran)
         try {
           const audiometri = mcu.audiometry;
-          if (audiometri && audiometri !== 'Normal') {
+          if (audiometri && !this.isExamResultNormal(audiometri)) {
             const conditionKey = `Audiometri: ${audiometri}`;
 
             if (!abnormalities[conditionKey]) {
@@ -374,7 +384,7 @@ export const abnormalitiesService = {
         // Check X-ray hasil
         try {
           const xrayResult = mcu.xray;
-          if (xrayResult && xrayResult !== 'Normal') {
+          if (xrayResult && !this.isExamResultNormal(xrayResult)) {
             const conditionKey = `X-ray: ${xrayResult}`;
 
             if (!abnormalities[conditionKey]) {
@@ -396,7 +406,7 @@ export const abnormalitiesService = {
         // Check EKG hasil
         try {
           const ekgResult = mcu.ekg;
-          if (ekgResult && ekgResult !== 'Normal') {
+          if (ekgResult && !this.isExamResultNormal(ekgResult)) {
             const conditionKey = `EKG: ${ekgResult}`;
 
             if (!abnormalities[conditionKey]) {
@@ -418,7 +428,7 @@ export const abnormalitiesService = {
         // Check Treadmill hasil
         try {
           const treadmillResult = mcu.treadmill;
-          if (treadmillResult && treadmillResult !== 'Normal') {
+          if (treadmillResult && !this.isExamResultNormal(treadmillResult)) {
             const conditionKey = `Treadmill: ${treadmillResult}`;
 
             if (!abnormalities[conditionKey]) {
