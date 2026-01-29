@@ -37,6 +37,7 @@ import storageDiagnostic from '../utils/storageDiagnostic.js';  // ✅ Diagnosti
 import { initVersionManager } from '../utils/versionManager.js';  // ✅ Version update manager
 import { initThemeManager } from '../utils/themeManager.js';  // ✅ Dark mode / Light mode manager
 import { networkStatusManager } from '../utils/networkStatusManager.js';  // ✅ Network status monitoring
+import { topAbnormalitiesChartInstance } from '../components/topAbnormalitiesChart.js';  // ✅ Top abnormalities chart
 // Initialize environment variables immediately (before other module code runs)
 initializeEnv().then(() => {
   logEnvStatus();
@@ -358,6 +359,9 @@ function updateCharts(filteredMCUs) {
 
   // Chart 7: BMI Distribution
   updateBMIDistributionChart(filteredMCUs);
+
+  // Chart 8: Top Abnormalities (Lab + MCU)
+  updateTopAbnormalitiesChart(filteredMCUs);
 }
 
 function updateDepartmentChart(filteredMCUs) {
@@ -879,6 +883,24 @@ function updateBMIDistributionChart(filteredMCUs) {
     },
     plugins: [ChartDataLabels]
   });
+}
+
+async function updateTopAbnormalitiesChart(filteredMCUs) {
+  try {
+    // Render top abnormalities chart
+    await topAbnormalitiesChartInstance.render(filteredMCUs, {
+      limit: 10, // Default top 10
+      view: 'bar' // Default view is bar chart
+    });
+
+    // Store reference for later updates
+    window.topAbnormalitiesChartInstance = topAbnormalitiesChartInstance;
+  } catch (error) {
+    const container = document.getElementById('top-abnormalities-container');
+    if (container) {
+      container.innerHTML = `<p class="text-red-600">Error loading abnormalities chart: ${error.message}</p>`;
+    }
+  }
 }
 
 async function updateFollowUpList() {
