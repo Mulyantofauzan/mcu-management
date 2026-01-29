@@ -127,6 +127,9 @@ export const abnormalitiesService = {
     for (const mcu of filteredMCUs) {
       try {
         // Get lab results for this MCU
+        if (!labService || typeof labService.getPemeriksaanLabByMcuId !== 'function') {
+          throw new Error(`labService not available or getPemeriksaanLabByMcuId is not a function. labService type: ${typeof labService}`);
+        }
         const labs = await labService.getPemeriksaanLabByMcuId(mcu.mcu_id || mcu.mcuId);
 
         if (!Array.isArray(labs)) continue;
@@ -284,38 +287,47 @@ export const abnormalitiesService = {
    * Supports both separate and combined display
    */
   async getTopAbnormalities(filteredMCUs, options = {}) {
-    const {
-      limit = 10,           // Top N items
-      includeTypes = ['lab', 'mcu'],  // ['lab', 'mcu', or both]
-      sortBy = 'frequency'  // 'frequency' or 'name'
-    } = options;
+    try {
+      const {
+        limit = 10,           // Top N items
+        includeTypes = ['lab', 'mcu'],  // ['lab', 'mcu', or both]
+        sortBy = 'frequency'  // 'frequency' or 'name'
+      } = options;
 
-    let abnormalities = [];
+      let abnormalities = [];
 
-    // Collect lab abnormalities
-    if (includeTypes.includes('lab')) {
-      const labAbnormalities = await this.collectLabAbnormalities(filteredMCUs);
-      abnormalities = abnormalities.concat(labAbnormalities);
-    }
-
-    // Collect MCU abnormalities
-    if (includeTypes.includes('mcu')) {
-      const mcuAbnormalities = this.collectMCUAbnormalities(filteredMCUs);
-      abnormalities = abnormalities.concat(mcuAbnormalities);
-    }
-
-    // Sort by count (frequency) descending
-    abnormalities.sort((a, b) => {
-      if (sortBy === 'frequency') {
-        return b.count - a.count;
-      } else if (sortBy === 'name') {
-        return a.name.localeCompare(b.name);
+      // Collect lab abnormalities
+      if (includeTypes.includes('lab')) {
+        try {
+          const labAbnormalities = await this.collectLabAbnormalities(filteredMCUs);
+          abnormalities = abnormalities.concat(labAbnormalities);
+        } catch (labError) {
+          // Continue even if lab collection fails
+        }
       }
-      return 0;
-    });
 
-    // Return top N
-    return abnormalities.slice(0, limit);
+      // Collect MCU abnormalities
+      if (includeTypes.includes('mcu')) {
+        const mcuAbnormalities = this.collectMCUAbnormalities(filteredMCUs);
+        abnormalities = abnormalities.concat(mcuAbnormalities);
+      }
+
+      // Sort by count (frequency) descending
+      abnormalities.sort((a, b) => {
+        if (sortBy === 'frequency') {
+          return b.count - a.count;
+        } else if (sortBy === 'name') {
+          return a.name.localeCompare(b.name);
+        }
+        return 0;
+      });
+
+      // Return top N
+      return abnormalities.slice(0, limit);
+    } catch (error) {
+      // Return empty array on error
+      return [];
+    }
   },
 
   /**
@@ -341,21 +353,32 @@ export const abnormalitiesService = {
    * Get summary statistics
    */
   async getAbnormalitiesSummary(filteredMCUs) {
-    const labAbnormalities = await this.collectLabAbnormalities(filteredMCUs);
-    const mcuAbnormalities = this.collectMCUAbnormalities(filteredMCUs);
+    try {
+      const labAbnormalities = await this.collectLabAbnormalities(filteredMCUs);
+      const mcuAbnormalities = this.collectMCUAbnormalities(filteredMCUs);
 
-    const totalAbnormalities = labAbnormalities.length + mcuAbnormalities.length;
-    const totalOccurrences = labAbnormalities.reduce((sum, a) => sum + a.count, 0) +
-                             mcuAbnormalities.reduce((sum, a) => sum + a.count, 0);
+      const totalAbnormalities = labAbnormalities.length + mcuAbnormalities.length;
+      const totalOccurrences = labAbnormalities.reduce((sum, a) => sum + a.count, 0) +
+                               mcuAbnormalities.reduce((sum, a) => sum + a.count, 0);
 
-    return {
-      totalConditions: totalAbnormalities,
-      totalOccurrences: totalOccurrences,
-      labConditions: labAbnormalities.length,
-      mcuConditions: mcuAbnormalities.length,
-      mostCommon: [...labAbnormalities, ...mcuAbnormalities]
-        .sort((a, b) => b.count - a.count)[0]
-    };
+      return {
+        totalConditions: totalAbnormalities,
+        totalOccurrences: totalOccurrences,
+        labConditions: labAbnormalities.length,
+        mcuConditions: mcuAbnormalities.length,
+        mostCommon: [...labAbnormalities, ...mcuAbnormalities]
+          .sort((a, b) => b.count - a.count)[0]
+      };
+    } catch (error) {
+      // Return default summary on error
+      return {
+        totalConditions: 0,
+        totalOccurrences: 0,
+        labConditions: 0,
+        mcuConditions: 0,
+        mostCommon: null
+      };
+    }
   }
 };
 
