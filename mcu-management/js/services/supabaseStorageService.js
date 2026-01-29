@@ -425,10 +425,6 @@ export async function deleteFileFromStorage(storagePath) {
 
     if (!response.ok) {
       const errorData = await response.json();
-        status: response.status,
-        error: errorData.error,
-        details: errorData.details
-      });
       return {
         success: false,
         error: errorData.error || `HTTP ${response.status}: Failed to delete file`,

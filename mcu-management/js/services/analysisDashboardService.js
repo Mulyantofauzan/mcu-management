@@ -281,16 +281,6 @@ class AnalysisDashboardService {
         labMapByMcuId[lab.mcu_id][lab.lab_item_id] = lab;
       });
 
-        totalLabResults: allLabResults.length,
-        totalMCUsWithLabData: Object.keys(labMapByMcuId).length,
-        totalMCUsByEmployeeYear: Object.keys(mcuByEmployeeYear).length,
-        sampleLabs: allLabResults.slice(0, 5).map(l => ({
-          lab_item_id: l.lab_item_id,
-          mcu_id: l.mcu_id,
-          notes: l.notes
-        }))
-      });
-
       // Build allMCUData from ALL MCU records (not just latest per employee)
       this.allMCUData = Object.values(mcuByEmployeeYear)
         .map(mcu => {
@@ -333,11 +323,8 @@ class AnalysisDashboardService {
         this.availableYears = newYears;
         this.updateYearDropdown();
       }
-
-        totalRecords: this.allMCUData.length,
-        availableYears: this.availableYears
-      });
     } catch (error) {
+      // Error loading all MCU data
     }
   }
 
@@ -439,18 +426,6 @@ class AnalysisDashboardService {
       }
 
       return true;
-    });
-
-    // Debug logging
-      mcuPeriod,
-      selectedYear,
-      baseDataLength: baseData.length,
-      filteredDataLength: this.filteredData.length,
-      filteredRecords: this.filteredData.map(d => ({
-        employee_id: d.employee.employee_id,
-        name: d.employee.name,
-        mcu_date: d.mcu.mcu_date || d.mcu.mcuDate
-      }))
     });
 
     // Load missing lab data for filtered MCUs
