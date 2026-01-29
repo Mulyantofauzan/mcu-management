@@ -205,7 +205,9 @@ class AnalysisDashboardService {
   }
 
   /**
-   * Lazy load all MCU records and years (called when user selects "Semua Tahun")
+   * Lazy load MCU data for year-based filtering (called when user selects "Semua Tahun")
+   * NOTE: Always uses LATEST MCU per employee only (not all MCU records)
+   * This ensures consistent data across all views and prevents double-counting
    */
   async loadAllMCUData() {
     // Return early if already loaded
@@ -214,9 +216,9 @@ class AnalysisDashboardService {
     }
 
     try {
-      console.log('Lazy loading all MCU data...');
+      console.log('Lazy loading MCU data for year filtering (latest per employee only)...');
 
-      // Get all MCUs again (this time we'll process all records, not just latest)
+      // Get all MCUs to find latest per employee (for year-based filtering)
       const { data: allMcus, error: mcuError } = await supabase
         .from('mcus')
         .select('*')
@@ -259,12 +261,20 @@ class AnalysisDashboardService {
         }
       }
 
-      // Build consolidated data for ALL MCU records
-      // Only include active employees with ANY MCU records
-      this.allMCUData = allMcus
-        .filter(mcu => employees.some(emp => emp.employee_id === mcu.employee_id && emp.is_active === true))
-        .map(mcu => {
-          const emp = employees.find(e => e.employee_id === mcu.employee_id);
+      // Build consolidated data for LATEST MCU per employee only
+      // Even in "all-years" mode, we only use latest MCU per employee to avoid double-counting
+      // Year filtering will still work by checking the mcu_date field
+      const latestMCUByEmployee = {};
+      allMcus.forEach(mcu => {
+        if (!latestMCUByEmployee[mcu.employee_id]) {
+          latestMCUByEmployee[mcu.employee_id] = mcu;
+        }
+      });
+
+      this.allMCUData = employees
+        .filter(emp => emp.is_active === true && latestMCUByEmployee[emp.employee_id])
+        .map(emp => {
+          const mcu = latestMCUByEmployee[emp.employee_id];
           const dept = departments?.find(d => d.name === emp.department);
           const job = jobTitles?.find(j => j.name === emp.job_title);
 
