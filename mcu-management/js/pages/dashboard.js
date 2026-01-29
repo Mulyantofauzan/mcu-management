@@ -360,8 +360,11 @@ async function updateCharts(filteredMCUs) {
   // Chart 7: BMI Distribution
   updateBMIDistributionChart(filteredMCUs);
 
-  // Chart 8: Top Abnormalities (Lab + MCU)
-  await updateTopAbnormalitiesChart(filteredMCUs);
+  // Chart 8: Top Abnormalities (Lab + MCU) - Load asynchronously to prevent blocking
+  // Don't await - let it load in background
+  updateTopAbnormalitiesChart(filteredMCUs).catch(err => {
+    // Silently fail if chart loading errors
+  });
 }
 
 function updateDepartmentChart(filteredMCUs) {
