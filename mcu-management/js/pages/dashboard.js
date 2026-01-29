@@ -37,7 +37,7 @@ import storageDiagnostic from '../utils/storageDiagnostic.js';  // ✅ Diagnosti
 import { initVersionManager } from '../utils/versionManager.js';  // ✅ Version update manager
 import { initThemeManager } from '../utils/themeManager.js';  // ✅ Dark mode / Light mode manager
 import { networkStatusManager } from '../utils/networkStatusManager.js';  // ✅ Network status monitoring
-import { topDiseasesChartInstance } from '../components/topDiseasesChart.js';  // ✅ Top comorbid diseases chart
+import { topAbnormalitiesChartInstance } from '../components/topAbnormalitiesChart.js';  // ✅ Top abnormalities chart
 // Initialize environment variables immediately (before other module code runs)
 initializeEnv().then(() => {
   logEnvStatus();
@@ -360,9 +360,9 @@ async function updateCharts(filteredMCUs) {
   // Chart 7: BMI Distribution
   updateBMIDistributionChart(filteredMCUs);
 
-  // Chart 8: Top Comorbid Diseases - Load asynchronously to prevent blocking
+  // Chart 8: Top Abnormalities (conditions found in MCU data) - Load asynchronously to prevent blocking
   // Don't await - let it load in background
-  updateTopDiseasesChart(filteredMCUs).catch(err => {
+  updateTopAbnormalitiesChart(filteredMCUs).catch(err => {
     // Silently fail if chart loading errors
   });
 }
@@ -888,20 +888,20 @@ function updateBMIDistributionChart(filteredMCUs) {
   });
 }
 
-async function updateTopDiseasesChart(filteredMCUs) {
+async function updateTopAbnormalitiesChart(filteredMCUs) {
   try {
-    // Render top diseases chart
-    await topDiseasesChartInstance.render(filteredMCUs, {
+    // Render top abnormalities chart
+    await topAbnormalitiesChartInstance.render(filteredMCUs, {
       limit: 10, // Default top 10
       view: 'bar' // Default view is bar chart
     });
 
     // Store reference for later updates
-    window.topDiseasesChartInstance = topDiseasesChartInstance;
+    window.topAbnormalitiesChartInstance = topAbnormalitiesChartInstance;
   } catch (error) {
-    const container = document.getElementById('top-diseases-container');
+    const container = document.getElementById('top-abnormalities-container');
     if (container) {
-      container.innerHTML = `<p class="text-red-600">Error loading diseases chart: ${error.message}</p>`;
+      container.innerHTML = `<p class="text-red-600">Error loading abnormalities chart: ${error.message}</p>`;
     }
   }
 }

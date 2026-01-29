@@ -234,7 +234,7 @@ export const abnormalitiesService = {
             const bp = mcu.bloodPressure || mcu.blood_pressure;
             if (this.isBPAbnormal(bp)) {
               const bpParsed = this.parseBP(bp);
-              const conditionKey = `Hipertensi (${bp} mmHg)`;
+              const conditionKey = 'Hipertensi'; // Disease name only
 
               if (!abnormalities[conditionKey]) {
                 abnormalities[conditionKey] = {
@@ -255,15 +255,16 @@ export const abnormalitiesService = {
           // Skip BP checking on error
         }
 
-        // Check BMI
+        // Check BMI - only count Overweight and Obese
         try {
           if (mcu.bmi) {
             const bmiValue = parseFloat(mcu.bmi);
             if (!isNaN(bmiValue)) {
               const category = this.getBMICategory(bmiValue);
 
-              if (category !== 'Normal') {
-                const conditionKey = `${category} (BMI ${bmiValue.toFixed(1)})`;
+              // Only count abnormal BMI (Overweight or Obese)
+              if (category === 'Overweight' || category === 'Obese') {
+                const conditionKey = category; // Just the category name
 
                 if (!abnormalities[conditionKey]) {
                   abnormalities[conditionKey] = {
@@ -302,7 +303,7 @@ export const abnormalitiesService = {
             const visionValue = mcu[field.key] || mcu[field.key.replace(/_/g, '')];
 
             if (this.isVisionAbnormal(visionValue)) {
-              const conditionKey = `Gangguan Penglihatan - ${field.label}`;
+              const conditionKey = 'Gangguan Penglihatan'; // Disease name only
 
               if (!abnormalities[conditionKey]) {
                 abnormalities[conditionKey] = {
