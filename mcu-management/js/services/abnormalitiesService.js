@@ -123,6 +123,14 @@ export const abnormalitiesService = {
    */
   async collectLabAbnormalities(filteredMCUs) {
     const abnormalities = {};
+    const debugLog = {
+      totalMCUs: filteredMCUs?.length || 0,
+      mcusWithLabs: 0,
+      totalLabsLoaded: 0,
+      labsProcessed: 0,
+      labsSkipped: [],
+      abnormalitiesFound: []
+    };
 
     if (!Array.isArray(filteredMCUs) || filteredMCUs.length === 0) {
       return [];
@@ -144,6 +152,8 @@ export const abnormalitiesService = {
         results.forEach(result => {
           if (result.labs && result.labs.length > 0) {
             labResultsMap.set(result.mcuId, result.labs);
+            debugLog.mcusWithLabs++;
+            debugLog.totalLabsLoaded += result.labs.length;
           }
         });
       }
@@ -160,11 +170,17 @@ export const abnormalitiesService = {
         if (!Array.isArray(labs)) continue;
 
         for (const lab of labs) {
-          if (lab.deleted_at) continue; // Skip soft-deleted records
+          debugLog.labsProcessed++;
+
+          if (lab.deleted_at) {
+            debugLog.labsSkipped.push(`Lab ${lab.lab_item_id}: Deleted`);
+            continue; // Skip soft-deleted records
+          }
 
           // Get lab item info for reference ranges
           let minRange = lab.min_range_reference;
           let maxRange = lab.max_range_reference;
+          let rangeSource = 'database';
 
           // If database ranges are NULL, use defaults from labItemsMapping
           if (!minRange || !maxRange) {
@@ -172,16 +188,29 @@ export const abnormalitiesService = {
             if (labItemInfo) {
               minRange = minRange || labItemInfo.min;
               maxRange = maxRange || labItemInfo.max;
+              rangeSource = 'mapping';
             }
           }
 
+          const value = parseFloat(lab.value);
           const status = this.determineLabStatus(lab.value, minRange, maxRange);
 
-          if (status === 'normal') continue; // Skip normal results
-
-          // Get lab item info for display name
+          // Debug: Log each lab result processing
           const labItemInfo = getLabItemInfo(lab.lab_item_id);
           const displayName = labItemInfo?.name || `Lab Item ${lab.lab_item_id}`;
+
+          debugLog.labsSkipped.push({
+            labId: lab.lab_item_id,
+            name: displayName,
+            value: value,
+            min: minRange,
+            max: maxRange,
+            rangeSource: rangeSource,
+            status: status,
+            reason: status === 'normal' ? 'Normal value' : 'Abnormal'
+          });
+
+          if (status === 'normal') continue; // Skip normal results
 
           // Create condition key: "Lab Name - Status"
           const conditionKey = `${displayName} (${status === 'high' ? 'Tinggi' : 'Rendah'})`;
@@ -197,6 +226,7 @@ export const abnormalitiesService = {
               unit: lab.unit,
               category: 'Lab Results'
             };
+            debugLog.abnormalitiesFound.push(conditionKey);
           }
 
           abnormalities[conditionKey].count++;
@@ -205,6 +235,9 @@ export const abnormalitiesService = {
         // Log error but continue processing other MCUs
       }
     }
+
+    // Store debug info
+    window.__abnormalitiesLabDebug = debugLog;
 
     return Object.values(abnormalities);
   },
