@@ -425,7 +425,6 @@ export async function deleteFileFromStorage(storagePath) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('[deleteFileFromStorage] API Error:', {
         status: response.status,
         error: errorData.error,
         details: errorData.details
@@ -441,7 +440,6 @@ export async function deleteFileFromStorage(storagePath) {
     return { success: true, message: result.message || 'File deleted from storage' };
 
   } catch (error) {
-    console.error('[deleteFileFromStorage] Exception:', error);
     return { success: false, error: error.message };
   }
 }

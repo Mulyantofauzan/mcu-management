@@ -108,7 +108,6 @@ class MCUBatchService {
         }
       } catch (historyError) {
         // Non-critical: medical/family history save failures don't block MCU creation
-        console.warn('Warning: Medical/family history save failed:', historyError);
       }
 
       // ✅ FINAL: Determine overall success

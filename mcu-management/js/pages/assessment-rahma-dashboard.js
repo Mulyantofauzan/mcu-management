@@ -300,7 +300,6 @@ async function loadAllMedicalHistories() {
             allMedicalHistories[mcuId].push(history);
         });
     } catch (error) {
-        console.error('Error loading medical histories:', error);
     }
 }
 
@@ -313,17 +312,14 @@ async function loadAllLabResults() {
     try {
         // Get all unique MCU IDs from allMCUs
         const mcuIds = [...new Set(allMCUs.map(mcu => mcu.mcuId || mcu.mcu_id))];
-        console.log(`Loading lab results for ${mcuIds.length} MCUs:`, mcuIds.slice(0, 5), '...');
 
         // Load lab results for all MCUs in parallel
         const labPromises = mcuIds.map(mcuId =>
             labService.getPemeriksaanLabByMcuId(mcuId)
                 .then(results => {
-                    console.log(`Lab results for MCU ${mcuId}:`, results);
                     return { mcuId, results };
                 })
                 .catch(error => {
-                    console.warn(`Error loading lab for MCU ${mcuId}:`, error);
                     return { mcuId, results: [] };
                 })
         );
@@ -336,10 +332,7 @@ async function loadAllLabResults() {
         });
 
         const totalLabCount = Object.values(allLabResults).reduce((sum, arr) => sum + arr.length, 0);
-        console.log(`Pre-cached ${totalLabCount} lab results for ${mcuIds.length} MCUs`);
-        console.log('Sample allLabResults:', Object.entries(allLabResults).slice(0, 3));
     } catch (error) {
-        console.error('Error pre-loading lab results:', error);
     }
 }
 
@@ -391,7 +384,6 @@ async function calculateAllAssessments() {
 
             // Debug: Log first few employees to see if lab results are loaded
             if (i < 3) {
-                console.log(`Employee ${i}: ${employee.name}, MCU ID: ${mcuId}, Lab Results:`, labResults);
             }
 
             // Calculate metabolic syndrome
@@ -415,10 +407,8 @@ async function calculateAllAssessments() {
 
                 // Debug: Log first few results
                 if (i < 3) {
-                    console.log(`Metabolic syndrome for ${employee.name}:`, metabolicSyndromeData);
                 }
             } catch (error) {
-                console.warn(`Could not calculate metabolic syndrome for employee ${employee.name}:`, error);
             }
 
             // Calculate Risk Total based on Jakarta CV Risk × Metabolic Syndrome Risk
@@ -451,7 +441,6 @@ async function calculateAllAssessments() {
             // Update progress
             updateLoadingProgress(((i + 1) / totalEmployees) * 100);
         } catch (error) {
-            console.error(`Error processing employee ${employee.name}:`, error);
             updateLoadingProgress(((i + 1) / totalEmployees) * 100);
         }
     }
@@ -906,15 +895,10 @@ export async function initAssessmentRahmaDAshboard() {
 
         // Always calculate fresh - parallel loading + pre-cached lab results already makes it fast
         // Caching localStorage can cause data to disappear, so we skip it for stability
-        console.log('Calculating fresh assessment data (parallel lab loading ensures speed)');
         await calculateAllAssessments();
 
         // Debug: Log loaded data
-        console.log('Employees loaded:', allEmployees.length);
-        console.log('MCUs loaded:', allMCUs.length);
-        console.log('Cardiovascular data calculated:', cardiovascularData.length);
         if (cardiovascularData.length > 0) {
-            console.log('Sample data:', cardiovascularData[0]);
         }
 
         // Hide loading modal
@@ -925,7 +909,6 @@ export async function initAssessmentRahmaDAshboard() {
 
         document.body.classList.add('initialized');
     } catch (error) {
-        console.error('Error initializing Jakarta Cardiovascular:', error);
         hideLoadingModal();
         showToast('Gagal memuat data: ' + error.message, 'error');
         document.body.classList.add('initialized');
@@ -949,7 +932,6 @@ window.handleExportExcel = async function() {
 
         showToast('Data berhasil diexport ke Excel', 'success');
     } catch (error) {
-        console.error('Error exporting to Excel:', error);
         showToast('Gagal export data: ' + error.message, 'error');
     } finally {
         // Restore button state

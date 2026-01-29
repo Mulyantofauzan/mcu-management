@@ -103,7 +103,6 @@ class MCUExpiryService {
 
       return employeesMCUData;
     } catch (error) {
-      console.error('Error loading employees with MCU:', error?.message || error);
       throw error;
     }
   }

@@ -246,7 +246,6 @@ export async function exportToExcel(data) {
 
         return { success: true, message: 'Export berhasil!' };
     } catch (error) {
-        console.error('Error exporting to Excel:', error);
         throw error;
     }
 }

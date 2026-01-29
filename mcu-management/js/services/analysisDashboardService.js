@@ -99,7 +99,6 @@ class AnalysisDashboardService {
             .is('deleted_at', null);
 
           if (labError) {
-            console.warn(`Warning loading lab batch ${Math.floor(i/batchSize)+1}:`, labError);
             // Continue processing instead of throwing
           } else {
             labResults = labResults.concat(labs || []);
@@ -158,7 +157,6 @@ class AnalysisDashboardService {
 
       this.filteredData = [...this.allData];
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
       throw error;
     }
   }
@@ -216,7 +214,6 @@ class AnalysisDashboardService {
     }
 
     try {
-      console.log('Lazy loading MCU data for year filtering (latest per employee only)...');
 
       // Get all MCUs to find latest per employee (for year-based filtering)
       const { data: allMcus, error: mcuError } = await supabase
@@ -254,7 +251,6 @@ class AnalysisDashboardService {
             .is('deleted_at', null);
 
           if (labError) {
-            console.warn(`Warning loading lab batch ${Math.floor(i/batchSize)+1}:`, labError);
           } else {
             allLabResults = allLabResults.concat(labs || []);
           }
@@ -285,7 +281,6 @@ class AnalysisDashboardService {
         labMapByMcuId[lab.mcu_id][lab.lab_item_id] = lab;
       });
 
-      console.log('Lab loading debug:', {
         totalLabResults: allLabResults.length,
         totalMCUsWithLabData: Object.keys(labMapByMcuId).length,
         totalMCUsByEmployeeYear: Object.keys(mcuByEmployeeYear).length,
@@ -339,12 +334,10 @@ class AnalysisDashboardService {
         this.updateYearDropdown();
       }
 
-      console.log('All MCU data loaded:', {
         totalRecords: this.allMCUData.length,
         availableYears: this.availableYears
       });
     } catch (error) {
-      console.error('Error lazy loading all MCU data:', error);
     }
   }
 
@@ -449,7 +442,6 @@ class AnalysisDashboardService {
     });
 
     // Debug logging
-    console.log('Filters applied:', {
       mcuPeriod,
       selectedYear,
       baseDataLength: baseData.length,
@@ -479,11 +471,9 @@ class AnalysisDashboardService {
         .map(item => item.mcu.mcu_id);
 
       if (mcuIdsNeedingLabs.length === 0) {
-        console.log('All filtered MCUs have lab data');
         return;
       }
 
-      console.log(`Loading lab data for ${mcuIdsNeedingLabs.length} MCUs without lab data`);
 
       // Load lab data in batches
       const batchSize = 100;
@@ -496,7 +486,6 @@ class AnalysisDashboardService {
           .is('deleted_at', null);
 
         if (error) {
-          console.warn('Error loading lab data:', error);
           continue;
         }
 
@@ -510,9 +499,7 @@ class AnalysisDashboardService {
         });
       }
 
-      console.log('Lab data loading complete');
     } catch (error) {
-      console.error('Error in loadMissingLabData:', error);
     }
   }
 
@@ -541,8 +528,6 @@ class AnalysisDashboardService {
    */
   async renderAllCharts() {
     try {
-      console.log('renderAllCharts() called with filteredData count:', this.filteredData.length);
-      console.log('filteredData sample:', this.filteredData.slice(0, 3).map(d => ({
         employee_id: d.employee.employee_id,
         name: d.employee.name,
         mcu_date: d.mcu.mcu_date || d.mcu.mcuDate
@@ -557,7 +542,6 @@ class AnalysisDashboardService {
       this.renderExaminationCharts();
       this.renderLabResultsCharts();
     } catch (error) {
-      console.error('Error rendering dashboard charts:', error);
     }
   }
 
@@ -925,7 +909,6 @@ class AnalysisDashboardService {
       'Tidak Terukur': '#9ca3af'
     };
 
-    console.log('renderVisionChart() processing filteredData count:', this.filteredData.length);
 
     // Evaluate vision status for each employee
     this.filteredData.forEach(item => {
@@ -948,7 +931,6 @@ class AnalysisDashboardService {
 
       // Skip this item if grade info not found (shouldn't happen but safety check)
       if (!gradeInfo) {
-        console.warn(`Unknown vision grade: ${gradeId}`);
         return; // continue to next item in forEach
       }
 
@@ -1166,7 +1148,6 @@ class AnalysisDashboardService {
         }
       }
     } catch (error) {
-      console.warn('Error rendering Framingham charts:', error);
     }
   }
 
@@ -1203,7 +1184,6 @@ class AnalysisDashboardService {
       try {
         const ctx = document.getElementById(exam.id)?.getContext('2d');
         if (!ctx) {
-          console.warn(`Chart canvas not found for exam: ${exam.label} (id: ${exam.id})`);
           return;
         }
 
@@ -1336,7 +1316,6 @@ class AnalysisDashboardService {
         plugins: [window.ChartDataLabels || {}] // Use datalabels plugin if available
       }));
       } catch (error) {
-        console.error(`Error rendering chart for ${exam.label}:`, error);
       }
     });
   }
@@ -1363,12 +1342,10 @@ class AnalysisDashboardService {
       { id: 32, name: 'Asam Urat', canvasId: 'chartLabAsamUrat', statusEl: 'asamuratStatus' }
     ];
 
-    console.log('renderLabResultsCharts() processing filteredData count:', this.filteredData.length);
 
     // Debug: Check first filtered item's labs
     if (this.filteredData.length > 0) {
       const firstItem = this.filteredData[0];
-      console.log('Sample filtered item labs:', {
         employee: firstItem.employee.name,
         mcu_id: firstItem.mcu.mcu_id,
         labsKeys: Object.keys(firstItem.labs),

@@ -57,7 +57,6 @@ export async function initAssessmentRAHMA() {
     showToast('Halaman Assessment RAHMA dimuat', 'success');
 
   } catch (error) {
-    console.error('Error initializing Assessment RAHMA:', error);
     showToast(`Error: ${error.message}`, 'error');
   }
 }
@@ -69,7 +68,6 @@ async function loadEmployees() {
   try {
     employees = await employeeService.getAll();
   } catch (error) {
-    console.error('Error loading employees:', error);
     employees = [];
   }
 }
@@ -81,7 +79,6 @@ async function loadDepartments() {
   try {
     departments = await masterDataService.getAll('departments');
   } catch (error) {
-    console.error('Error loading departments:', error);
     departments = [];
   }
 }
@@ -93,7 +90,6 @@ async function loadJobTitles() {
   try {
     jobTitles = await masterDataService.getAll('job_titles');
   } catch (error) {
-    console.error('Error loading job titles:', error);
     jobTitles = [];
   }
 }
@@ -121,7 +117,6 @@ async function loadAssessmentList() {
     displayAssessmentTable();
 
   } catch (error) {
-    console.error('Error loading assessment list:', error);
     showToast('Error memuat daftar MCU', 'error');
   }
 }
@@ -229,7 +224,6 @@ export async function openAssessmentModal(mcuId) {
     openModal('assessment-modal');
 
   } catch (error) {
-    console.error('Error opening assessment modal:', error);
     showToast(`Error: ${error.message}`, 'error');
   }
 }
@@ -333,7 +327,6 @@ export async function calculateAssessment() {
     displayAssessmentResults(result, assessmentData);
 
   } catch (error) {
-    console.error('Error calculating assessment:', error);
     showToast(`Error: ${error.message}`, 'error');
   }
 }
@@ -527,7 +520,6 @@ export async function saveAssessment() {
     await loadAssessmentList();
 
   } catch (error) {
-    console.error('Error saving assessment:', error);
     showToast(`Error: ${error.message}`, 'error');
   }
 }

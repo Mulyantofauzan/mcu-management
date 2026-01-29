@@ -1424,13 +1424,11 @@ const MedicalHistories = {
                 .select();
 
             if (error) {
-                console.error('Error creating medical histories:', error);
                 return { success: false, error };
             }
 
             return { success: true, data };
         } catch (err) {
-            console.error('Exception creating medical histories:', err);
             return { success: false, error: err };
         }
     },
@@ -1445,13 +1443,11 @@ const MedicalHistories = {
                 .order('created_at', { ascending: false });
 
             if (error) {
-                console.error('Error fetching medical histories:', error);
                 return [];
             }
 
             return data || [];
         } catch (err) {
-            console.error('Exception fetching medical histories:', err);
             return [];
         }
     },
@@ -1465,13 +1461,11 @@ const MedicalHistories = {
                 .eq('mcu_id', mcuId);
 
             if (error) {
-                console.error('Error deleting medical histories:', error);
                 return { success: false, error };
             }
 
             return { success: true };
         } catch (err) {
-            console.error('Exception deleting medical histories:', err);
             return { success: false, error: err };
         }
     },
@@ -1485,13 +1479,11 @@ const MedicalHistories = {
                 .order('created_at', { ascending: false });
 
             if (error) {
-                console.error('Error fetching all medical histories:', error);
                 return [];
             }
 
             return data || [];
         } catch (err) {
-            console.error('Exception fetching all medical histories:', err);
             return [];
         }
     }
@@ -1522,13 +1514,11 @@ const FamilyHistories = {
                 .select();
 
             if (error) {
-                console.error('Error creating family histories:', error);
                 return { success: false, error };
             }
 
             return { success: true, data };
         } catch (err) {
-            console.error('Exception creating family histories:', err);
             return { success: false, error: err };
         }
     },
@@ -1543,13 +1533,11 @@ const FamilyHistories = {
                 .order('created_at', { ascending: false });
 
             if (error) {
-                console.error('Error fetching family histories:', error);
                 return [];
             }
 
             return data || [];
         } catch (err) {
-            console.error('Exception fetching family histories:', err);
             return [];
         }
     },
@@ -1563,13 +1551,11 @@ const FamilyHistories = {
                 .eq('mcu_id', mcuId);
 
             if (error) {
-                console.error('Error deleting family histories:', error);
                 return { success: false, error };
             }
 
             return { success: true };
         } catch (err) {
-            console.error('Exception deleting family histories:', err);
             return { success: false, error: err };
         }
     }

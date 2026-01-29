@@ -25,7 +25,6 @@ export async function initVersionService() {
         // Set up periodic version checks
         setInterval(checkAndUpdateVersion, VERSION_CHECK_INTERVAL);
     } catch (error) {
-        console.error('Error initializing version service:', error);
     }
 }
 
@@ -43,7 +42,6 @@ export async function getCurrentVersion() {
         currentVersion = data.version;
         return data.version;
     } catch (error) {
-        console.error('Error fetching version:', error);
         return null;
     }
 }
@@ -73,7 +71,6 @@ export async function checkAndUpdateVersion() {
 
         // If versions differ, clear cache and reload
         if (storedVersion && storedVersion !== serverVersion) {
-            console.log(`Version update detected: ${storedVersion} → ${serverVersion}`);
             await clearAllCaches();
             notifyUserOfUpdate(storedVersion, serverVersion);
             return;
@@ -82,7 +79,6 @@ export async function checkAndUpdateVersion() {
         // Store current version
         localStorage.setItem(LOCAL_STORAGE_KEY, serverVersion);
     } catch (error) {
-        console.error('Error checking version:', error);
     }
 }
 
@@ -96,10 +92,8 @@ export async function clearAllCaches() {
             await Promise.all(
                 cacheNames.map(name => caches.delete(name))
             );
-            console.log('All caches cleared');
         }
     } catch (error) {
-        console.error('Error clearing caches:', error);
     }
 }
 
@@ -121,7 +115,6 @@ export async function forceRefresh() {
         // Reload page hard (bypass cache)
         window.location.href = window.location.href.split('?')[0] + '?v=' + Date.now();
     } catch (error) {
-        console.error('Error force refreshing:', error);
         // Fallback: just reload
         window.location.reload();
     }
@@ -140,7 +133,6 @@ function notifyUserOfUpdate(oldVersion, newVersion) {
         showToast(message, 'info');
     } catch (e) {
         // Fallback: show alert
-        console.log(`Update available: ${oldVersion} → ${newVersion}`);
     }
 
     // Create update notification banner

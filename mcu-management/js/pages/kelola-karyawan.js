@@ -1535,7 +1535,6 @@ window.viewMCUDetail = async function(mcuId) {
                 familyHistoryEl.innerHTML = '<p class="text-sm text-gray-500">Tidak ada riwayat penyakit keluarga</p>';
             }
         } catch (error) {
-            console.warn('Warning: Failed to load medical/family histories:', error);
             document.getElementById('mcu-detail-medical-history').innerHTML = '<p class="text-sm text-gray-500">-</p>';
             document.getElementById('mcu-detail-family-history').innerHTML = '<p class="text-sm text-gray-500">-</p>';
         }
@@ -1927,7 +1926,6 @@ window.editMCU = async function() {
                     }
                 } catch (historyError) {
                     // Continue even if history loading fails
-                    console.warn('Warning: Failed to load medical/family history:', historyError);
                 }
 
             } catch (error) {
@@ -2122,8 +2120,6 @@ window.handleEditMCU = async function(event) {
             const medicalHistories = getEditMedicalHistoryData();
             const familyHistories = getEditFamilyHistoryData();
 
-            console.log('Medical histories to save:', medicalHistories);
-            console.log('Family histories to save:', familyHistories);
 
             // Get existing histories for comparison
             const existingMedicalHistories = await database.MedicalHistories.getByMcuId(mcuId);
@@ -2195,9 +2191,7 @@ window.handleEditMCU = async function(event) {
                     mcu_id: mcuId,
                     mcuId: mcuId
                 }));
-                console.log('Saving medical histories:', medicalHistoriesWithMcuId);
                 const result = await database.MedicalHistories.create(medicalHistoriesWithMcuId);
-                console.log('Medical history save result:', result);
             }
 
             if (familyHistories.length > 0) {
@@ -2206,12 +2200,9 @@ window.handleEditMCU = async function(event) {
                     mcu_id: mcuId,
                     mcuId: mcuId
                 }));
-                console.log('Saving family histories:', familyHistoriesWithMcuId);
                 const result = await database.FamilyHistories.create(familyHistoriesWithMcuId);
-                console.log('Family history save result:', result);
             }
         } catch (historyError) {
-            console.error('ERROR: Failed to update medical/family history:', historyError);
             showToast('⚠️ Riwayat Kesehatan mungkin tidak tersimpan: ' + historyError.message, 'warning');
             // Continue with MCU update even if history save fails
         }
@@ -2575,7 +2566,6 @@ async function populateDiseaseDropdowns() {
         const diseases = await database.MasterData.getDiseases();
 
         if (!diseases || diseases.length === 0) {
-            console.warn('No diseases found in master data');
             return;
         }
 
@@ -2621,9 +2611,7 @@ async function populateDiseaseDropdowns() {
             }
         });
 
-        console.log(`✓ Populated disease dropdowns with ${diseases.length} diseases from master data`);
     } catch (error) {
-        console.error('Error populating disease dropdowns:', error);
         // Continue with hardcoded list as fallback
     }
 }
