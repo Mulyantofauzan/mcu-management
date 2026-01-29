@@ -203,12 +203,15 @@ class MCUService {
       await database.add('mcuChanges', change);
     }
 
-    // ✅ FIX: Log activity for MCU update with details
+    // Log activity - use only ACTUALLY CHANGED fields (not all fields sent in request)
     if (currentUser) {
-      const changedFields = Object.keys(updates).join(', ');
+      // Extract field names from actual changes only
+      const changedFields = changes.length > 0
+        ? [...new Set(changes.map(c => c.fieldChanged))].join(', ')
+        : 'none';
       const employeeName = newMCU?.employeeId ? await database.get('employees', newMCU.employeeId).then(e => e?.name || 'Unknown') : 'Unknown';
       await database.logActivity('update', 'MCU', mcuId, currentUser.userId,
-        `MCU: ${mcuId}., Employee: ${employeeName}. Fields: ${changedFields}`);
+        `MCU: ${mcuId}. Employee: ${employeeName}. Fields: ${changedFields}`);
     }
 
     return newMCU;
@@ -312,12 +315,15 @@ class MCUService {
       await database.add('mcuChanges', change);
     }
 
-    // Log activity - use 'update' action for follow-up updates (CRUD standard) with details
+    // Log activity - use only ACTUALLY CHANGED fields (not all fields sent in request)
     if (currentUser) {
-      const changedFields = Object.keys(updateData).filter(k => k !== 'updatedAt').join(', ');
+      // Extract field names from actual changes only
+      const changedFields = changes.length > 0
+        ? [...new Set(changes.map(c => c.fieldChanged))].join(', ')
+        : 'none';
       const employeeName = newMCU?.employeeId ? await database.get('employees', newMCU.employeeId).then(e => e?.name || 'Unknown') : 'Unknown';
       await database.logActivity('update', 'MCU', mcuId, currentUser.userId,
-        `Updated MCU follow-up: ${mcuId}. Employee: ${employeeName}. Fields: ${changedFields || 'none'}`);
+        `Updated MCU follow-up: ${mcuId}. Employee: ${employeeName}. Fields: ${changedFields}`);
     }
 
     return newMCU;
