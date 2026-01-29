@@ -81,6 +81,25 @@
             opacity: 1;
         }
 
+        /* Loading overlay should always be visible when active, bypassing body opacity */
+        #unified-loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 9999;
+        }
+
+        #unified-loading-overlay:not(.hidden) {
+            opacity: 1 !important;
+        }
+
+        /* When body is invisible but loading overlay is showing, still make body content invisible */
+        body:not(.initialized) > *:not(#unified-loading-overlay) {
+            opacity: 0;
+        }
+
         /* Sidebar transition */
         .sidebar {
             transition: transform 0.3s ease-in-out;
@@ -94,8 +113,8 @@
     </style>
 </head>
 <body class="bg-gray-50">
-    <!-- Unified Loading Overlay -->
-    <div id="unified-loading-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+    <!-- Unified Loading Overlay (visible by default during page load) -->
+    <div id="unified-loading-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
         <div class="flex flex-col items-center gap-4">
             <!-- Animated Spinner -->
             <div class="animate-spin">
