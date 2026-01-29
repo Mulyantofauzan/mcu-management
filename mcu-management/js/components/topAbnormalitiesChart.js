@@ -14,6 +14,9 @@
 import abnormalitiesService from '../services/abnormalitiesService.js';
 import { showToast } from '../utils/uiHelpers.js';
 
+// ChartDataLabels is loaded via CDN in dashboard.html
+const ChartDataLabels = window.ChartDataLabels || {};
+
 class TopAbnormalitiesChart {
   constructor() {
     this.chart = null;
@@ -84,8 +87,9 @@ class TopAbnormalitiesChart {
     });
 
     const values = this.data.map(item => item.count);
-    const colors = this.data.map(item => this.getCategoryColor(item.category));
-    const bgColors = this.data.map(item => this.getCategoryBgColor(item.category));
+    // Use single color for all bars
+    const barColor = '#3b82f6'; // Blue
+    const barBgColor = 'rgba(59, 130, 246, 0.7)'; // Semi-transparent blue
 
     // Create chart
     const ctx = canvas.getContext('2d');
@@ -96,8 +100,8 @@ class TopAbnormalitiesChart {
         datasets: [{
           label: 'Jumlah Kasus',
           data: values,
-          backgroundColor: bgColors,
-          borderColor: colors,
+          backgroundColor: barBgColor,
+          borderColor: barColor,
           borderWidth: 2,
           borderRadius: 4
         }]
@@ -109,6 +113,18 @@ class TopAbnormalitiesChart {
         plugins: {
           legend: {
             display: false
+          },
+          datalabels: {
+            anchor: 'end',
+            align: 'end',
+            color: '#1f2937',
+            font: {
+              weight: 'bold',
+              size: 12
+            },
+            formatter: function(value) {
+              return value;
+            }
           },
           tooltip: {
             callbacks: {
@@ -131,7 +147,8 @@ class TopAbnormalitiesChart {
             }
           }
         }
-      }
+      },
+      plugins: [ChartDataLabels]
     });
 
     // Store reference to data for tooltip
