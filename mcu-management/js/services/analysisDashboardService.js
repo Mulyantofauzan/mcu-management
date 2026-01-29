@@ -145,9 +145,13 @@ class AnalysisDashboardService {
       // Extract available years from latest MCUs only (for initial display)
       const yearSet = new Set();
       Object.values(latestMCUPerEmployee).forEach(mcu => {
-        if (mcu && mcu.mcu_date) {
-          const year = new Date(mcu.mcu_date).getFullYear();
-          yearSet.add(year);
+        if (mcu) {
+          // Support both snake_case (mcu_date) and camelCase (mcuDate)
+          const dateField = mcu.mcu_date || mcu.mcuDate;
+          if (dateField) {
+            const year = new Date(dateField).getFullYear();
+            yearSet.add(year);
+          }
         }
       });
       this.availableYears = Array.from(yearSet).sort((a, b) => b - a); // Sort descending
@@ -283,9 +287,13 @@ class AnalysisDashboardService {
       // Extract available years from ALL MCU records
       const yearSet = new Set();
       this.allMCUData.forEach(item => {
-        if (item.mcu && item.mcu.mcu_date) {
-          const year = new Date(item.mcu.mcu_date).getFullYear();
-          yearSet.add(year);
+        if (item.mcu) {
+          // Support both snake_case (mcu_date) and camelCase (mcuDate)
+          const dateField = item.mcu.mcu_date || item.mcu.mcuDate;
+          if (dateField) {
+            const year = new Date(dateField).getFullYear();
+            yearSet.add(year);
+          }
         }
       });
 
@@ -389,9 +397,15 @@ class AnalysisDashboardService {
 
       // Apply year filter if in all-years mode and year is selected
       if (mcuPeriod === 'all-years' && selectedYear) {
-        if (item.mcu && item.mcu.mcu_date) {
-          const itemYear = new Date(item.mcu.mcu_date).getFullYear();
-          if (itemYear !== selectedYear) return false;
+        if (item.mcu) {
+          // Support both snake_case (mcu_date) and camelCase (mcuDate)
+          const dateField = item.mcu.mcu_date || item.mcu.mcuDate;
+          if (dateField) {
+            const itemYear = new Date(dateField).getFullYear();
+            if (itemYear !== selectedYear) return false;
+          } else {
+            return false; // Exclude if no date field found
+          }
         } else {
           return false;
         }
@@ -481,9 +495,13 @@ class AnalysisDashboardService {
 
     dataToProcess.forEach(item => {
       const mcu = item.mcu || item;
-      if (!mcu || !mcu.mcu_date) return;
+      if (!mcu) return;
 
-      const year = new Date(mcu.mcu_date).getFullYear();
+      // Support both snake_case (mcu_date) and camelCase (mcuDate)
+      const dateField = mcu.mcu_date || mcu.mcuDate;
+      if (!dateField) return;
+
+      const year = new Date(dateField).getFullYear();
       const status = mcu.status || 'Unfit';
 
       if (!yearStatusMap[year]) {
