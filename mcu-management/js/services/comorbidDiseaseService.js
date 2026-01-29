@@ -28,26 +28,35 @@ export const comorbidDiseaseService = {
       // Batch-load medical histories for all MCUs in parallel
       const medicalHistoriesMap = new Map();
 
-      // Load all medical histories in parallel
-      const historyPromises = filteredMCUs.map(mcu => {
-        const mcuId = mcu.mcu_id || mcu.mcuId;
-        return database.MedicalHistories.getByMcuId(mcuId)
-          .then(histories => ({
-            mcuId: mcuId,
-            histories: Array.isArray(histories) ? histories : []
-          }))
-          .catch(err => ({
-            mcuId: mcuId,
-            histories: []
-          }));
-      });
+      if (database && database.MedicalHistories && typeof database.MedicalHistories.getByMcuId === 'function') {
+        // Load all medical histories in parallel
+        const historyPromises = filteredMCUs.map(mcu => {
+          const mcuId = mcu.mcu_id || mcu.mcuId;
+          return database.MedicalHistories.getByMcuId(mcuId)
+            .then(histories => ({
+              mcuId: mcuId,
+              histories: Array.isArray(histories) ? histories : []
+            }))
+            .catch(err => ({
+              mcuId: mcuId,
+              histories: []
+            }));
+        });
 
-      const results = await Promise.all(historyPromises);
-      results.forEach(result => {
-        if (result.histories && result.histories.length > 0) {
-          medicalHistoriesMap.set(result.mcuId, result.histories);
-        }
-      });
+        const results = await Promise.all(historyPromises);
+        results.forEach(result => {
+          if (result.histories && result.histories.length > 0) {
+            medicalHistoriesMap.set(result.mcuId, result.histories);
+          }
+        });
+      }
+
+      // Debug logging
+      window.__comorbidDiseaseCollectDebug = {
+        filteredMCUsCount: filteredMCUs?.length || 0,
+        medicalHistoriesLoaded: medicalHistoriesMap.size,
+        totalHistories: Array.from(medicalHistoriesMap.values()).reduce((sum, arr) => sum + arr.length, 0)
+      };
 
       // Process MCUs with cached medical histories
       for (const mcu of filteredMCUs) {

@@ -59,7 +59,11 @@ class TopDiseasesChart {
    */
   renderBarChart(container) {
     if (!this.data || this.data.length === 0) {
-      container.innerHTML = '<p class="text-center text-gray-500 py-8">Tidak ada data penyakit komorbid</p>';
+      const debugInfo = window.__comorbidDiseaseCollectDebug || {};
+      const debugMsg = debugInfo.totalHistories === 0
+        ? '<br><small style="color:#999;">Data penyakit komorbid belum ada di database</small>'
+        : '';
+      container.innerHTML = `<p class="text-center text-gray-500 py-8">Tidak ada data penyakit komorbid${debugMsg}</p>`;
       return;
     }
 
@@ -143,7 +147,11 @@ class TopDiseasesChart {
    */
   renderListView(container) {
     if (!this.data || this.data.length === 0) {
-      container.innerHTML = '<p class="text-center text-gray-500 py-8">Tidak ada data penyakit komorbid</p>';
+      const debugInfo = window.__comorbidDiseaseCollectDebug || {};
+      const debugMsg = debugInfo.totalHistories === 0
+        ? '<br><small style="color:#999;">Data penyakit komorbid belum ada di database</small>'
+        : '';
+      container.innerHTML = `<p class="text-center text-gray-500 py-8">Tidak ada data penyakit komorbid${debugMsg}</p>`;
       return;
     }
 
