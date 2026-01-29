@@ -195,87 +195,110 @@ export const abnormalitiesService = {
   collectMCUAbnormalities(filteredMCUs) {
     const abnormalities = {};
 
+    if (!Array.isArray(filteredMCUs)) {
+      return [];
+    }
+
     for (const mcu of filteredMCUs) {
-      // Check Blood Pressure
-      if (mcu.bloodPressure || mcu.blood_pressure) {
-        const bp = mcu.bloodPressure || mcu.blood_pressure;
-        if (this.isBPAbnormal(bp)) {
-          const bpParsed = this.parseBP(bp);
-          const conditionKey = `Hipertensi (${bp} mmHg)`;
+      try {
+        if (!mcu) continue;
 
-          if (!abnormalities[conditionKey]) {
-            abnormalities[conditionKey] = {
-              name: conditionKey,
-              count: 0,
-              type: 'mcu',
-              examType: 'bloodPressure',
-              category: 'Hypertension',
-              sbp: bpParsed?.sbp,
-              dbp: bpParsed?.dbp
-            };
-          }
+        // Check Blood Pressure
+        try {
+          if (mcu.bloodPressure || mcu.blood_pressure) {
+            const bp = mcu.bloodPressure || mcu.blood_pressure;
+            if (this.isBPAbnormal(bp)) {
+              const bpParsed = this.parseBP(bp);
+              const conditionKey = `Hipertensi (${bp} mmHg)`;
 
-          abnormalities[conditionKey].count++;
-        }
-      }
+              if (!abnormalities[conditionKey]) {
+                abnormalities[conditionKey] = {
+                  name: conditionKey,
+                  count: 0,
+                  type: 'mcu',
+                  examType: 'bloodPressure',
+                  category: 'Hypertension',
+                  sbp: bpParsed?.sbp,
+                  dbp: bpParsed?.dbp
+                };
+              }
 
-      // Check BMI
-      if (mcu.bmi) {
-        const bmiValue = parseFloat(mcu.bmi);
-        if (!isNaN(bmiValue)) {
-          const category = this.getBMICategory(bmiValue);
-
-          if (category !== 'Normal') {
-            const conditionKey = `${category} (BMI ${bmiValue.toFixed(1)})`;
-
-            if (!abnormalities[conditionKey]) {
-              abnormalities[conditionKey] = {
-                name: conditionKey,
-                count: 0,
-                type: 'mcu',
-                examType: 'bmi',
-                category: 'Obesity',
-                bmiValue: bmiValue,
-                bmiCategory: category
-              };
+              abnormalities[conditionKey].count++;
             }
-
-            abnormalities[conditionKey].count++;
           }
+        } catch (bpError) {
+          // Skip BP checking on error
         }
-      }
 
-      // Check Vision - check all 8 vision fields
-      const visionFields = [
-        { key: 'vision_distant_unaided_left', label: 'Distant Vision Unaided (Left)' },
-        { key: 'vision_distant_unaided_right', label: 'Distant Vision Unaided (Right)' },
-        { key: 'vision_distant_spectacles_left', label: 'Distant Vision with Spectacles (Left)' },
-        { key: 'vision_distant_spectacles_right', label: 'Distant Vision with Spectacles (Right)' },
-        { key: 'vision_near_unaided_left', label: 'Near Vision Unaided (Left)' },
-        { key: 'vision_near_unaided_right', label: 'Near Vision Unaided (Right)' },
-        { key: 'vision_near_spectacles_left', label: 'Near Vision with Spectacles (Left)' },
-        { key: 'vision_near_spectacles_right', label: 'Near Vision with Spectacles (Right)' }
-      ];
+        // Check BMI
+        try {
+          if (mcu.bmi) {
+            const bmiValue = parseFloat(mcu.bmi);
+            if (!isNaN(bmiValue)) {
+              const category = this.getBMICategory(bmiValue);
 
-      for (const field of visionFields) {
-        const visionValue = mcu[field.key] || mcu[field.key.replace(/_/g, '')];
+              if (category !== 'Normal') {
+                const conditionKey = `${category} (BMI ${bmiValue.toFixed(1)})`;
 
-        if (this.isVisionAbnormal(visionValue)) {
-          const conditionKey = `Gangguan Penglihatan - ${field.label}`;
+                if (!abnormalities[conditionKey]) {
+                  abnormalities[conditionKey] = {
+                    name: conditionKey,
+                    count: 0,
+                    type: 'mcu',
+                    examType: 'bmi',
+                    category: 'Obesity',
+                    bmiValue: bmiValue,
+                    bmiCategory: category
+                  };
+                }
 
-          if (!abnormalities[conditionKey]) {
-            abnormalities[conditionKey] = {
-              name: conditionKey,
-              count: 0,
-              type: 'mcu',
-              examType: 'vision',
-              category: 'Vision Defect',
-              visionField: field.key
-            };
+                abnormalities[conditionKey].count++;
+              }
+            }
           }
-
-          abnormalities[conditionKey].count++;
+        } catch (bmiError) {
+          // Skip BMI checking on error
         }
+
+        // Check Vision - check all 8 vision fields
+        try {
+          const visionFields = [
+            { key: 'vision_distant_unaided_left', label: 'Distant Vision Unaided (Left)' },
+            { key: 'vision_distant_unaided_right', label: 'Distant Vision Unaided (Right)' },
+            { key: 'vision_distant_spectacles_left', label: 'Distant Vision with Spectacles (Left)' },
+            { key: 'vision_distant_spectacles_right', label: 'Distant Vision with Spectacles (Right)' },
+            { key: 'vision_near_unaided_left', label: 'Near Vision Unaided (Left)' },
+            { key: 'vision_near_unaided_right', label: 'Near Vision Unaided (Right)' },
+            { key: 'vision_near_spectacles_left', label: 'Near Vision with Spectacles (Left)' },
+            { key: 'vision_near_spectacles_right', label: 'Near Vision with Spectacles (Right)' }
+          ];
+
+          for (const field of visionFields) {
+            const visionValue = mcu[field.key] || mcu[field.key.replace(/_/g, '')];
+
+            if (this.isVisionAbnormal(visionValue)) {
+              const conditionKey = `Gangguan Penglihatan - ${field.label}`;
+
+              if (!abnormalities[conditionKey]) {
+                abnormalities[conditionKey] = {
+                  name: conditionKey,
+                  count: 0,
+                  type: 'mcu',
+                  examType: 'vision',
+                  category: 'Vision Defect',
+                  visionField: field.key
+                };
+              }
+
+              abnormalities[conditionKey].count++;
+            }
+          }
+        } catch (visionError) {
+          // Skip vision checking on error
+        }
+      } catch (mcuError) {
+        // Skip this MCU on error and continue
+        continue;
       }
     }
 
