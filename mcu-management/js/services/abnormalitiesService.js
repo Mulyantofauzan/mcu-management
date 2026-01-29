@@ -425,27 +425,7 @@ export const abnormalitiesService = {
           // Skip EKG checking on error
         }
 
-        // Check Treadmill hasil
-        try {
-          const treadmillResult = mcu.treadmill;
-          if (treadmillResult && !this.isExamResultNormal(treadmillResult)) {
-            const conditionKey = `Treadmill: ${treadmillResult}`;
-
-            if (!abnormalities[conditionKey]) {
-              abnormalities[conditionKey] = {
-                name: conditionKey,
-                count: 0,
-                type: 'mcu',
-                examType: 'treadmill',
-                category: 'Stress Test'
-              };
-            }
-
-            abnormalities[conditionKey].count++;
-          }
-        } catch (treadmillError) {
-          // Skip treadmill checking on error
-        }
+        // Treadmill - Skipped (tidak digunakan di chart)
 
       } catch (mcuError) {
         // Skip this MCU on error and continue
