@@ -12,7 +12,6 @@ import { masterDataService } from '../services/masterDataService.js';
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
 import { supabaseReady } from '../config/supabase.js';
-import { initSuperSearch } from '../components/superSearch.js';
 import FileUploadWidget from '../components/fileUploadWidget.js';
 import { generateMCUId } from '../utils/idGenerator.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';
@@ -245,7 +244,6 @@ async function init() {
 
         // ✅ NEW: Initialize Super Search (Cmd+K global search)
         try {
-            await initSuperSearch();
         } catch (error) {
         }
 

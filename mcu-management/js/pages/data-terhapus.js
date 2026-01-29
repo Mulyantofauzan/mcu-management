@@ -9,7 +9,6 @@ import { masterDataService } from '../services/masterDataService.js';
 import { formatDateDisplay } from '../utils/dateHelpers.js';
 import { showToast, confirmDialog } from '../utils/uiHelpers.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
-import { initSuperSearch } from '../components/superSearch.js';  // ✅ NEW: Global search
 
 let deletedEmployees = [];
 let deletedMCU = [];  // ✅ NEW: Deleted MCU records
@@ -32,7 +31,6 @@ async function init() {
 
         // ✅ NEW: Initialize Super Search (Cmd+K global search)
         try {
-            await initSuperSearch();
         } catch (error) {
         }
 

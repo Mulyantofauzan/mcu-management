@@ -33,7 +33,6 @@ import { showToast } from '../utils/uiHelpers.js';
 import { sessionManager } from '../utils/sessionManager.js';
 import { checkAndSeedIfEmpty } from '../seedData.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
-import { initSuperSearch } from '../components/superSearch.js';
 import storageDiagnostic from '../utils/storageDiagnostic.js';  // ✅ Diagnostic tools for file upload troubleshooting
 import { initVersionManager } from '../utils/versionManager.js';  // ✅ Version update manager
 import { initThemeManager } from '../utils/themeManager.js';  // ✅ Dark mode / Light mode manager
@@ -85,12 +84,6 @@ async function init() {
     const seedResult = await checkAndSeedIfEmpty();
     if (seedResult.success && seedResult.counts) {
 
-    }
-
-    // Initialize Super Search
-    try {
-      await initSuperSearch();
-    } catch (error) {
     }
 
     // ✅ FIX: Wait for Supabase to be ready before loading data
@@ -1130,15 +1123,6 @@ window.handleLogout = function() {
 window.toggleDebugPanel = function() {
   const panel = document.getElementById('debug-panel');
   panel.classList.toggle('hidden');
-};
-
-// Super Search function
-window.openSuperSearch = async function() {
-  const { getSuperSearch } = await import('../components/superSearch.js');
-  const superSearch = getSuperSearch();
-  if (superSearch) {
-    superSearch.open();
-  }
 };
 
 // Seed function for manual trigger

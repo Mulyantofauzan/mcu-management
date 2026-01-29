@@ -13,7 +13,6 @@ import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
 import { generateRujukanPDF, generateRujukanBalikPDF } from '../utils/rujukanPDFGenerator.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
-import { initSuperSearch } from '../components/superSearch.js';  // ✅ NEW: Global search
 import FileUploadWidget from '../components/fileUploadWidget.js';
 import { uploadBatchFiles } from '../services/supabaseStorageService.js';  // ✅ NEW: File upload to Supabase
 import { tempFileStorage } from '../services/tempFileStorage.js';  // ✅ NEW: Temp file management
@@ -295,11 +294,6 @@ async function init() {
     await loadMasterData();
     await loadFollowUpList();
 
-    // ✅ NEW: Initialize Super Search (Cmd+K global search)
-    try {
-      await initSuperSearch();
-    } catch (error) {
-    }
 
     // Show page content after initialization complete
     document.body.classList.add('initialized');

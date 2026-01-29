@@ -7,7 +7,6 @@ import { masterDataService } from '../services/masterDataService.js';
 import { labService } from '../services/labService.js';
 import { showToast, openModal, closeModal, confirmDialog } from '../utils/uiHelpers.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
-import { initSuperSearch } from '../components/superSearch.js';  // ✅ NEW: Global search
 
 let currentTab = 'jobTitles';
 let currentData = [];
@@ -206,7 +205,6 @@ async function init() {
 
         // ✅ NEW: Initialize Super Search (Cmd+K global search)
         try {
-            await initSuperSearch();
         } catch (error) {
         }
 

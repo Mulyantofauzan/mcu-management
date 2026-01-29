@@ -16,7 +16,6 @@ import { database } from '../services/database.js';
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
 import { supabaseReady } from '../config/supabase.js';
-import { initSuperSearch } from '../components/superSearch.js';
 
 let assessmentList = [];
 let filteredList = [];
@@ -51,7 +50,6 @@ export async function initAssessmentRAHMA() {
     ]);
 
     // Initialize super search
-    initSuperSearch();
 
     // Show the page
     document.getElementById('assessment-rahma-page').classList.remove('hidden');

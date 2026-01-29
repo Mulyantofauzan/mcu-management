@@ -19,7 +19,6 @@ import { debounce } from '../utils/debounce.js';
 import { UI } from '../config/constants.js';
 import { safeGet, safeArray, isEmpty } from '../utils/nullSafety.js';
 import { supabaseReady } from '../config/supabase.js';
-import { initSuperSearch } from '../components/superSearch.js';
 import FileUploadWidget from '../components/fileUploadWidget.js';
 import FileListViewer from '../components/fileListViewer.js';
 import { deleteOrphanedFiles } from '../services/supabaseStorageService.js';
@@ -241,7 +240,6 @@ async function init() {
 
         // ✅ NEW: Initialize Super Search (Cmd+K global search)
         try {
-            await initSuperSearch();
         } catch (error) {
         }
 
