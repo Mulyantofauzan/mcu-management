@@ -260,7 +260,7 @@ async function loadData() {
     await updateKPIs(filteredMCUs);
 
     // Update charts
-    updateCharts(filteredMCUs);
+    await updateCharts(filteredMCUs);
 
     // Update follow-up list
     updateFollowUpList();
@@ -338,7 +338,7 @@ async function updateKPIs(filteredMCUs) {
   }
 }
 
-function updateCharts(filteredMCUs) {
+async function updateCharts(filteredMCUs) {
   // Chart 1: Distribution per Department
   updateDepartmentChart(filteredMCUs);
 
@@ -361,7 +361,7 @@ function updateCharts(filteredMCUs) {
   updateBMIDistributionChart(filteredMCUs);
 
   // Chart 8: Top Abnormalities (Lab + MCU)
-  updateTopAbnormalitiesChart(filteredMCUs);
+  await updateTopAbnormalitiesChart(filteredMCUs);
 }
 
 function updateDepartmentChart(filteredMCUs) {
