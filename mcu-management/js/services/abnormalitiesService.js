@@ -172,10 +172,15 @@ export const abnormalitiesService = {
 
     // Process MCUs with cached lab results
     let totalAbnormalFound = 0;
+    let debugMCUIds = [];
     for (const mcu of filteredMCUs) {
       try {
         const mcuId = mcu.mcu_id || mcu.mcuId;
         const labs = labResultsMap.get(mcuId) || [];
+
+        if (debugMCUIds.length < 5) {
+          debugMCUIds.push({ mcuId, found: labs.length > 0, labCount: labs.length });
+        }
 
         if (!Array.isArray(labs)) continue;
 
@@ -261,7 +266,9 @@ export const abnormalitiesService = {
       totalLabsLoaded: debugLog.totalLabsLoaded,
       labsProcessed: debugLog.labsProcessed,
       abnormalitiesFound: totalAbnormalFound,
-      abnormalitiesCount: Object.keys(abnormalities).length
+      abnormalitiesCount: Object.keys(abnormalities).length,
+      sampleMCUIds: debugMCUIds,
+      labResultsMapKeys: Array.from(labResultsMap.keys()).slice(0, 5)
     });
 
     return Object.values(abnormalities);
