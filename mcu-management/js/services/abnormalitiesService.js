@@ -302,6 +302,141 @@ export const abnormalitiesService = {
           // Skip BP checking on error
         }
 
+        // Check Vision (Audiometri)
+        try {
+          const visionLeft = mcu.visionDistantLeft || mcu.vision_distant_left;
+          const visionRight = mcu.visionDistantRight || mcu.vision_distant_right;
+
+          if ((visionLeft && this.isVisionAbnormal(visionLeft)) ||
+              (visionRight && this.isVisionAbnormal(visionRight))) {
+            const conditionKey = 'Gangguan Penglihatan';
+
+            if (!abnormalities[conditionKey]) {
+              abnormalities[conditionKey] = {
+                name: conditionKey,
+                count: 0,
+                type: 'mcu',
+                examType: 'vision',
+                category: 'Pemeriksaan Mata'
+              };
+            }
+
+            abnormalities[conditionKey].count++;
+          }
+        } catch (visionError) {
+          // Skip vision checking on error
+        }
+
+        // Check Spirometri (hasil pemeriksaan paru)
+        try {
+          const spirometri = mcu.spirometriResult || mcu.spirometri_result;
+          if (spirometri && spirometri !== 'Normal') {
+            const conditionKey = `Spirometri: ${spirometri}`;
+
+            if (!abnormalities[conditionKey]) {
+              abnormalities[conditionKey] = {
+                name: conditionKey,
+                count: 0,
+                type: 'mcu',
+                examType: 'spirometri',
+                category: 'Pemeriksaan Paru'
+              };
+            }
+
+            abnormalities[conditionKey].count++;
+          }
+        } catch (spirometriError) {
+          // Skip spirometri checking on error
+        }
+
+        // Check Audiometri (hasil pemeriksaan pendengaran)
+        try {
+          const audiometri = mcu.audiometriResult || mcu.audiometri_result;
+          if (audiometri && audiometri !== 'Normal') {
+            const conditionKey = `Audiometri: ${audiometri}`;
+
+            if (!abnormalities[conditionKey]) {
+              abnormalities[conditionKey] = {
+                name: conditionKey,
+                count: 0,
+                type: 'mcu',
+                examType: 'audiometri',
+                category: 'Pemeriksaan Pendengaran'
+              };
+            }
+
+            abnormalities[conditionKey].count++;
+          }
+        } catch (audiometriError) {
+          // Skip audiometri checking on error
+        }
+
+        // Check X-ray hasil
+        try {
+          const xrayResult = mcu.xrayResult || mcu.xray_result;
+          if (xrayResult && xrayResult !== 'Normal') {
+            const conditionKey = `X-ray: ${xrayResult}`;
+
+            if (!abnormalities[conditionKey]) {
+              abnormalities[conditionKey] = {
+                name: conditionKey,
+                count: 0,
+                type: 'mcu',
+                examType: 'xray',
+                category: 'X-ray'
+              };
+            }
+
+            abnormalities[conditionKey].count++;
+          }
+        } catch (xrayError) {
+          // Skip x-ray checking on error
+        }
+
+        // Check EKG hasil
+        try {
+          const ekgResult = mcu.ekgResult || mcu.ekg_result;
+          if (ekgResult && ekgResult !== 'Normal') {
+            const conditionKey = `EKG: ${ekgResult}`;
+
+            if (!abnormalities[conditionKey]) {
+              abnormalities[conditionKey] = {
+                name: conditionKey,
+                count: 0,
+                type: 'mcu',
+                examType: 'ekg',
+                category: 'EKG'
+              };
+            }
+
+            abnormalities[conditionKey].count++;
+          }
+        } catch (ekgError) {
+          // Skip EKG checking on error
+        }
+
+        // Check Treadmill hasil
+        try {
+          const treadmillResult = mcu.treadmillResult || mcu.treadmill_result;
+          if (treadmillResult && treadmillResult !== 'Normal') {
+            const conditionKey = `Treadmill: ${treadmillResult}`;
+
+            if (!abnormalities[conditionKey]) {
+              abnormalities[conditionKey] = {
+                name: conditionKey,
+                count: 0,
+                type: 'mcu',
+                examType: 'treadmill',
+                category: 'Stress Test'
+              };
+            }
+
+            abnormalities[conditionKey].count++;
+          }
+        } catch (treadmillError) {
+          // Skip treadmill checking on error
+        }
+
       } catch (mcuError) {
         // Skip this MCU on error and continue
         continue;
