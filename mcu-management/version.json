@@ -1,13 +1,11 @@
 {
-  "version": "1.0.21",
+  "version": "1.0.22",
   "releaseDate": "2026-01-29",
   "features": [
     "Excel export functionality for Jakarta Cardiovascular assessments",
     "MCU change history tracking (Riwayat Perubahan)",
     "Automatic cache invalidation on new versions",
     "Version management system",
-    "Top Abnormalities Chart feature (Lab + MCU analysis) - optimized with parallel batch loading",
-    "Top 10 Abnormalities with bar chart and list view display",
-    "Top 10 Comorbid Diseases Chart - from latest MCU medical history data"
+    "Top 10 Comorbid Diseases Chart - from latest MCU medical history data with parallel batch loading"
   ]
 }
