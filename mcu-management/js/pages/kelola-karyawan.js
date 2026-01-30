@@ -1159,10 +1159,9 @@ window.handleAddMCU = async function(event) {
         const labSaved = batchResult.data.labSaved.length;
         const labFailed = batchResult.data.labFailed.length;
 
-        // Get employee name for success modal
-        const employeeId = mcuData.employeeId;
-        const employee = employees.find(emp => emp.employee_id === employeeId);
-        const employeeName = employee ? employee.name : 'Unknown';
+        // Get employee name from the form display (already shown in modal)
+        const employeeNameEl = document.getElementById('mcu-emp-name');
+        const employeeName = employeeNameEl ? employeeNameEl.textContent.trim() : 'Unknown';
 
         // Hide loading after a brief delay to show completion
         setTimeout(() => {
