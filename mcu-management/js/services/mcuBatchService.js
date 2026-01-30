@@ -65,6 +65,17 @@ class MCUBatchService {
               value: labResult.value,
               data: savedLab
             });
+
+            // ✅ RECORD LAB RESULT CHANGE to mcu_changes table
+            // This ensures lab results are tracked in change history
+            await database.MCUChanges.add({
+              mcuId: createdMCU.mcuId,
+              fieldName: `Lab: ${labItemName}`,
+              oldValue: null, // New lab result, no old value
+              newValue: `${labResult.value}${LAB_ITEMS_MAPPING[labResult.labItemId]?.unit || ''}`,
+              changedAt: new Date().toISOString(),
+              changedBy: currentUser?.userId || currentUser?.id || 'system'
+            });
           } catch (labError) {
             result.data.labFailed.push({
               labItemId: labResult.labItemId,
