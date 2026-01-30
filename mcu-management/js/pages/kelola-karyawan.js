@@ -1177,7 +1177,7 @@ window.handleAddMCU = async function(event) {
             employeeName,
             mcuData.mcuType,
             mcuData.initialResult,
-            4  // Auto-dismiss after 4 seconds
+            5  // Auto-dismiss after 5 seconds
         );
 
         // Show warning toast if lab failed (in addition to success modal)
