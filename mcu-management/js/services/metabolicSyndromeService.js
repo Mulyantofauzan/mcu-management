@@ -14,7 +14,7 @@
  *
  * Risk Classification (LP-dependent):
  * - Risk 1: Nilai 0-2 AND LP=0 (normal waist circumference)
- * - Risk 2: Nilai 1-2 AND LP=1 (abnormal waist but <3 criteria)
+ * - Risk 2: Nilai 1-2 AND LP=1 (abnormal waist, central obesity present)
  * - Risk 3: Nilai ≥3 (metabolic syndrome diagnosis)
  */
 
@@ -219,8 +219,10 @@ function performMetabolicSyndromeAssessment(employee, mcu, labResults, hasDiabet
  * Determine metabolic syndrome risk level based on total score and LP
  * Risk classification is LP-DEPENDENT:
  * - Risk 1: Nilai 0-2 AND LP=0 (normal waist, safe)
- * - Risk 2: Nilai 1-2 AND LP=1 (abnormal waist, concerning)
+ * - Risk 2: Nilai 1-2 AND LP=1 (abnormal waist, central obesity concern)
  * - Risk 3: Nilai ≥3 (metabolic syndrome diagnosis)
+ *
+ * Note: Nilai = LP + TG + HDL + TD + GDP, so if LP=1, minimum Nilai=1
  *
  * @param {number} totalScore - Sum of 5 parameter scores (0-5)
  * @param {number} lpScore - Waist circumference score (0=normal, 1=abnormal)

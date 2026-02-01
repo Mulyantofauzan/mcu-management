@@ -155,9 +155,10 @@ The risk level is determined by BOTH total score AND LP presence.
 - LP=0, Nilai=2 → Risk 1 ✓ (safe because no central obesity)
 
 ### Risk 2 (Medium)
-**Criteria:** Nilai 0-2 **AND** LP=1
+**Criteria:** Nilai 1-2 **AND** LP=1
 - Has abnormal waist circumference (central obesity)
 - But not enough criteria for metabolic syndrome diagnosis
+- Note: Nilai always includes LP, so if LP=1, minimum Nilai=1
 
 **Example:**
 - LP=1, Nilai=1 → Risk 2 ✓
