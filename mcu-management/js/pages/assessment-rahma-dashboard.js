@@ -18,6 +18,7 @@ import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast } from '../utils/uiHelpers.js';
 import { supabaseReady } from '../config/supabase.js';
 import { exportToExcel } from '../services/excelExportService.js';
+import { unifiedLoading } from '../utils/unifiedLoadingManager.js';
 
 // State
 let allEmployees = [];
@@ -944,8 +945,8 @@ export async function initAssessmentRahmaDAshboard() {
             return;
         }
 
-        // Show loading modal
-        showLoadingModal('Data sedang dihitung, harap tunggu sebentar...');
+        // Show unified loading spinner (better UX with animated spinner)
+        unifiedLoading.show('Memuat data... Harap tunggu sebentar');
 
         // Load employees, MCUs, departments, job titles in parallel
         await Promise.all([
@@ -955,6 +956,9 @@ export async function initAssessmentRahmaDAshboard() {
             loadJobTitles(),
             loadAllMedicalHistories()
         ]);
+
+        // Update loading message
+        unifiedLoading.updateMessage('Memproses data penilaian... Harap tunggu');
 
         // Load lab results AFTER MCUs are loaded (depends on allMCUs)
         await loadAllLabResults();
@@ -967,8 +971,8 @@ export async function initAssessmentRahmaDAshboard() {
         if (cardiovascularData.length > 0) {
         }
 
-        // Hide loading modal
-        hideLoadingModal();
+        // Hide loading spinner
+        unifiedLoading.hide();
 
         // Render dashboard
         renderDashboard();
