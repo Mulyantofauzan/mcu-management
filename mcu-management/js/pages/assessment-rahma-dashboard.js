@@ -535,7 +535,8 @@ function renderTable() {
         const tdMetabolik = item.metabolicSyndrome?.scores.td !== undefined ? item.metabolicSyndrome.scores.td : '-';
         const gdp = item.metabolicSyndrome?.scores.gdp !== undefined ? item.metabolicSyndrome.scores.gdp : '-';
         const nilaiMetabolik = item.metabolicSyndrome?.totalScore !== undefined ? item.metabolicSyndrome.totalScore : '-';
-        const metabolikRiskData = item.metabolicSyndrome?.risk ? getMetabolicSyndromeRiskLabel(item.metabolicSyndrome.risk) : { text: '-', color: 'bg-gray-100', label: 'Unknown' };
+        // ✅ FIX: Use !== undefined instead of truthiness check (0 is falsy but valid value)
+        const metabolikRiskData = item.metabolicSyndrome?.risk !== undefined ? getMetabolicSyndromeRiskLabel(item.metabolicSyndrome.risk) : { text: '-', color: 'bg-gray-100', label: 'Unknown' };
         const riskMetabolik = metabolikRiskData.text;
 
         // Calculate Risk Total (Jakarta CV Risk * Metabolic Syndrome Risk)
