@@ -414,7 +414,21 @@ async function calculateAllAssessments() {
             // Calculate Risk Total based on Jakarta CV Risk × Metabolic Syndrome Risk
             const cvRisk = getJakartaCVRiskLevel(score);
             const metabolicRisk = metabolicSyndromeData.risk || 0;
-            const riskTotal = (cvRisk.level > 0 && metabolicRisk > 0) ? cvRisk.level * metabolicRisk : 0;
+
+            // Calculate riskTotal with fallback logic:
+            // - If both CV and metabolic risks are available: multiply them (risk matrix)
+            // - If only CV risk is available: use CV risk as risk level (e.g., level 1, 2, or 3)
+            // - If CV risk is missing or 0: show as Unknown (0)
+            let riskTotal = 0;
+            if (cvRisk.level > 0) {
+                if (metabolicRisk > 0) {
+                    // Both available: use risk matrix multiplication
+                    riskTotal = cvRisk.level * metabolicRisk;
+                } else {
+                    // Only CV risk available: use CV risk level directly
+                    riskTotal = cvRisk.level;
+                }
+            }
 
             // Determine final risk level based on Risk Total (from risk matrix)
             const riskLevel = getRiskLevelFromRiskTotal(riskTotal);
@@ -527,7 +541,22 @@ function renderTable() {
         // Calculate Risk Total (Jakarta CV Risk * Metabolic Syndrome Risk)
         const cvRiskLevel = cvRisk.level || 0;
         const metabolicRiskLevel = item.metabolicSyndrome?.risk || 0;
-        const riskTotal = (cvRiskLevel > 0 && metabolicRiskLevel > 0) ? cvRiskLevel * metabolicRiskLevel : 0;
+
+        // Calculate riskTotal with fallback logic:
+        // - If both CV and metabolic risks are available: multiply them (risk matrix)
+        // - If only CV risk is available: use CV risk as risk level (e.g., level 1, 2, or 3)
+        // - If CV risk is missing or 0: show as Unknown (0)
+        let riskTotal = 0;
+        if (cvRiskLevel > 0) {
+            if (metabolicRiskLevel > 0) {
+                // Both available: use risk matrix multiplication
+                riskTotal = cvRiskLevel * metabolicRiskLevel;
+            } else {
+                // Only CV risk available: use CV risk level directly
+                riskTotal = cvRiskLevel;
+            }
+        }
+
         const riskTotalData = getRiskTotalLabel(riskTotal);
 
         return `
