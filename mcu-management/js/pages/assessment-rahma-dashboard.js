@@ -489,19 +489,33 @@ function applyFilters() {
 }
 
 /**
- * Update risk counters
+ * Update risk counters with percentages
  */
 function updateRiskCounters() {
     const counts = { 1: 0, 2: 0, 3: 0, 4: 0 };
+    const total = filteredData.length;
 
     filteredData.forEach(item => {
         counts[item.riskLevel]++;
     });
 
+    // Calculate percentages
+    const getPercentage = (count) => {
+        if (total === 0) return '0%';
+        return `${((count / total) * 100).toFixed(1)}%`;
+    };
+
     document.getElementById('count-low').textContent = counts[1];
+    document.getElementById('count-low-percent').textContent = getPercentage(counts[1]);
+
     document.getElementById('count-medium').textContent = counts[2];
+    document.getElementById('count-medium-percent').textContent = getPercentage(counts[2]);
+
     document.getElementById('count-high').textContent = counts[3];
+    document.getElementById('count-high-percent').textContent = getPercentage(counts[3]);
+
     document.getElementById('count-critical').textContent = counts[4];
+    document.getElementById('count-critical-percent').textContent = getPercentage(counts[4]);
 }
 
 /**
@@ -773,18 +787,30 @@ function renderDashboard() {
             <div class="bg-white rounded-lg border-l-4 border-green-500 p-6 shadow">
                 <h3 class="text-gray-600 text-sm font-medium">Low Risk</h3>
                 <p class="text-3xl font-bold text-green-600 mt-2" id="count-low">0</p>
+                <p class="text-sm text-gray-500 mt-1">
+                    <span id="count-low-percent">0%</span>
+                </p>
             </div>
             <div class="bg-white rounded-lg border-l-4 border-yellow-500 p-6 shadow">
                 <h3 class="text-gray-600 text-sm font-medium">Medium Risk</h3>
                 <p class="text-3xl font-bold text-yellow-600 mt-2" id="count-medium">0</p>
+                <p class="text-sm text-gray-500 mt-1">
+                    <span id="count-medium-percent">0%</span>
+                </p>
             </div>
             <div class="bg-white rounded-lg border-l-4 border-red-500 p-6 shadow">
                 <h3 class="text-gray-600 text-sm font-medium">High Risk</h3>
                 <p class="text-3xl font-bold text-red-600 mt-2" id="count-high">0</p>
+                <p class="text-sm text-gray-500 mt-1">
+                    <span id="count-high-percent">0%</span>
+                </p>
             </div>
             <div class="bg-white rounded-lg border-l-4 border-purple-500 p-6 shadow">
                 <h3 class="text-gray-600 text-sm font-medium">Critical</h3>
                 <p class="text-3xl font-bold text-purple-600 mt-2" id="count-critical">0</p>
+                <p class="text-sm text-gray-500 mt-1">
+                    <span id="count-critical-percent">0%</span>
+                </p>
             </div>
         </div>
 
