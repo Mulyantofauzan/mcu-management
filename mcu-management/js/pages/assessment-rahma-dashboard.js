@@ -945,8 +945,9 @@ export async function initAssessmentRahmaDAshboard() {
             return;
         }
 
-        // Show unified loading spinner (better UX with animated spinner)
+        // Show unified loading spinner with progress bar
         unifiedLoading.show('Memuat data... Harap tunggu sebentar');
+        unifiedLoading.updateProgress(5);
 
         // Load employees, MCUs, departments, job titles in parallel
         await Promise.all([
@@ -956,20 +957,30 @@ export async function initAssessmentRahmaDAshboard() {
             loadJobTitles(),
             loadAllMedicalHistories()
         ]);
+        unifiedLoading.updateProgress(40);
 
         // Update loading message
         unifiedLoading.updateMessage('Memproses data penilaian... Harap tunggu');
+        unifiedLoading.updateProgress(50);
 
         // Load lab results AFTER MCUs are loaded (depends on allMCUs)
         await loadAllLabResults();
+        unifiedLoading.updateProgress(70);
 
         // Always calculate fresh - parallel loading + pre-cached lab results already makes it fast
         // Caching localStorage can cause data to disappear, so we skip it for stability
         await calculateAllAssessments();
+        unifiedLoading.updateProgress(90);
 
         // Debug: Log loaded data
         if (cardiovascularData.length > 0) {
         }
+
+        // Complete progress
+        unifiedLoading.updateProgress(100);
+
+        // Small delay to show 100% before hiding
+        await new Promise(resolve => setTimeout(resolve, 300));
 
         // Hide loading spinner
         unifiedLoading.hide();

@@ -74,7 +74,8 @@
       "Bash(__NEW_LINE_4af56c2c02e6ed21__ echo \"Updated all pages\")",
       "Bash(git checkout:*)",
       "Bash(tree:*)",
-      "Bash(xmllint:*)"
+      "Bash(xmllint:*)",
+      "Bash(node --check:*)"
     ],
     "deny": [],
     "ask": []

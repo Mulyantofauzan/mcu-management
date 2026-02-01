@@ -8,7 +8,10 @@ export class UnifiedLoadingManager {
     constructor() {
         this.loadingElement = null;
         this.messageElement = null;
+        this.progressBar = null;
+        this.progressPercent = null;
         this.isVisible = false;
+        this.currentProgress = 0;
     }
 
     /**
@@ -54,6 +57,28 @@ export class UnifiedLoadingManager {
     }
 
     /**
+     * Update loading progress bar
+     * @param {number} percent - Progress percentage (0-100)
+     */
+    updateProgress(percent) {
+        this.currentProgress = Math.min(100, Math.max(0, percent));
+        if (this.progressBar) {
+            this.progressBar.style.width = this.currentProgress + '%';
+        }
+        if (this.progressPercent) {
+            this.progressPercent.textContent = Math.round(this.currentProgress);
+        }
+    }
+
+    /**
+     * Increment progress by percentage
+     * @param {number} increment - Amount to increment (default: 10)
+     */
+    incrementProgress(increment = 10) {
+        this.updateProgress(this.currentProgress + increment);
+    }
+
+    /**
      * Create the loading element
      * @private
      */
@@ -67,15 +92,21 @@ export class UnifiedLoadingManager {
             this.loadingElement.id = 'unified-loading-manager';
             this.loadingElement.innerHTML = `
                 <div class="fixed top-0 left-0 right-0 bottom-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center">
-                    <div class="flex flex-col items-center gap-4">
+                    <div class="flex flex-col items-center gap-6">
                         <!-- Animated Spinner -->
                         <div class="animate-spin">
-                            <svg class="w-10 h-10 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-12 h-12 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                             </svg>
                         </div>
                         <!-- Message -->
-                        <p class="text-sm text-gray-700 font-medium" id="unified-loading-message">Memproses...</p>
+                        <p class="text-base text-gray-900 font-semibold" id="unified-loading-message">Memproses...</p>
+                        <!-- Progress Bar -->
+                        <div class="w-64 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div id="unified-loading-bar" class="h-full bg-gradient-to-r from-primary-400 to-primary-600 rounded-full" style="width: 0%; transition: width 0.3s ease;"></div>
+                        </div>
+                        <!-- Progress Text -->
+                        <p class="text-xs text-gray-600"><span id="unified-loading-percent">0</span>%</p>
                     </div>
                 </div>
             `;
@@ -83,7 +114,10 @@ export class UnifiedLoadingManager {
         }
 
         this.messageElement = this.loadingElement.querySelector('#unified-loading-message');
+        this.progressBar = this.loadingElement.querySelector('#unified-loading-bar');
+        this.progressPercent = this.loadingElement.querySelector('#unified-loading-percent');
         this.loadingElement.classList.add('hidden');
+        this.currentProgress = 0;
     }
 
     /**
