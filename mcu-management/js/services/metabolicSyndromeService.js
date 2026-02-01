@@ -234,10 +234,13 @@ function getMetabolicSyndromeRisk(totalScore, lpScore) {
 
     // If total score is 0-2, check LP to determine Risk 1 or 2
     if (totalScore <= 2) {
-        if (lpScore === 0) {
+        // ✅ FIX: Handle undefined lpScore - assume normal waist (0) if LP data missing
+        const lpScoreValue = lpScore !== undefined ? lpScore : 0;
+
+        if (lpScoreValue === 0) {
             // Normal waist circumference, max risk 1
             return 1;
-        } else if (lpScore === 1) {
+        } else if (lpScoreValue === 1) {
             // Abnormal waist circumference with 1-2 criteria, Risk 2
             return 2;
         }
