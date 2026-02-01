@@ -60,8 +60,9 @@ let charts = {};
 // Initialize
 async function init() {
   try {
-    // Show loading overlay immediately
+    // Show loading overlay with progress bar
     unifiedLoading.show('Memuat Dashboard...');
+    unifiedLoading.updateProgress(5);
 
     // Check auth - SECURITY: Require proper authentication
     if (!authService.isAuthenticated()) {
@@ -72,14 +73,17 @@ async function init() {
 
     // ✅ Initialize theme manager (light/dark mode) FIRST before rendering
     initThemeManager();
+    unifiedLoading.updateProgress(15);
 
     // ✅ Check for app updates and show notification if new version available
     await initVersionManager();
+    unifiedLoading.updateProgress(25);
 
     // Wait for sidebar to load before updating user info
 
     // Update user info
     updateUserInfo();
+    unifiedLoading.updateProgress(30);
 
     // Show debug toggle for admin
     if (authService.isAdmin()) {
@@ -95,15 +99,28 @@ async function init() {
     // ✅ FIX: Wait for Supabase to be ready before loading data
     // This ensures MCU expiry service has fresh connection
     await supabaseReady;
+    unifiedLoading.updateProgress(40);
 
     // Set default date range (empty = show all)
     setDateRange('', '');
 
+    // Update message during data loading
+    unifiedLoading.updateMessage('Memuat data karyawan dan MCU...');
+    unifiedLoading.updateProgress(50);
+
     // Load data (which will also populate filter dropdowns)
     await loadData();
+    unifiedLoading.updateProgress(80);
 
     // Initialize filter dropdowns after data loads
     await initializeFilters();
+    unifiedLoading.updateProgress(95);
+
+    // Final progress
+    unifiedLoading.updateProgress(100);
+
+    // Brief pause for visual feedback
+    await new Promise(resolve => setTimeout(resolve, 300));
 
     // Hide loading overlay
     unifiedLoading.hide();
