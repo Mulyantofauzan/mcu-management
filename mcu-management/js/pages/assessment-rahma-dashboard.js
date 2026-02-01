@@ -505,17 +505,26 @@ function updateRiskCounters() {
         return `${((count / total) * 100).toFixed(1)}%`;
     };
 
-    document.getElementById('count-low').textContent = counts[1];
-    document.getElementById('count-low-percent').textContent = getPercentage(counts[1]);
+    // Update counts with null checks (elements may not exist yet during initialization)
+    const lowEl = document.getElementById('count-low');
+    if (lowEl) lowEl.textContent = counts[1];
+    const lowPercentEl = document.getElementById('count-low-percent');
+    if (lowPercentEl) lowPercentEl.textContent = getPercentage(counts[1]);
 
-    document.getElementById('count-medium').textContent = counts[2];
-    document.getElementById('count-medium-percent').textContent = getPercentage(counts[2]);
+    const mediumEl = document.getElementById('count-medium');
+    if (mediumEl) mediumEl.textContent = counts[2];
+    const mediumPercentEl = document.getElementById('count-medium-percent');
+    if (mediumPercentEl) mediumPercentEl.textContent = getPercentage(counts[2]);
 
-    document.getElementById('count-high').textContent = counts[3];
-    document.getElementById('count-high-percent').textContent = getPercentage(counts[3]);
+    const highEl = document.getElementById('count-high');
+    if (highEl) highEl.textContent = counts[3];
+    const highPercentEl = document.getElementById('count-high-percent');
+    if (highPercentEl) highPercentEl.textContent = getPercentage(counts[3]);
 
-    document.getElementById('count-critical').textContent = counts[4];
-    document.getElementById('count-critical-percent').textContent = getPercentage(counts[4]);
+    const criticalEl = document.getElementById('count-critical');
+    if (criticalEl) criticalEl.textContent = counts[4];
+    const criticalPercentEl = document.getElementById('count-critical-percent');
+    if (criticalPercentEl) criticalPercentEl.textContent = getPercentage(counts[4]);
 }
 
 /**
