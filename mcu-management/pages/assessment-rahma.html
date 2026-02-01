@@ -36,6 +36,17 @@
             opacity: 1;
         }
 
+        /* ✅ Loading overlay must ALWAYS be visible, regardless of body opacity */
+        #unified-loading-overlay {
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        /* Body content hidden initially */
+        body:not(.initialized) > *:not(#unified-loading-overlay) {
+            opacity: 0;
+        }
+
         /* Safari fallback: show content after 5 seconds even if JS fails */
         @media (prefers-reduced-motion: no-preference) {
             body {
