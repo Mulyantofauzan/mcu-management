@@ -541,7 +541,8 @@ function renderTable() {
 
         // Calculate Risk Total (Jakarta CV Risk * Metabolic Syndrome Risk)
         const cvRiskLevel = cvRisk.level || 0;
-        const metabolicRiskLevel = item.metabolicSyndrome?.risk || 0;
+        // ✅ FIX: Use !== undefined to handle 0 as valid value (not falsy check)
+        const metabolicRiskLevel = item.metabolicSyndrome?.risk !== undefined ? item.metabolicSyndrome.risk : 0;
 
         // Calculate riskTotal with fallback logic:
         // - If both CV and metabolic risks are available: multiply them (risk matrix)
