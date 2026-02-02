@@ -350,6 +350,9 @@ window.handleAddMCU = async function(event) {
       return;
     }
 
+    // Get current user for activity logging
+    const currentUser = authService.getCurrentUser();
+
     // Create MCU record with minimal required data
     const mcuData = {
       employeeId: employeeId,
@@ -357,18 +360,17 @@ window.handleAddMCU = async function(event) {
       mcuDate: mcuDate,
       initialResult: initialResult,
       initialNotes: initialNotes || null,
-      // Required fields with default/minimal values
-      bmi: 0,
-      bloodPressure: '-',
-      respiratoryRate: '-',
-      pulse: '-',
-      temperature: '-',
-      chestCircumference: 0,
-      status: 'New'
+      // Required fields with default/minimal values (will be null/empty)
+      bmi: null,
+      bloodPressure: null,
+      respiratoryRate: null,
+      pulse: null,
+      temperature: null,
+      chestCircumference: null
     };
 
-    // Save to database
-    await mcuService.create(mcuData);
+    // Save to database with current user
+    await mcuService.create(mcuData, currentUser);
 
     unifiedLoading.hide();
     showToast('MCU berhasil disimpan', 'success');
@@ -382,6 +384,7 @@ window.handleAddMCU = async function(event) {
   } catch (error) {
     unifiedLoading.hide();
     showToast('Error menyimpan MCU: ' + error.message, 'error');
+    console.error('MCU Save Error:', error);
   }
 };
 
