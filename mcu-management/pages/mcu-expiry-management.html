@@ -234,6 +234,75 @@
         </main>
     </div>
 
+    <!-- Modal: Tambah MCU -->
+    <div id="add-mcu-modal" class="modal-overlay hidden">
+        <div class="modal max-w-4xl">
+            <div class="modal-header">
+                <h3 class="text-lg font-semibold">Tambah MCU Baru</h3>
+                <button onclick="window.closeAddMCUModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Employee Summary -->
+                <div class="bg-blue-50 rounded-lg p-4 mb-6">
+                    <h4 class="font-semibold text-gray-900 mb-3">Data Karyawan</h4>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div><span class="text-gray-600">Nama:</span> <span class="font-medium" id="mcu-emp-name">-</span></div>
+                        <div><span class="text-gray-600">ID:</span> <span class="font-medium" id="mcu-emp-id">-</span></div>
+                        <div><span class="text-gray-600">Jabatan:</span> <span class="font-medium" id="mcu-emp-job">-</span></div>
+                        <div><span class="text-gray-600">Departemen:</span> <span class="font-medium" id="mcu-emp-dept">-</span></div>
+                    </div>
+                </div>
+
+                <form id="mcu-form" onsubmit="window.handleAddMCU(event)">
+                    <input type="hidden" id="mcu-employee-id" />
+
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="label">Jenis MCU <span class="text-red-500">*</span></label>
+                            <select id="mcu-type" class="input" required>
+                                <option value="">Pilih...</option>
+                                <option value="Pre-Employee">Pre-Employee</option>
+                                <option value="Annual">Annual</option>
+                                <option value="Khusus">Khusus</option>
+                                <option value="Final">Final</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Tanggal MCU <span class="text-red-500">*</span></label>
+                            <input type="date" id="mcu-date" class="input" required />
+                        </div>
+                    </div>
+
+                    <h4 class="font-semibold text-gray-900 mb-3 mt-6">Hasil Pemeriksaan</h4>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="label">Hasil Awal <span class="text-red-500">*</span></label>
+                            <select id="mcu-initial-result" class="input" required>
+                                <option value="">Pilih...</option>
+                                <option value="Fit">Fit</option>
+                                <option value="Fit With Note">Fit With Note</option>
+                                <option value="Follow-Up">Follow-Up</option>
+                                <option value="Temporary Unfit">Temporary Unfit</option>
+                                <option value="Unfit">Unfit</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Catatan Awal</label>
+                            <input type="text" id="mcu-initial-notes" class="input" placeholder="Catatan hasil awal..." />
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" onclick="window.closeAddMCUModal()" class="btn btn-secondary">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan MCU</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="../js/sidebar-manager.js"></script>
     <script type="module" defer src="../js/pages/mcu-expiry-management.js"></script>

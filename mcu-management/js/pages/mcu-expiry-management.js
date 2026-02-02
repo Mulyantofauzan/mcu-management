@@ -6,6 +6,10 @@
 import { authService } from '../services/authService.js';
 import { initSidebar } from '../utils/sidebarInit.js';
 import { mcuExpiryService } from '../services/mcuExpiryService.js';
+import { mcuService } from '../services/mcuService.js';
+import { employeeService } from '../services/employeeService.js';
+import { showToast } from '../utils/uiHelpers.js';
+import { unifiedLoading } from '../utils/unifiedLoadingManager.js';
 
 class MCUExpiryManagementPage {
   constructor() {
@@ -285,12 +289,100 @@ window.nextPage = function() {
 };
 
 window.openAddMCUModal = function(employeeId, employeeName) {
-  // Redirect to tambah-karyawan page with pre-filled employee
-  // Store the employee ID in sessionStorage for the tambah-karyawan page to use
-  sessionStorage.setItem('prefilledEmployeeId', employeeId);
-  sessionStorage.setItem('prefilledEmployeeName', employeeName);
-  // Redirect to tambah-karyawan page which will open the Add MCU modal
-  window.location.href = '../pages/tambah-karyawan.html?openMCUModal=true';
+  // Find employee data from the filtered list
+  const employee = page.allExpiryData.find(emp => emp.employee_id === employeeId);
+
+  if (!employee) {
+    showToast('Data karyawan tidak ditemukan', 'error');
+    return;
+  }
+
+  // Populate employee info in the modal
+  document.getElementById('mcu-employee-id').value = employeeId;
+  document.getElementById('mcu-emp-name').textContent = employeeName;
+  document.getElementById('mcu-emp-id').textContent = employeeId;
+  document.getElementById('mcu-emp-job').textContent = employee.job_title || '-';
+  document.getElementById('mcu-emp-dept').textContent = employee.department || '-';
+
+  // Reset form fields
+  document.getElementById('mcu-form').reset();
+  document.getElementById('mcu-type').value = '';
+  document.getElementById('mcu-date').value = '';
+  document.getElementById('mcu-initial-result').value = '';
+  document.getElementById('mcu-initial-notes').value = '';
+
+  // Set today's date as default
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('mcu-date').value = today;
+
+  // Show modal
+  const modal = document.getElementById('add-mcu-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+};
+
+window.closeAddMCUModal = function() {
+  const modal = document.getElementById('add-mcu-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+  }
+};
+
+window.handleAddMCU = async function(event) {
+  event.preventDefault();
+
+  try {
+    unifiedLoading.show('Menyimpan MCU...');
+
+    const employeeId = document.getElementById('mcu-employee-id').value;
+    const mcuType = document.getElementById('mcu-type').value;
+    const mcuDate = document.getElementById('mcu-date').value;
+    const initialResult = document.getElementById('mcu-initial-result').value;
+    const initialNotes = document.getElementById('mcu-initial-notes').value;
+
+    // Validate required fields
+    if (!employeeId || !mcuType || !mcuDate || !initialResult) {
+      unifiedLoading.hide();
+      showToast('Harap isi semua field yang wajib diisi', 'warning');
+      return;
+    }
+
+    // Create MCU record with minimal required data
+    const mcuData = {
+      employeeId: employeeId,
+      mcuType: mcuType,
+      mcuDate: mcuDate,
+      initialResult: initialResult,
+      initialNotes: initialNotes || null,
+      // Required fields with default/minimal values
+      bmi: 0,
+      bloodPressure: '-',
+      respiratoryRate: '-',
+      pulse: '-',
+      temperature: '-',
+      chestCircumference: 0,
+      status: 'New'
+    };
+
+    // Save to database
+    await mcuService.create(mcuData);
+
+    unifiedLoading.hide();
+    showToast('MCU berhasil disimpan', 'success');
+
+    // Close modal
+    window.closeAddMCUModal();
+
+    // Reload data to refresh the table
+    await page.loadExpiryData();
+
+  } catch (error) {
+    unifiedLoading.hide();
+    showToast('Error menyimpan MCU: ' + error.message, 'error');
+  }
 };
 
 window.handleFilterChange = function() {
