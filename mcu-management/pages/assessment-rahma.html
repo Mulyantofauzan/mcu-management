@@ -40,6 +40,12 @@
         #unified-loading-overlay {
             opacity: 1 !important;
             visibility: visible !important;
+            display: flex !important;
+        }
+
+        /* Hide loading overlay when body is initialized */
+        body.initialized #unified-loading-overlay {
+            display: none !important;
         }
 
         /* Body content hidden initially */
