@@ -30,27 +30,40 @@
         body {
             opacity: 0;
             transition: opacity 0.2s ease-in;
+            background-color: white;
         }
 
         body.initialized {
             opacity: 1;
         }
 
-        /* ✅ Loading overlay must ALWAYS be visible, regardless of body opacity */
+        /* ✅ Loading overlay ALWAYS visible on top, with z-index priority */
         #unified-loading-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            z-index: 9999 !important;
             opacity: 1 !important;
             visibility: visible !important;
             display: flex !important;
+            background-color: rgba(255, 255, 255, 0.8) !important;
+            backdrop-filter: blur(4px) !important;
+            align-items: center !important;
+            justify-content: center !important;
         }
 
         /* Hide loading overlay when body is initialized */
         body.initialized #unified-loading-overlay {
             display: none !important;
+            visibility: hidden !important;
         }
 
-        /* Body content hidden initially */
+        /* Initially hide all content except loading overlay */
         body:not(.initialized) > *:not(#unified-loading-overlay) {
             opacity: 0;
+            pointer-events: none;
         }
 
         /* Safari fallback: show content after 5 seconds even if JS fails */
@@ -180,14 +193,13 @@
                 if (document.readyState === 'loading') {
                     document.addEventListener('DOMContentLoaded', async () => {
                         await initAssessmentRahmaDAshboard();
-                        document.body.classList.add('initialized');
                     });
                 } else {
                     // DOM already loaded
                     await initAssessmentRahmaDAshboard();
-                    document.body.classList.add('initialized');
                 }
             } catch (error) {
+                console.error('Error initializing:', error);
             }
         }
 
