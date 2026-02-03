@@ -484,9 +484,51 @@ function applyFilters() {
     });
 
     currentPage = 1;
+    updateResumeSummary();
     updateRiskCounters();
     renderTable();
     renderPagination();
+}
+
+/**
+ * Update resume summary (based on ALL data, not filtered)
+ */
+function updateResumeSummary() {
+    const counts = { 1: 0, 2: 0, 3: 0, 4: 0 };
+    const total = cardiovascularData.length;
+
+    cardiovascularData.forEach(item => {
+        if (item.riskLevel) {
+            counts[item.riskLevel]++;
+        }
+    });
+
+    // Calculate percentages
+    const getPercentage = (count) => {
+        if (total === 0) return '0%';
+        return `${((count / total) * 100).toFixed(1)}%`;
+    };
+
+    // Update resume summary cards
+    const lowResumeEl = document.getElementById('resume-low');
+    if (lowResumeEl) lowResumeEl.textContent = counts[1];
+    const lowResumePercentEl = document.getElementById('resume-low-percent');
+    if (lowResumePercentEl) lowResumePercentEl.textContent = getPercentage(counts[1]);
+
+    const mediumResumeEl = document.getElementById('resume-medium');
+    if (mediumResumeEl) mediumResumeEl.textContent = counts[2];
+    const mediumResumePercentEl = document.getElementById('resume-medium-percent');
+    if (mediumResumePercentEl) mediumResumePercentEl.textContent = getPercentage(counts[2]);
+
+    const highResumeEl = document.getElementById('resume-high');
+    if (highResumeEl) highResumeEl.textContent = counts[3];
+    const highResumePercentEl = document.getElementById('resume-high-percent');
+    if (highResumePercentEl) highResumePercentEl.textContent = getPercentage(counts[3]);
+
+    const criticalResumeEl = document.getElementById('resume-critical');
+    if (criticalResumeEl) criticalResumeEl.textContent = counts[4];
+    const criticalResumePercentEl = document.getElementById('resume-critical-percent');
+    if (criticalResumePercentEl) criticalResumePercentEl.textContent = getPercentage(counts[4]);
 }
 
 /**
@@ -792,6 +834,41 @@ function renderDashboard() {
             <p class="text-gray-600 mt-2">Penilaian risiko cardiovascular berdasarkan kriteria Jakarta Cardiovascular</p>
         </div>
 
+        <!-- Summary Resume -->
+        <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg shadow-sm border border-blue-200 p-6 mb-8">
+            <h3 class="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wide">Resume - Distribusi Risk Level</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white rounded-lg p-4 border-l-4 border-green-500 shadow-sm">
+                    <p class="text-gray-600 text-xs font-medium mb-1">Low Risk</p>
+                    <p class="text-xl font-bold text-green-600" id="resume-low">0</p>
+                    <p class="text-xs text-gray-500 mt-1">
+                        <span id="resume-low-percent">0%</span>
+                    </p>
+                </div>
+                <div class="bg-white rounded-lg p-4 border-l-4 border-yellow-500 shadow-sm">
+                    <p class="text-gray-600 text-xs font-medium mb-1">Medium Risk</p>
+                    <p class="text-xl font-bold text-yellow-600" id="resume-medium">0</p>
+                    <p class="text-xs text-gray-500 mt-1">
+                        <span id="resume-medium-percent">0%</span>
+                    </p>
+                </div>
+                <div class="bg-white rounded-lg p-4 border-l-4 border-red-500 shadow-sm">
+                    <p class="text-gray-600 text-xs font-medium mb-1">High Risk</p>
+                    <p class="text-xl font-bold text-red-600" id="resume-high">0</p>
+                    <p class="text-xs text-gray-500 mt-1">
+                        <span id="resume-high-percent">0%</span>
+                    </p>
+                </div>
+                <div class="bg-white rounded-lg p-4 border-l-4 border-purple-500 shadow-sm">
+                    <p class="text-gray-600 text-xs font-medium mb-1">Critical</p>
+                    <p class="text-xl font-bold text-purple-600" id="resume-critical">0</p>
+                    <p class="text-xs text-gray-500 mt-1">
+                        <span id="resume-critical-percent">0%</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
         <!-- Risk Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div class="bg-white rounded-lg border-l-4 border-green-500 p-6 shadow">
@@ -987,6 +1064,13 @@ export async function initAssessmentRahmaDAshboard() {
 
         // Render dashboard
         renderDashboard();
+
+        // Update resume summary and risk counters
+        updateResumeSummary();
+        updateRiskCounters();
+
+        // Setup filters after render
+        setupFilters();
 
         document.body.classList.add('initialized');
     } catch (error) {
