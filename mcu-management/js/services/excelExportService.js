@@ -106,7 +106,7 @@ function addResumeSummarySheet(workbook, allData) {
     });
 
     // Set print options
-    summarySheet.pageSetup = { paperSize: summarySheet.PAPERSIZE.A4, orientation: 'portrait' };
+    summarySheet.pageSetup = { paperSize: 9, orientation: 'portrait' }; // 9 = A4
 }
 
 /**
