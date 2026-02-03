@@ -5,11 +5,117 @@
  */
 
 /**
+ * Add resume/summary sheet to workbook
+ * @param {Workbook} workbook - ExcelJS workbook
+ * @param {array} allData - All cardiovascular data
+ */
+function addResumeSummarySheet(workbook, allData) {
+    const ExcelJSLib = window.ExcelJS;
+    const summarySheet = workbook.addWorksheet('Resume', { index: 0 });
+
+    // Set column widths
+    summarySheet.columns = [
+        { width: 25 },
+        { width: 15 },
+        { width: 15 }
+    ];
+
+    // Add title
+    const titleRow = summarySheet.addRow(['Jakarta Cardiovascular Score - Resume']);
+    titleRow.font = { bold: true, size: 14, color: { argb: 'FF1F2937' } };
+    titleRow.alignment = { horizontal: 'left', vertical: 'center' };
+
+    // Add empty row
+    summarySheet.addRow([]);
+
+    // Add date
+    const dateRow = summarySheet.addRow([`Generated: ${new Date().toLocaleDateString('id-ID')}`]);
+    dateRow.font = { size: 10, color: { argb: 'FF6B7280' } };
+
+    // Add empty row
+    summarySheet.addRow([]);
+
+    // Calculate risk distribution
+    const counts = { 1: 0, 2: 0, 3: 0, 4: 0 };
+    const total = allData.length;
+
+    allData.forEach(item => {
+        if (item.riskLevel) {
+            counts[item.riskLevel]++;
+        }
+    });
+
+    // Add header
+    const headerRow = summarySheet.addRow(['Risk Level', 'Count', 'Percentage']);
+    headerRow.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+    headerRow.eachCell((cell) => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF374151' } };
+        cell.alignment = { horizontal: 'center', vertical: 'center' };
+        cell.border = {
+            top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
+        };
+    });
+
+    // Add data rows with colors
+    const riskLevels = [
+        { label: 'Low Risk', level: 1, color: 'FF22C55E' },
+        { label: 'Medium Risk', level: 2, color: 'FFEAB308' },
+        { label: 'High Risk', level: 3, color: 'FFEF4444' },
+        { label: 'Critical', level: 4, color: 'FFA855F7' }
+    ];
+
+    riskLevels.forEach(({ label, level, color }) => {
+        const count = counts[level];
+        const percentage = total === 0 ? '0%' : `${((count / total) * 100).toFixed(1)}%`;
+
+        const row = summarySheet.addRow([label, count, percentage]);
+        row.eachCell((cell, colNum) => {
+            if (colNum === 1) {
+                cell.font = { bold: true, size: 10, color: { argb: 'FF1F2937' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+            } else {
+                cell.font = { size: 10, color: { argb: 'FF1F2937' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
+                cell.alignment = { horizontal: 'center', vertical: 'center' };
+            }
+            cell.border = {
+                top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+                left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+                bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+                right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
+            };
+        });
+    });
+
+    // Add total row
+    summarySheet.addRow([]);
+    const totalRow = summarySheet.addRow(['TOTAL', total, '100%']);
+    totalRow.font = { bold: true, size: 10, color: { argb: 'FFFFFFFF' } };
+    totalRow.eachCell((cell) => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } };
+        cell.alignment = { horizontal: 'center', vertical: 'center' };
+        cell.border = {
+            top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
+        };
+    });
+
+    // Set print options
+    summarySheet.pageSetup = { paperSize: summarySheet.PAPERSIZE.A4, orientation: 'portrait' };
+}
+
+/**
  * Export cardiovascular assessment data to Excel
- * @param {array} data - Array of assessment data
+ * @param {array} data - Array of assessment data (filtered data)
+ * @param {array} allData - Array of all assessment data (for resume calculations)
  * @returns {Promise} Promise that resolves when export is complete
  */
-export async function exportToExcel(data) {
+export async function exportToExcel(data, allData = null) {
     try {
         // Wait for ExcelJS to be available (loaded from CDN)
         if (typeof ExcelJS === 'undefined') {
@@ -18,6 +124,12 @@ export async function exportToExcel(data) {
 
         const ExcelJSLib = window.ExcelJS;
         const workbook = new ExcelJSLib.Workbook();
+
+        // Add resume/summary sheet if allData is provided
+        if (allData && allData.length > 0) {
+            addResumeSummarySheet(workbook, allData);
+        }
+
         const worksheet = workbook.addWorksheet('Jakarta Cardiovascular');
 
         // Set column widths

@@ -484,7 +484,6 @@ function applyFilters() {
     });
 
     currentPage = 1;
-    updateResumeSummary();
     updateRiskCounters();
     renderTable();
     renderPagination();
@@ -834,41 +833,6 @@ function renderDashboard() {
             <p class="text-gray-600 mt-2">Penilaian risiko cardiovascular berdasarkan kriteria Jakarta Cardiovascular</p>
         </div>
 
-        <!-- Summary Resume -->
-        <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg shadow-sm border border-blue-200 p-6 mb-8">
-            <h3 class="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wide">Resume - Distribusi Risk Level</h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-white rounded-lg p-4 border-l-4 border-green-500 shadow-sm">
-                    <p class="text-gray-600 text-xs font-medium mb-1">Low Risk</p>
-                    <p class="text-xl font-bold text-green-600" id="resume-low">0</p>
-                    <p class="text-xs text-gray-500 mt-1">
-                        <span id="resume-low-percent">0%</span>
-                    </p>
-                </div>
-                <div class="bg-white rounded-lg p-4 border-l-4 border-yellow-500 shadow-sm">
-                    <p class="text-gray-600 text-xs font-medium mb-1">Medium Risk</p>
-                    <p class="text-xl font-bold text-yellow-600" id="resume-medium">0</p>
-                    <p class="text-xs text-gray-500 mt-1">
-                        <span id="resume-medium-percent">0%</span>
-                    </p>
-                </div>
-                <div class="bg-white rounded-lg p-4 border-l-4 border-red-500 shadow-sm">
-                    <p class="text-gray-600 text-xs font-medium mb-1">High Risk</p>
-                    <p class="text-xl font-bold text-red-600" id="resume-high">0</p>
-                    <p class="text-xs text-gray-500 mt-1">
-                        <span id="resume-high-percent">0%</span>
-                    </p>
-                </div>
-                <div class="bg-white rounded-lg p-4 border-l-4 border-purple-500 shadow-sm">
-                    <p class="text-gray-600 text-xs font-medium mb-1">Critical</p>
-                    <p class="text-xl font-bold text-purple-600" id="resume-critical">0</p>
-                    <p class="text-xs text-gray-500 mt-1">
-                        <span id="resume-critical-percent">0%</span>
-                    </p>
-                </div>
-            </div>
-        </div>
-
         <!-- Risk Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div class="bg-white rounded-lg border-l-4 border-green-500 p-6 shadow">
@@ -1065,8 +1029,7 @@ export async function initAssessmentRahmaDAshboard() {
         // Render dashboard
         renderDashboard();
 
-        // Update resume summary and risk counters
-        updateResumeSummary();
+        // Update risk counters
         updateRiskCounters();
 
         // Setup filters after render
@@ -1092,8 +1055,8 @@ window.handleExportExcel = async function() {
         btn.style.backgroundColor = '#059669';
         btn.innerHTML = '<svg style="width: 1rem; height: 1rem; animation: spin 1s linear infinite;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><span>Sedang export...</span>';
 
-        // Export all data (use filteredData or cardiovascularData based on current filters)
-        await exportToExcel(filteredData);
+        // Export filtered data with resume summary based on all data
+        await exportToExcel(filteredData, cardiovascularData);
 
         showToast('Data berhasil diexport ke Excel', 'success');
     } catch (error) {
