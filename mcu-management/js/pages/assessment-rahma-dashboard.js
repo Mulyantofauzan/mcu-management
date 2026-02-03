@@ -408,9 +408,9 @@ async function calculateAllAssessments() {
             });
 
             // Update progress
-            updateLoadingProgress(((i + 1) / totalEmployees) * 100);
+            unifiedLoading.updateProgress(50 + ((i + 1) / totalEmployees) * 40);
         } catch (error) {
-            updateLoadingProgress(((i + 1) / totalEmployees) * 100);
+            unifiedLoading.updateProgress(50 + ((i + 1) / totalEmployees) * 40);
         }
     }
 
