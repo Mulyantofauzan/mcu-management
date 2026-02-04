@@ -3,10 +3,56 @@
  * Handles user authentication and session management
  */
 
-import bcrypt from 'bcryptjs';
 import { database } from './database.js';
 import { generateUserId } from '../utils/idGenerator.js';
 import { getCurrentTimestamp } from '../utils/dateHelpers.js';
+
+/**
+ * Simple password hashing using Web Crypto API
+ * Creates a salted hash suitable for password storage
+ */
+async function hashPassword(password) {
+  // Generate random salt
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+
+  // Encode password as UTF-8
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password + Array.from(salt).map(b => String.fromCharCode(b)).join(''));
+
+  // Hash using SHA-256
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+
+  // Combine salt and hash
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const saltArray = Array.from(salt);
+  const combined = saltArray.concat(hashArray);
+
+  // Convert to base64 for storage
+  return btoa(String.fromCharCode(...combined));
+}
+
+/**
+ * Verify password against stored hash
+ */
+async function verifyPassword(password, storedHash) {
+  try {
+    // Decode stored hash from base64
+    const combined = Uint8Array.from(atob(storedHash), c => c.charCodeAt(0));
+    const salt = combined.slice(0, 16);
+
+    // Hash the provided password with the same salt
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password + Array.from(salt).map(b => String.fromCharCode(b)).join(''));
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+
+    // Compare hashes
+    const storedHashArray = Array.from(combined.slice(16));
+    return hashArray.every((val, idx) => val === storedHashArray[idx]);
+  } catch (error) {
+    return false;
+  }
+}
 
 class AuthService {
   constructor() {
@@ -29,8 +75,8 @@ class AuthService {
   }
 
   async createUser(userData) {
-    // Hash password using bcryptjs (secure)
-    const passwordHash = await bcrypt.hash(userData.password, 10);
+    // Hash password using Web Crypto API with salt
+    const passwordHash = await hashPassword(userData.password);
 
     const user = {
       userId: generateUserId(),
@@ -57,8 +103,8 @@ class AuthService {
       throw new Error('Username tidak ditemukan atau akun tidak aktif');
     }
 
-    // Verify password using bcryptjs
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    // Verify password using Web Crypto API
+    const isPasswordValid = await verifyPassword(password, user.passwordHash);
     if (!isPasswordValid) {
       throw new Error('Password salah');
     }
@@ -140,9 +186,9 @@ class AuthService {
   async updateUser(userId, updates) {
     const updateData = { ...updates };
 
-    // If password is being updated, hash it using bcryptjs
+    // If password is being updated, hash it using Web Crypto API
     if (updates.password) {
-      updateData.passwordHash = await bcrypt.hash(updates.password, 10);
+      updateData.passwordHash = await hashPassword(updates.password);
       delete updateData.password;
     }
 
