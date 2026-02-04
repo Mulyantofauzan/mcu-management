@@ -2172,8 +2172,67 @@ window.handleEditMCU = async function(event) {
 
         }
 
+        // ✅ Get existing MCU to compare and track field changes
+        const existingMCU = await mcuService.getById(mcuId);
+
         // ✅ Handle medical and family history updates
         let historyChanges = []; // Track changes for mcuChanges table
+
+        // ✅ Track MCU field changes (only if value actually changed)
+        const fieldLabels = {
+            'mcuType': 'Jenis MCU',
+            'mcuDate': 'Tanggal MCU',
+            'bmi': 'BMI',
+            'bloodPressure': 'Tekanan Darah',
+            'respiratoryRate': 'RR (Frekuensi Nafas)',
+            'pulse': 'Nadi',
+            'temperature': 'Suhu',
+            'chestCircumference': 'Lingkar Perut',
+            'visionDistantUnaideLeft': 'Penglihatan Jauh Tanpa Koreksi (Kiri)',
+            'visionDistantUnaideRight': 'Penglihatan Jauh Tanpa Koreksi (Kanan)',
+            'visionDistantSpectaclesLeft': 'Penglihatan Jauh Dengan Kacamata (Kiri)',
+            'visionDistantSpectaclesRight': 'Penglihatan Jauh Dengan Kacamata (Kanan)',
+            'visionNearUnaideLeft': 'Penglihatan Dekat Tanpa Koreksi (Kiri)',
+            'visionNearUnaideRight': 'Penglihatan Dekat Tanpa Koreksi (Kanan)',
+            'visionNearSpectaclesLeft': 'Penglihatan Dekat Dengan Kacamata (Kiri)',
+            'visionNearSpectaclesRight': 'Penglihatan Dekat Dengan Kacamata (Kanan)',
+            'audiometry': 'Audiometri',
+            'spirometry': 'Spirometri',
+            'xray': 'X-Ray',
+            'ekg': 'EKG',
+            'treadmill': 'Treadmill',
+            'hbsag': 'HBsAg',
+            'napza': 'NAPZA',
+            'colorblind': 'Buta Warna',
+            'smokingStatus': 'Status Merokok',
+            'exerciseFrequency': 'Frekuensi Olahraga',
+            'doctor': 'Dokter',
+            'recipient': 'Penerima Rujukan',
+            'keluhanUtama': 'Keluhan Utama',
+            'diagnosisKerja': 'Diagnosis Kerja',
+            'alasanRujuk': 'Alasan Rujuk',
+            'initialResult': 'Hasil Awal MCU',
+            'initialNotes': 'Catatan Awal MCU',
+            'finalResult': 'Hasil Akhir MCU',
+            'finalNotes': 'Catatan Akhir MCU'
+        };
+
+        // Compare each field and record changes
+        for (const [field, label] of Object.entries(fieldLabels)) {
+            const oldValue = existingMCU[field];
+            const newValue = updateData[field] !== undefined ? updateData[field] : (field.startsWith('edit-') ? null : oldValue);
+
+            // Only record if value actually changed
+            if (oldValue !== newValue && newValue !== undefined && newValue !== null) {
+                historyChanges.push({
+                    fieldLabel: label,
+                    fieldChanged: field,
+                    oldValue: oldValue !== null && oldValue !== undefined ? String(oldValue) : '-',
+                    newValue: newValue !== null && newValue !== undefined ? String(newValue) : '-'
+                });
+            }
+        }
+
         try {
             // Collect updated histories from EDIT form FIRST (before deleting old ones)
             const medicalHistories = getEditMedicalHistoryData();
