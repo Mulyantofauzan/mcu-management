@@ -727,17 +727,27 @@ window.openMCUUpdateModal = async function(mcuId) {
     if (finalResultSection) {
       if (currentMCU.initialResult === 'Follow-Up' || currentMCU.finalResult) {
         finalResultSection.classList.remove('hidden');
+
+        // Populate readonly display fields from pendingChanges (modal sebelumnya)
+        // If user just came from Update Follow-Up modal, show data they entered
+        const displayFinalResultEl = document.getElementById('display-final-result');
+        const displayFinalNotesEl = document.getElementById('display-final-notes');
+
+        if (displayFinalResultEl && displayFinalNotesEl) {
+          if (pendingChanges.followUpData) {
+            // Use data from modal sebelumnya (Update Follow-Up)
+            displayFinalResultEl.textContent = pendingChanges.followUpData.finalResult || '-';
+            displayFinalNotesEl.textContent = pendingChanges.followUpData.finalNotes || '-';
+          } else {
+            // Fallback: gunakan data dari database jika sudah ada
+            displayFinalResultEl.textContent = currentMCU.finalResult || '-';
+            displayFinalNotesEl.textContent = currentMCU.finalNotes || '-';
+          }
+        }
       } else {
         finalResultSection.classList.add('hidden');
       }
     }
-
-    // Set Final Result and Notes if applicable
-    const finalResultField = document.getElementById('update-final-result');
-    const finalNotesField = document.getElementById('update-final-notes');
-
-    if (finalResultField) finalResultField.value = currentMCU.finalResult || '';
-    if (finalNotesField) finalNotesField.value = currentMCU.finalNotes || '';
 
     // Populate all form fields with values from database (like edit modal)
     const fieldsToPopulate = {
