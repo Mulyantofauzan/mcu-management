@@ -286,17 +286,16 @@
                 </button>
             </div>
             <div class="modal-body">
-                <!-- Employee Info -->
-                <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div><span class="text-gray-500">Nama:</span> <span class="font-medium" id="update-emp-name">-</span></div>
-                        <div><span class="text-gray-500">ID:</span> <span class="font-medium" id="update-emp-id">-</span></div>
-                        <div><span class="text-gray-500">Departemen:</span> <span class="font-medium" id="update-emp-dept">-</span></div>
-                        <div><span class="text-gray-500">Jabatan:</span> <span class="font-medium" id="update-emp-job">-</span></div>
+                <!-- Employee Summary -->
+                <div class="bg-blue-50 rounded-lg p-4 mb-6">
+                    <h4 class="font-semibold text-gray-900 mb-3">Data Karyawan</h4>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div><span class="text-gray-600">Nama:</span> <span class="font-medium" id="update-emp-name">-</span></div>
+                        <div><span class="text-gray-600">ID:</span> <span class="font-medium" id="update-emp-id">-</span></div>
+                        <div><span class="text-gray-600">Jabatan:</span> <span class="font-medium" id="update-emp-job">-</span></div>
+                        <div><span class="text-gray-600">Departemen:</span> <span class="font-medium" id="update-emp-dept">-</span></div>
                     </div>
                 </div>
-
-                <p class="text-sm text-gray-600 mb-4">📝 Silakan update detail pemeriksaan MCU. Nilai di bawah menunjukkan nilai sebelumnya.</p>
 
                 <form id="mcu-update-form" onsubmit="window.handleDetailMCUUpdate(event)">
                     <input type="hidden" id="update-mcu-id" />
@@ -326,10 +325,56 @@
                         <div><label class="label">Nadi <span class="text-red-500">*</span></label><input type="text" id="update-pulse" class="input" placeholder="Contoh: 80" required /></div>
                         <div><label class="label">Suhu <span class="text-red-500">*</span></label><input type="text" id="update-temp" class="input" placeholder="Contoh: 36.5" required /></div>
                         <div><label class="label">Lingkar Perut <span class="text-red-500">*</span></label><input type="number" step="0.1" id="update-chest-circumference" class="input" placeholder="Contoh: 85.5" required /></div>
-                        <div><label class="label">Penglihatan <span class="text-red-500">*</span></label><input type="text" id="update-vision" class="input" placeholder="Contoh: 6/6" required /></div>
-                        <div><label class="label">Audiometri <span class="text-red-500">*</span></label><input type="text" id="update-audio" class="input" placeholder="Contoh: Normal / Gangguan ringan" required /></div>
-                        <div><label class="label">Spirometri <span class="text-red-500">*</span></label><input type="text" id="update-spiro" class="input" placeholder="Contoh: Normal / Restriktif / Obstruktif" required /></div>
-                        <div><label class="label">HBsAg <span class="text-red-500">*</span></label>
+                    </div>
+
+                    <!-- Lifestyle Information -->
+                    <div class="grid grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label class="label">Status Merokok <span class="text-red-500">*</span></label>
+                            <select id="update-smoking-status" class="input" required>
+                                <option value="">Pilih...</option>
+                                <option value="Tidak Merokok">Tidak Merokok</option>
+                                <option value="Mantan Perokok">Mantan Perokok</option>
+                                <option value="Perokok Aktif">Perokok Aktif</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Frekuensi Olahraga <span class="text-red-500">*</span></label>
+                            <select id="update-exercise-frequency" class="input" required>
+                                <option value="">Pilih...</option>
+                                <option value="Tidak Pernah">Tidak Pernah</option>
+                                <option value=">2x Seminggu">>2x Seminggu</option>
+                                <option value="1-2x Seminggu">1-2x Seminggu</option>
+                                <option value="1-2x Sebulan">1-2x Sebulan</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Other Examinations -->
+                    <div class="grid grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label class="label">Audiometri <span class="text-red-500">*</span></label>
+                            <select id="update-audio" class="input" required onchange="handleOtherOptionChange(this, 'update-audio-other')">
+                                <option value="">Pilih...</option>
+                                <option value="Normal">Normal</option>
+                                <option value="Gangguan Ringan">Gangguan Ringan</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                            <input type="text" id="update-audio-other" class="input mt-1 hidden" placeholder="Sebutkan hasil lainnya..." />
+                        </div>
+                        <div>
+                            <label class="label">Spirometri <span class="text-red-500">*</span></label>
+                            <select id="update-spiro" class="input" required onchange="handleOtherOptionChange(this, 'update-spiro-other')">
+                                <option value="">Pilih...</option>
+                                <option value="Normal">Normal</option>
+                                <option value="Restriktif">Restriktif</option>
+                                <option value="Obstruktif">Obstruktif</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                            <input type="text" id="update-spiro-other" class="input mt-1 hidden" placeholder="Sebutkan hasil lainnya..." />
+                        </div>
+                        <div>
+                            <label class="label">HBsAg <span class="text-red-500">*</span></label>
                             <select id="update-hbsag" class="input" required>
                                 <option value="">Pilih: Reaktif / Non-reaktif</option>
                                 <option value="Negatif">Negatif</option>
@@ -361,12 +406,55 @@
                     </div>
 
                     <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Penunjang</h4>
-                    <div class="grid grid-cols-1 gap-4 mb-4">
-                        <div><label class="label">X-Ray <span class="text-red-500">*</span></label><textarea id="update-xray" class="input" rows="2" placeholder="Contoh: Normal / Infiltrat paru kanan / Pembesaran jantung" required></textarea></div>
-                        <div><label class="label">EKG <span class="text-red-500">*</span></label><textarea id="update-ekg" class="input" rows="2" placeholder="Contoh: Irama sinus normal / Takikardi / Aritmia" required></textarea></div>
-                        <div><label class="label">Treadmill <span class="text-red-500">*</span></label><textarea id="update-treadmill" class="input" rows="2" placeholder="Contoh: Normal / Tanda iskemia ringan" required></textarea></div>
-                        <div><label class="label">NAPZA <span class="text-red-500">*</span></label><input type="text" id="update-napza" class="input" placeholder="Contoh: Negatif / Positif amfetamin" required /></div>
-                        <div><label class="label">Buta Warna <span class="text-red-500">*</span></label><input type="text" id="update-colorblind" class="input" placeholder="Contoh: Normal / Merah–Hijau / Total" required /></div>
+                    <div class="grid grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label class="label">X-Ray <span class="text-red-500">*</span></label>
+                            <select id="update-xray" class="input" required onchange="handleOtherOptionChange(this, 'update-xray-other')">
+                                <option value="">Pilih...</option>
+                                <option value="Normal">Normal</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                            <textarea id="update-xray-other" class="input mt-1 hidden" rows="2" placeholder="Sebutkan hasil lainnya..."></textarea>
+                        </div>
+                        <div>
+                            <label class="label">EKG <span class="text-red-500">*</span></label>
+                            <select id="update-ekg" class="input" required onchange="handleOtherOptionChange(this, 'update-ekg-other')">
+                                <option value="">Pilih...</option>
+                                <option value="Normal">Normal</option>
+                                <option value="Normal Resting ECG">Normal Resting ECG</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                            <textarea id="update-ekg-other" class="input mt-1 hidden" rows="2" placeholder="Sebutkan hasil lainnya..."></textarea>
+                        </div>
+                        <div>
+                            <label class="label">Treadmill <span class="text-red-500">*</span></label>
+                            <select id="update-treadmill" class="input" required onchange="handleOtherOptionChange(this, 'update-treadmill-other')">
+                                <option value="">Pilih...</option>
+                                <option value="Normal">Normal</option>
+                                <option value="Tidak diperiksa">Tidak diperiksa</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                            <textarea id="update-treadmill-other" class="input mt-1 hidden" rows="2" placeholder="Sebutkan hasil lainnya..."></textarea>
+                        </div>
+                        <div>
+                            <label class="label">NAPZA <span class="text-red-500">*</span></label>
+                            <select id="update-napza" class="input" required onchange="handleOtherOptionChange(this, 'update-napza-other')">
+                                <option value="">Pilih...</option>
+                                <option value="Negatif">Negatif</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                            <input type="text" id="update-napza-other" class="input mt-1 hidden" placeholder="Sebutkan hasil lainnya..." />
+                        </div>
+                        <div>
+                            <label class="label">Buta Warna <span class="text-red-500">*</span></label>
+                            <select id="update-colorblind" class="input" required onchange="handleOtherOptionChange(this, 'update-colorblind-other')">
+                                <option value="">Pilih...</option>
+                                <option value="Normal">Normal</option>
+                                <option value="Buta Warna Parsial">Buta Warna Parsial</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                            <input type="text" id="update-colorblind-other" class="input mt-1 hidden" placeholder="Sebutkan hasil lainnya..." />
+                        </div>
                     </div>
 
                     <!-- Medical History Section (Follow-Up/Read-Only) -->
