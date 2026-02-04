@@ -1821,6 +1821,31 @@ window.editMCU = async function() {
                     }
                 }
 
+                // Fill employee info display (matching Tambah MCU layout)
+                const emp = employees.find(e => e.employeeId === mcu.employeeId);
+                const empJobTitle = (emp?.job_title || '').trim();
+                const job = jobTitles.find(j =>
+                    j.name === empJobTitle ||
+                    (j.name && j.name.trim().toLowerCase() === empJobTitle.toLowerCase())
+                );
+                const empDept = (emp?.department || '').trim();
+                const dept = departments.find(d =>
+                    d.name === empDept ||
+                    (d.name && d.name.trim().toLowerCase() === empDept.toLowerCase())
+                );
+
+                const empNameEl = document.getElementById('edit-mcu-emp-name');
+                if (empNameEl) empNameEl.textContent = emp?.name || '-';
+
+                const empIdEl = document.getElementById('edit-mcu-emp-id');
+                if (empIdEl) empIdEl.textContent = emp?.employeeId || '-';
+
+                const empJobEl = document.getElementById('edit-mcu-emp-job');
+                if (empJobEl) empJobEl.textContent = empJobTitle || '-';
+
+                const empDeptEl = document.getElementById('edit-mcu-emp-dept');
+                if (empDeptEl) empDeptEl.textContent = dept?.name || empDept || '-';
+
                 // Fill edit MCU form with current values
                 document.getElementById('edit-mcu-id').value = mcu.mcuId || '';
                 // ✅ CRITICAL: Store employeeId for use in handleEditMCU (needed for lab results)

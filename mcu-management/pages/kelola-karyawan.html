@@ -523,6 +523,17 @@
                 </button>
             </div>
             <div class="modal-body">
+                <!-- Employee Summary -->
+                <div class="bg-blue-50 rounded-lg p-4 mb-6">
+                    <h4 class="font-semibold text-gray-900 mb-3">Data Karyawan</h4>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div><span class="text-gray-600">Nama:</span> <span class="font-medium" id="edit-mcu-emp-name">-</span></div>
+                        <div><span class="text-gray-600">ID:</span> <span class="font-medium" id="edit-mcu-emp-id">-</span></div>
+                        <div><span class="text-gray-600">Jabatan:</span> <span class="font-medium" id="edit-mcu-emp-job">-</span></div>
+                        <div><span class="text-gray-600">Departemen:</span> <span class="font-medium" id="edit-mcu-emp-dept">-</span></div>
+                    </div>
+                </div>
+
                 <form id="edit-mcu-form" onsubmit="window.handleEditMCU(event)">
                     <input type="hidden" id="edit-mcu-id" />
 
