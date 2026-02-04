@@ -457,6 +457,43 @@
                         </div>
                     </div>
 
+                    <!-- Vision Assessment - Detailed 8-field structure -->
+                    <h4 class="font-semibold text-gray-900 mb-3">Pemeriksaan Penglihatan (Detail) <span class="text-red-500">*</span></h4>
+                    <div class="bg-blue-50 rounded-lg p-4 mb-4 overflow-x-auto">
+                        <table class="w-full text-xs border-collapse">
+                            <thead>
+                                <tr class="border-b-2 border-blue-200">
+                                    <th colspan="1" class="py-2 px-3 text-left font-semibold text-gray-700 border-r border-blue-200">Pemeriksaan</th>
+                                    <th colspan="2" class="py-2 px-3 text-center font-semibold text-gray-700 border-r border-blue-200">Tanpa Koreksi</th>
+                                    <th colspan="2" class="py-2 px-3 text-center font-semibold text-gray-700">Dengan Kacamata</th>
+                                </tr>
+                                <tr class="border-b border-blue-200">
+                                    <th class="py-2 px-3 text-left font-semibold text-gray-700 border-r border-blue-200"></th>
+                                    <th class="py-2 px-3 text-center font-semibold text-gray-700 border-r border-blue-200">Mata Kiri</th>
+                                    <th class="py-2 px-3 text-center font-semibold text-gray-700 border-r border-blue-200">Mata Kanan</th>
+                                    <th class="py-2 px-3 text-center font-semibold text-gray-700 border-r border-blue-200">Mata Kiri</th>
+                                    <th class="py-2 px-3 text-center font-semibold text-gray-700">Mata Kanan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-blue-100">
+                                    <td class="py-2 px-3 text-gray-700 font-medium border-r border-blue-200">Visus Jauh</td>
+                                    <td class="py-2 px-3 border-r border-blue-200"><select id="update-vision-distant-unaided-left" class="input text-xs w-full" onchange="handleOtherOptionChange(this, 'update-vision-distant-unaided-left-other')"><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="update-vision-distant-unaided-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-3 border-r border-blue-200"><select id="update-vision-distant-unaided-right" class="input text-xs w-full" onchange="handleOtherOptionChange(this, 'update-vision-distant-unaided-right-other')"><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="update-vision-distant-unaided-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-3 border-r border-blue-200"><select id="update-vision-distant-spectacles-left" class="input text-xs w-full" onchange="handleOtherOptionChange(this, 'update-vision-distant-spectacles-left-other')"><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="update-vision-distant-spectacles-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-3"><select id="update-vision-distant-spectacles-right" class="input text-xs w-full" onchange="handleOtherOptionChange(this, 'update-vision-distant-spectacles-right-other')"><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="update-vision-distant-spectacles-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2 px-3 text-gray-700 font-medium border-r border-blue-200">Visus Dekat</td>
+                                    <td class="py-2 px-3 border-r border-blue-200"><select id="update-vision-near-unaided-left" class="input text-xs w-full" onchange="handleOtherOptionChange(this, 'update-vision-near-unaided-left-other')"><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="update-vision-near-unaided-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-3 border-r border-blue-200"><select id="update-vision-near-unaided-right" class="input text-xs w-full" onchange="handleOtherOptionChange(this, 'update-vision-near-unaided-right-other')"><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="update-vision-near-unaided-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-3 border-r border-blue-200"><select id="update-vision-near-spectacles-left" class="input text-xs w-full" onchange="handleOtherOptionChange(this, 'update-vision-near-spectacles-left-other')"><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="update-vision-near-spectacles-left-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                    <td class="py-2 px-3"><select id="update-vision-near-spectacles-right" class="input text-xs w-full" onchange="handleOtherOptionChange(this, 'update-vision-near-spectacles-right-other')"><option value="">Pilih</option><option value="">-</option><option value="6/6">6/6</option><option value="6/9">6/9</option><option value="6/12">6/12</option><option value="6/18">6/18</option><option value="6/24">6/24</option><option value="6/36">6/36</option><option value="6/60">6/60</option><option value="Lainnya">Lainnya</option></select><input type="text" id="update-vision-near-spectacles-right-other" class="input mt-1 text-xs hidden w-full" placeholder="Sebutkan..." /></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
                     <!-- Medical History Section (Follow-Up/Read-Only) -->
                     <h4 class="font-semibold text-gray-900 mb-3">Riwayat Kesehatan</h4>
                     <div class="grid grid-cols-2 gap-4 mb-4">
@@ -509,19 +546,19 @@
                         <h4 class="font-semibold text-gray-900 mb-3">Hasil Akhir (Follow-Up)</h4>
                         <div class="grid grid-cols-2 gap-4 mb-4">
                             <div>
-                                <label class="label">Hasil Akhir</label>
-                                <select id="update-final-result" class="input" readonly disabled style="background-color: #f3f4f6; cursor: not-allowed;">
+                                <label class="label">Hasil Akhir <span class="text-red-500">*</span></label>
+                                <select id="update-final-result" class="input" required>
                                     <option value="">Pilih...</option>
                                     <option value="Fit">Fit</option>
-                                    <option value="Fit With Note">Fit With Note</option>
+                                    <option value="Fit with Note">Fit with Note</option>
                                     <option value="Temporary Unfit">Temporary Unfit</option>
-                                    <option value="Follow-Up">Follow-Up</option>
+                                    <option value="Follow Up">Follow Up</option>
                                     <option value="Unfit">Unfit</option>
                                 </select>
                             </div>
                             <div class="col-span-2">
                                 <label class="label">Catatan Akhir</label>
-                                <textarea id="update-final-notes" class="input" rows="3" readonly style="background-color: #f3f4f6; cursor: not-allowed;"></textarea>
+                                <textarea id="update-final-notes" class="input" rows="3" placeholder="Contoh: Hasil follow-up berdasarkan pemeriksaan lanjutan..."></textarea>
                             </div>
                         </div>
                     </div>

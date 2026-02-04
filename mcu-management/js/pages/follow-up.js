@@ -747,15 +747,16 @@ window.openMCUUpdateModal = async function(mcuId) {
       'update-pulse': currentMCU.pulse,
       'update-temp': currentMCU.temperature,
       'update-chest-circumference': currentMCU.chestCircumference,
-      'update-vision': currentMCU.vision,
+      'update-smoking-status': currentMCU.smokingStatus,
+      'update-exercise-frequency': currentMCU.exerciseFrequency,
       'update-audio': currentMCU.audiometry,
-      'update-colorblind': currentMCU.colorblind,
       'update-spiro': currentMCU.spirometry,
+      'update-hbsag': currentMCU.hbsag,
       'update-xray': currentMCU.xray,
       'update-ekg': currentMCU.ekg,
       'update-treadmill': currentMCU.treadmill,
-      'update-hbsag': currentMCU.hbsag,
       'update-napza': currentMCU.napza,
+      'update-colorblind': currentMCU.colorblind,
       'update-recipient': currentMCU.recipient,
       'update-keluhan': currentMCU.keluhanUtama,
       'update-diagnosis': currentMCU.diagnosisKerja,
@@ -769,6 +770,24 @@ window.openMCUUpdateModal = async function(mcuId) {
         input.value = value || '';
       }
     }
+
+    // Handle vision fields (8-field vision assessment)
+    const visionFields = [
+      { id: 'update-vision-distant-unaided-left', value: currentMCU.visionDistantUnaideLeft },
+      { id: 'update-vision-distant-unaided-right', value: currentMCU.visionDistantUnaideRight },
+      { id: 'update-vision-distant-spectacles-left', value: currentMCU.visionDistantSpectaclesLeft },
+      { id: 'update-vision-distant-spectacles-right', value: currentMCU.visionDistantSpectaclesRight },
+      { id: 'update-vision-near-unaided-left', value: currentMCU.visionNearUnaideLeft },
+      { id: 'update-vision-near-unaided-right', value: currentMCU.visionNearUnaideRight },
+      { id: 'update-vision-near-spectacles-left', value: currentMCU.visionNearSpectaclesLeft },
+      { id: 'update-vision-near-spectacles-right', value: currentMCU.visionNearSpectaclesRight }
+    ];
+    visionFields.forEach(field => {
+      const el = document.getElementById(field.id);
+      if (el) {
+        el.value = field.value || '';
+      }
+    });
 
     // Open modal FIRST to ensure DOM container is visible
     openModal('mcu-update-modal');
