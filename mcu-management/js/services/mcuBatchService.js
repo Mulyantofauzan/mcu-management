@@ -282,15 +282,22 @@ class MCUBatchService {
               });
             } else if (existing.value !== numValue || existing.notes !== labResult.notes) {
               // MODIFIED - Update
+              // 🔍 Debug: Log the change detection
+              const existingValueNum = parseFloat(existing.value);
+              const valueChanged = existingValueNum !== numValue;
+              const notesChanged = existing.notes !== labResult.notes;
+
               await labService.updatePemeriksaanLab(existing.id, {
                 value: numValue,
                 notes: labResult.notes || null
               }, currentUser);
+
               result.data.labUpdated.push({
                 labItemId: labResult.labItemId,
                 labItemName: labItemName,
-                oldValue: existing.value,
-                newValue: numValue
+                oldValue: existingValueNum,
+                newValue: numValue,
+                notesChanged: notesChanged
               });
             }
             // UNCHANGED - do nothing
@@ -347,6 +354,15 @@ class MCUBatchService {
       if (!result.success && (result.data.labSaved.length > 0 || result.data.labUpdated.length > 0)) {
         result.success = true; // Partial success is still considered success
       }
+
+      // 🔍 Debug: Log what's being returned
+      console.log('🔍 MCU Batch Update Result:', {
+        mcuUpdated: result.data.mcuUpdated,
+        labSavedCount: result.data.labSaved.length,
+        labUpdatedCount: result.data.labUpdated.length,
+        labDeletedCount: result.data.labDeleted.length,
+        labUpdated: result.data.labUpdated
+      });
 
       return result;
     } catch (error) {

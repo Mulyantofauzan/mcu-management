@@ -2366,15 +2366,26 @@ window.handleEditMCU = async function(event) {
             }
 
             if (batchResult.data.labUpdated.length > 0) {
+                console.log('🔍 Lab Updated Count:', batchResult.data.labUpdated.length);
+                console.log('🔍 Lab Updated Data:', batchResult.data.labUpdated);
+
                 for (const updated of batchResult.data.labUpdated) {
                     // ✅ ONLY record if value actually changed (not identical)
-                    if (updated.oldValue !== updated.newValue) {
+                    const oldNum = parseFloat(updated.oldValue);
+                    const newNum = parseFloat(updated.newValue);
+
+                    console.log(`🔍 Comparing: ${getLabItemName(updated.labItemId)} - Old: ${oldNum} (${typeof oldNum}) vs New: ${newNum} (${typeof newNum})`);
+
+                    if (oldNum !== newNum) {
                         labChanges.push({
                             fieldLabel: `Hasil Lab (Update): ${getLabItemName(updated.labItemId)}`,
                             fieldChanged: 'labResults',
-                            oldValue: `${updated.oldValue}`,
-                            newValue: `${updated.newValue}`
+                            oldValue: `${oldNum}`,
+                            newValue: `${newNum}`
                         });
+                        console.log('✅ Change recorded for:', getLabItemName(updated.labItemId));
+                    } else {
+                        console.log('❌ No change detected - values are identical');
                     }
                 }
             }
