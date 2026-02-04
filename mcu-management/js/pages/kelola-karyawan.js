@@ -152,9 +152,11 @@ function completeUploadStep() {
   }
 }
 
-function startSaveStep() {
+function startSaveStep(totalSteps = null) {
   const saveIcon = document.getElementById('step-save-icon');
   const saveLabel = document.getElementById('step-save-label');
+  const saveProgressBar = document.getElementById('save-progress-bar');
+  const saveProgressText = document.getElementById('save-progress-text');
 
   if (saveIcon) {
     saveIcon.textContent = '⏳';
@@ -163,6 +165,29 @@ function startSaveStep() {
   }
   if (saveLabel) {
     saveLabel.style.color = '#1f2937';
+  }
+  // Show progress bar if totalSteps provided
+  if (totalSteps && totalSteps > 1) {
+    if (saveProgressBar) {
+      saveProgressBar.style.display = 'block';
+    }
+    if (saveProgressText) {
+      saveProgressText.style.display = 'block';
+      saveProgressText.textContent = `0 dari ${totalSteps} item`;
+    }
+  }
+}
+
+function updateSaveProgress(current, total) {
+  const progressFill = document.getElementById('save-progress-fill');
+  const progressText = document.getElementById('save-progress-text');
+
+  if (progressFill) {
+    const percentage = (current / total) * 100;
+    progressFill.style.width = percentage + '%';
+  }
+  if (progressText) {
+    progressText.textContent = `${current} dari ${total} item`;
   }
 }
 
@@ -1127,9 +1152,6 @@ window.handleAddMCU = async function(event) {
         // ✅ CRITICAL: Clear temporary files ONLY after successful R2 upload
         tempFileStorage.clearFiles(mcuData.mcuId);
 
-        // Start save step
-        startSaveStep();
-
         // ✅ CRITICAL: Collect lab results for batch processing
         let labResults = [];
         if (labResultWidgetAdd) {
@@ -1141,15 +1163,40 @@ window.handleAddMCU = async function(event) {
             throw new Error('MCU data incomplete - missing required fields');
         }
 
+        // Calculate total save steps: 1 for MCU + 1 for each lab result
+        const totalSaveSteps = 1 + (labResults.length || 0);
+
+        // Start save step with progress tracking
+        startSaveStep(totalSaveSteps);
+        let currentSaveStep = 0;
+
+        // Update progress after MCU save
+        const updateSaveStepProgress = () => {
+            currentSaveStep++;
+            updateSaveProgress(currentSaveStep, totalSaveSteps);
+        };
+
         // ✅ BATCH SAVE: Use MCU batch service to atomically save MCU + lab results
         // This prevents race conditions and orphaned records on sequential MCU operations
         const batchResult = await mcuBatchService.saveMCUWithLabResults(mcuData, labResults, currentUser);
+
+        // Update progress for MCU save
+        updateSaveStepProgress();
 
         if (!batchResult.success) {
             hideUnifiedLoading();
             const errorMsg = `⚠️ SEBAGIAN GAGAL atau ERROR:\n${batchResult.errors.join('\n')}\n\nMCU ID: ${batchResult.data.mcu?.mcuId || 'Unknown'}. Hubungi support!`;
             showToast(errorMsg, 'error');
             throw new Error(batchResult.errors[0] || 'Batch save failed');
+        }
+
+        // Update progress for each successful lab result
+        if (batchResult.data.labSaved && batchResult.data.labSaved.length > 0) {
+            for (let i = 0; i < batchResult.data.labSaved.length; i++) {
+                updateSaveStepProgress();
+                // Add small delay to show progress animation
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
         }
 
         completeSaveStep();
@@ -2092,9 +2139,6 @@ window.handleEditMCU = async function(event) {
         // ✅ CRITICAL: Clear temporary files ONLY after upload attempt
         tempFileStorage.clearFiles(mcuId);
 
-        // Start save step
-        startSaveStep();
-
         // ✅ CRITICAL FIX: Get employeeId from hidden data attribute (stored when modal was populated)
         const employeeIdElement = document.getElementById('edit-mcu-id');
         const employeeId = employeeIdElement?.dataset?.employeeId;
@@ -2222,8 +2266,23 @@ window.handleEditMCU = async function(event) {
             // Continue with MCU update even if history save fails
         }
 
+        // Calculate total save steps for edit: 1 for MCU + 1 for each lab result change
+        const totalEditSaveSteps = 1 + (labResults.length || 0);
+
+        // Start save step with progress tracking
+        startSaveStep(totalEditSaveSteps);
+        let currentEditSaveStep = 0;
+
+        const updateEditSaveStepProgress = () => {
+            currentEditSaveStep++;
+            updateSaveProgress(currentEditSaveStep, totalEditSaveSteps);
+        };
+
         // ✅ BATCH UPDATE: Use batch service for atomic MCU + lab update
         const batchResult = await mcuBatchService.updateMCUWithLabResults(mcuId, updateData, labResults, currentUser);
+
+        // Update progress for MCU update
+        updateEditSaveStepProgress();
 
         // ✅ IMPORTANT: Save lab changes to mcuChanges table so they appear in change history
         try {
@@ -2288,6 +2347,15 @@ window.handleEditMCU = async function(event) {
             }
         } catch (labChangeError) {
             // Silently fail - MCU save succeeded but change tracking failed (non-critical)
+        }
+
+        // Update progress for each saved lab result
+        if (batchResult.data.labSaved && batchResult.data.labSaved.length > 0) {
+            for (let i = 0; i < batchResult.data.labSaved.length; i++) {
+                updateEditSaveStepProgress();
+                // Add small delay to show progress animation
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
         }
 
         completeSaveStep();
