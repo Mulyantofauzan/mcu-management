@@ -111,12 +111,13 @@ export class UnifiedLoadingManager {
                 </div>
             `;
             document.body.appendChild(this.loadingElement);
+            // Only add hidden class for dynamically created elements
+            this.loadingElement.classList.add('hidden');
         }
 
         this.messageElement = this.loadingElement.querySelector('#unified-loading-message');
         this.progressBar = this.loadingElement.querySelector('#unified-loading-bar');
         this.progressPercent = this.loadingElement.querySelector('#unified-loading-percent');
-        this.loadingElement.classList.add('hidden');
         this.currentProgress = 0;
     }
 
