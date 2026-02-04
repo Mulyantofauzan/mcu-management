@@ -33,22 +33,34 @@ async function hashPassword(password) {
 
 /**
  * Verify password against stored hash
+ * Supports both new (salted SHA-256) and old (btoa Base64) formats for backward compatibility
  */
 async function verifyPassword(password, storedHash) {
   try {
-    // Decode stored hash from base64
+    // Try new format first (salted SHA-256)
+    // New format: salt (16 bytes) + SHA-256 hash (32 bytes) = 48 bytes total
     const combined = Uint8Array.from(atob(storedHash), c => c.charCodeAt(0));
-    const salt = combined.slice(0, 16);
 
-    // Hash the provided password with the same salt
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password + Array.from(salt).map(b => String.fromCharCode(b)).join(''));
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    // Check if this looks like a new format hash (should be 48 bytes)
+    if (combined.length === 48) {
+      // New format verification
+      const salt = combined.slice(0, 16);
 
-    // Compare hashes
-    const storedHashArray = Array.from(combined.slice(16));
-    return hashArray.every((val, idx) => val === storedHashArray[idx]);
+      // Hash the provided password with the same salt
+      const encoder = new TextEncoder();
+      const data = encoder.encode(password + Array.from(salt).map(b => String.fromCharCode(b)).join(''));
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+
+      // Compare hashes
+      const storedHashArray = Array.from(combined.slice(16));
+      return hashArray.every((val, idx) => val === storedHashArray[idx]);
+    } else {
+      // Old format verification (btoa/Base64 encoding)
+      // Old format: just btoa(password)
+      const oldFormatHash = btoa(password);
+      return storedHash === oldFormatHash;
+    }
   } catch (error) {
     return false;
   }
@@ -103,16 +115,35 @@ class AuthService {
       throw new Error('Username tidak ditemukan atau akun tidak aktif');
     }
 
-    // Verify password using Web Crypto API
+    // Verify password using Web Crypto API (supports both old and new formats)
     const isPasswordValid = await verifyPassword(password, user.passwordHash);
     if (!isPasswordValid) {
       throw new Error('Password salah');
     }
 
-    // Update last login
-    await database.update('users', user.userId, {
-      lastLogin: getCurrentTimestamp()
-    });
+    // ✅ Auto-migrate old password hashes to new secure format
+    // Check if password is in old format (not 48 bytes when decoded)
+    try {
+      const decoded = Uint8Array.from(atob(user.passwordHash), c => c.charCodeAt(0));
+      if (decoded.length !== 48) {
+        // Old format detected, migrate to new format
+        const newHash = await hashPassword(password);
+        await database.update('users', user.userId, {
+          passwordHash: newHash,
+          lastLogin: getCurrentTimestamp()
+        });
+      } else {
+        // New format, just update last login
+        await database.update('users', user.userId, {
+          lastLogin: getCurrentTimestamp()
+        });
+      }
+    } catch (e) {
+      // If decode fails, just update last login
+      await database.update('users', user.userId, {
+        lastLogin: getCurrentTimestamp()
+      });
+    }
 
     // Don't store password hash in session
     const sessionUser = {
