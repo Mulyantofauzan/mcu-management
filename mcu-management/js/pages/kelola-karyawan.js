@@ -43,6 +43,31 @@ let generatedMCUIdForAdd = null;  // Store generated MCU ID for the add modal
 let labResultWidgetEdit = null;
 let labResultWidgetAdd = null;
 
+/**
+ * Get the correct MCU status to display
+ * Logic:
+ * 1. If initialResult is Fit, Fit with Note, or Unfit → use initialResult (final, no follow-up needed)
+ * 2. If initialResult is Follow Up or Temporary Unfit → use finalResult if exists, otherwise initialResult
+ */
+function getMCUDisplayStatus(mcu) {
+  const finalStatuses = ['Fit', 'Fit with Note', 'Unfit'];
+  const temporaryStatuses = ['Follow Up', 'Temporary Unfit'];
+
+  // If initial result is already final, return it
+  if (finalStatuses.includes(mcu.initialResult)) {
+    return mcu.initialResult;
+  }
+
+  // If initial result is temporary status, check for final result
+  if (temporaryStatuses.includes(mcu.initialResult)) {
+    // If final result exists, use it; otherwise use initial
+    return mcu.finalResult || mcu.initialResult;
+  }
+
+  // Default to initial result if not recognized
+  return mcu.initialResult;
+}
+
 // Unified loading overlay functions
 function showUnifiedLoading(title = 'Memproses...', message = 'Mohon tunggu') {
   const overlay = document.getElementById('unified-loading-overlay');
@@ -740,11 +765,12 @@ window.viewEmployee = async function(employeeId) {
 
             mcus.forEach((mcu, index) => {
                 const isLatest = index === 0;
+                const displayStatus = getMCUDisplayStatus(mcu);
                 mcuHtml += '<tr>';
                 mcuHtml += `<td>${escapeHtml(mcu.mcuId)} ${isLatest ? '<span class="badge badge-primary ml-2">Terbaru</span>' : ''}</td>`;
                 mcuHtml += `<td>${formatDateDisplay(mcu.mcuDate)}</td>`;
                 mcuHtml += `<td>${escapeHtml(mcu.mcuType)}</td>`;
-                mcuHtml += `<td><span class="text-sm">${escapeHtml(mcu.initialResult)}</span></td>`;
+                mcuHtml += `<td><span class="text-sm">${escapeHtml(displayStatus)}</span></td>`;
                 mcuHtml += `<td>${getStatusBadge(mcu.status)}</td>`;
                 mcuHtml += `<td><button onclick="window.viewMCUDetail('${escapeHtml(mcu.mcuId)}')" class="btn btn-sm btn-secondary">Detail</button></td>`;
                 mcuHtml += '</tr>';
