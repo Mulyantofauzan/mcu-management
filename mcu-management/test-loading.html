@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Loading Screen</title>
+    <link rel="stylesheet" href="css/output.css">
+    <style>
+        body {
+            opacity: 0;
+            transition: opacity 0.2s ease-in;
+            background-color: white;
+        }
+
+        body.initialized {
+            opacity: 1;
+        }
+
+        /* ✅ Loading overlay ALWAYS visible on top, with z-index priority */
+        #unified-loading-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            z-index: 9999 !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: flex !important;
+            background-color: rgba(255, 255, 255, 0.8) !important;
+            backdrop-filter: blur(4px) !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        /* Hide loading overlay when body is initialized */
+        body.initialized #unified-loading-overlay {
+            display: none !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+        }
+
+        /* When body is invisible but loading overlay is showing, still make body content invisible */
+        body:not(.initialized) > *:not(#unified-loading-overlay) {
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Unified Loading Overlay -->
+    <div id="unified-loading-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm" style="display: flex !important; visibility: visible !important; opacity: 1 !important;">
+        <div class="flex flex-col items-center gap-6">
+            <!-- Animated Spinner -->
+            <div class="animate-spin">
+                <svg class="w-12 h-12 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+            </div>
+
+            <!-- Message -->
+            <p class="text-base text-gray-900 font-semibold" id="unified-loading-message">Memuat data... Harap tunggu</p>
+
+            <!-- Progress Bar -->
+            <div class="w-64 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div id="unified-loading-bar" class="h-full bg-gradient-to-r from-primary-400 to-primary-600 rounded-full" style="width: 0%; transition: width 0.3s ease;"></div>
+            </div>
+
+            <!-- Progress Text -->
+            <p class="text-xs text-gray-600"><span id="unified-loading-percent">0</span>%</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="p-8">
+        <h1 class="text-3xl font-bold mb-4">Test Loading Screen</h1>
+        <p class="text-lg text-gray-700 mb-6">Loading overlay should be visible above this content.</p>
+        <button onclick="simulateLoading()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Simulate Loading (10 seconds)
+        </button>
+    </div>
+
+    <script>
+        function simulateLoading() {
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 25;
+                if (progress > 100) progress = 100;
+
+                document.getElementById('unified-loading-bar').style.width = progress + '%';
+                document.getElementById('unified-loading-percent').textContent = Math.round(progress);
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        document.body.classList.add('initialized');
+                    }, 500);
+                }
+            }, 500);
+        }
+
+        // Auto-hide after 3 seconds on page load
+        setTimeout(() => {
+            document.body.classList.add('initialized');
+        }, 3000);
+    </script>
+</body>
+</html>

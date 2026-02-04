@@ -32,6 +32,13 @@ export class UnifiedLoadingManager {
         this.loadingElement.style.display = 'flex';
         this.isVisible = true;
         document.body.style.overflow = 'hidden';
+
+        console.log('✅ Loading screen shown:', {
+            message,
+            isVisible: this.isVisible,
+            display: this.loadingElement.style.display,
+            hasHiddenClass: this.loadingElement.classList.contains('hidden')
+        });
     }
 
     /**
@@ -68,6 +75,8 @@ export class UnifiedLoadingManager {
         if (this.progressPercent) {
             this.progressPercent.textContent = Math.round(this.currentProgress);
         }
+        // Uncomment for detailed progress debugging:
+        // console.log(`Progress: ${this.currentProgress}%`);
     }
 
     /**
@@ -118,6 +127,15 @@ export class UnifiedLoadingManager {
         this.messageElement = this.loadingElement.querySelector('#unified-loading-message');
         this.progressBar = this.loadingElement.querySelector('#unified-loading-bar');
         this.progressPercent = this.loadingElement.querySelector('#unified-loading-percent');
+
+        // Debug logging
+        console.log('✅ UnifiedLoading initialized:', {
+            elementFound: !!this.loadingElement,
+            messageFound: !!this.messageElement,
+            progressBarFound: !!this.progressBar,
+            percentFound: !!this.progressPercent
+        });
+
         this.currentProgress = 0;
     }
 
