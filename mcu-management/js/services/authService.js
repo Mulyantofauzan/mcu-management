@@ -3,6 +3,7 @@
  * Handles user authentication and session management
  */
 
+import bcrypt from 'bcryptjs';
 import { database } from './database.js';
 import { generateUserId } from '../utils/idGenerator.js';
 import { getCurrentTimestamp } from '../utils/dateHelpers.js';
@@ -28,8 +29,8 @@ class AuthService {
   }
 
   async createUser(userData) {
-    // Simple password hashing (in production, use proper hashing)
-    const passwordHash = btoa(userData.password); // Base64 encoding (NOT secure for production)
+    // Hash password using bcryptjs (secure)
+    const passwordHash = await bcrypt.hash(userData.password, 10);
 
     const user = {
       userId: generateUserId(),
@@ -56,9 +57,9 @@ class AuthService {
       throw new Error('Username tidak ditemukan atau akun tidak aktif');
     }
 
-    // Simple password verification
-    const passwordHash = btoa(password);
-    if (user.passwordHash !== passwordHash) {
+    // Verify password using bcryptjs
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
       throw new Error('Password salah');
     }
 
@@ -139,9 +140,9 @@ class AuthService {
   async updateUser(userId, updates) {
     const updateData = { ...updates };
 
-    // If password is being updated, hash it
+    // If password is being updated, hash it using bcryptjs
     if (updates.password) {
-      updateData.passwordHash = btoa(updates.password);
+      updateData.passwordHash = await bcrypt.hash(updates.password, 10);
       delete updateData.password;
     }
 
