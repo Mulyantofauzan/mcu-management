@@ -27,16 +27,6 @@
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 
     <style>
-        body {
-            opacity: 0;
-            transition: opacity 0.2s ease-in;
-            background-color: white;
-        }
-
-        body.initialized {
-            opacity: 1;
-        }
-
         /* ✅ Loading overlay ALWAYS visible on top, with z-index priority */
         #unified-loading-overlay {
             position: fixed !important;
@@ -62,29 +52,27 @@
             visibility: hidden !important;
         }
 
-        /* Initially hide all content except loading overlay */
+        /* Page content - initially hidden until initialized */
+        body {
+            background-color: white;
+        }
+
+        body:not(.initialized) {
+            /* Hide all content except loading overlay during initialization */
+        }
+
         body:not(.initialized) > *:not(#unified-loading-overlay) {
             opacity: 0;
             pointer-events: none;
+            visibility: hidden;
         }
 
-        /* Safari fallback: show content after 5 seconds even if JS fails */
-        @media (prefers-reduced-motion: no-preference) {
-            body {
-                animation: safariShow 5s forwards;
-            }
-        }
-
-        @keyframes safariShow {
-            0% { opacity: 0; }
-            99% { opacity: 0; }
-            100% { opacity: 1; }
-        }
-
-        /* If initialized is set, show immediately and disable animation */
-        body.initialized {
-            animation: none;
+        /* Show content when initialized */
+        body.initialized > *:not(#unified-loading-overlay) {
             opacity: 1 !important;
+            visibility: visible !important;
+            pointer-events: auto !important;
+            transition: opacity 0.2s ease-in;
         }
     </style>
 </head>

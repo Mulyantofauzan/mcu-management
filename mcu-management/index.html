@@ -71,17 +71,6 @@
     <script defer src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
 
     <style>
-        /* Hide body until page is fully initialized (prevents flash of unstyled content) */
-        body {
-            opacity: 0;
-            transition: opacity 0.2s ease-in;
-            background-color: white;
-        }
-
-        body.initialized {
-            opacity: 1;
-        }
-
         /* ✅ Loading overlay ALWAYS visible on top, with z-index priority */
         #unified-loading-overlay {
             position: fixed !important;
@@ -101,17 +90,30 @@
             justify-content: center !important;
         }
 
-        /* Hide loading overlay when body is initialized - use higher specificity */
+        /* Hide loading overlay when body is initialized */
         body.initialized #unified-loading-overlay {
             display: none !important;
             visibility: hidden !important;
             pointer-events: none !important;
         }
 
-        /* When body is invisible but loading overlay is showing, still make body content invisible */
+        /* Page content - initially hidden until initialized */
+        body {
+            background-color: white;
+        }
+
         body:not(.initialized) > *:not(#unified-loading-overlay) {
             opacity: 0;
             pointer-events: none;
+            visibility: hidden;
+        }
+
+        /* Show content when initialized */
+        body.initialized > *:not(#unified-loading-overlay) {
+            opacity: 1 !important;
+            visibility: visible !important;
+            pointer-events: auto !important;
+            transition: opacity 0.2s ease-in;
         }
 
         /* Sidebar transition */
