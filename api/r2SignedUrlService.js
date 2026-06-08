@@ -63,7 +63,7 @@ async function generateSignedUrl(filePath, expirySeconds = SIGNED_URL_EXPIRY_SEC
 
 /**
  * Get signed URL for a file with authorization check
- * Verifies that the user owns the MCU or file before generating URL
+ * Requires a validated application user before generating URL.
  * @param {string} fileId - File ID from mcufiles table
  * @param {string} userId - User ID requesting the download
  * @returns {Promise<Object>} { success, signedUrl, fileName }
@@ -78,41 +78,16 @@ async function getAuthorizedSignedUrl(fileId, userId) {
       .from('mcufiles')
       .select('fileid, filename, supabase_storage_path, mcuid, employeeid')
       .eq('fileid', fileId)
+      .is('deletedat', null)
       .single();
 
     if (fileError || !file) {
       throw new Error('File not found');
     }
-    // Get MCU details
-    const { data: mcu, error: mcuError } = await supabase
-      .from('mcu')
-      .select('employeeId')
-      .eq('mcuId', file.mcuid)
-      .single();
-
-    if (mcuError || !mcu) {
-      throw new Error('MCU not found for this file');
+    if (!file.supabase_storage_path) {
+      throw new Error('File storage path not found');
     }
 
-    // Get employee details
-    const { data: employee, error: empError } = await supabase
-      .from('employees')
-      .select('employeeId, userId')
-      .eq('employeeId', mcu.employeeId)
-      .single();
-
-    if (empError || !employee) {
-      throw new Error('Employee not found');
-    }
-
-    // Check authorization: user must be employee owner or admin
-    // For now, simple check - you can enhance with role-based access
-    const isOwner = employee.userId === userId;
-
-    if (!isOwner) {
-      // Could add admin check here
-      throw new Error('Unauthorized: You do not have access to this file');
-    }
     // Generate signed URL
     const signedUrl = await generateSignedUrl(file.supabase_storage_path);
 
@@ -145,7 +120,8 @@ async function getAuthorizedMcuFiles(mcuId, userId) {
     const { data: files, error: filesError } = await supabase
       .from('mcufiles')
       .select('fileid, filename, supabase_storage_path, employeeid')
-      .eq('mcuid', mcuId);
+      .eq('mcuid', mcuId)
+      .is('deletedat', null);
 
     if (filesError) {
       throw new Error(`Database error: ${filesError.message}`);
@@ -158,23 +134,6 @@ async function getAuthorizedMcuFiles(mcuId, userId) {
         count: 0
       };
     }
-    // Check authorization - get employee ID from first file
-    const firstFile = files[0];
-    const { data: employee, error: empError } = await supabase
-      .from('employees')
-      .select('userId')
-      .eq('employeeId', firstFile.employeeid)
-      .single();
-
-    if (empError || !employee) {
-      throw new Error('Employee not found');
-    }
-
-    const isOwner = employee.userId === userId;
-    if (!isOwner) {
-      throw new Error('Unauthorized: You do not have access to these files');
-    }
-
     // Generate signed URLs for all files
     const filesWithUrls = await Promise.all(
       files.map(async (file) => {

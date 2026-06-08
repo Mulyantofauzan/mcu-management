@@ -11,6 +11,14 @@
  */
 
 import { showToast } from '../utils/uiHelpers.js';
+import { authService } from './authService.js';
+
+function getAuthHeaders(extraHeaders = {}) {
+  const token = authService.getAccessToken();
+  return token
+    ? { ...extraHeaders, Authorization: `Bearer ${token}` }
+    : extraHeaders;
+}
 
 /**
  * Upload file ke Cloudflare R2
@@ -110,6 +118,10 @@ export async function uploadFileToSupabase(file, employeeId, mcuId, onProgress =
       // Send request to API (using relative URL to work on any deployment)
       const apiUrl = '/api/compress-upload';
       xhr.open('POST', apiUrl);
+      const token = authService.getAccessToken();
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      }
       xhr.send(formData);
     });
   } catch (error) {
@@ -254,9 +266,9 @@ export async function deleteFile(fileId) {
     }
     const response = await fetch(`/api/delete-file?fileId=${encodeURIComponent(fileId)}`, {
       method: 'DELETE',
-      headers: {
+      headers: getAuthHeaders({
         'Content-Type': 'application/json'
-      }
+      })
     });
 
     if (!response.ok) {
@@ -293,7 +305,9 @@ export async function getFilesByMCU(mcuId) {
     }
 
     const apiUrl = '/api/get-mcu-files';
-    const response = await fetch(`${apiUrl}?mcuId=${encodeURIComponent(mcuId)}`);
+    const response = await fetch(`${apiUrl}?mcuId=${encodeURIComponent(mcuId)}`, {
+      headers: getAuthHeaders()
+    });
 
     if (!response.ok) {
       return { success: false, files: [], error: `HTTP ${response.status}` };
@@ -334,7 +348,9 @@ export async function downloadFile(fileId, fileName, userId) {
     }
     // Request signed URL from server
     const apiUrl = '/api/download-file';
-    const response = await fetch(`${apiUrl}?fileId=${encodeURIComponent(fileId)}&userId=${encodeURIComponent(userId)}`);
+    const response = await fetch(`${apiUrl}?fileId=${encodeURIComponent(fileId)}&userId=${encodeURIComponent(userId)}`, {
+      headers: getAuthHeaders()
+    });
 
     if (!response.ok) {
       const error = await response.json();
@@ -377,7 +393,9 @@ export async function getMCUFilesWithSignedUrls(mcuId, userId) {
       return { success: false, error: 'MCU ID and user ID required', files: [] };
     }
     const apiUrl = '/api/download-file';
-    const response = await fetch(`${apiUrl}?mcuId=${encodeURIComponent(mcuId)}&userId=${encodeURIComponent(userId)}`);
+    const response = await fetch(`${apiUrl}?mcuId=${encodeURIComponent(mcuId)}&userId=${encodeURIComponent(userId)}`, {
+      headers: getAuthHeaders()
+    });
 
     if (!response.ok) {
       const error = await response.json();
@@ -418,9 +436,9 @@ export async function deleteFileFromStorage(storagePath) {
     // The backend API will handle both R2 deletion and database cleanup
     const response = await fetch(`/api/hard-delete-file?storagePath=${encodeURIComponent(storagePath)}`, {
       method: 'DELETE',
-      headers: {
+      headers: getAuthHeaders({
         'Content-Type': 'application/json'
-      }
+      })
     });
 
     if (!response.ok) {

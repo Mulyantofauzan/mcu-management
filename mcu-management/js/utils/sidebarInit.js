@@ -144,6 +144,7 @@ window.handleLogout = async function() {
                 await window.authService.logout();
             } else {
                 localStorage.removeItem('auth_token');
+                localStorage.removeItem('madisAccessToken');
                 localStorage.removeItem('currentUser');
                 sessionStorage.clear();
             }

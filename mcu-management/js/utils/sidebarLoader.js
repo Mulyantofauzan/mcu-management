@@ -289,6 +289,7 @@ window.handleLogout = async function() {
             } else {
                 // Fallback: clear local storage
                 localStorage.removeItem('auth_token');
+                localStorage.removeItem('madisAccessToken');
                 localStorage.removeItem('currentUser');
                 sessionStorage.clear();
             }

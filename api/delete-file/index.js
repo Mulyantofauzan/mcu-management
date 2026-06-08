@@ -7,6 +7,7 @@
  */
 
 const { createClient } = require('@supabase/supabase-js');
+const { setCorsHeaders, requireAuth } = require('../auth-utils');
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -15,10 +16,7 @@ const supabase = createClient(
 );
 
 module.exports = async (req, res) => {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  setCorsHeaders(req, res, 'DELETE, OPTIONS');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -27,6 +25,9 @@ module.exports = async (req, res) => {
   if (req.method !== 'DELETE') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  const auth = requireAuth(req, res);
+  if (!auth) return;
 
   try {
     const { fileId } = req.query;

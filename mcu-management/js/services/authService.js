@@ -7,6 +7,9 @@ import { database } from './database.js';
 import { generateUserId } from '../utils/idGenerator.js';
 import { getCurrentTimestamp } from '../utils/dateHelpers.js';
 
+const CURRENT_USER_KEY = 'currentUser';
+const ACCESS_TOKEN_KEY = 'madisAccessToken';
+
 /**
  * Simple password hashing using Web Crypto API
  * Creates a salted hash suitable for password storage
@@ -72,18 +75,63 @@ class AuthService {
   }
 
   loadCurrentUser() {
-    const userJson = localStorage.getItem('currentUser');
+    const userJson = localStorage.getItem(CURRENT_USER_KEY);
     return userJson ? JSON.parse(userJson) : null;
   }
 
-  saveCurrentUser(user) {
+  saveCurrentUser(user, accessToken = null) {
     this.currentUser = user;
-    localStorage.setItem('currentUser', JSON.stringify(user));
+    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+    if (accessToken) {
+      this.saveAccessToken(accessToken);
+    }
   }
 
   clearCurrentUser() {
     this.currentUser = null;
-    localStorage.removeItem('currentUser');
+    localStorage.removeItem(CURRENT_USER_KEY);
+    this.clearAccessToken();
+  }
+
+  saveAccessToken(token) {
+    localStorage.setItem(ACCESS_TOKEN_KEY, token);
+  }
+
+  getAccessToken() {
+    return localStorage.getItem(ACCESS_TOKEN_KEY);
+  }
+
+  clearAccessToken() {
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+  }
+
+  async loginWithServer(username, password) {
+    if (!window.location.protocol.startsWith('http')) {
+      return null;
+    }
+
+    const response = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    const result = await response.json().catch(() => null);
+
+    if (response.ok && result?.success && result.user && result.token) {
+      this.saveCurrentUser(result.user, result.token);
+      return result.user;
+    }
+
+    if (response.status === 404) {
+      return null;
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(result?.error || 'Username atau password salah');
+    }
+
+    throw new Error(result?.error || 'Server login belum siap');
   }
 
   async createUser(userData) {
@@ -106,6 +154,17 @@ class AuthService {
   }
 
   async login(username, password) {
+    try {
+      const serverUser = await this.loginWithServer(username, password);
+      if (serverUser) {
+        return serverUser;
+      }
+    } catch (error) {
+      if (error.message !== 'Server login belum siap') {
+        throw error;
+      }
+    }
+
     const users = await database.getAll('users');
 
     // Check active field - if undefined (Supabase old schema), treat as active

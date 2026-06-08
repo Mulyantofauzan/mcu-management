@@ -6,7 +6,6 @@
 import { authService } from '../services/authService.js';
 import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
 import { database } from '../services/database.js';
-import { generateUserId } from '../utils/idGenerator.js';
 import { getCurrentTimestamp } from '../utils/dateHelpers.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 
@@ -237,20 +236,12 @@ window.handleAddUser = async function(event) {
             return;
         }
 
-        // Create user
-        const userId = generateUserId();
-        const newUser = {
-            userId: userId,
-            username: username,
-            passwordHash: btoa(password), // Simple encoding for demo (use bcrypt in production)
-            displayName: displayName,
-            role: role,
-            active: true,
-            createdAt: getCurrentTimestamp(),
-            updatedAt: getCurrentTimestamp()
-        };
-
-        await database.add('users', newUser);
+        await authService.createUser({
+            username,
+            password,
+            displayName,
+            role
+        });
 
         hideSaveLoading();
         showToast('User berhasil ditambahkan', 'success');
@@ -354,10 +345,10 @@ window.handleEditUser = async function(event) {
                 return;
             }
 
-            updateData.passwordHash = btoa(password);
+            updateData.password = password;
         }
 
-        await database.update('users', userId, updateData);
+        await authService.updateUser(userId, updateData);
 
         hideSaveLoading();
         showToast('User berhasil diupdate', 'success');

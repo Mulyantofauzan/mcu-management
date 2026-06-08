@@ -13,15 +13,13 @@
 
 const busboy = require('busboy');
 const { uploadFileToStorage, ALLOWED_TYPES, MAX_FILE_SIZE } = require('../r2StorageService');
+const { setCorsHeaders, requireAuth } = require('../auth-utils');
 
 /**
  * Main handler function
  */
 module.exports = async (req, res) => {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  setCorsHeaders(req, res, 'POST, OPTIONS');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -30,6 +28,9 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  const auth = requireAuth(req, res);
+  if (!auth) return;
 
   try {
     // Parse multipart/form-data

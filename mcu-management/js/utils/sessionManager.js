@@ -205,6 +205,9 @@ class SessionManager {
 
       // Clear session storage
       sessionStorage.clear();
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('madisAccessToken');
+      localStorage.removeItem('auth_token');
 
       // Optional: Call logout API endpoint
       try {
@@ -218,10 +221,12 @@ class SessionManager {
       const messageText = message || 'You have been logged out';
 
       // Redirect to login page
-      window.location.href = 'pages/login.html?message=' + encodeURIComponent(messageText);
+      const loginPath = window.location.pathname.includes('/pages/') ? 'login.html' : 'pages/login.html';
+      window.location.href = loginPath + '?message=' + encodeURIComponent(messageText);
     } catch (err) {
       // Fallback redirect
-      window.location.href = 'pages/login.html';
+      const loginPath = window.location.pathname.includes('/pages/') ? 'login.html' : 'pages/login.html';
+      window.location.href = loginPath;
     }
   }
 

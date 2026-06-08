@@ -43,11 +43,12 @@ export async function loadEnvironmentConfig() {
   // Priority 2: Load from Vite environment variables
   // Vite replaces import.meta.env.VITE_* during build or dev
   // Works for both dev server (.env.local) and production build (.env.production)
-  if (import.meta.env.VITE_SUPABASE_URL) {
+  const viteEnv = import.meta.env || {};
+  if (viteEnv.VITE_SUPABASE_URL) {
     Object.assign(ENV, {
-      SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
-      SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
-      ENABLE_AUTO_SEED: import.meta.env.VITE_ENABLE_AUTO_SEED === 'true'
+      SUPABASE_URL: viteEnv.VITE_SUPABASE_URL,
+      SUPABASE_ANON_KEY: viteEnv.VITE_SUPABASE_ANON_KEY,
+      ENABLE_AUTO_SEED: viteEnv.VITE_ENABLE_AUTO_SEED === 'true'
     });
     return true;
   }

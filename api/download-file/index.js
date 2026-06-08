@@ -12,12 +12,10 @@
  */
 
 const { getAuthorizedSignedUrl, getAuthorizedMcuFiles } = require('../r2SignedUrlService');
+const { setCorsHeaders, requireAuth } = require('../auth-utils');
 
 module.exports = async (req, res) => {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  setCorsHeaders(req, res, 'GET, OPTIONS');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -27,19 +25,23 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const auth = requireAuth(req, res);
+  if (!auth) return;
+
   try {
     const { fileId, mcuId, userId } = req.query;
-    // Require user ID for authorization
-    if (!userId) {
-      return res.status(401).json({
-        error: 'Unauthorized: User ID required',
+    const authenticatedUserId = auth.app_user_id || auth.sub;
+
+    if (userId && userId !== authenticatedUserId) {
+      return res.status(403).json({
+        error: 'Forbidden: user mismatch',
         success: false
       });
     }
 
     // Case 1: Get single file
     if (fileId) {
-      const result = await getAuthorizedSignedUrl(fileId, userId);
+      const result = await getAuthorizedSignedUrl(fileId, authenticatedUserId);
 
       if (!result.success) {
         return res.status(403).json(result);
@@ -49,7 +51,7 @@ module.exports = async (req, res) => {
 
     // Case 2: Get all files for MCU
     if (mcuId) {
-      const result = await getAuthorizedMcuFiles(mcuId, userId);
+      const result = await getAuthorizedMcuFiles(mcuId, authenticatedUserId);
 
       if (!result.success) {
         return res.status(403).json(result);

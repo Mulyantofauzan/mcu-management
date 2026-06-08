@@ -7,13 +7,11 @@
  */
 
 const { createClient } = require('@supabase/supabase-js');
-const AWS = require('aws-sdk');
+const { S3Client, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const { setCorsHeaders, requireAuth } = require('../auth-utils');
 
 module.exports = async (req, res) => {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  setCorsHeaders(req, res, 'DELETE, OPTIONS');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -22,6 +20,9 @@ module.exports = async (req, res) => {
   if (req.method !== 'DELETE') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  const auth = requireAuth(req, res, { roles: ['Admin'] });
+  if (!auth) return;
 
   try {
     // Validate environment variables first
@@ -45,12 +46,13 @@ module.exports = async (req, res) => {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    const r2 = new AWS.S3({
-      accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
-      secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+    const r2 = new S3Client({
+      region: 'auto',
       endpoint: process.env.CLOUDFLARE_R2_ENDPOINT,
-      s3ForcePathStyle: true,
-      signatureVersion: 'v4'
+      credentials: {
+        accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
+        secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY
+      }
     });
 
     const { fileId, storagePath: queryStoragePath } = req.query;
@@ -110,10 +112,11 @@ module.exports = async (req, res) => {
     if (fileStoragePath) {
       try {
         console.log(`[hard-delete-file] Deleting from R2 storage: ${fileStoragePath}`);
-        await r2.deleteObject({
+        const deleteCommand = new DeleteObjectCommand({
           Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME,
           Key: fileStoragePath
-        }).promise();
+        });
+        await r2.send(deleteCommand);
         console.log(`[hard-delete-file] Successfully deleted from R2`);
       } catch (r2Error) {
         console.warn(`[hard-delete-file] ⚠️ Failed to delete from R2 (will continue with DB delete): ${r2Error.message}`);
@@ -147,8 +150,7 @@ module.exports = async (req, res) => {
   } catch (error) {
     console.error('[hard-delete-file] Unexpected error:', error);
     return res.status(500).json({
-      error: error.message || 'Internal server error',
-      details: error.stack
+      error: 'Internal server error'
     });
   }
 };

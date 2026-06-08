@@ -17,6 +17,23 @@ await initializeEnv();
 // Set in Vercel: Settings → Environment Variables or via /api/config endpoint
 const SUPABASE_URL = ENV.SUPABASE_URL || window.ENV?.SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = ENV.SUPABASE_ANON_KEY || window.ENV?.SUPABASE_ANON_KEY || '';
+const ACCESS_TOKEN_KEY = 'madisAccessToken';
+
+function getSupabaseOptions() {
+    const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
+    if (!accessToken) {
+        return {};
+    }
+
+    return {
+        global: {
+            headers: {
+                Authorization: `Bearer ${accessToken}`
+            }
+        }
+    };
+}
+
 // Initialize Supabase client
 let supabase = null;
 let useSupabase = false;
@@ -37,7 +54,7 @@ async function initSupabase() {
         }
         if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') {
             try {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, getSupabaseOptions());
                 useSupabase = true;
             } catch (error) {
             }

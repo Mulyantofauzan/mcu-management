@@ -13,6 +13,7 @@
 
 const { createClient } = require('@supabase/supabase-js');
 const { S3Client, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const { setCorsHeaders, requireAuth } = require('../auth-utils');
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -47,10 +48,7 @@ try {
 const R2_BUCKET = process.env.CLOUDFLARE_R2_BUCKET_NAME;
 
 module.exports = async (req, res) => {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  setCorsHeaders(req, res, 'DELETE, OPTIONS');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -59,6 +57,9 @@ module.exports = async (req, res) => {
   if (req.method !== 'DELETE') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  const auth = requireAuth(req, res, { roles: ['Admin'] });
+  if (!auth) return;
 
   try {
     const { mcuId } = req.query;
