@@ -32,7 +32,7 @@ The app had its own local/session authentication, but Supabase and several serve
 
 ## Files Changed
 
-- `api/auth-utils.js`
+- `server/auth-utils.js`
 - `api/login/index.js`
 - `api/compress-upload/index.js`
 - `api/config.js`
@@ -42,7 +42,8 @@ The app had its own local/session authentication, but Supabase and several serve
 - `api/get-mcu-files/index.js`
 - `api/hard-delete-file/index.js`
 - `api/permanently-delete-mcu/index.js`
-- `api/r2SignedUrlService.js`
+- `server/r2SignedUrlService.js`
+- `server/r2StorageService.js`
 - `api/test-r2-config/index.js`
 - `mcu-management/js/config/envConfig.js`
 - `mcu-management/js/config/supabase.js`

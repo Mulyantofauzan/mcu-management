@@ -13,7 +13,7 @@
 
 const { createClient } = require('@supabase/supabase-js');
 const { S3Client, DeleteObjectCommand } = require('@aws-sdk/client-s3');
-const { setCorsHeaders, requireAuth } = require('../auth-utils');
+const { setCorsHeaders, requireAuth } = require('../../server/auth-utils');
 
 // Initialize Supabase client
 const supabase = createClient(

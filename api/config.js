@@ -6,7 +6,7 @@
  * not exposed in source code or DevTools.
  */
 
-const { setCorsHeaders } = require('./auth-utils');
+const { setCorsHeaders } = require('../server/auth-utils');
 
 module.exports = (req, res) => {
   setCorsHeaders(req, res, 'GET, OPTIONS');

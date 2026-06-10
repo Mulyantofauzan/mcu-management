@@ -6,7 +6,7 @@ const {
   hashPassword,
   verifyPassword,
   isLegacyPasswordHash
-} = require('../auth-utils');
+} = require('../../server/auth-utils');
 
 function getSupabaseAdmin() {
   return createClient(

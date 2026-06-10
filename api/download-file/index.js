@@ -11,8 +11,8 @@
  * - mcuId: (optional) MCU ID - returns all files for that MCU
  */
 
-const { getAuthorizedSignedUrl, getAuthorizedMcuFiles } = require('../r2SignedUrlService');
-const { setCorsHeaders, requireAuth } = require('../auth-utils');
+const { getAuthorizedSignedUrl, getAuthorizedMcuFiles } = require('../../server/r2SignedUrlService');
+const { setCorsHeaders, requireAuth } = require('../../server/auth-utils');
 
 module.exports = async (req, res) => {
   setCorsHeaders(req, res, 'GET, OPTIONS');

@@ -12,8 +12,8 @@
  */
 
 const busboy = require('busboy');
-const { uploadFileToStorage, ALLOWED_TYPES, MAX_FILE_SIZE } = require('../r2StorageService');
-const { setCorsHeaders, requireAuth } = require('../auth-utils');
+const { uploadFileToStorage, ALLOWED_TYPES, MAX_FILE_SIZE } = require('../../server/r2StorageService');
+const { setCorsHeaders, requireAuth } = require('../../server/auth-utils');
 
 /**
  * Main handler function

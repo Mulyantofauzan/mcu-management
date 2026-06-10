@@ -2,7 +2,7 @@
  * Diagnostic endpoint untuk test R2 configuration
  */
 
-const { setCorsHeaders, requireAuth } = require('../auth-utils');
+const { setCorsHeaders, requireAuth } = require('../../server/auth-utils');
 
 module.exports = async (req, res) => {
   setCorsHeaders(req, res, 'GET, OPTIONS');
@@ -38,7 +38,7 @@ module.exports = async (req, res) => {
 
     // Try to load r2StorageService
     try {
-      const { uploadFileToStorage, MAX_FILE_SIZE, STORAGE_BUCKET } = require('../r2StorageService');
+      const { uploadFileToStorage, MAX_FILE_SIZE, STORAGE_BUCKET } = require('../../server/r2StorageService');
     } catch (error) {
     }
 
