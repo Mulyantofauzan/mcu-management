@@ -88,16 +88,10 @@ module.exports = async (req, res) => {
     });
   } catch (error) {
     console.error(`[login] Failure during ${failureStage}:`, error.message);
-    const response = {
+    return res.status(500).json({
       success: false,
       error: 'Internal server error',
       code: `LOGIN_${failureStage.toUpperCase().replace(/-/g, '_')}_FAILED`
-    };
-
-    if (failureStage === 'database-client') {
-      response.diagnostic = String(error.message || 'Unknown client initialization error').slice(0, 160);
-    }
-
-    return res.status(500).json(response);
+    });
   }
 };

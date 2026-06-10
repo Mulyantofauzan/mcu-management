@@ -4,7 +4,7 @@
   "description": "Vercel Serverless API for MCU Management System",
   "main": "compress-upload/index.js",
   "engines": {
-    "node": "20.x"
+    "node": "22.x"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.38.0",
