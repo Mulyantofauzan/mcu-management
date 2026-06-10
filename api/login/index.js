@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
 
   try {
     failureStage = 'configuration';
-    if (!hasSupabaseAdminConfig() || !process.env.SUPABASE_JWT_SECRET) {
+    if (!hasSupabaseAdminConfig() || !String(process.env.SUPABASE_JWT_SECRET || '').trim()) {
       return res.status(500).json({ success: false, error: 'Server auth is not configured' });
     }
 

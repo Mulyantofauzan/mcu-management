@@ -2,10 +2,40 @@ const { createClient } = require('@supabase/supabase-js');
 
 let supabaseAdmin = null;
 
+function normalizeEnvValue(value) {
+  if (!value) return '';
+
+  const trimmed = String(value).trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"'))
+    || (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+
+  return trimmed;
+}
+
+function getValidSupabaseUrl() {
+  const candidates = [
+    normalizeEnvValue(process.env.VITE_SUPABASE_URL),
+    normalizeEnvValue(process.env.SUPABASE_URL)
+  ];
+
+  return candidates.find((candidate) => {
+    try {
+      const url = new URL(candidate);
+      return url.protocol === 'https:' || url.protocol === 'http:';
+    } catch (error) {
+      return false;
+    }
+  }) || '';
+}
+
 function getSupabaseAdminConfig() {
   return {
-    url: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
-    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY
+    url: getValidSupabaseUrl(),
+    serviceRoleKey: normalizeEnvValue(process.env.SUPABASE_SERVICE_ROLE_KEY)
   };
 }
 

@@ -4,6 +4,20 @@ const DEFAULT_ALLOWED_ORIGINS = [
   'https://madis.sabdamu.my.id'
 ];
 
+function normalizeSecret(value) {
+  if (!value) return '';
+
+  const trimmed = String(value).trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"'))
+    || (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+
+  return trimmed;
+}
+
 function getAllowedOrigins() {
   const origins = new Set(DEFAULT_ALLOWED_ORIGINS);
 
@@ -63,7 +77,7 @@ function base64UrlDecode(input) {
 }
 
 function signJwt(payload, expiresInSeconds = 8 * 60 * 60) {
-  const secret = process.env.SUPABASE_JWT_SECRET;
+  const secret = normalizeSecret(process.env.SUPABASE_JWT_SECRET);
   if (!secret) {
     throw new Error('SUPABASE_JWT_SECRET is not configured');
   }
@@ -93,7 +107,7 @@ function signJwt(payload, expiresInSeconds = 8 * 60 * 60) {
 }
 
 function verifyJwt(token) {
-  const secret = process.env.SUPABASE_JWT_SECRET;
+  const secret = normalizeSecret(process.env.SUPABASE_JWT_SECRET);
   if (!secret) {
     throw new Error('SUPABASE_JWT_SECRET is not configured');
   }
