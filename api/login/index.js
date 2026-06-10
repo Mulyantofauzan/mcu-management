@@ -10,6 +10,7 @@ const { getSupabaseAdmin, hasSupabaseAdminConfig } = require('../../server/supab
 
 module.exports = async (req, res) => {
   setCorsHeaders(req, res, 'POST, OPTIONS');
+  let failureStage = 'request';
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -20,16 +21,20 @@ module.exports = async (req, res) => {
   }
 
   try {
+    failureStage = 'configuration';
     if (!hasSupabaseAdminConfig() || !process.env.SUPABASE_JWT_SECRET) {
       return res.status(500).json({ success: false, error: 'Server auth is not configured' });
     }
 
+    failureStage = 'body';
     const { username, password } = await readJsonBody(req);
     if (!username || !password) {
       return res.status(400).json({ success: false, error: 'Username dan password wajib diisi' });
     }
 
+    failureStage = 'database-client';
     const supabase = getSupabaseAdmin();
+    failureStage = 'database-query';
     const { data: user, error } = await supabase
       .from('users')
       .select('user_id, username, password_hash, display_name, role, active')
@@ -48,6 +53,7 @@ module.exports = async (req, res) => {
       return res.status(401).json({ success: false, error: 'Password salah' });
     }
 
+    failureStage = 'database-update';
     const updates = { last_login: new Date().toISOString() };
     if (isLegacyPasswordHash(user.password_hash)) {
       updates.password_hash = hashPassword(password);
@@ -58,6 +64,7 @@ module.exports = async (req, res) => {
       .update(updates)
       .eq('user_id', user.user_id);
 
+    failureStage = 'token';
     const sessionUser = {
       userId: user.user_id,
       username: user.username,
@@ -80,7 +87,11 @@ module.exports = async (req, res) => {
       expiresIn
     });
   } catch (error) {
-    console.error('[login] Unexpected error:', error.message);
-    return res.status(500).json({ success: false, error: 'Internal server error' });
+    console.error(`[login] Failure during ${failureStage}:`, error.message);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      code: `LOGIN_${failureStage.toUpperCase().replace(/-/g, '_')}_FAILED`
+    });
   }
 };
