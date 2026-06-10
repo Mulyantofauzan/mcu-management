@@ -74,9 +74,48 @@ class AuthService {
     this.currentUser = this.loadCurrentUser();
   }
 
+  isLocalDevelopment() {
+    return window.location.protocol === 'file:'
+      || window.location.hostname === 'localhost'
+      || window.location.hostname === '127.0.0.1';
+  }
+
+  isAccessTokenValid(token = localStorage.getItem(ACCESS_TOKEN_KEY)) {
+    if (!token) return false;
+
+    try {
+      const payloadPart = token.split('.')[1];
+      if (!payloadPart) return false;
+
+      const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+      const payload = JSON.parse(atob(padded));
+      const now = Math.floor(Date.now() / 1000);
+
+      return Boolean(payload.exp && payload.exp > now);
+    } catch (error) {
+      return false;
+    }
+  }
+
   loadCurrentUser() {
     const userJson = localStorage.getItem(CURRENT_USER_KEY);
-    return userJson ? JSON.parse(userJson) : null;
+    if (!userJson) return null;
+
+    try {
+      const user = JSON.parse(userJson);
+      if (!this.isLocalDevelopment() && !this.isAccessTokenValid()) {
+        localStorage.removeItem(CURRENT_USER_KEY);
+        localStorage.removeItem(ACCESS_TOKEN_KEY);
+        return null;
+      }
+
+      return user;
+    } catch (error) {
+      localStorage.removeItem(CURRENT_USER_KEY);
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
+      return null;
+    }
   }
 
   saveCurrentUser(user, accessToken = null) {
@@ -98,7 +137,12 @@ class AuthService {
   }
 
   getAccessToken() {
-    return localStorage.getItem(ACCESS_TOKEN_KEY);
+    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+    if (token && !this.isAccessTokenValid(token)) {
+      this.clearCurrentUser();
+      return null;
+    }
+    return token;
   }
 
   clearAccessToken() {
@@ -106,7 +150,7 @@ class AuthService {
   }
 
   async loginWithServer(username, password) {
-    if (!window.location.protocol.startsWith('http')) {
+    if (window.location.protocol === 'file:') {
       return null;
     }
 
@@ -123,7 +167,7 @@ class AuthService {
       return result.user;
     }
 
-    if (response.status === 404) {
+    if (response.status === 404 && this.isLocalDevelopment()) {
       return null;
     }
 
@@ -154,13 +198,17 @@ class AuthService {
   }
 
   async login(username, password) {
+    if (!this.isLocalDevelopment()) {
+      return await this.loginWithServer(username, password);
+    }
+
     try {
-      const serverUser = await this.loginWithServer(username, password);
-      if (serverUser) {
-        return serverUser;
+      const localServerUser = await this.loginWithServer(username, password);
+      if (localServerUser) {
+        return localServerUser;
       }
     } catch (error) {
-      if (error.message !== 'Server login belum siap') {
+      if (error.message !== 'Server login belum siap' && !error.message.includes('Failed to fetch')) {
         throw error;
       }
     }
@@ -243,7 +291,20 @@ class AuthService {
   }
 
   isAuthenticated() {
-    return this.currentUser !== null;
+    if (!this.currentUser) {
+      return false;
+    }
+
+    if (this.isLocalDevelopment()) {
+      return true;
+    }
+
+    if (!this.isAccessTokenValid()) {
+      this.clearCurrentUser();
+      return false;
+    }
+
+    return true;
   }
 
   isAdmin() {
