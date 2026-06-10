@@ -11,7 +11,7 @@
  */
 
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
-const { createClient } = require('@supabase/supabase-js');
+const { getSupabaseAdmin } = require('./supabaseAdmin');
 
 // Validate R2 configuration on startup
 function validateR2Config() {
@@ -35,12 +35,6 @@ function validateR2Config() {
   }
   return true;
 }
-
-// Initialize Supabase client for metadata and employee name lookups
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
 
 // Validate and initialize R2 configuration
 let s3Client = null;
@@ -83,6 +77,7 @@ const ALLOWED_TYPES = {
  */
 async function getEmployeeName(employeeId) {
   try {
+    const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from('employees')
       .select('name')
@@ -125,6 +120,7 @@ function generatePublicUrl(filePath) {
  */
 async function saveFileMetadata(fileName, employeeId, mcuId, fileSize, mimeType, storagePath, publicUrl) {
   try {
+    const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from('mcufiles')
       .insert([{

@@ -26,7 +26,7 @@ module.exports = async (req, res) => {
       'CLOUDFLARE_R2_SECRET_ACCESS_KEY': process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
       'CLOUDFLARE_R2_BUCKET_NAME': process.env.CLOUDFLARE_R2_BUCKET_NAME,
       'CLOUDFLARE_ACCOUNT_ID': process.env.CLOUDFLARE_ACCOUNT_ID,
-      'SUPABASE_URL': process.env.SUPABASE_URL,
+      'SUPABASE_URL': process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
       'SUPABASE_SERVICE_ROLE_KEY': process.env.SUPABASE_SERVICE_ROLE_KEY
     };
     const status = {};

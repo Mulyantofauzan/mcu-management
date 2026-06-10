@@ -1,4 +1,3 @@
-const { createClient } = require('@supabase/supabase-js');
 const {
   setCorsHeaders,
   signJwt,
@@ -7,13 +6,7 @@ const {
   verifyPassword,
   isLegacyPasswordHash
 } = require('../../server/auth-utils');
-
-function getSupabaseAdmin() {
-  return createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
-}
+const { getSupabaseAdmin, hasSupabaseAdminConfig } = require('../../server/supabaseAdmin');
 
 module.exports = async (req, res) => {
   setCorsHeaders(req, res, 'POST, OPTIONS');
@@ -27,7 +20,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.SUPABASE_JWT_SECRET) {
+    if (!hasSupabaseAdminConfig() || !process.env.SUPABASE_JWT_SECRET) {
       return res.status(500).json({ success: false, error: 'Server auth is not configured' });
     }
 
@@ -87,6 +80,7 @@ module.exports = async (req, res) => {
       expiresIn
     });
   } catch (error) {
+    console.error('[login] Unexpected error:', error.message);
     return res.status(500).json({ success: false, error: 'Internal server error' });
   }
 };

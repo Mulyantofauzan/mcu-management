@@ -11,15 +11,9 @@
  * This is irreversible - files and MCU record are completely removed.
  */
 
-const { createClient } = require('@supabase/supabase-js');
 const { S3Client, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const { setCorsHeaders, requireAuth } = require('../../server/auth-utils');
-
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const { getSupabaseAdmin } = require('../../server/supabaseAdmin');
 
 // Initialize R2 S3 Client
 let s3Client = null;
@@ -62,6 +56,7 @@ module.exports = async (req, res) => {
   if (!auth) return;
 
   try {
+    const supabase = getSupabaseAdmin();
     const { mcuId } = req.query;
 
     // Validate required parameters

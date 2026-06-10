@@ -6,14 +6,8 @@
  * Does NOT delete from R2 storage (keeps backup)
  */
 
-const { createClient } = require('@supabase/supabase-js');
 const { setCorsHeaders, requireAuth } = require('../../server/auth-utils');
-
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const { getSupabaseAdmin } = require('../../server/supabaseAdmin');
 
 module.exports = async (req, res) => {
   setCorsHeaders(req, res, 'DELETE, OPTIONS');
@@ -30,6 +24,7 @@ module.exports = async (req, res) => {
   if (!auth) return;
 
   try {
+    const supabase = getSupabaseAdmin();
     const { fileId } = req.query;
 
     // Validate required parameters

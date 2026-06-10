@@ -6,9 +6,9 @@
  * This is used when permanently deleting employees or for secure file removal
  */
 
-const { createClient } = require('@supabase/supabase-js');
 const { S3Client, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const { setCorsHeaders, requireAuth } = require('../../server/auth-utils');
+const { getSupabaseAdmin, hasSupabaseAdminConfig } = require('../../server/supabaseAdmin');
 
 module.exports = async (req, res) => {
   setCorsHeaders(req, res, 'DELETE, OPTIONS');
@@ -26,7 +26,7 @@ module.exports = async (req, res) => {
 
   try {
     // Validate environment variables first
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    if (!hasSupabaseAdminConfig()) {
       console.error('[hard-delete-file] Missing Supabase credentials');
       return res.status(500).json({
         error: 'Server configuration error: Missing Supabase credentials'
@@ -41,10 +41,7 @@ module.exports = async (req, res) => {
     }
 
     // Initialize clients inside handler
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
+    const supabase = getSupabaseAdmin();
 
     const r2 = new S3Client({
       region: 'auto',

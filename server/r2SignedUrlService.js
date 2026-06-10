@@ -12,13 +12,7 @@
 
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-const { createClient } = require('@supabase/supabase-js');
-
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const { getSupabaseAdmin } = require('./supabaseAdmin');
 
 // Initialize R2 S3 Client
 const s3Client = new S3Client({
@@ -74,6 +68,7 @@ async function getAuthorizedSignedUrl(fileId, userId) {
       throw new Error('File ID and User ID are required');
     }
     // Get file from database
+    const supabase = getSupabaseAdmin();
     const { data: file, error: fileError } = await supabase
       .from('mcufiles')
       .select('fileid, filename, supabase_storage_path, mcuid, employeeid')
@@ -117,6 +112,7 @@ async function getAuthorizedMcuFiles(mcuId, userId) {
       throw new Error('MCU ID and User ID are required');
     }
     // Get all files for MCU
+    const supabase = getSupabaseAdmin();
     const { data: files, error: filesError } = await supabase
       .from('mcufiles')
       .select('fileid, filename, supabase_storage_path, employeeid')
