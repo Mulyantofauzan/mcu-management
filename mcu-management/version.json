@@ -1,7 +1,9 @@
 {
-  "version": "1.0.24",
-  "releaseDate": "2026-01-29",
+  "version": "1.0.25",
+  "releaseDate": "2026-06-19",
   "features": [
+    "Automatic service worker update without hard refresh",
+    "Fresh department and application data after normal reload",
     "Excel export functionality for Jakarta Cardiovascular assessments",
     "MCU change history tracking (Riwayat Perubahan)",
     "Automatic cache invalidation on new versions",

@@ -13,6 +13,7 @@
   <link rel="manifest" href="../assets/site.webmanifest">
 
   <link rel="stylesheet" href="../css/output.css" />
+  <script type="module" src="../js/appBootstrap.js"></script>
 
   <!-- Environment Configuration (must load first!) -->
   <script src="../env-config.js"></script>
@@ -245,19 +246,5 @@
     showLogoutMessage();
   </script>
 
-  <!-- Display App Version -->
-  <script>
-    // Load version from version.json
-    fetch('../version.json')
-      .then(res => res.json())
-      .then(data => {
-        const versionElements = document.querySelectorAll('#app-version');
-        versionElements.forEach(el => {
-          el.textContent = 'v' + data.version;
-        });
-      })
-      .catch(err => {
-      });
-  </script>
 </body>
 </html>

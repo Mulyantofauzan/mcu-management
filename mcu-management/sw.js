@@ -14,7 +14,7 @@
  * 3. Stale-while-revalidate: Master data (fetch fresh, serve stale immediately)
  */
 
-const CACHE_VERSION = 'madis-v23'; // Increment when deploying new features
+const CACHE_VERSION = 'madis-v25';
 const MAX_CACHE_ENTRIES = 200;
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
@@ -25,6 +25,8 @@ const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/css/output.css',
+  '/css/sidebar.css',
+  '/js/appBootstrap.js',
   '/assets/images/favicon.ico',
   '/js/config/envConfig.js',
   '/js/config/supabase.js',
@@ -77,10 +79,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Skip external CDN requests (let them go to network)
-  if (url.hostname !== location.hostname && url.origin.includes('cdn.jsdelivr') === false) {
+  // Never cache the release manifest. It is the source of truth for updates.
+  if (url.pathname === '/version.json') {
+    event.respondWith(networkOnlyStrategy(request));
     return;
   }
+
+  // External libraries and Supabase manage their own network behavior.
+  if (url.hostname !== location.hostname) return;
 
   // HTML pages - Network first
   if (request.headers.get('Accept')?.includes('text/html')) {
@@ -88,20 +94,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Supabase API calls - Network first with longer timeout
-  if (url.hostname === 'xqyuktsfjvdqfhulobai.supabase.co') {
-    event.respondWith(apiNetworkFirstStrategy(request));
-    return;
-  }
-
-  // API calls - Network first with API cache
+  // Do not persist API responses because they may contain user-specific data.
   if (url.pathname.includes('/api/')) {
-    event.respondWith(apiNetworkFirstStrategy(request));
+    event.respondWith(networkOnlyStrategy(request));
     return;
   }
 
-  // JavaScript modules - Network first (to ensure fresh code)
-  if (url.pathname.endsWith('.js')) {
+  // Unhashed code and styles must revalidate on every normal reload.
+  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
     event.respondWith(networkFirstStrategy(request));
     return;
   }
@@ -112,18 +112,22 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // CDN resources - Cache first with network fallback
-  if (url.origin.includes('cdn.jsdelivr') || url.origin.includes('unpkg') || url.origin.includes('cdnjs')) {
-    event.respondWith(cacheFirstStrategy(request));
-    return;
-  }
-
-  // Database requests - Network first
-  if (url.pathname.includes('supabase') || url.pathname.includes('realtime')) {
+  if (url.pathname.endsWith('.json')) {
     event.respondWith(networkFirstStrategy(request));
     return;
   }
 });
+
+async function networkOnlyStrategy(request) {
+  try {
+    return await fetch(request, { cache: 'no-store' });
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: 'Network unavailable' }),
+      { status: 503, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
 
 /**
  * Cache-first strategy: Try cache first, fall back to network

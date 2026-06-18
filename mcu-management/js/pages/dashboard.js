@@ -3,21 +3,6 @@
  * Main dashboard with KPIs and charts
  */
 
-// ✅ PERFORMANCE: Register service worker for offline support and caching
-// Must be done on app initialization for best results
-if ('serviceWorker' in navigator) {
-  // Determine service worker path based on app location
-  // dashboard.js is at: /js/pages/dashboard.js
-  // sw.js is at: /sw.js (relative to root)
-  const swPath = '/sw.js';
-  const scope = '/';
-
-  navigator.serviceWorker.register(swPath, { scope })
-    .catch((error) => {
-      // Service worker registration failed (may be due to 404 or other issues)
-      // App will still work, just without offline support
-    });
-}
 // ✅ CRITICAL: Load environment config BEFORE importing Supabase
 // This ensures window.ENV is set before supabase.js tries to use it
 import { initializeEnv, logEnvStatus } from '../config/envConfig.js';
@@ -34,7 +19,6 @@ import { sessionManager } from '../utils/sessionManager.js';
 import { checkAndSeedIfEmpty } from '../seedData.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 import storageDiagnostic from '../utils/storageDiagnostic.js';  // ✅ Diagnostic tools for file upload troubleshooting
-import { initVersionManager } from '../utils/versionManager.js';  // ✅ Version update manager
 import { initThemeManager } from '../utils/themeManager.js';  // ✅ Dark mode / Light mode manager
 import { networkStatusManager } from '../utils/networkStatusManager.js';  // ✅ Network status monitoring
 import { topAbnormalitiesChartInstance } from '../components/topAbnormalitiesChart.js';  // ✅ Top abnormalities chart
@@ -75,8 +59,6 @@ async function init() {
     initThemeManager();
     unifiedLoading.updateProgress(15);
 
-    // ✅ Check for app updates and show notification if new version available
-    await initVersionManager();
     unifiedLoading.updateProgress(25);
 
     // Wait for sidebar to load before updating user info

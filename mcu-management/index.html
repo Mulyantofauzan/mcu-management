@@ -20,6 +20,7 @@
 
     <link rel="stylesheet" href="css/output.css">
     <link rel="stylesheet" href="css/sidebar.css">
+    <script type="module" src="js/appBootstrap.js"></script>
 
 
     <!-- Supabase - Production Database (critical) -->
@@ -583,30 +584,6 @@
     <!-- Scripts -->
     <script src="js/sidebar-manager.js"></script>
 
-    <!-- Version Check & Cache Management -->
-    <script type="module">
-        import { initVersionService } from './js/services/versionService.js';
-
-        // Initialize version service to check for updates
-        // This will automatically clear cache if a new version is available
-        initVersionService();
-    </script>
-
     <script type="module" src="js/pages/dashboard.js"></script>
-
-    <!-- Display App Version -->
-    <script>
-        // Load version from version.json
-        fetch('version.json')
-            .then(res => res.json())
-            .then(data => {
-                const versionElements = document.querySelectorAll('#app-version');
-                versionElements.forEach(el => {
-                    el.textContent = 'v' + data.version;
-                });
-            })
-            .catch(err => {
-            });
-    </script>
 </body>
 </html>
