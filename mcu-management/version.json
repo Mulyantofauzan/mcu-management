@@ -1,5 +1,5 @@
 {
-  "version": "1.0.25",
+  "version": "1.0.26",
   "releaseDate": "2026-06-19",
   "features": [
     "Automatic service worker update without hard refresh",

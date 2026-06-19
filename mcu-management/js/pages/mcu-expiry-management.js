@@ -24,7 +24,7 @@ class MCUExpiryManagementPage {
     try {
       // Check authentication
       if (!authService.isAuthenticated()) {
-        window.location.href = '../login.html';
+        window.location.href = 'login.html';
         return;
       }
 

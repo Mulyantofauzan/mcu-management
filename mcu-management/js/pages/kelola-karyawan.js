@@ -434,9 +434,19 @@ async function loadData() {
         // ✅ FIX: Build lookup Maps once for O(1) enrichment (performance optimization)
         const jobMap = new Map(jobTitles.map(j => [j.name, j]));
         const deptMap = new Map(departments.map(d => [d.name, d]));
+        const jobMapById = new Map(jobTitles.flatMap(job => [
+            [String(job.id), job],
+            [String(job.jobTitleId), job]
+        ]));
+        const deptMapById = new Map(departments.flatMap(department => [
+            [String(department.id), department],
+            [String(department.departmentId), department]
+        ]));
 
         // Enrich employee data with IDs using O(1) Map lookups (O(n) total instead of O(n²))
-        employees = employees.map(emp => enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap));
+        employees = employees.map(emp =>
+            enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap, jobMapById, deptMapById)
+        );
         filteredEmployees = [...employees];
 
         // ✅ FIX: Populate filter dropdowns
@@ -454,25 +464,31 @@ async function loadData() {
 // ✅ FIX: Populate department filter dropdown
 function populateFilterDropdowns() {
     const deptSelect = document.getElementById('filter-department');
-    const uniqueDepts = [...new Set(employees.map(e => e.department).filter(Boolean))];
+    if (!deptSelect) return;
 
-    // Get department names from master data
-    uniqueDepts.forEach(deptName => {
+    // Always use master data as the source of truth. Employee records may only
+    // contain departmentId during migration or IndexedDB fallback.
+    deptSelect.innerHTML = '<option value="">Semua Departemen</option>';
+    departments.forEach(department => {
+        if (!department?.name) return;
         const option = document.createElement('option');
-        option.value = deptName;
-        option.textContent = deptName;
+        option.value = department.name;
+        option.textContent = department.name;
         deptSelect.appendChild(option);
     });
 }
 
 // ✅ FIX: Optimized enrichment using Map lookups - O(1) per employee instead of O(n)
-function enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap) {
+function enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap, jobMapById, deptMapById) {
     // Match job title by name to get ID using O(1) Map lookup
     if (emp.jobTitle && !emp.jobTitleId) {
         const job = jobMap.get(emp.jobTitle);
         if (job) {
             emp.jobTitleId = job.id;
         }
+    }
+    if (!emp.jobTitle && emp.jobTitleId) {
+        emp.jobTitle = jobMapById.get(String(emp.jobTitleId))?.name || '';
     }
 
     // Match department by name to get ID using O(1) Map lookup
@@ -481,6 +497,9 @@ function enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap) {
         if (dept) {
             emp.departmentId = dept.id;
         }
+    }
+    if (!emp.department && emp.departmentId) {
+        emp.department = deptMapById.get(String(emp.departmentId))?.name || '';
     }
 
     return emp;

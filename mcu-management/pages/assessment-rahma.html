@@ -169,12 +169,12 @@
     <script src="../js/sidebar-manager.js"></script>
     <script type="module">
         import { initAssessmentRahmaDAshboard } from '../js/pages/assessment-rahma-dashboard.js';
+        import { authService } from '../js/services/authService.js';
 
         // Handle logout
         window.handleLogout = function() {
             if (confirm('Apakah Anda yakin ingin logout?')) {
-                // Logout logic will be handled by auth service
-                location.href = '../index.html?logout=true';
+                authService.logout();
             }
         };
 

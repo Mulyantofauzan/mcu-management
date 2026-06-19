@@ -936,7 +936,7 @@ export async function initAssessmentRahmaDAshboard() {
         // Check auth
         const user = await authService.getCurrentUser();
         if (!user) {
-            showToast('Anda harus login terlebih dahulu', 'error');
+            window.location.replace('login.html');
             return;
         }
 
