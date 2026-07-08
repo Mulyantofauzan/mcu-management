@@ -122,7 +122,8 @@ module.exports = async (req, res) => {
             file.filename,
             employeeId,
             mcuId,
-            file.mimeType
+            file.mimeType,
+            auth.app_user_id || auth.sub || 'system'
           );
           return res.status(200).json({
             success: true,

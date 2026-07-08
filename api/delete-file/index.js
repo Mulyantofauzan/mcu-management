@@ -20,7 +20,7 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const auth = requireAuth(req, res);
+  const auth = requireAuth(req, res, { roles: ['Admin'] });
   if (!auth) return;
 
   try {

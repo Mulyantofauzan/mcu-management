@@ -41,7 +41,7 @@ module.exports = async (req, res) => {
 
     // Case 1: Get single file
     if (fileId) {
-      const result = await getAuthorizedSignedUrl(fileId, authenticatedUserId);
+      const result = await getAuthorizedSignedUrl(fileId, auth);
 
       if (!result.success) {
         return res.status(403).json(result);
@@ -51,7 +51,7 @@ module.exports = async (req, res) => {
 
     // Case 2: Get all files for MCU
     if (mcuId) {
-      const result = await getAuthorizedMcuFiles(mcuId, authenticatedUserId);
+      const result = await getAuthorizedMcuFiles(mcuId, auth);
 
       if (!result.success) {
         return res.status(403).json(result);

@@ -24,6 +24,14 @@ async function init() {
             return;
         }
 
+        if (!authService.isAdmin()) {
+            showToast('Hanya Admin yang dapat mengakses Data Terhapus', 'error');
+            setTimeout(() => {
+                window.location.href = '../index.html';
+            }, 1200);
+            return;
+        }
+
         // Wait for sidebar to load before updating user info
 
         updateUserInfo();

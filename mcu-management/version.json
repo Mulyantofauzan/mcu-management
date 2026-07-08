@@ -1,6 +1,6 @@
 {
-  "version": "1.0.26",
-  "releaseDate": "2026-06-19",
+  "version": "1.0.27",
+  "releaseDate": "2026-07-08",
   "features": [
     "Automatic service worker update without hard refresh",
     "Fresh department and application data after normal reload",

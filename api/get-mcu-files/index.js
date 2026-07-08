@@ -25,6 +25,8 @@ module.exports = async (req, res) => {
   try {
     const supabase = getSupabaseAdmin();
     const { mcuId } = req.query;
+    const userId = auth.app_user_id || auth.sub;
+    const isAdmin = auth.app_role === 'Admin';
 
     // Validate required parameters
     if (!mcuId) {
@@ -33,12 +35,17 @@ module.exports = async (req, res) => {
       });
     }
     // Query mcufiles table for this MCU
-    const { data, error } = await supabase
+    let query = supabase
       .from('mcufiles')
       .select('*')
       .eq('mcuid', mcuId)
-      .is('deletedat', null)
-      .order('uploadedat', { ascending: false });
+      .is('deletedat', null);
+
+    if (!isAdmin) {
+      query = query.eq('uploadedby', userId);
+    }
+
+    const { data, error } = await query.order('uploadedat', { ascending: false });
 
     if (error) {
       return res.status(500).json({

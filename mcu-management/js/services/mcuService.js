@@ -4,6 +4,7 @@
  */
 
 import { database } from './database.js';
+import { authService } from './authService.js';
 import { generateMCUId } from '../utils/idGenerator.js';
 import { getCurrentTimestamp, calculateAge } from '../utils/dateHelpers.js';
 import { diffAndSaveHistory, createInitialChangeEntry } from '../utils/diffHelpers.js';
@@ -372,6 +373,32 @@ class MCUService {
   }
 
   async permanentDelete(mcuId, currentUser) {
+    const accessToken = authService.getAccessToken();
+    if (accessToken && !authService.isLocalDevelopment()) {
+      const response = await fetch(`/api/permanently-delete-mcu?mcuId=${encodeURIComponent(mcuId)}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
+
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result.success === false) {
+        throw new Error(result.error || `Permanent delete failed with status ${response.status}`);
+      }
+
+      if (currentUser?.userId) {
+        try {
+          await database.logActivity('delete', 'MCU', mcuId, currentUser.userId,
+            `Permanently deleted MCU via server API: ${mcuId}`);
+        } catch (error) {
+          // Delete already completed on the server; logging must not mark it failed.
+        }
+      }
+
+      return true;
+    }
+
     // Get MCU info before permanent delete for audit trail
     const mcu = await this.getById(mcuId);
 

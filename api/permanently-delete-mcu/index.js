@@ -41,6 +41,22 @@ try {
 
 const R2_BUCKET = process.env.CLOUDFLARE_R2_BUCKET_NAME;
 
+async function deleteRelatedRows(supabase, table, column, mcuId) {
+  const { count, error } = await supabase
+    .from(table)
+    .delete({ count: 'exact' })
+    .eq(column, mcuId);
+
+  if (error) {
+    if (error.code === '42P01') {
+      return 0;
+    }
+    throw new Error(`Failed to delete ${table}: ${error.message}`);
+  }
+
+  return count || 0;
+}
+
 module.exports = async (req, res) => {
   setCorsHeaders(req, res, 'DELETE, OPTIONS');
 
@@ -87,6 +103,10 @@ module.exports = async (req, res) => {
     let r2DeletedCount = 0;
     let r2FailedCount = 0;
     let dbDeletedCount = 0;
+    let labDeletedCount = 0;
+    let changeDeletedCount = 0;
+    let medicalHistoryDeletedCount = 0;
+    let familyHistoryDeletedCount = 0;
 
     if (files && files.length > 0) {
       for (const file of files) {
@@ -127,7 +147,20 @@ module.exports = async (req, res) => {
       }
     }
 
-    // Step 3: Hard delete MCU record itself
+    // Step 3: Hard delete related rows before the MCU record
+    try {
+      labDeletedCount = await deleteRelatedRows(supabase, 'pemeriksaan_lab', 'mcu_id', mcuId);
+      changeDeletedCount = await deleteRelatedRows(supabase, 'mcu_changes', 'mcu_id', mcuId);
+      medicalHistoryDeletedCount = await deleteRelatedRows(supabase, 'medical_histories', 'mcu_id', mcuId);
+      familyHistoryDeletedCount = await deleteRelatedRows(supabase, 'family_histories', 'mcu_id', mcuId);
+    } catch (relatedDeleteError) {
+      console.error('[permanently-delete-mcu] Failed to delete related rows:', relatedDeleteError.message);
+      return res.status(500).json({
+        error: relatedDeleteError.message
+      });
+    }
+
+    // Step 4: Hard delete MCU record itself
     console.log(`[permanently-delete-mcu] Hard-deleting MCU record: ${mcuId}`);
     const { error: mcuDeleteError } = await supabase
       .from('mcus')
@@ -146,6 +179,8 @@ module.exports = async (req, res) => {
     console.log(`  - R2 deleted: ${r2DeletedCount}`);
     console.log(`  - R2 failed: ${r2FailedCount}`);
     console.log(`  - Database files hard-deleted: ${dbDeletedCount}`);
+    console.log(`  - Lab rows hard-deleted: ${labDeletedCount}`);
+    console.log(`  - Change rows hard-deleted: ${changeDeletedCount}`);
     console.log(`  - MCU record hard-deleted: yes`);
 
     return res.status(200).json({
@@ -154,6 +189,10 @@ module.exports = async (req, res) => {
       mcuId: mcuId,
       filesDeleted: dbDeletedCount,
       totalFiles: files ? files.length : 0,
+      labDeletedCount: labDeletedCount,
+      changeDeletedCount: changeDeletedCount,
+      medicalHistoryDeletedCount: medicalHistoryDeletedCount,
+      familyHistoryDeletedCount: familyHistoryDeletedCount,
       r2DeletedCount: r2DeletedCount,
       r2FailedCount: r2FailedCount,
       r2Enabled: R2_ENABLED

@@ -118,7 +118,7 @@ function generatePublicUrl(filePath) {
 /**
  * Save file metadata to database
  */
-async function saveFileMetadata(fileName, employeeId, mcuId, fileSize, mimeType, storagePath, publicUrl) {
+async function saveFileMetadata(fileName, employeeId, mcuId, fileSize, mimeType, storagePath, publicUrl, uploadedBy = 'system') {
   try {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
@@ -134,7 +134,7 @@ async function saveFileMetadata(fileName, employeeId, mcuId, fileSize, mimeType,
         google_drive_link: publicUrl,
         google_drive_folder_id: STORAGE_BUCKET,
         uploadedat: new Date().toISOString(),
-        uploadedby: 'system',
+        uploadedby: uploadedBy,
         createdat: new Date().toISOString(),
         updatedat: new Date().toISOString()
       }])
@@ -152,7 +152,7 @@ async function saveFileMetadata(fileName, employeeId, mcuId, fileSize, mimeType,
 /**
  * Upload file to Cloudflare R2
  */
-async function uploadFileToStorage(fileBuffer, fileName, employeeId, mcuId, mimeType) {
+async function uploadFileToStorage(fileBuffer, fileName, employeeId, mcuId, mimeType, uploadedBy = 'system') {
   try {
     // Check R2 configuration
     if (!R2_CONFIG_VALID || !s3Client) {
@@ -204,7 +204,8 @@ async function uploadFileToStorage(fileBuffer, fileName, employeeId, mcuId, mime
       fileBuffer.length,
       mimeType,
       filePath,
-      publicUrl
+      publicUrl,
+      uploadedBy
     );
 
     if (!metadataResult) {

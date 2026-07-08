@@ -28,6 +28,25 @@ const STORAGE_BUCKET = process.env.CLOUDFLARE_R2_BUCKET_NAME;
 const R2_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
 const SIGNED_URL_EXPIRY_SECONDS = 3600; // 1 hour
 
+function getUserId(claimsOrUserId) {
+  if (!claimsOrUserId) return null;
+  if (typeof claimsOrUserId === 'string') return claimsOrUserId;
+  return claimsOrUserId.app_user_id || claimsOrUserId.sub || null;
+}
+
+function isAdmin(claimsOrUserId) {
+  return Boolean(claimsOrUserId && typeof claimsOrUserId === 'object' && claimsOrUserId.app_role === 'Admin');
+}
+
+function canAccessFile(file, claimsOrUserId) {
+  if (isAdmin(claimsOrUserId)) return true;
+
+  const userId = getUserId(claimsOrUserId);
+  if (!userId || !file?.uploadedby) return false;
+
+  return String(file.uploadedby) === String(userId);
+}
+
 /**
  * Generate a signed URL for downloading a file from private R2 bucket
  * @param {string} filePath - File path in R2 (e.g., mcu_files/John_Doe_EMP001/MCU-2024-001/file.pdf)
@@ -62,8 +81,9 @@ async function generateSignedUrl(filePath, expirySeconds = SIGNED_URL_EXPIRY_SEC
  * @param {string} userId - User ID requesting the download
  * @returns {Promise<Object>} { success, signedUrl, fileName }
  */
-async function getAuthorizedSignedUrl(fileId, userId) {
+async function getAuthorizedSignedUrl(fileId, claimsOrUserId) {
   try {
+    const userId = getUserId(claimsOrUserId);
     if (!fileId || !userId) {
       throw new Error('File ID and User ID are required');
     }
@@ -71,7 +91,7 @@ async function getAuthorizedSignedUrl(fileId, userId) {
     const supabase = getSupabaseAdmin();
     const { data: file, error: fileError } = await supabase
       .from('mcufiles')
-      .select('fileid, filename, supabase_storage_path, mcuid, employeeid')
+      .select('fileid, filename, supabase_storage_path, mcuid, employeeid, uploadedby')
       .eq('fileid', fileId)
       .is('deletedat', null)
       .single();
@@ -81,6 +101,9 @@ async function getAuthorizedSignedUrl(fileId, userId) {
     }
     if (!file.supabase_storage_path) {
       throw new Error('File storage path not found');
+    }
+    if (!canAccessFile(file, claimsOrUserId)) {
+      throw new Error('Forbidden: file access denied');
     }
 
     // Generate signed URL
@@ -106,8 +129,9 @@ async function getAuthorizedSignedUrl(fileId, userId) {
  * @param {string} userId - User ID requesting access
  * @returns {Promise<Object>} { success, files: [{filename, signedUrl, expiresIn}] }
  */
-async function getAuthorizedMcuFiles(mcuId, userId) {
+async function getAuthorizedMcuFiles(mcuId, claimsOrUserId) {
   try {
+    const userId = getUserId(claimsOrUserId);
     if (!mcuId || !userId) {
       throw new Error('MCU ID and User ID are required');
     }
@@ -115,7 +139,7 @@ async function getAuthorizedMcuFiles(mcuId, userId) {
     const supabase = getSupabaseAdmin();
     const { data: files, error: filesError } = await supabase
       .from('mcufiles')
-      .select('fileid, filename, supabase_storage_path, employeeid')
+      .select('fileid, filename, supabase_storage_path, employeeid, uploadedby')
       .eq('mcuid', mcuId)
       .is('deletedat', null);
 
@@ -123,7 +147,9 @@ async function getAuthorizedMcuFiles(mcuId, userId) {
       throw new Error(`Database error: ${filesError.message}`);
     }
 
-    if (!files || files.length === 0) {
+    const accessibleFiles = (files || []).filter(file => canAccessFile(file, claimsOrUserId));
+
+    if (accessibleFiles.length === 0) {
       return {
         success: true,
         files: [],
@@ -132,7 +158,7 @@ async function getAuthorizedMcuFiles(mcuId, userId) {
     }
     // Generate signed URLs for all files
     const filesWithUrls = await Promise.all(
-      files.map(async (file) => {
+      accessibleFiles.map(async (file) => {
         try {
           const signedUrl = await generateSignedUrl(file.supabase_storage_path);
           return {

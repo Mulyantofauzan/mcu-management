@@ -117,6 +117,7 @@ export const Users = {
             if (updates.passwordHash) updateData.password_hash = updates.passwordHash;
             if (updates.displayName) updateData.display_name = updates.displayName;
             if (updates.role) updateData.role = updates.role;
+            if (updates.active !== undefined) updateData.active = updates.active;
             if (updates.lastLogin !== undefined) updateData.last_login = updates.lastLogin;
             if (updates.updatedAt) updateData.updated_at = updates.updatedAt;
 
