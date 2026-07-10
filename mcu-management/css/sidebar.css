@@ -177,8 +177,120 @@
 }
 
 @media (max-width: 767px) {
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
   body > .ml-64 {
     margin-left: 0;
+    width: 100%;
+    min-width: 0;
+  }
+
+  body > .ml-64 > header {
+    padding: 0.75rem 1rem 0.75rem 4.25rem;
+  }
+
+  body > .ml-64 > header .flex,
+  body > .ml-64 main .flex.justify-between,
+  body > .ml-64 main .flex.items-center.justify-between {
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  body > .ml-64 > header h1,
+  body > .ml-64 main h1,
+  body > .ml-64 main h2 {
+    line-height: 1.2;
+  }
+
+  body > .ml-64 main,
+  body > .ml-64 > .p-8 {
+    padding: 1rem;
+  }
+
+  body > .ml-64 .card {
+    padding: 1rem;
+    border-radius: 0.875rem;
+  }
+
+  body > .ml-64 .grid.grid-cols-2,
+  body > .ml-64 .grid.grid-cols-3,
+  body > .ml-64 .grid.md\:grid-cols-2,
+  body > .ml-64 .grid.md\:grid-cols-3,
+  body > .ml-64 .grid.md\:grid-cols-4,
+  body > .ml-64 .grid.lg\:grid-cols-2,
+  body > .ml-64 .grid.lg\:grid-cols-3,
+  body > .ml-64 .grid.lg\:grid-cols-4,
+  body > .ml-64 .grid.lg\:grid-cols-5 {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body > .ml-64 .col-span-2,
+  body > .ml-64 .col-span-3,
+  body > .ml-64 .md\:col-span-2,
+  body > .ml-64 .lg\:col-span-2,
+  body > .ml-64 .lg\:col-span-3 {
+    grid-column: auto !important;
+  }
+
+  body > .ml-64 .table-container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body > .ml-64 .table {
+    width: max-content;
+    min-width: 100%;
+  }
+
+  body > .ml-64 .table th {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.6875rem;
+  }
+
+  body > .ml-64 .table td {
+    padding: 0.75rem;
+  }
+
+  .modal-overlay {
+    align-items: flex-start;
+    padding: 0.75rem;
+    overflow-y: auto;
+  }
+
+  .modal {
+    max-width: 100%;
+    max-height: calc(100vh - 1.5rem);
+    border-radius: 1rem;
+  }
+
+  .modal-header,
+  .modal-footer {
+    padding: 1rem;
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .modal-footer .btn,
+  .modal-footer button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .toast {
+    right: 1rem;
+    left: 1rem;
+    min-width: 0;
+    max-width: none;
   }
 
   .sidebar {

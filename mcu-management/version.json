@@ -1,7 +1,8 @@
 {
-  "version": "1.0.27",
-  "releaseDate": "2026-07-08",
+  "version": "1.0.28",
+  "releaseDate": "2026-07-10",
   "features": [
+    "Mobile layout fixes for authenticated pages",
     "Automatic service worker update without hard refresh",
     "Fresh department and application data after normal reload",
     "Excel export functionality for Jakarta Cardiovascular assessments",
