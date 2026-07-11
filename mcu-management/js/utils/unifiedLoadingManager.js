@@ -12,6 +12,9 @@ export class UnifiedLoadingManager {
         this.progressPercent = null;
         this.isVisible = false;
         this.currentProgress = 0;
+        this.displayedProgress = 0;
+        this.animationFrame = null;
+        this.animationResolve = null;
     }
 
     /**
@@ -27,6 +30,11 @@ export class UnifiedLoadingManager {
             this.messageElement.textContent = message;
         }
 
+        this._cancelProgressAnimation();
+        this.currentProgress = 0;
+        this.displayedProgress = 0;
+        this._renderProgress(0);
+
         // Show using both methods for compatibility
         this.loadingElement.classList.remove('hidden');
         this.loadingElement.style.display = 'flex';
@@ -38,6 +46,7 @@ export class UnifiedLoadingManager {
      * Hide loading screen
      */
     hide() {
+        this._cancelProgressAnimation();
         if (this.loadingElement) {
             this.loadingElement.classList.add('hidden');
             this.loadingElement.style.display = 'none';
@@ -61,15 +70,48 @@ export class UnifiedLoadingManager {
      * @param {number} percent - Progress percentage (0-100)
      */
     updateProgress(percent) {
-        this.currentProgress = Math.min(100, Math.max(0, percent));
-        if (this.progressBar) {
-            this.progressBar.style.width = this.currentProgress + '%';
+        const target = Math.min(100, Math.max(0, percent));
+        const start = this.displayedProgress;
+        this.currentProgress = target;
+        this._cancelProgressAnimation();
+
+        if (start === target || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            this.displayedProgress = target;
+            this._renderProgress(target);
+            return Promise.resolve();
         }
-        if (this.progressPercent) {
-            this.progressPercent.textContent = Math.round(this.currentProgress);
-        }
-        // Uncomment for detailed progress debugging:
-        // console.log(`Progress: ${this.currentProgress}%`);
+
+        const duration = Math.min(600, Math.max(220, Math.abs(target - start) * 9));
+
+        return new Promise(resolve => {
+            let startTime = null;
+            this.animationResolve = resolve;
+
+            const animate = timestamp => {
+                if (startTime === null) startTime = timestamp;
+
+                const elapsed = Math.min(1, (timestamp - startTime) / duration);
+                const eased = elapsed < 0.5
+                    ? 4 * elapsed * elapsed * elapsed
+                    : 1 - Math.pow(-2 * elapsed + 2, 3) / 2;
+
+                this.displayedProgress = start + ((target - start) * eased);
+                this._renderProgress(this.displayedProgress);
+
+                if (elapsed < 1) {
+                    this.animationFrame = window.requestAnimationFrame(animate);
+                    return;
+                }
+
+                this.animationFrame = null;
+                this.animationResolve = null;
+                this.displayedProgress = target;
+                this._renderProgress(target);
+                resolve();
+            };
+
+            this.animationFrame = window.requestAnimationFrame(animate);
+        });
     }
 
     /**
@@ -77,7 +119,27 @@ export class UnifiedLoadingManager {
      * @param {number} increment - Amount to increment (default: 10)
      */
     incrementProgress(increment = 10) {
-        this.updateProgress(this.currentProgress + increment);
+        return this.updateProgress(this.currentProgress + increment);
+    }
+
+    _renderProgress(percent) {
+        if (this.progressBar) {
+            this.progressBar.style.width = percent + '%';
+        }
+        if (this.progressPercent) {
+            this.progressPercent.textContent = Math.round(percent);
+        }
+    }
+
+    _cancelProgressAnimation() {
+        if (this.animationFrame !== null) {
+            window.cancelAnimationFrame(this.animationFrame);
+            this.animationFrame = null;
+        }
+        if (this.animationResolve) {
+            this.animationResolve();
+            this.animationResolve = null;
+        }
     }
 
     /**
@@ -121,7 +183,13 @@ export class UnifiedLoadingManager {
         this.progressBar = this.loadingElement.querySelector('#unified-loading-bar');
         this.progressPercent = this.loadingElement.querySelector('#unified-loading-percent');
 
+        if (this.progressBar) {
+            this.progressBar.style.transition = 'none';
+            this.progressBar.style.willChange = 'width';
+        }
+
         this.currentProgress = 0;
+        this.displayedProgress = 0;
     }
 
     /**

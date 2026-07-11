@@ -972,10 +972,10 @@ export async function initAssessmentRahmaDAshboard() {
         }
 
         // Complete progress
-        unifiedLoading.updateProgress(100);
+        await unifiedLoading.updateProgress(100);
 
         // Small delay to show 100% before hiding
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 150));
 
         // Hide loading spinner
         unifiedLoading.hide();

@@ -1,7 +1,8 @@
 {
-  "version": "1.0.28",
-  "releaseDate": "2026-07-10",
+  "version": "1.0.29",
+  "releaseDate": "2026-07-11",
   "features": [
+    "Smooth loading progress animation",
     "Mobile layout fixes for authenticated pages",
     "Automatic service worker update without hard refresh",
     "Fresh department and application data after normal reload",

@@ -99,10 +99,10 @@ async function init() {
     unifiedLoading.updateProgress(95);
 
     // Final progress
-    unifiedLoading.updateProgress(100);
+    await unifiedLoading.updateProgress(100);
 
     // Brief pause for visual feedback
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 150));
 
     // Hide loading overlay
     unifiedLoading.hide();
