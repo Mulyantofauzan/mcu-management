@@ -484,6 +484,7 @@ function updateMCUTypeChart(filteredMCUs) {
     options: {
       responsive: true,
       maintainAspectRatio: true,
+      aspectRatio: 1.8,
       plugins: {
         legend: {
           position: 'bottom'
@@ -554,6 +555,7 @@ function updateStatusChart(filteredMCUs) {
     options: {
       responsive: true,
       maintainAspectRatio: true,
+      aspectRatio: 1.8,
       plugins: {
         legend: {
           position: 'bottom'

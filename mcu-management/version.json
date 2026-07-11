@@ -1,7 +1,8 @@
 {
-  "version": "1.0.29",
+  "version": "1.0.30",
   "releaseDate": "2026-07-11",
   "features": [
+    "Compact dashboard pie and doughnut charts",
     "Smooth loading progress animation",
     "Mobile layout fixes for authenticated pages",
     "Automatic service worker update without hard refresh",
