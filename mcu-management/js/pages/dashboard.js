@@ -421,7 +421,7 @@ function updateDepartmentChart(filteredMCUs) {
     },
     options: {
       responsive: true,
-      maintainAspectRatio: true,
+      maintainAspectRatio: false,
       plugins: {
         legend: {
           display: false
@@ -483,8 +483,7 @@ function updateMCUTypeChart(filteredMCUs) {
     },
     options: {
       responsive: true,
-      maintainAspectRatio: true,
-      aspectRatio: 1.8,
+      maintainAspectRatio: false,
       plugins: {
         legend: {
           position: 'bottom'
@@ -554,8 +553,7 @@ function updateStatusChart(filteredMCUs) {
     },
     options: {
       responsive: true,
-      maintainAspectRatio: true,
-      aspectRatio: 1.8,
+      maintainAspectRatio: false,
       plugins: {
         legend: {
           position: 'bottom'
@@ -612,7 +610,7 @@ function updateBloodTypeChart(filteredMCUs) {
     },
     options: {
       responsive: true,
-      maintainAspectRatio: true,
+      maintainAspectRatio: false,
       plugins: {
         legend: {
           display: false
@@ -715,7 +713,7 @@ async function updateMCUTrendChart() {
       },
       options: {
         responsive: true,
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: {
             display: false
@@ -797,7 +795,7 @@ function updateAgeDistributionChart(filteredMCUs) {
     },
     options: {
       responsive: true,
-      maintainAspectRatio: true,
+      maintainAspectRatio: false,
       plugins: {
         legend: {
           display: false
@@ -871,7 +869,7 @@ function updateBMIDistributionChart(filteredMCUs) {
     },
     options: {
       responsive: true,
-      maintainAspectRatio: true,
+      maintainAspectRatio: false,
       plugins: {
         legend: {
           display: false

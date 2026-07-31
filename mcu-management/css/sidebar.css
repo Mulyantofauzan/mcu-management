@@ -176,6 +176,27 @@
   display: none;
 }
 
+.dashboard-chart-card {
+  padding: 1.25rem;
+}
+
+.dashboard-chart-card > h3 {
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+.dashboard-chart {
+  position: relative;
+  width: 100%;
+  height: 16rem;
+  min-width: 0;
+}
+
+.dashboard-chart-wide {
+  height: 15rem;
+}
+
 @media (max-width: 767px) {
   html,
   body {
@@ -215,6 +236,14 @@
   body > .ml-64 .card {
     padding: 1rem;
     border-radius: 0.875rem;
+  }
+
+  .dashboard-chart {
+    height: 14rem;
+  }
+
+  .dashboard-chart-wide {
+    height: 13rem;
   }
 
   body > .ml-64 .grid.grid-cols-2,
