@@ -1,7 +1,8 @@
 {
-  "version": "1.0.31",
+  "version": "1.0.32",
   "releaseDate": "2026-07-31",
   "features": [
+    "Consistent grouped report navigation on every page",
     "Compact fixed-height dashboard charts",
     "Compact dashboard pie and doughnut charts",
     "Smooth loading progress animation",

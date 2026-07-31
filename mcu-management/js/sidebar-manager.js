@@ -33,17 +33,63 @@ function normalizeSidebar() {
     user?.classList.add('sidebar-user');
   }
 
-  // Older pages contain a direct report link and the same link in the
-  // Laporan submenu. Keep the submenu copy so every page has one menu tree.
-  const reportSubmenu = sidebar.querySelector('#laporan-submenu');
+  const reportPages = [
+    'assessment-rahma',
+    'analysis',
+    'report-period',
+    'employee-health-history'
+  ];
+  let reportSubmenu = sidebar.querySelector('#laporan-submenu');
+
+  // Build the canonical report group when an older page still has flat links.
+  if (!reportSubmenu) {
+    const reportLinks = reportPages
+      .map(page => sidebar.querySelector(`.sidebar-link[data-page="${page}"]`))
+      .filter(Boolean);
+
+    if (reportLinks.length === reportPages.length) {
+      const group = document.createElement('li');
+      group.innerHTML = `
+        <button type="button" data-toggle-submenu="laporan-submenu" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition text-left">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          <span>Laporan</span>
+          <svg data-submenu-arrow class="w-4 h-4 ml-auto transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+          </svg>
+        </button>
+        <ul id="laporan-submenu" class="hidden pl-8 space-y-1 mt-1"></ul>
+      `;
+
+      const expiryItem = sidebar
+        .querySelector('.sidebar-link[data-page="mcu-expiry-management"]')
+        ?.closest('li');
+      const firstReportItem = reportLinks[0].closest('li');
+
+      if (expiryItem) {
+        expiryItem.after(group);
+      } else {
+        firstReportItem.before(group);
+      }
+
+      reportSubmenu = group.querySelector('#laporan-submenu');
+      reportLinks.forEach(link => {
+        link.querySelector('svg')?.remove();
+        reportSubmenu.appendChild(link.closest('li'));
+      });
+    }
+  }
+
+  // Keep only submenu copies when old pages contain duplicate report links.
   if (reportSubmenu) {
-    const reportPages = new Set(
+    const submenuPages = new Set(
       Array.from(reportSubmenu.querySelectorAll('.sidebar-link[data-page]'))
         .map(link => link.dataset.page)
     );
 
     sidebar.querySelectorAll('.sidebar-link[data-page]').forEach(link => {
-      if (reportPages.has(link.dataset.page) && !reportSubmenu.contains(link)) {
+      if (submenuPages.has(link.dataset.page) && !reportSubmenu.contains(link)) {
         link.closest('li')?.remove();
       }
     });
