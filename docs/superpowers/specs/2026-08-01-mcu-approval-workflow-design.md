@@ -1,7 +1,7 @@
 # MCU Approval Workflow Design
 
 **Date:** 2026-08-01
-**Status:** Approved in brainstorming; awaiting written-spec review
+**Status:** Approved
 **Project:** MADIS MCU Management System
 
 ## 1. Summary
@@ -114,15 +114,17 @@ Results requiring another review cycle:
 - `Follow-Up`
 - `Temporary Unfit`
 
-### Employment status
+### Joining status
 
 - `candidate`
 - `joined`
 - `not_joined`
 
-The existing employee `Active/Inactive` status remains separate from employment status and MCU freshness.
+This status is stored as `joining_status` in the database and exposed as `joiningStatus` in frontend models.
 
-Allowed employment transitions:
+The existing `employee_type`/`employmentStatus` field remains the employee type (`Karyawan PST` or `Vendor`). The existing `is_active`/`activeStatus` field remains the operational `Active/Inactive` status. Both remain separate from joining status and MCU freshness.
+
+Allowed joining-status transitions:
 
 - `candidate -> joined`.
 - `candidate -> not_joined`, with a mandatory reason.
@@ -207,7 +209,7 @@ Analytics eligibility is derived, not changed by a search or page view.
 
 An employee enters organizational analytics only when all conditions are true:
 
-1. `employment_status = joined`.
+1. `joining_status = joined`.
 2. Existing employee status is `Active`.
 3. A reviewed MCU is eligible as the latest current MCU.
 4. The MCU examination date is within the configured freshness threshold.
@@ -246,21 +248,21 @@ The signature object must be private. The browser must never receive a permanent
 
 ### Existing `employees`
 
-Add current employment fields:
+Add current joining-decision fields:
 
-- `employment_status`.
-- `employment_decided_by`.
-- `employment_decided_at`.
-- `employment_decision_reason`.
+- `joining_status`.
+- `joining_decided_by`.
+- `joining_decided_at`.
+- `joining_decision_reason`.
 
-The current value is a projection. Full history belongs in `employee_status_events`.
+The current value is a projection. Full history belongs in `employee_joining_status_events`.
 
-### New `employee_status_events`
+### New `employee_joining_status_events`
 
 Append-only history containing:
 
 - Employee ID.
-- Previous and next employment status.
+- Previous and next joining status.
 - Actor ID and role.
 - Mandatory reason for `not_joined`, corrections, and overrides.
 - Timestamp and request ID.
