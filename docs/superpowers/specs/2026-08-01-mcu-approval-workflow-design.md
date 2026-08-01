@@ -18,7 +18,7 @@ The workflow preserves all existing data, supports repeated follow-up cycles, pr
 ## 2. Goals
 
 1. Prevent unreviewed MCU data from entering analytics.
-2. Separate clinical decisions from employment decisions.
+2. Separate clinical decisions from joining decisions.
 3. Preserve every review, correction, follow-up, and status transition.
 4. Prevent two doctors from approving the same review concurrently.
 5. Keep the existing dashboard and historical data stable during rollout.
@@ -74,7 +74,7 @@ There is no separate `Superadmin` role.
 - Does not select the medical result.
 - Corrects submissions rejected by a doctor.
 - Records follow-up notes, results, and supporting files.
-- Cannot approve medical results or decide employment status.
+- Cannot approve medical results or decide joining status.
 
 ### Dokter
 
@@ -85,7 +85,7 @@ There is no separate `Superadmin` role.
 - Rejects incorrect or incomplete data with a mandatory reason.
 - Reviews each follow-up cycle.
 - Manages only their profile and private signature.
-- Cannot manage employees, users, master data, organizational reports, or employment status.
+- Cannot manage employees, users, master data, organizational reports, or joining status.
 
 ## 5. Independent Status Dimensions
 
@@ -167,7 +167,7 @@ The UI must say **Dikonfirmasi pengguna**, not **Terkirim**, because a normal Wh
 5. A first-time candidate enters the joining-decision queue.
 6. A joined employee needs no new joining decision.
 
-`Unfit` never automatically changes employment status to `not_joined`. Administrator retains the employment decision and its audit responsibility.
+`Unfit` never automatically changes joining status to `not_joined`. Administrator retains the joining decision and its audit responsibility.
 
 ### Follow-up doctor result
 
@@ -330,7 +330,7 @@ Use narrowly scoped PostgreSQL RPC functions for:
 - Submitting or resubmitting for review.
 - Applying a doctor decision.
 - Submitting follow-up evidence.
-- Applying an employment decision.
+- Applying a joining decision.
 - Updating expiry settings with audited impact metadata.
 
 Concurrency rules:
@@ -376,7 +376,7 @@ API invariants:
 - Return stable error codes and a request ID.
 - Never return raw SQL, stack traces, service-role credentials, or permanent private-file URLs.
 
-Workflow fields, review tables, employment decisions, and settings must reject direct browser writes through RLS. Only server-controlled operations may mutate them.
+Workflow fields, review tables, joining decisions, and settings must reject direct browser writes through RLS. Only server-controlled operations may mutate them.
 
 ## 12. UI Structure
 
@@ -476,7 +476,7 @@ No new workflow code may call raw browser `alert()`.
 - Do not store medical drafts in `localStorage`.
 - Do not include raw medical detail in WhatsApp summaries.
 - Do not log JWTs, credentials, signature URLs, or raw clinical documents.
-- Preserve immutable clinical and employment-decision history.
+- Preserve immutable clinical and joining-decision history.
 - A production RLS verification remains a release gate.
 
 ## 17. Legacy Migration
@@ -527,7 +527,7 @@ No destructive column or table removal is part of this release.
 - Repeated `Temporary Unfit` cycles.
 - Follow-up eventually reaching each terminal result.
 - Candidate excluded until `joined`.
-- `Unfit` still requires an Administrator employment decision.
+- `Unfit` still requires an Administrator joining decision.
 - Periodic pending MCU leaves prior MCU current.
 - Reviewed follow-up result becomes the current MCU for a joined employee.
 
