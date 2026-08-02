@@ -57,11 +57,11 @@ OR configure a public bucket policy. The policy should allow:
 Ensure all variables are set in Vercel:
 
 ```bash
-CLOUDFLARE_R2_ENDPOINT=https://fd1c39fefc64308d6692bb137a7a55c0.r2.cloudflarestorage.com
-CLOUDFLARE_R2_ACCESS_KEY_ID=9c414074a10f8be1f5832b17833048ea
-CLOUDFLARE_R2_SECRET_ACCESS_KEY=d63c43da985786e1a6a2563d870a0deedb01674212f208c6b8ef7a29f51e123a
+CLOUDFLARE_R2_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+CLOUDFLARE_R2_ACCESS_KEY_ID=<R2_ACCESS_KEY_ID>
+CLOUDFLARE_R2_SECRET_ACCESS_KEY=<R2_SECRET_ACCESS_KEY>
 CLOUDFLARE_R2_BUCKET_NAME=mcu-files
-CLOUDFLARE_ACCOUNT_ID=fd1c39fefc64308d6692bb137a7a55c0
+CLOUDFLARE_ACCOUNT_ID=<ACCOUNT_ID>
 ```
 
 ### Step 3: Redeploy Application
@@ -120,7 +120,7 @@ https://{ACCOUNT_ID}.r2.cloudflarestorage.com/mcu-files/mcu_files/{Employee}_{Em
 
 Example:
 ```
-https://fd1c39fefc64308d6692bb137a7a55c0.r2.cloudflarestorage.com/mcu-files/mcu_files/John_Doe_EMP001/MCU-2024-001/medical_report.pdf
+https://<ACCOUNT_ID>.r2.cloudflarestorage.com/mcu-files/mcu_files/John_Doe_EMP001/MCU-2024-001/medical_report.pdf
 ```
 
 ### Using Custom Domain (Optional):

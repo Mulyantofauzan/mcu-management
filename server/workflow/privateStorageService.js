@@ -35,7 +35,7 @@ function getPrivateStorageConfig(env = process.env) {
 
   if (missing.length) {
     throw new WorkflowError(WORKFLOW_ERROR_CODES.DOCUMENT_FAILED, {
-      message: `Konfigurasi storage privat belum lengkap: ${missing.join(', ')}.`
+      message: 'Penyimpanan dokumen privat belum siap. Hubungi Administrator.'
     });
   }
   return config;

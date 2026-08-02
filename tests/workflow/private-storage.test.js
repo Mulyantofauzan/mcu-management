@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
   PrivateStorageService,
+  getPrivateStorageConfig,
   assertObjectKey,
   assertSignatureMetadata,
   MAX_SIGNATURE_BYTES
@@ -13,6 +14,17 @@ const config = {
   secretAccessKey: 'secret',
   bucket: 'private'
 };
+
+test('missing private storage configuration does not expose environment details', () => {
+  assert.throws(
+    () => getPrivateStorageConfig({}),
+    error => {
+      assert.equal(error.message, 'Penyimpanan dokumen privat belum siap. Hubungi Administrator.');
+      assert.doesNotMatch(error.message, /bucket|accessKey|secretAccessKey|endpoint/i);
+      return true;
+    }
+  );
+});
 
 test('signature metadata accepts only PNG/JPEG up to 2 MB', () => {
   assert.deepEqual(assertSignatureMetadata('image/png', 100), {

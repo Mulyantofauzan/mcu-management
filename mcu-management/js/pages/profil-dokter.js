@@ -109,7 +109,10 @@ async function uploadSignature() {
     const Swal = await ensureWorkflowAlerts();
     await Swal.fire({ icon: 'success', title: 'Tanda Tangan Tersimpan', text: `Versi ${confirmed.signatureVersion}` });
   } catch (error) {
-    await presentWorkflowError(error, { retry: uploadSignature });
+    await presentWorkflowError(error, {
+      retry: uploadSignature,
+      presentation: { title: 'Penyimpanan TTD Belum Siap' }
+    });
   } finally {
     $('#upload-signature').disabled = false;
   }

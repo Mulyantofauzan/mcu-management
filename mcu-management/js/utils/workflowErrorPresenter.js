@@ -71,8 +71,10 @@ export function ensureWorkflowAlerts() {
 
 export async function presentWorkflowError(error, handlers = {}) {
   const Swal = await ensureWorkflowAlerts();
-  const presentation = ERROR_PRESENTATIONS[error?.code]
-    || ERROR_PRESENTATIONS.WORKFLOW_INTERNAL_ERROR;
+  const presentation = {
+    ...(ERROR_PRESENTATIONS[error?.code] || ERROR_PRESENTATIONS.WORKFLOW_INTERNAL_ERROR),
+    ...(handlers.presentation || {})
+  };
   const requestText = error?.requestId ? `\n\nID: ${error.requestId}` : '';
   const detail = error?.code === 'WORKFLOW_LOCKED' && error?.details?.claimExpiresAt
     ? `\nKunci berakhir: ${new Date(error.details.claimExpiresAt).toLocaleString('id-ID')}`
