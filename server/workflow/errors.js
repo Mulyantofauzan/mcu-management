@@ -83,12 +83,28 @@ function findDatabaseMarker(error) {
   return Object.keys(DATABASE_MARKERS).find(marker => text.includes(marker)) || null;
 }
 
+function parseSafeDetails(details) {
+  if (!details) return null;
+  if (typeof details === 'object' && !Array.isArray(details)) return details;
+  if (typeof details !== 'string' || !details.trim().startsWith('{')) return null;
+
+  try {
+    const parsed = JSON.parse(details);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+  } catch (error) {
+    return null;
+  }
+}
+
 function normalizeWorkflowError(error) {
   if (error instanceof WorkflowError) return error;
 
   const marker = findDatabaseMarker(error);
   if (marker) {
-    return new WorkflowError(DATABASE_MARKERS[marker], { cause: error });
+    return new WorkflowError(DATABASE_MARKERS[marker], {
+      cause: error,
+      details: parseSafeDetails(error?.details)
+    });
   }
 
   return new WorkflowError(WORKFLOW_ERROR_CODES.INTERNAL_ERROR, { cause: error });

@@ -8,7 +8,8 @@ const migrationFiles = [
   'migrations/20260802_01_mcu_workflow_schema.sql',
   'migrations/20260802_02_mcu_workflow_backfill.sql',
   'migrations/20260802_03_mcu_workflow_functions.sql',
-  'migrations/20260802_04_mcu_workflow_security.sql'
+  'migrations/20260802_04_mcu_workflow_security.sql',
+  'migrations/20260802_05_mcu_workflow_operations.sql'
 ];
 
 function read(relativePath) {
@@ -58,10 +59,16 @@ test('clinical history and generated documents are append-only', () => {
 
 test('workflow functions are service-role only and versioned', () => {
   const functions = read(migrationFiles[2]);
+  const operations = read(migrationFiles[4]);
 
   assert.match(functions, /FROM PUBLIC/);
   assert.match(functions, /TO service_role/);
   assert.match(functions, /WF_VERSION_CONFLICT/);
   assert.match(functions, /FOR UPDATE/);
   assert.match(functions, /idempotency_key/);
+  assert.match(operations, /workflow_confirm_doctor_signature/);
+  assert.match(operations, /workflow_record_document_failure/);
+  assert.match(operations, /workflow_update_expiry_months/);
+  assert.match(operations, /workflow_set_feature_flag/);
+  assert.match(operations, /TO service_role/);
 });
