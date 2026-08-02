@@ -104,6 +104,7 @@ node --check server/workflow/errors.js
    - `doctor_profiles`.
    - `employee_joining_status_events`.
    - `mcu_review_cycles`.
+   - `mcu_review_documents`.
    - `mcu_workflow_events`.
    - `app_settings`.
 5. Add checks, foreign keys, unique cycle constraints, partial idempotency indexes, queue indexes, and current-MCU indexes.
@@ -302,7 +303,7 @@ Expected function count: `11`.
    - Confirm upload with an R2 HEAD check before updating `doctor_profiles`.
 3. Generate referral PDF only after a committed Follow-Up or Temporary Unfit approval.
 4. Reproduce the existing letter's approved fields/layout server-side, use bundled logo and Unicode fonts, embed the approving doctor's current signature bytes, and persist the PDF privately. PDF generation must not fetch external assets at runtime.
-5. Store object key and signature version on the review cycle through a dedicated server-only RPC/event.
+5. Insert object key, content hash, and signature version into append-only `mcu_review_documents` through a dedicated server-only RPC/event. Do not update the finalized review cycle.
 6. A PDF failure records `DOCUMENT_FAILED` but never rolls back the medical approval. Retry uses the same cycle and does not add a new clinical decision.
 7. Download action returns a short-lived signed GET URL only to an authorized active user.
 

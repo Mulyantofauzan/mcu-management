@@ -295,10 +295,20 @@ One row per doctor review attempt that reaches a decision:
 - Clinical notes or rejection reason.
 - Doctor user ID.
 - Review timestamps.
-- Referral-letter object key when applicable.
 - Idempotency key.
 
 A finalized review cycle cannot be updated or deleted.
+
+### New `mcu_review_documents`
+
+Append-only document records containing:
+
+- Review-cycle ID and document type.
+- Private object key and immutable content hash.
+- Signature version used during generation.
+- Generation timestamp and request ID.
+
+The document is stored separately because clinical approval must commit even when PDF generation fails. A retry inserts the missing document record without updating the finalized review cycle. At most one successful referral letter may exist per review cycle.
 
 ### New `mcu_workflow_events`
 

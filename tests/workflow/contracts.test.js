@@ -40,6 +40,16 @@ test('database markers map to stable workflow errors', () => {
   assert.equal(error.message, 'MCU sedang direview dokter lain.');
 });
 
+test('authorization and immutable markers never become generic errors', () => {
+  const inactive = normalizeWorkflowError({ message: 'WF_USER_INACTIVE' });
+  const forbidden = normalizeWorkflowError({ message: 'WF_IMMUTABLE_RECORD' });
+
+  assert.equal(inactive.code, constants.WORKFLOW_ERROR_CODES.USER_INACTIVE);
+  assert.equal(inactive.status, 401);
+  assert.equal(forbidden.code, constants.WORKFLOW_ERROR_CODES.FORBIDDEN);
+  assert.equal(forbidden.status, 403);
+});
+
 test('unknown errors do not expose raw database messages', () => {
   const error = normalizeWorkflowError(new Error('password=secret SQL failed'));
 

@@ -10,6 +10,9 @@
 -- 3. Keep this as a transitional policy so the existing app keeps working.
 --
 -- The app mints the JWT in /api/login using the Supabase project JWT secret.
+-- Workflow tables are intentionally absent from the transitional lists below.
+-- After this script, run 20260802_04_mcu_workflow_security.sql so protected
+-- MCU/joining columns remain server-controlled when approval is enabled.
 
 BEGIN;
 
@@ -90,6 +93,8 @@ END $$;
 
 -- Transitional app data access: any logged-in app user can use existing workflows.
 -- Tighten these further later if you add branch/unit ownership columns.
+-- Never add doctor_profiles, employee_joining_status_events, mcu_review_cycles,
+-- mcu_review_documents, mcu_workflow_events, or app_settings to this list.
 DO $$
 DECLARE
   table_name text;
