@@ -75,6 +75,29 @@ test('workflow functions are service-role only and versioned', () => {
   assert.match(operations, /TO service_role/);
 });
 
+test('permission signatures match declared workflow functions', () => {
+  migrationFiles.slice(2).forEach(relativePath => {
+    const sql = read(relativePath);
+    const declared = new Set(
+      [...sql.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\s*\(([\s\S]*?)\)\s*RETURNS/g)]
+        .map(match => {
+          const types = match[2]
+            .split(',')
+            .filter(parameter => parameter.trim())
+            .map(parameter => parameter.trim().split(/\s+/).slice(1).join(' ').toLowerCase());
+          return `${match[1].toLowerCase()}(${types.join(',')})`;
+        })
+    );
+    const permissionSignatures = [
+      ...sql.matchAll(/'(workflow_\w+\([^']*\))'/g)
+    ].map(match => match[1].toLowerCase());
+
+    permissionSignatures.forEach(signature => {
+      assert.ok(declared.has(signature), `${relativePath}: unknown signature ${signature}`);
+    });
+  });
+});
+
 test('follow-up evidence is immutable and carries no medical decision', () => {
   const evidence = read(migrationFiles[5]);
   assert.match(evidence, /mcu_followup_submissions/);

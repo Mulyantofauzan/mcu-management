@@ -1147,7 +1147,7 @@ BEGIN
         'workflow_submit_followup(text,text,bigint,text,text)',
         'workflow_apply_joining_decision(text,text,text,bigint,text,text,text,text,text)',
         'workflow_correct_joining_status(text,text,bigint,text,text,text)',
-        'workflow_set_share_status(text,text,bigint,text,text,text,text,text)',
+        'workflow_set_share_status(text,text,bigint,text,text,text,text)',
         'workflow_register_review_document(uuid,text,text,text,integer,text,text)'
     ]
     LOOP
