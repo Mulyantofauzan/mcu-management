@@ -184,6 +184,7 @@ test('production pages do not depend on third-party CDN assets', () => {
 
   const csp = read('vercel.json');
   assert.doesNotMatch(csp, /cdn\.jsdelivr\.net|fonts\.googleapis\.com|fonts\.gstatic\.com/);
+  assert.match(csp, /connect-src[^;]*https:\/\/madis-private-documents\.[a-f0-9]{32}\.r2\.cloudflarestorage\.com/);
 });
 
 test('production HTML and service-worker asset references exist locally', () => {
