@@ -46,6 +46,19 @@ test('sidebar has one canonical role-aware menu definition', () => {
   assert.doesNotMatch(read('mcu-management/js/utils/sidebarInit.js'), /pageMap|menu-kelola-user/);
 });
 
+test('loading overlay styles do not expose the mobile sidebar backdrop', () => {
+  [
+    'mcu-management/index.html',
+    'mcu-management/pages/assessment-rahma.html'
+  ].forEach(file => {
+    assert.match(
+      read(file),
+      /body\.initialized > \*:not\(#unified-loading-overlay\):not\(\.sidebar-backdrop\)/,
+      file
+    );
+  });
+});
+
 test('user management exposes canonical doctor role', () => {
   const html = read('mcu-management/pages/kelola-user.html');
   const auth = read('mcu-management/js/services/authService.js');

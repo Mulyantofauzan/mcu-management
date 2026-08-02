@@ -74,7 +74,7 @@
         }
 
         /* Show content when initialized */
-        body.initialized > *:not(#unified-loading-overlay) {
+        body.initialized > *:not(#unified-loading-overlay):not(.sidebar-backdrop) {
             opacity: 1 !important;
             visibility: visible !important;
             pointer-events: auto !important;
