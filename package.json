@@ -4,7 +4,9 @@
   "description": "MCU Management System - Medical Check-Up Records",
   "scripts": {
     "dev": "cd mcu-management && npm run dev",
-    "build": "cd mcu-management && npm run build"
+    "build": "cd mcu-management && npm run build",
+    "test": "node --test",
+    "test:workflow": "node --test tests/workflow/*.test.js"
   },
   "private": true,
   "dependencies": {
