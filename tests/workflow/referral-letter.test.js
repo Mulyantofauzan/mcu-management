@@ -15,6 +15,14 @@ function signaturePng() {
   ));
 }
 
+function signatureJpeg() {
+  return fs.readFileSync(path.join(__dirname, 'fixtures/signature.jpg'));
+}
+
+function pdfPageCount(buffer) {
+  return (buffer.toString('latin1').match(/\/Type\s*\/Page\b/g) || []).length;
+}
+
 function validData(medicalResult = 'Follow-Up') {
   return {
     employee: {
@@ -57,6 +65,37 @@ test('referral letter is a non-empty PDF with stable hash', async () => {
   assert.equal(result.buffer.subarray(0, 4).toString(), '%PDF');
   assert.ok(result.buffer.length > 10_000);
   assert.match(result.sha256, /^[0-9a-f]{64}$/);
+});
+
+test('referral letter accepts a JPEG signature', async () => {
+  const data = validData();
+  data.signatureBuffer = signatureJpeg();
+
+  const result = await generateReferralLetter(data);
+
+  assert.equal(result.buffer.subarray(0, 4).toString(), '%PDF');
+  assert.equal(pdfPageCount(result.buffer), 1);
+});
+
+test('long referral content remains on one A4 page', async () => {
+  const data = validData();
+  data.reviewCycle.clinical_notes = (
+    'Evaluasi klinis lanjutan diperlukan untuk memastikan kondisi pasien, '
+    + 'menilai hasil pemeriksaan penunjang, dan menetapkan rekomendasi kerja. '
+  ).repeat(4);
+  data.doctorProfile.professional_name = (
+    'dr. Nama Dokter Perusahaan Dengan Gelar Spesialis Penyakit Dalam'
+  );
+  data.doctorProfile.registration_number = 'SIP-KALTIM-2026-000000000000001';
+
+  assert.ok(data.reviewCycle.clinical_notes.length >= 500);
+  assert.ok(data.doctorProfile.professional_name.length >= 60);
+  assert.ok(data.doctorProfile.registration_number.length >= 30);
+
+  const result = await generateReferralLetter(data);
+
+  assert.equal(result.buffer.subarray(0, 4).toString(), '%PDF');
+  assert.equal(pdfPageCount(result.buffer), 1);
 });
 
 test('terminal medical result cannot generate referral letter', () => {

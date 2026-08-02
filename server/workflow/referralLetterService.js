@@ -55,11 +55,11 @@ function drawLabelValue(doc, label, value, options = {}) {
   const y = doc.y;
   const labelWidth = options.labelWidth || 120;
   doc.font('Poppins-Bold').fontSize(9).text(`${label}:`, 50, y, { width: labelWidth });
-  doc.font('Poppins').text(clean(value), 50 + labelWidth, y, {
+  doc.font('Poppins').fontSize(options.valueFontSize || 9).text(clean(value), 50 + labelWidth, y, {
     width: 495 - labelWidth,
-    lineGap: 2
+    lineGap: options.lineGap ?? 2
   });
-  doc.y = Math.max(doc.y, y + 14);
+  doc.y = Math.max(doc.y, y + 11.5);
 }
 
 function drawHeader(doc) {
@@ -75,16 +75,16 @@ function drawHeader(doc) {
 }
 
 function drawReturnReferral(doc, employee) {
-  doc.moveDown(0.4);
+  doc.moveDown(0.2);
   doc.moveTo(50, doc.y).lineTo(545, doc.y).lineWidth(0.7).strokeColor('#94a3b8').stroke();
-  doc.moveDown(0.7);
+  doc.moveDown(0.4);
   doc.font('Poppins-Bold').fontSize(11).fillColor('#111827')
     .text('SURAT RUJUKAN BALIK', { align: 'center', underline: true });
-  doc.moveDown(0.4);
+  doc.moveDown(0.2);
   doc.font('Poppins').fontSize(8.5)
     .text('Yth. Rekan Sejawat,')
     .text('Bersama ini kami kirim kembali pasien berikut:');
-  doc.moveDown(0.3);
+  doc.moveDown(0.15);
   drawLabelValue(doc, 'Nama', employee.name);
   ['Diagnosa', 'Terapi', 'Saran', 'Keterangan', 'Kesimpulan'].forEach(label => {
     drawLabelValue(doc, label, '................................................................................................');
@@ -159,7 +159,10 @@ function generateReferralLetter(data) {
     drawLabelValue(doc, 'Siklus Review', reviewCycle.cycle_number);
     drawLabelValue(doc, 'Hasil Dokter', reviewCycle.medical_result);
     drawLabelValue(doc, 'Tekanan Darah', mcu.blood_pressure ? `${mcu.blood_pressure} mmHg` : '-');
-    drawLabelValue(doc, 'Catatan Klinis', reviewCycle.clinical_notes);
+    drawLabelValue(doc, 'Catatan Klinis', reviewCycle.clinical_notes, {
+      valueFontSize: 8,
+      lineGap: 0
+    });
 
     const signatureTop = Math.max(doc.y + 12, 430);
     doc.font('Poppins').fontSize(8.5)
@@ -169,8 +172,8 @@ function generateReferralLetter(data) {
       })
       .text('Dokter Pemeriksa', { width: 205, align: 'center' });
     try {
-      doc.image(signatureBuffer, 395, signatureTop + 28, {
-        fit: [105, 52],
+      doc.image(signatureBuffer, 375, signatureTop + 27, {
+        fit: [135, 64],
         align: 'center',
         valign: 'center'
       });
@@ -183,7 +186,7 @@ function generateReferralLetter(data) {
       return;
     }
     doc.font('Poppins-Bold').fontSize(8.5)
-      .text(clean(doctorProfile.professional_name), 340, signatureTop + 84, {
+      .text(clean(doctorProfile.professional_name), 340, signatureTop + 95, {
         width: 205,
         align: 'center',
         underline: true
@@ -196,7 +199,7 @@ function generateReferralLetter(data) {
         });
     }
 
-    doc.y = Math.max(doc.y, signatureTop + 115);
+    doc.y = Math.max(doc.y, signatureTop + 128);
     drawReturnReferral(doc, employee);
     doc.moveDown(0.6);
     doc.roundedRect(50, doc.y, 495, 42, 3).fillAndStroke('#fff7cc', '#d6b656');
