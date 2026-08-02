@@ -39,7 +39,7 @@ test('doctor signature upload uses a contextual storage error title', () => {
   const presenter = read('mcu-management/js/utils/workflowErrorPresenter.js');
   const profile = read('mcu-management/js/pages/profil-dokter.js');
   assert.match(presenter, /handlers\.presentation/);
-  assert.match(profile, /Penyimpanan TTD Belum Siap/);
+  assert.match(profile, /error\?\.code === 'WORKFLOW_DOCUMENT_FAILED'[\s\S]*Penyimpanan TTD Belum Siap/);
 });
 
 test('sidebar has one canonical role-aware menu definition', () => {

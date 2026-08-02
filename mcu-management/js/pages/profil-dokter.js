@@ -111,7 +111,9 @@ async function uploadSignature() {
   } catch (error) {
     await presentWorkflowError(error, {
       retry: uploadSignature,
-      presentation: { title: 'Penyimpanan TTD Belum Siap' }
+      presentation: error?.code === 'WORKFLOW_DOCUMENT_FAILED'
+        ? { title: 'Penyimpanan TTD Belum Siap' }
+        : undefined
     });
   } finally {
     $('#upload-signature').disabled = false;
