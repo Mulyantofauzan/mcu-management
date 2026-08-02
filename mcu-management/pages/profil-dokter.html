@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profil Dokter - MADIS</title>
+  <link rel="icon" href="../assets/images/favicon.ico">
+  <link rel="stylesheet" href="../css/output.css">
+  <link rel="stylesheet" href="../css/sidebar.css">
+  <link rel="stylesheet" href="../css/workflow.css">
+  <script type="module" src="../js/appBootstrap.js"></script>
+</head>
+<body class="workflow-page">
+  <aside id="sidebar" class="sidebar fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 z-30">
+    <div class="flex flex-col h-full">
+      <div class="sidebar-brand"><h1 class="text-xl font-bold text-primary-600">MADIS</h1><p class="text-xs text-gray-500 mt-1">Medical Check-Up Analysis & Data Information System</p></div>
+      <nav class="flex-1 overflow-y-auto"></nav><div></div>
+    </div>
+  </aside>
+
+  <div class="ml-64 min-h-screen">
+    <main class="workflow-main">
+      <div class="workflow-heading"><div><h1>Profil Dokter</h1><p>Identitas dan tanda tangan privat untuk surat rujukan.</p></div></div>
+      <div class="workflow-profile">
+        <section class="workflow-card">
+          <div class="workflow-toolbar"><h2>Identitas Profesional</h2></div>
+          <form id="doctor-profile-form" class="workflow-form-grid">
+            <div class="workflow-field workflow-field-full">
+              <label for="professional-name">Nama profesional</label>
+              <input id="professional-name" maxlength="200" required placeholder="dr. Nama Dokter">
+            </div>
+            <div class="workflow-field workflow-field-full">
+              <label for="registration-number">Nomor registrasi/SIP</label>
+              <input id="registration-number" maxlength="100" placeholder="Opsional">
+            </div>
+            <div class="workflow-actions workflow-field-full">
+              <button id="save-profile" type="submit" class="workflow-btn workflow-btn-primary">Simpan Profil</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="workflow-card">
+          <div class="workflow-toolbar"><h2>Tanda Tangan</h2></div>
+          <div id="signature-status" class="workflow-alert workflow-alert-info mb-3">Belum ada tanda tangan.</div>
+          <div class="workflow-field">
+            <label for="signature-file">PNG/JPEG, maksimal 2 MB</label>
+            <input id="signature-file" type="file" accept="image/png,image/jpeg">
+          </div>
+          <div class="workflow-actions mt-4">
+            <button id="upload-signature" type="button" class="workflow-btn workflow-btn-primary">Upload / Ganti</button>
+          </div>
+          <p class="workflow-meta mt-3">Gambar disimpan privat. Surat lama tetap memakai versi tanda tangan saat dibuat.</p>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/sidebar-manager.js"></script>
+  <script type="module" src="../js/pages/profil-dokter.js"></script>
+</body>
+</html>

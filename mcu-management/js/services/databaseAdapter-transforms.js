@@ -42,6 +42,11 @@ export function transformEmployee(emp) {
         isActive: emp.is_active,
         activeStatus: emp.is_active ? 'Active' : 'Inactive', // alias
         inactiveReason: emp.inactive_reason,
+        joiningStatus: emp.joining_status,
+        joiningVersion: emp.joining_version,
+        joiningDecidedBy: emp.joining_decided_by,
+        joiningDecidedAt: emp.joining_decided_at,
+        joiningDecisionReason: emp.joining_decision_reason,
         deletedAt: emp.deleted_at,
         createdAt: emp.created_at,
         updatedAt: emp.updated_at
@@ -106,6 +111,16 @@ export function transformMCU(mcu) {
         finalResult: mcu.final_result,
         finalNotes: mcu.final_notes,
         status: mcu.status,
+        workflowStatus: mcu.workflow_status,
+        workflowVersion: mcu.workflow_version,
+        currentMedicalResult: mcu.current_medical_result,
+        currentReviewCycle: mcu.current_review_cycle,
+        claimedBy: mcu.claimed_by,
+        claimedAt: mcu.claimed_at,
+        claimExpiresAt: mcu.claim_expires_at,
+        activatedAt: mcu.activated_at,
+        currentShareCycleId: mcu.current_share_cycle_id,
+        currentShareStatus: mcu.current_share_status,
         // Metadata fields
         deletedAt: mcu.deleted_at,
         createdAt: mcu.created_at,

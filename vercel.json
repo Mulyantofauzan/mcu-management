@@ -3,28 +3,25 @@
   "outputDirectory": "mcu-management/dist",
   "functions": {
     "api/compress-upload/index.js": {
-      "maxDuration": 60,
-      "memory": 1024
+      "maxDuration": 60
     },
     "api/get-mcu-files/index.js": {
-      "maxDuration": 30,
-      "memory": 1024
+      "maxDuration": 30
     },
     "api/download-file/index.js": {
-      "maxDuration": 30,
-      "memory": 512
+      "maxDuration": 30
     },
     "api/test-r2-config/index.js": {
-      "maxDuration": 10,
-      "memory": 512
+      "maxDuration": 10
     },
     "api/delete-file/index.js": {
-      "maxDuration": 30,
-      "memory": 512
+      "maxDuration": 30
     },
     "api/hard-delete-file/index.js": {
-      "maxDuration": 60,
-      "memory": 512
+      "maxDuration": 60
+    },
+    "api/workflow/index.js": {
+      "maxDuration": 60
     }
   },
   "headers": [
@@ -102,7 +99,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://xqyuktsfjvdqfhulobai.supabase.co wss://xqyuktsfjvdqfhulobai.supabase.co; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://xqyuktsfjvdqfhulobai.supabase.co wss://xqyuktsfjvdqfhulobai.supabase.co; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
         }
       ]
     },

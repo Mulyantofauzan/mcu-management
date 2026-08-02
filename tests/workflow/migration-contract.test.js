@@ -9,7 +9,9 @@ const migrationFiles = [
   'migrations/20260802_02_mcu_workflow_backfill.sql',
   'migrations/20260802_03_mcu_workflow_functions.sql',
   'migrations/20260802_04_mcu_workflow_security.sql',
-  'migrations/20260802_05_mcu_workflow_operations.sql'
+  'migrations/20260802_05_mcu_workflow_operations.sql',
+  'migrations/20260802_06_mcu_followup_evidence.sql',
+  'migrations/20260802_07_mcu_analytics_views.sql'
 ];
 
 function read(relativePath) {
@@ -71,4 +73,32 @@ test('workflow functions are service-role only and versioned', () => {
   assert.match(operations, /workflow_update_expiry_months/);
   assert.match(operations, /workflow_set_feature_flag/);
   assert.match(operations, /TO service_role/);
+});
+
+test('follow-up evidence is immutable and carries no medical decision', () => {
+  const evidence = read(migrationFiles[5]);
+  assert.match(evidence, /mcu_followup_submissions/);
+  assert.match(evidence, /workflow_submit_followup_evidence/);
+  assert.match(evidence, /workflow_reject_immutable_change/);
+  assert.doesNotMatch(evidence, /p_medical_result|final_result|current_medical_result\s*=/);
+});
+
+test('analytics eligibility uses reviewed activation and calendar months', () => {
+  const analytics = read(migrationFiles[6]);
+  assert.match(analytics, /v_current_reviewed_mcu/);
+  assert.match(analytics, /v_analytics_eligible_current/);
+  assert.match(analytics, /v_reviewed_mcu_history/);
+  assert.match(analytics, /v_mcu_expiry_overview/);
+  assert.match(analytics, /activated_at IS NOT NULL/);
+  assert.match(analytics, /MAKE_INTERVAL\(months => config\.expiry_months\)/);
+  assert.match(analytics, /Asia\/Makassar/);
+  assert.doesNotMatch(analytics, /UPDATE\s+public\.employees[\s\S]*is_active/i);
+});
+
+test('expiry preview is server-authorized and bounded', () => {
+  const analytics = read(migrationFiles[6]);
+  assert.match(analytics, /workflow_preview_expiry_impact/);
+  assert.match(analytics, /workflow_require_actor\(p_actor_user_id, ARRAY\['Admin'\]\)/);
+  assert.match(analytics, /p_expiry_months < 1 OR p_expiry_months > 120/);
+  assert.match(analytics, /TO service_role/);
 });

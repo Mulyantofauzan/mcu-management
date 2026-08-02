@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Keputusan Bergabung - MADIS</title>
+  <link rel="icon" href="../assets/images/favicon.ico">
+  <link rel="stylesheet" href="../css/output.css">
+  <link rel="stylesheet" href="../css/sidebar.css">
+  <link rel="stylesheet" href="../css/workflow.css">
+  <script type="module" src="../js/appBootstrap.js"></script>
+</head>
+<body class="workflow-page">
+  <aside id="sidebar" class="sidebar fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 z-30">
+    <div class="flex flex-col h-full">
+      <div class="sidebar-brand"><h1 class="text-xl font-bold text-primary-600">MADIS</h1><p class="text-xs text-gray-500 mt-1">Medical Check-Up Analysis & Data Information System</p></div>
+      <nav class="flex-1 overflow-y-auto"></nav><div></div>
+    </div>
+  </aside>
+
+  <div class="ml-64 min-h-screen">
+    <main class="workflow-main">
+      <div class="workflow-heading"><div><h1>Keputusan Bergabung</h1><p>Kandidat dengan hasil MCU terminal yang sudah direview Dokter.</p></div><button id="refresh-joining" type="button" class="workflow-btn">Muat Ulang</button></div>
+      <div class="workflow-tabs" role="tablist">
+        <button type="button" class="workflow-tab active" data-joining-tab="waiting">Daftar Tunggu</button>
+        <button type="button" class="workflow-tab" data-joining-tab="history">Riwayat</button>
+      </div>
+      <section class="workflow-card">
+        <div class="workflow-toolbar"><h2 id="joining-title">Daftar Tunggu</h2><span id="joining-count" class="workflow-meta"></span></div>
+        <div id="joining-list" class="workflow-list"></div>
+        <div id="joining-empty" class="workflow-empty" hidden>Tidak ada kandidat pada daftar ini.</div>
+      </section>
+    </main>
+  </div>
+
+  <div id="joining-overlay" class="workflow-overlay" hidden>
+    <section class="workflow-panel" role="dialog" aria-modal="true" aria-labelledby="joining-dialog-title">
+      <header class="workflow-panel-header"><div><h2 id="joining-dialog-title" class="font-bold">Keputusan Kandidat</h2><p id="joining-dialog-meta" class="workflow-meta"></p></div><button id="close-joining" type="button" class="workflow-btn">Tutup</button></header>
+      <div class="workflow-panel-body">
+        <section class="workflow-card"><dl id="joining-info" class="workflow-info-grid"></dl></section>
+        <section class="workflow-card">
+          <div class="workflow-toolbar"><h2>Bagikan Hasil</h2><span id="share-state" class="workflow-status"></span></div>
+          <p class="workflow-meta mb-3">Ringkasan disalin, lalu WhatsApp Web dibuka. Pilih grup HR/SHE secara manual.</p>
+          <button id="share-whatsapp" type="button" class="workflow-btn workflow-btn-primary">Bagikan ke WhatsApp</button>
+        </section>
+        <section class="workflow-card">
+          <form id="joining-form" class="workflow-form-grid">
+            <div class="workflow-field">
+              <label for="joining-status">Keputusan</label>
+              <select id="joining-status" required><option value="">Pilih keputusan</option><option value="joined">Bergabung</option><option value="not_joined">Tidak Bergabung</option></select>
+            </div>
+            <div class="workflow-field workflow-field-full">
+              <label for="joining-reason">Alasan tidak bergabung</label>
+              <textarea id="joining-reason" maxlength="2000"></textarea>
+            </div>
+            <div id="override-field" class="workflow-field workflow-field-full">
+              <label for="share-override-reason">Alasan melanjutkan sebelum konfirmasi WhatsApp</label>
+              <textarea id="share-override-reason" maxlength="1000"></textarea>
+            </div>
+            <div class="workflow-actions workflow-field-full"><button id="save-joining" type="submit" class="workflow-btn workflow-btn-primary">Simpan Keputusan</button></div>
+          </form>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <script src="../js/sidebar-manager.js"></script>
+  <script type="module" src="../js/pages/keputusan-bergabung.js"></script>
+</body>
+</html>

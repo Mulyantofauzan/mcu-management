@@ -13,6 +13,8 @@
 
 const { getAuthorizedSignedUrl, getAuthorizedMcuFiles } = require('../../server/r2SignedUrlService');
 const { setCorsHeaders, requireAuth } = require('../../server/auth-utils');
+const { loadActiveUser } = require('../../server/workflow/authorization');
+const { getSupabaseAdmin } = require('../../server/supabaseAdmin');
 
 module.exports = async (req, res) => {
   setCorsHeaders(req, res, 'GET, OPTIONS');
@@ -30,7 +32,8 @@ module.exports = async (req, res) => {
 
   try {
     const { fileId, mcuId, userId } = req.query;
-    const authenticatedUserId = auth.app_user_id || auth.sub;
+    const activeUser = await loadActiveUser(auth, getSupabaseAdmin());
+    const authenticatedUserId = activeUser.userId;
 
     if (userId && userId !== authenticatedUserId) {
       return res.status(403).json({
@@ -41,7 +44,7 @@ module.exports = async (req, res) => {
 
     // Case 1: Get single file
     if (fileId) {
-      const result = await getAuthorizedSignedUrl(fileId, auth);
+      const result = await getAuthorizedSignedUrl(fileId, activeUser);
 
       if (!result.success) {
         return res.status(403).json(result);
@@ -51,7 +54,7 @@ module.exports = async (req, res) => {
 
     // Case 2: Get all files for MCU
     if (mcuId) {
-      const result = await getAuthorizedMcuFiles(mcuId, auth);
+      const result = await getAuthorizedMcuFiles(mcuId, activeUser);
 
       if (!result.success) {
         return res.status(403).json(result);

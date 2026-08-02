@@ -7,8 +7,8 @@
  */
 
 import { authService } from '../services/authService.js';
-import { employeeService } from '../services/employeeService.js';
 import { mcuService } from '../services/mcuService.js';
+import { analyticsEligibilityService } from '../services/analyticsEligibilityService.js';
 import { labService } from '../services/labService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { framinghamCalculatorService } from '../services/framinghamCalculatorService.js';
@@ -24,6 +24,7 @@ let departments = [];
 let jobTitles = [];
 let currentMCU = null;
 let currentEmployee = null;
+let eligibleDataPromise = null;
 let currentPage = 1;
 const itemsPerPage = 10;
 
@@ -66,7 +67,8 @@ export async function initAssessmentRAHMA() {
  */
 async function loadEmployees() {
   try {
-    employees = await employeeService.getAll();
+    eligibleDataPromise ||= analyticsEligibilityService.getCurrentData();
+    employees = (await eligibleDataPromise).map(item => item.employee);
   } catch (error) {
     employees = [];
   }
@@ -99,14 +101,11 @@ async function loadJobTitles() {
  */
 async function loadAssessmentList() {
   try {
-    // Get all MCUs
-    const allMCUs = await mcuService.getAll();
-
-    // Filter: Only MCUs with finalResult (completed MCU)
-    // and status is "Fit" or "Conditional Fit" or "Tidak Fit"
-    assessmentList = allMCUs.filter(mcu =>
-      mcu.finalResult && mcu.finalResult !== 'Pending'
-    );
+    const allMCUs = await analyticsEligibilityService.getCurrentMCUs();
+    const terminalResults = new Set(['Fit', 'Fit With Note', 'Unfit']);
+    assessmentList = allMCUs.filter(mcu => terminalResults.has(
+      mcu.currentMedicalResult || mcu.finalResult || mcu.initialResult
+    ));
 
     // Sort by date descending (newest first)
     assessmentList.sort((a, b) =>
@@ -159,10 +158,10 @@ function displayAssessmentTable() {
       <td class="px-4 py-3 text-sm">${formatDateDisplay(mcu.mcuDate)}</td>
       <td class="px-4 py-3 text-sm">
         <span class="px-2 py-1 rounded text-xs font-medium
-          ${mcu.finalResult === 'Fit' ? 'bg-green-100 text-green-800' :
-            mcu.finalResult === 'Conditional Fit' ? 'bg-yellow-100 text-yellow-800' :
+          ${(mcu.currentMedicalResult || mcu.finalResult || mcu.initialResult) === 'Fit' ? 'bg-green-100 text-green-800' :
+            (mcu.currentMedicalResult || mcu.finalResult || mcu.initialResult) === 'Fit With Note' ? 'bg-yellow-100 text-yellow-800' :
             'bg-red-100 text-red-800'}">
-          ${mcu.finalResult}
+          ${mcu.currentMedicalResult || mcu.finalResult || mcu.initialResult}
         </span>
       </td>
       <td class="px-4 py-3 text-sm text-center">

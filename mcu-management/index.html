@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MADIS - Dashboard</title>
 
-    <!-- Preconnect to critical CDN servers -->
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <!-- Preconnect to database API -->
     <link rel="preconnect" href="https://xqyuktsfjvdqfhulobai.supabase.co" crossorigin>
-    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
     <link rel="dns-prefetch" href="https://xqyuktsfjvdqfhulobai.supabase.co">
 
     <!-- Favicons -->
@@ -24,53 +22,18 @@
 
 
     <!-- Supabase - Production Database (critical) -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        // Wait for Supabase to be available
-        const checkSupabase = setInterval(() => {
-            if (typeof window.supabase !== 'undefined') {
-                clearInterval(checkSupabase);
-            }
-        }, 100);
-    </script>
+    <script src="assets/vendor/supabase/supabase.js"></script>
 
     <!-- Chart.js (defer - loaded when needed) -->
-    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <script defer src="assets/vendor/chartjs/chart.umd.min.js"></script>
+    <script defer src="assets/vendor/chartjs/chartjs-plugin-datalabels.min.js"></script>
 
-    <!-- Pako - Gzip compression library for PDF files (multiple CDN fallbacks) -->
-    <script>
-        // Try to load pako from multiple CDN sources for reliability
-        window.pakoLoadAttempts = 0;
-        window.loadPako = function() {
-            const cdnUrls = [
-                'https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js',
-                'https://unpkg.com/pako@2.1.0/dist/pako.min.js',
-                'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js'
-            ];
-
-            if (window.pakoLoadAttempts < cdnUrls.length) {
-                const script = document.createElement('script');
-                script.src = cdnUrls[window.pakoLoadAttempts];
-                script.onload = () => {
-                    window.pakoReady = true;
-                };
-                script.onerror = () => {
-                    window.pakoLoadAttempts++;
-                    window.loadPako();
-                };
-                document.head.appendChild(script);
-            } else {
-                window.pakoReady = false;
-            }
-        };
-
-        // Start loading pako immediately
-        window.loadPako();
-    </script>
+    <!-- Pako - local gzip compression library -->
+    <script src="assets/vendor/pako/pako.min.js"></script>
+    <script>window.pakoReady = typeof window.pako !== 'undefined';</script>
 
     <!-- Dexie (IndexedDB) - Fallback (defer) -->
-    <script defer src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
+    <script defer src="assets/vendor/dexie/dexie.min.js"></script>
 
     <style>
         /* ✅ Loading overlay ALWAYS visible on top, with z-index priority */
@@ -161,7 +124,7 @@
             <div class="p-6 border-b border-gray-200">
                 <div class="flex items-center justify-between">
                     <h1 class="text-xl font-bold text-primary-600">MADIS</h1>
-                    <span class="text-xs font-semibold text-primary-500 bg-primary-50 px-2 py-1 rounded" id="app-version">v1.0.9</span>
+                    <span class="text-xs font-semibold text-primary-500 bg-primary-50 px-2 py-1 rounded" id="app-version">v1.1.0</span>
                 </div>
                 <p class="text-xs text-gray-500 mt-1">Medical Check-Up Analysis & Data Information System</p>
             </div>

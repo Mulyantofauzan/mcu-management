@@ -27,7 +27,7 @@ Implement the approved MCU workflow without changing legacy production totals du
 5. Never mark a normal WhatsApp share as delivered. Store only `confirmed_by_user`.
 6. Keep feature flag off until migration, API, RLS, browser QA, and KPI reconciliation pass.
 7. Do not alter or remove legacy columns in this release. Existing `initial_result`, `final_result`, and `status` remain compatibility projections updated only by server workflow code after activation.
-8. Do not add another Vercel function. Current count is 10; workflow raises it to 11 of 12.
+8. Do not add another Vercel function. The workflow deployment uses 10 of 12 functions.
 
 ## 3. Target Architecture
 
@@ -277,7 +277,7 @@ npm run test:workflow
 find api -type f -name '*.js' | wc -l
 ```
 
-Expected function count: `11`.
+Expected function count: `10`.
 
 **Commit:** `feat: add consolidated workflow API`
 
@@ -582,7 +582,7 @@ git diff --check
 find api -type f -name '*.js' | wc -l
 ```
 
-Expected function count: `11`.
+Expected function count: `10`.
 
 **Manual/browser matrix**
 

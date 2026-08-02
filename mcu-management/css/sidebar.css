@@ -68,7 +68,8 @@
 }
 
 .sidebar .sidebar-link > svg,
-.sidebar .sidebar-submenu-toggle > svg:first-child {
+.sidebar .sidebar-submenu-toggle > svg:first-child,
+.sidebar .sidebar-submenu-toggle > span > svg {
   width: 1.125rem;
   height: 1.125rem;
   flex: 0 0 1.125rem;
@@ -134,10 +135,15 @@
   box-shadow: none;
 }
 
-.sidebar #badge-mcu-expiry {
+.sidebar .sidebar-badge {
   flex: 0 0 auto;
   min-width: 1.5rem;
   padding: 0.15rem 0.4rem;
+  color: #ffffff;
+  background: #ef4444;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
   text-align: center;
 }
 

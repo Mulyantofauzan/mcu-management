@@ -31,15 +31,16 @@ const SIGNED_URL_EXPIRY_SECONDS = 3600; // 1 hour
 function getUserId(claimsOrUserId) {
   if (!claimsOrUserId) return null;
   if (typeof claimsOrUserId === 'string') return claimsOrUserId;
-  return claimsOrUserId.app_user_id || claimsOrUserId.sub || null;
+  return claimsOrUserId.userId || claimsOrUserId.app_user_id || claimsOrUserId.sub || null;
 }
 
-function isAdmin(claimsOrUserId) {
-  return Boolean(claimsOrUserId && typeof claimsOrUserId === 'object' && claimsOrUserId.app_role === 'Admin');
+function getUserRole(claimsOrUserId) {
+  if (!claimsOrUserId || typeof claimsOrUserId !== 'object') return null;
+  return claimsOrUserId.role || claimsOrUserId.app_role || null;
 }
 
 function canAccessFile(file, claimsOrUserId) {
-  if (isAdmin(claimsOrUserId)) return true;
+  if (['Admin', 'Petugas', 'Dokter'].includes(getUserRole(claimsOrUserId))) return true;
 
   const userId = getUserId(claimsOrUserId);
   if (!userId || !file?.uploadedby) return false;
@@ -191,6 +192,7 @@ async function getAuthorizedMcuFiles(mcuId, claimsOrUserId) {
 }
 
 module.exports = {
+  canAccessFile,
   generateSignedUrl,
   getAuthorizedSignedUrl,
   getAuthorizedMcuFiles,

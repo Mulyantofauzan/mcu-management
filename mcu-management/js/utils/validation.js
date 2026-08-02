@@ -92,7 +92,7 @@ export function validateEmployeeForm(data) {
  * @param {Object} data - MCU data to validate
  * @returns {Object} - { isValid: boolean, errors: Array<string> }
  */
-export function validateMCUForm(data) {
+export function validateMCUForm(data, options = {}) {
     const errors = [];
 
     // Validate MCU type
@@ -167,7 +167,7 @@ export function validateMCUForm(data) {
     }
 
     // Validate initial result
-    if (!data.initialResult) {
+    if (options.requireMedicalResult !== false && !data.initialResult) {
         errors.push('Hasil MCU harus dipilih');
     }
 

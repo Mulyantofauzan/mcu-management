@@ -20,10 +20,10 @@
   <script src="../env-config.js"></script>
 
       <!-- Dexie (IndexedDB) - Fallback -->
-    <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
+    <script src="../assets/vendor/dexie/dexie.min.js"></script>
 
     <!-- Supabase - Production Database -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../assets/vendor/supabase/supabase.js"></script>
 
     <style>
         body {
@@ -244,9 +244,9 @@
                 <form id="followup-form" onsubmit="window.handleFollowUpSubmit(event)">
                     <input type="hidden" id="followup-mcu-id" />
 
-                    <p class="text-sm text-gray-600 mb-4">💡 Isi hasil akhir dan catatan. Detail pemeriksaan MCU akan diupdate di langkah berikutnya.</p>
+                    <p id="followup-form-help" class="text-sm text-gray-600 mb-4">Isi hasil akhir dan catatan. Detail pemeriksaan MCU akan diupdate di langkah berikutnya.</p>
 
-                    <div class="mb-4">
+                    <div id="followup-result-field" class="mb-4">
                         <label class="label">Hasil Akhir <span class="text-danger">*</span></label>
                         <select id="fu-result" class="input" required>
                             <option value="">Pilih hasil...</option>
@@ -259,7 +259,7 @@
                     </div>
 
                     <div class="mb-4">
-                        <label class="label">Catatan Akhir <span class="text-danger">*</span></label>
+                        <label id="followup-notes-label" class="label">Catatan Akhir <span class="text-danger">*</span></label>
                         <textarea id="fu-notes" class="input" rows="4" required placeholder="Keterangan hasil follow-up..."></textarea>
                     </div>
 

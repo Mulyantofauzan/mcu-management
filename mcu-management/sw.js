@@ -14,7 +14,7 @@
  * 3. Stale-while-revalidate: Master data (fetch fresh, serve stale immediately)
  */
 
-const CACHE_VERSION = 'madis-v32';
+const CACHE_VERSION = 'madis-v1.1.0';
 const MAX_CACHE_ENTRIES = 200;
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
@@ -26,7 +26,17 @@ const STATIC_ASSETS = [
   '/index.html',
   '/css/output.css',
   '/css/sidebar.css',
+  '/css/workflow.css',
   '/js/appBootstrap.js',
+  '/js/services/workflowService.js',
+  '/js/utils/workflowErrorPresenter.js',
+  '/assets/vendor/supabase/supabase.js',
+  '/assets/vendor/chartjs/chart.umd.min.js',
+  '/assets/vendor/chartjs/chartjs-plugin-datalabels.min.js',
+  '/assets/vendor/dexie/dexie.min.js',
+  '/assets/vendor/pako/pako.min.js',
+  '/assets/vendor/sweetalert2/sweetalert2.all.min.js',
+  '/assets/vendor/sweetalert2/sweetalert2.min.css',
   '/assets/images/favicon.ico',
   '/js/config/envConfig.js',
   '/js/config/supabase.js',

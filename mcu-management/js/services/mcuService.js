@@ -8,6 +8,7 @@ import { authService } from './authService.js';
 import { generateMCUId } from '../utils/idGenerator.js';
 import { getCurrentTimestamp, calculateAge } from '../utils/dateHelpers.js';
 import { diffAndSaveHistory, createInitialChangeEntry } from '../utils/diffHelpers.js';
+import { analyticsEligibilityService } from './analyticsEligibilityService.js';
 
 class MCUService {
   async create(mcuData, currentUser) {
@@ -99,25 +100,7 @@ class MCUService {
 
   // ✅ FIX: Load only LATEST MCU per active employee (for dashboard KPIs)
   async getActive() {
-    const mcus = await this.getAll();
-    const activeEmployees = await database.query('employees',
-      emp => !emp.deletedAt && emp.activeStatus === 'Active'
-    );
-    const activeIds = new Set(activeEmployees.map(e => e.employeeId));
-
-    // Filter MCUs for active employees
-    const activeMCUs = mcus.filter(mcu => activeIds.has(mcu.employeeId));
-
-    // Get only the LATEST MCU per employee
-    const latestMCUMap = new Map();
-    activeMCUs.forEach(mcu => {
-      const existing = latestMCUMap.get(mcu.employeeId);
-      if (!existing || new Date(mcu.mcuDate) > new Date(existing.mcuDate)) {
-        latestMCUMap.set(mcu.employeeId, mcu);
-      }
-    });
-
-    return Array.from(latestMCUMap.values());
+    return analyticsEligibilityService.getCurrentMCUs();
   }
 
   // ✅ FIX: Load only deleted MCUs (for trash/deleted page)
@@ -158,29 +141,7 @@ class MCUService {
    * Critical for dashboard calculations
    */
   async getLatestMCUPerEmployee() {
-    const mcus = await this.getAll();
-    const employees = await database.query('employees', emp => !emp.deletedAt);
-
-    const latestMap = new Map();
-
-    for (const employee of employees) {
-      const employeeMCUs = mcus.filter(mcu => mcu.employeeId === employee.employeeId);
-
-      if (employeeMCUs.length > 0) {
-        // Sort by mcuDate desc, then by updatedAt desc (fallback to lastUpdatedTimestamp for backward compat)
-        employeeMCUs.sort((a, b) => {
-          const dateCompare = new Date(b.mcuDate) - new Date(a.mcuDate);
-          if (dateCompare !== 0) return dateCompare;
-          const timestampA = a.lastUpdatedTimestamp || a.updatedAt;
-          const timestampB = b.lastUpdatedTimestamp || b.updatedAt;
-          return new Date(timestampB) - new Date(timestampA);
-        });
-
-        latestMap.set(employee.employeeId, employeeMCUs[0]);
-      }
-    }
-
-    return Array.from(latestMap.values());
+    return analyticsEligibilityService.getCurrentMCUs();
   }
 
   async update(mcuId, updates, currentUser) {

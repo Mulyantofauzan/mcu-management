@@ -11,7 +11,7 @@ import { ENV, initializeEnv } from './envConfig.js';
 await initializeEnv();
 
 // Load Supabase client from CDN (added in HTML)
-// <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+// The browser bundle is served locally from assets/vendor/supabase/supabase.js.
 
 // Supabase credentials - SECURE: Load from environment variables
 // Set in Vercel: Settings → Environment Variables or via /api/config endpoint

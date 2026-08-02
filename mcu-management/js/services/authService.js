@@ -3,9 +3,19 @@
  * Handles user authentication and session management
  */
 
-import { database } from './database.js';
 import { generateUserId } from '../utils/idGenerator.js';
 import { getCurrentTimestamp } from '../utils/dateHelpers.js';
+
+let databasePromise;
+const database = new Proxy({}, {
+  get(_target, method) {
+    return async (...args) => {
+      databasePromise ||= import('./database.js').then(module => module.database);
+      const client = await databasePromise;
+      return client[method](...args);
+    };
+  }
+});
 
 const CURRENT_USER_KEY = 'currentUser';
 const ACCESS_TOKEN_KEY = 'madisAccessToken';
@@ -309,6 +319,14 @@ class AuthService {
 
   isAdmin() {
     return this.currentUser && this.currentUser.role === 'Admin';
+  }
+
+  isDoctor() {
+    return this.currentUser && this.currentUser.role === 'Dokter';
+  }
+
+  hasRole(...roles) {
+    return Boolean(this.currentUser && roles.includes(this.currentUser.role));
   }
 
   requireAuth() {

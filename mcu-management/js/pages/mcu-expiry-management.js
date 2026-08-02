@@ -6,6 +6,9 @@
 import { authService } from '../services/authService.js';
 import { initSidebar } from '../utils/sidebarInit.js';
 import { mcuExpiryService } from '../services/mcuExpiryService.js';
+import { workflowService } from '../services/workflowService.js';
+import { workflowIdempotency } from '../utils/workflowIdempotency.js';
+import { ensureWorkflowAlerts, presentWorkflowError } from '../utils/workflowErrorPresenter.js';
 
 class MCUExpiryManagementPage {
   constructor() {
@@ -18,6 +21,8 @@ class MCUExpiryManagementPage {
     this.filterStatus = '';
     this.sortBy = 'days'; // 'days' or 'status'
     this.allDepartments = [];
+    this.expirySettingVersion = null;
+    this.preview = null;
   }
 
   async initialize() {
@@ -30,6 +35,11 @@ class MCUExpiryManagementPage {
 
       // Set user info
       const user = authService.getCurrentUser();
+      if (user?.role !== 'Admin') {
+        await presentWorkflowError({ code: 'WORKFLOW_FORBIDDEN', message: 'Halaman ini hanya untuk Administrator.' });
+        window.location.href = '../index.html';
+        return;
+      }
       if (user) {
         const displayName = user?.displayName || 'User';
         const role = user?.role || 'Petugas';
@@ -45,12 +55,98 @@ class MCUExpiryManagementPage {
 
       // Load data
       await this.loadExpiryData();
+      await this.loadExpirySetting();
+      this.bindExpirySettingActions();
 
       // Mark page as initialized
       document.body.classList.add('initialized');
     } catch (error) {
-      alert('Error initializing page: ' + error.message);
+      await presentWorkflowError({
+        code: error?.code || 'WORKFLOW_INTERNAL_ERROR',
+        message: error?.message || 'Halaman pengaturan MCU gagal dimuat.'
+      }, { retry: () => this.initialize() });
       document.body.classList.add('initialized');
+    }
+  }
+
+  async loadExpirySetting() {
+    try {
+      const settings = await workflowService.settings();
+      const row = settings.settings.find(item => item.setting_key === 'mcu_expiry_months');
+      this.expirySettingVersion = row?.version ?? null;
+      document.getElementById('expiry-months-input').value = settings.expiryMonths;
+      this.preview = null;
+      document.getElementById('expiry-impact-preview').classList.add('hidden');
+      document.getElementById('apply-expiry-button').disabled = true;
+    } catch (error) {
+      await presentWorkflowError(error, { retry: () => this.loadExpirySetting() });
+    }
+  }
+
+  bindExpirySettingActions() {
+    document.getElementById('preview-expiry-button')?.addEventListener('click', () => this.previewExpiryImpact());
+    document.getElementById('apply-expiry-button')?.addEventListener('click', () => this.applyExpirySetting());
+    document.getElementById('expiry-months-input')?.addEventListener('input', () => {
+      this.preview = null;
+      document.getElementById('apply-expiry-button').disabled = true;
+      document.getElementById('expiry-impact-preview').classList.add('hidden');
+    });
+  }
+
+  readExpiryMonths() {
+    const value = Number(document.getElementById('expiry-months-input').value);
+    if (!Number.isInteger(value) || value < 1 || value > 120) {
+      throw { code: 'WORKFLOW_VALIDATION_FAILED', message: 'Ambang harus berupa 1 sampai 120 bulan.' };
+    }
+    return value;
+  }
+
+  async previewExpiryImpact() {
+    try {
+      const months = this.readExpiryMonths();
+      this.preview = await workflowService.expiryPreview(months);
+      document.getElementById('impact-eligible').textContent = this.preview.proposedEligible;
+      document.getElementById('impact-entering').textContent = this.preview.entering;
+      document.getElementById('impact-leaving').textContent = this.preview.leaving;
+      document.getElementById('impact-no-mcu').textContent = this.preview.noMcu;
+      document.getElementById('expiry-impact-preview').classList.remove('hidden');
+      document.getElementById('apply-expiry-button').disabled = months === this.preview.currentMonths;
+    } catch (error) {
+      await presentWorkflowError(error, { retry: () => this.previewExpiryImpact() });
+    }
+  }
+
+  async applyExpirySetting() {
+    if (!this.preview || this.expirySettingVersion === null) return;
+    const months = this.readExpiryMonths();
+    const Swal = await ensureWorkflowAlerts();
+    const confirmation = await Swal.fire({
+      icon: 'question',
+      title: 'Terapkan Ambang Baru?',
+      text: `${this.preview.entering} masuk dan ${this.preview.leaving} keluar dari analitik.`,
+      showCancelButton: true,
+      confirmButtonText: 'Terapkan',
+      cancelButtonText: 'Batal'
+    });
+    if (!confirmation.isConfirmed) return;
+
+    const scope = `update-expiry:${this.expirySettingVersion}:${months}`;
+    try {
+      await workflowService.mutate('update-expiry-setting', {
+        expectedVersion: this.expirySettingVersion,
+        expiryMonths: months,
+        idempotencyKey: workflowIdempotency.get(scope)
+      }, scope);
+      workflowIdempotency.clear(scope);
+      await Swal.fire({ icon: 'success', title: 'Pengaturan Tersimpan', text: `Masa berlaku MCU: ${months} bulan.` });
+      mcuExpiryService.invalidateCache();
+      await this.loadExpiryData();
+      await this.loadExpirySetting();
+    } catch (error) {
+      await presentWorkflowError(error, {
+        retry: () => this.applyExpirySetting(),
+        reload: () => this.loadExpirySetting()
+      });
     }
   }
 
@@ -77,7 +173,10 @@ class MCUExpiryManagementPage {
       this.currentPage = 1;
       this.renderTable();
     } catch (error) {
-      alert('Error loading expiry data: ' + error.message);
+      await presentWorkflowError({
+        code: error?.code || 'WORKFLOW_INTERNAL_ERROR',
+        message: error?.message || 'Data masa berlaku MCU gagal dimuat.'
+      }, { retry: () => this.loadExpiryData() });
     }
   }
 
@@ -311,11 +410,12 @@ window.handleSortChange = function(sortType) {
   }
 };
 
-window.exportToCSV = function() {
+window.exportToCSV = async function() {
   try {
     const data = page.getSearchedData();
     if (data.length === 0) {
-      alert('Tidak ada data untuk diexport');
+      const Swal = await ensureWorkflowAlerts();
+      await Swal.fire({ icon: 'info', title: 'Tidak Ada Data', text: 'Tidak ada baris yang dapat diekspor.' });
       return;
     }
 
@@ -353,8 +453,12 @@ window.exportToCSV = function() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   } catch (error) {
-    alert('Error exporting CSV: ' + error.message);
+    await presentWorkflowError({
+      code: 'WORKFLOW_INTERNAL_ERROR',
+      message: error?.message || 'CSV gagal dibuat.'
+    });
   }
 };
 

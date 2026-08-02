@@ -34,6 +34,9 @@ class SPARouter {
       '/pages/report-period.html': { path: 'js/pages/report-period.js', title: 'Laporan Periode' },
       '/pages/employee-health-history.html': { path: 'js/pages/employee-health-history.js', title: 'Riwayat Kesehatan' },
       '/pages/data-terhapus.html': { path: 'js/pages/data-terhapus.js', title: 'Data Terhapus' },
+      '/pages/validasi-mcu.html': { path: '/pages/validasi-mcu.html', title: 'Validasi MCU', noSPA: true },
+      '/pages/profil-dokter.html': { path: '/pages/profil-dokter.html', title: 'Profil Dokter', noSPA: true },
+      '/pages/keputusan-bergabung.html': { path: '/pages/keputusan-bergabung.html', title: 'Keputusan Bergabung', noSPA: true },
       '/pages/login.html': { path: 'pages/login.html', title: 'Login', noSPA: true }
     };
 

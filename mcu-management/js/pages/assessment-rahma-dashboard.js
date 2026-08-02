@@ -9,8 +9,6 @@
  */
 
 import { authService } from '../services/authService.js';
-import { employeeService } from '../services/employeeService.js';
-import { mcuService } from '../services/mcuService.js';
 import { labService } from '../services/labService.js';
 import * as metabolicSyndromeService from '../services/metabolicSyndromeService.js';
 import database from '../services/databaseAdapter.js';
@@ -19,6 +17,7 @@ import { showToast } from '../utils/uiHelpers.js';
 import { supabaseReady } from '../config/supabase.js';
 import { exportToExcel } from '../services/excelExportService.js';
 import { unifiedLoading } from '../utils/unifiedLoadingManager.js';
+import { analyticsEligibilityService } from '../services/analyticsEligibilityService.js';
 
 // State
 let allEmployees = [];
@@ -29,6 +28,7 @@ let departments = [];
 let jobTitles = [];
 let allMedicalHistories = {}; // Cache: mcuId -> [medical histories]
 let allLabResults = {}; // Cache: mcuId -> [lab results]
+let eligibleModelsPromise = null;
 let currentPage = 1;
 const itemsPerPage = 10;
 
@@ -214,14 +214,16 @@ function getRiskBadge(riskLevel) {
  * Load employees
  */
 async function loadEmployees() {
-    allEmployees = await employeeService.getAll();
+    eligibleModelsPromise ||= analyticsEligibilityService.getCurrentModels();
+    allEmployees = (await eligibleModelsPromise).map(item => item.employee);
 }
 
 /**
  * Load MCUs
  */
 async function loadMCUs() {
-    allMCUs = await mcuService.getAll();
+    eligibleModelsPromise ||= analyticsEligibilityService.getCurrentModels();
+    allMCUs = (await eligibleModelsPromise).map(item => item.mcu);
 }
 
 /**

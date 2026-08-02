@@ -1,7 +1,11 @@
 {
-  "version": "1.0.32",
-  "releaseDate": "2026-07-31",
+  "version": "1.1.0",
+  "releaseDate": "2026-08-02",
   "features": [
+    "Doctor-led MCU approval and repeatable follow-up review",
+    "Administrator joining decisions and audited WhatsApp confirmation",
+    "Reviewed-data analytics eligibility with configurable calendar-month expiry",
+    "Canonical role-aware navigation for Administrator, Petugas, and Dokter",
     "Consistent grouped report navigation on every page",
     "Compact fixed-height dashboard charts",
     "Compact dashboard pie and doughnut charts",

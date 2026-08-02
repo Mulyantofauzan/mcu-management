@@ -1,0 +1,189 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const root = path.resolve(__dirname, '../..');
+const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
+
+test('workflow client uses bearer API and deduplicates mutations', () => {
+  const source = read('mcu-management/js/services/workflowService.js');
+  assert.match(source, /\/api\/workflow/);
+  assert.match(source, /Authorization: `Bearer \$\{token\}`/);
+  assert.match(source, /pendingMutations/);
+  assert.doesNotMatch(source, /setTimeout\([^)]*request/);
+});
+
+test('idempotency keys stay in memory', () => {
+  const source = read('mcu-management/js/utils/workflowIdempotency.js');
+  assert.match(source, /crypto\.randomUUID\(\)/);
+  assert.doesNotMatch(source, /localStorage|sessionStorage|indexedDB/);
+});
+
+test('workflow errors have local SweetAlert recovery UI', () => {
+  const source = read('mcu-management/js/utils/workflowErrorPresenter.js');
+  [
+    'WORKFLOW_UNAUTHORIZED',
+    'WORKFLOW_FORBIDDEN',
+    'WORKFLOW_VERSION_CONFLICT',
+    'WORKFLOW_VALIDATION_FAILED',
+    'WORKFLOW_LOCKED',
+    'WORKFLOW_NETWORK_ERROR',
+    'WORKFLOW_DOCUMENT_FAILED'
+  ].forEach(code => assert.match(source, new RegExp(code)));
+  assert.match(source, /assets\/vendor\/sweetalert2/);
+  assert.doesNotMatch(source, /https?:\/\//);
+});
+
+test('sidebar has one canonical role-aware menu definition', () => {
+  const source = read('mcu-management/js/sidebar-manager.js');
+  assert.match(source, /Admin:/);
+  assert.match(source, /Petugas:/);
+  assert.match(source, /Dokter:/);
+  assert.match(source, /keputusan-bergabung\.html/);
+  assert.match(source, /validasi-mcu\.html/);
+  assert.match(source, /\/api\/workflow\?action=bootstrap/);
+  assert.doesNotMatch(read('mcu-management/js/utils/sidebarInit.js'), /pageMap|menu-kelola-user/);
+});
+
+test('user management exposes canonical doctor role', () => {
+  const html = read('mcu-management/pages/kelola-user.html');
+  const auth = read('mcu-management/js/services/authService.js');
+  assert.match(html, /value="Dokter"/);
+  assert.match(html, /value="Admin">Administrator/);
+  assert.match(auth, /isDoctor\(\)/);
+});
+
+test('workflow auth does not eagerly load database CDN', () => {
+  const auth = read('mcu-management/js/services/authService.js');
+  assert.doesNotMatch(auth, /^import \{ database \}/m);
+  assert.match(auth, /import\('\.\/database\.js'\)/);
+});
+
+test('WhatsApp summary uses approved review and excludes raw labs', () => {
+  const source = read('mcu-management/js/utils/whatsappShare.js');
+  assert.match(source, /approvedCycle/);
+  assert.match(source, /Hasil:/);
+  assert.match(source, /Catatan:/);
+  assert.match(source, /Dokter:/);
+  assert.doesNotMatch(source, /labs|pemeriksaan_lab|SGOT|SGPT/);
+  assert.match(source, /web\.whatsapp\.com/);
+});
+
+test('MCU entry separates examiner metadata from doctor decision', () => {
+  const page = read('mcu-management/pages/tambah-karyawan.html');
+  const source = read('mcu-management/js/pages/tambah-karyawan.js');
+  assert.match(page, /Dokter Pemeriksa \/ Sumber Data/);
+  assert.match(page, /workflow-review-notice/);
+  assert.match(source, /initialResult: workflowEnabled \? null/);
+  assert.match(source, /submit-review/);
+  assert.match(source, /Menunggu review dokter/);
+  assert.match(source, /const savedDraft = workflowEnabled/);
+  assert.match(source, /workflowStatus !== 'draft'/);
+});
+
+test('correction and periodic MCU paths submit raw data for doctor review', () => {
+  const source = read('mcu-management/js/pages/kelola-karyawan.js');
+  const page = read('mcu-management/pages/kelola-karyawan.html');
+  assert.match(source, /\['draft', 'correction_required'\]\.includes\(item\.workflow_status\)/);
+  assert.match(source, /delete updateData\.initialResult/);
+  assert.match(source, /submitMCUForReview/);
+  assert.match(source, /resumeDraftReview/);
+  assert.match(source, /Menunggu review dokter/);
+  assert.match(page, /workflow-correction-section/);
+  assert.match(page, /edit-medical-result-section/);
+});
+
+test('follow-up path submits evidence without a petugas medical result', () => {
+  const source = read('mcu-management/js/pages/follow-up.js');
+  assert.match(source, /evidenceNotes: followUpData\.evidenceNotes/);
+  assert.match(source, /attachmentFileIds: \[\]/);
+  assert.match(source, /if \(!workflowEnabled\)[\s\S]{0,500}mergedUpdateData\.finalResult/);
+  assert.match(source, /Bukti follow-up dikirim untuk review dokter/);
+});
+
+test('analytics pages use the centralized eligibility service', () => {
+  const service = read('mcu-management/js/services/analyticsEligibilityService.js');
+  assert.match(service, /v_analytics_eligible_current/);
+  assert.match(service, /v_reviewed_mcu_history/);
+  assert.match(service, /v_mcu_expiry_overview/);
+  assert.match(read('mcu-management/js/pages/dashboard.js'), /analyticsEligibilityService\.getCurrentModels/);
+  assert.match(read('mcu-management/js/services/analysisDashboardService.js'), /analyticsEligibilityService\.getCurrentData/);
+  assert.match(read('mcu-management/js/pages/assessment-rahma-dashboard.js'), /analyticsEligibilityService\.getCurrentModels/);
+  assert.doesNotMatch(read('mcu-management/js/services/mcuExpiryService.js'), /expiryPeriodDays|setDate\(/);
+});
+
+test('expiry impact is recomputed by server before update', () => {
+  const service = read('server/workflow/workflowService.js');
+  assert.match(service, /const impact = await this\.getExpiryPreview\(payload, user\)/);
+  assert.match(service, /p_impact: impact/);
+  assert.doesNotMatch(service, /p_impact: payload\.impact/);
+});
+
+test('doctor review exposes clinical evidence and post-approval sharing', () => {
+  const source = read('mcu-management/js/pages/validasi-mcu.js');
+  assert.match(source, /labReference/);
+  assert.match(source, /medicalHistories/);
+  assert.match(source, /priorMcus/);
+  assert.match(source, /downloadFile/);
+  assert.match(source, /shareApprovedReview/);
+  assert.match(source, /Bagikan ke WhatsApp/);
+});
+
+test('new workflow pages do not use raw browser alerts', () => {
+  [
+    'mcu-management/js/pages/validasi-mcu.js',
+    'mcu-management/js/pages/keputusan-bergabung.js',
+    'mcu-management/js/pages/profil-dokter.js',
+    'mcu-management/js/pages/mcu-expiry-management.js'
+  ].forEach(file => assert.doesNotMatch(read(file), /\balert\s*\(/, `${file} must use workflow error UI`));
+});
+
+test('production pages do not depend on third-party CDN assets', () => {
+  const productionFiles = [
+    'mcu-management/index.html',
+    'mcu-management/css/input.css',
+    'mcu-management/css/output.css',
+    ...fs.readdirSync(path.join(root, 'mcu-management/pages'))
+      .filter(name => name.endsWith('.html') && !name.startsWith('test-'))
+      .map(name => `mcu-management/pages/${name}`)
+  ];
+
+  const externalAssetHosts = /cdn\.jsdelivr\.net|unpkg\.com|cdnjs\.cloudflare\.com|fonts\.googleapis\.com|fonts\.gstatic\.com/;
+  productionFiles.forEach(file => {
+    assert.doesNotMatch(read(file), externalAssetHosts, `${file} must use local assets`);
+  });
+
+  const csp = read('vercel.json');
+  assert.doesNotMatch(csp, /cdn\.jsdelivr\.net|fonts\.googleapis\.com|fonts\.gstatic\.com/);
+});
+
+test('production HTML and service-worker asset references exist locally', () => {
+  const appRoot = path.join(root, 'mcu-management');
+  const htmlFiles = [
+    'mcu-management/index.html',
+    ...fs.readdirSync(path.join(appRoot, 'pages'))
+      .filter(name => name.endsWith('.html') && !name.startsWith('test-'))
+      .map(name => `mcu-management/pages/${name}`)
+  ];
+
+  for (const file of htmlFiles) {
+    const fullPath = path.join(root, file);
+    for (const match of read(file).matchAll(/(?:src|href)=["']([^"']+)["']/g)) {
+      const reference = match[1].split(/[?#]/)[0];
+      if (!reference || /^(?:https?:|data:|mailto:|tel:|javascript:)/.test(reference)) continue;
+      const target = reference.startsWith('/')
+        ? path.join(appRoot, reference)
+        : path.resolve(path.dirname(fullPath), reference);
+      assert.equal(fs.existsSync(target), true, `${file} references missing ${reference}`);
+    }
+  }
+
+  const serviceWorker = read('mcu-management/sw.js');
+  const staticBlock = serviceWorker.match(/const STATIC_ASSETS = \[([\s\S]*?)\];/)?.[1] || '';
+  for (const match of staticBlock.matchAll(/'([^']+)'/g)) {
+    const reference = match[1];
+    const target = reference === '/' ? path.join(appRoot, 'index.html') : path.join(appRoot, reference);
+    assert.equal(fs.existsSync(target), true, `sw.js references missing ${reference}`);
+  }
+});

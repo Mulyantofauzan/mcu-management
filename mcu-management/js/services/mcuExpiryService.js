@@ -3,11 +3,10 @@
  * Handles calculation of MCU expiry status and provides data for expiry management
  */
 
-import { supabaseReady, getSupabaseClient, isSupabaseEnabled } from '../config/supabase.js';
+import { analyticsEligibilityService } from './analyticsEligibilityService.js';
 
 class MCUExpiryService {
   constructor() {
-    this.expiryPeriodDays = 365; // 1 year
     this.warningPeriodDays = 60; // 60 days before expiry
     this.allEmployeesMCU = [];
   }
@@ -17,86 +16,7 @@ class MCUExpiryService {
    */
   async loadEmployeesWithMCU() {
     try {
-      // Wait for Supabase to be ready
-      await supabaseReady;
-
-      // Check if Supabase is actually enabled
-      if (!isSupabaseEnabled()) {
-        throw new Error('Supabase is not configured or enabled');
-      }
-
-      const supabase = getSupabaseClient();
-
-      // Get all employees
-      const { data: employees, error: empError } = await supabase
-        .from('employees')
-        .select('*')
-        .eq('is_active', true)
-        .is('deleted_at', null);
-
-      if (empError) throw empError;
-
-      // Get all MCUs
-      const { data: mcus, error: mcuError } = await supabase
-        .from('mcus')
-        .select('*')
-        .is('deleted_at', null)
-        .order('mcu_date', { ascending: false });
-
-      if (mcuError) throw mcuError;
-
-      // Get departments and jobs
-      const { data: departments } = await supabase.from('departments').select('*');
-      const { data: jobTitles } = await supabase.from('job_titles').select('*');
-
-      // Create map of latest MCU per employee
-      const latestMCUPerEmployee = {};
-      mcus.forEach(mcu => {
-        if (!latestMCUPerEmployee[mcu.employee_id]) {
-          latestMCUPerEmployee[mcu.employee_id] = mcu;
-        }
-      });
-
-      // Build employee data with MCU info
-      const employeesMCUData = employees.map(emp => {
-        const latestMCU = latestMCUPerEmployee[emp.employee_id];
-        const dept = departments?.find(d => d.name === emp.department);
-        const job = jobTitles?.find(j => j.name === emp.job_title);
-
-        // Calculate expiry status
-        let expiryStatus = 'NO_MCU';
-        let daysLeft = null;
-        let expiryDate = null;
-
-        if (latestMCU && latestMCU.mcu_date) {
-          expiryDate = new Date(latestMCU.mcu_date);
-          expiryDate.setDate(expiryDate.getDate() + this.expiryPeriodDays);
-
-          const today = new Date();
-          const timeDiff = expiryDate - today;
-          daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
-
-          if (daysLeft < 0) {
-            expiryStatus = 'EXPIRED';
-          } else if (daysLeft <= this.warningPeriodDays) {
-            expiryStatus = 'WARNING';
-          } else {
-            expiryStatus = 'OK';
-          }
-        }
-
-        return {
-          employee_id: emp.employee_id,
-          name: emp.name,
-          department: emp.department || 'N/A',
-          job_title: emp.job_title || 'N/A',
-          lastMCUDate: latestMCU?.mcu_date ? new Date(latestMCU.mcu_date) : null,
-          expiryDate: expiryDate,
-          daysLeft: daysLeft,
-          expiryStatus: expiryStatus,
-          latestMCU: latestMCU
-        };
-      });
+      const employeesMCUData = await analyticsEligibilityService.getExpiryOverview();
 
       // Always update cache with fresh data
       this.allEmployeesMCU = employeesMCUData;

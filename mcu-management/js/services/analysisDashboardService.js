@@ -9,6 +9,7 @@ import { supabase } from '../config/supabase.js';
 import { labService } from './labService.js';
 import { LAB_ITEMS_MAPPING } from '../data/labItemsMapping.js';
 import { evaluateVisionStatus, getGradeInfo } from '../utils/visionScaleHelper.js';
+import { analyticsEligibilityService } from './analyticsEligibilityService.js';
 
 class AnalysisDashboardService {
   constructor() {
@@ -53,22 +54,9 @@ class AnalysisDashboardService {
    */
   async loadDashboardData() {
     try {
-      // Get all employees
-      const { data: employees, error: empError } = await supabase
-        .from('employees')
-        .select('*')
-        .is('deleted_at', null);
-
-      if (empError) throw empError;
-
-      // Get all MCUs (sorted by date DESC to get latest first)
-      const { data: mcus, error: mcuError } = await supabase
-        .from('mcus')
-        .select('*')
-        .is('deleted_at', null)
-        .order('mcu_date', { ascending: false });
-
-      if (mcuError) throw mcuError;
+      const currentData = await analyticsEligibilityService.getCurrentData();
+      const employees = currentData.map(item => item.employee);
+      const mcus = currentData.map(item => item.mcu);
 
       // Get departments and job titles
       const { data: departments } = await supabase.from('departments').select('*');
@@ -215,22 +203,10 @@ class AnalysisDashboardService {
 
     try {
 
-      // Get all MCUs to find latest per employee (for year-based filtering)
-      const { data: allMcus, error: mcuError } = await supabase
-        .from('mcus')
-        .select('*')
-        .is('deleted_at', null)
-        .order('mcu_date', { ascending: false });
-
-      if (mcuError) throw mcuError;
-
-      // Get all employees (we need this for filtering)
-      const { data: employees, error: empError } = await supabase
-        .from('employees')
-        .select('*')
-        .is('deleted_at', null);
-
-      if (empError) throw empError;
+      const historyData = await analyticsEligibilityService.getReviewedHistoryData();
+      const allMcus = historyData.map(item => item.mcu);
+      const employeeMap = new Map(historyData.map(item => [item.employee.employee_id, item.employee]));
+      const employees = [...employeeMap.values()];
 
       // Get departments and job titles
       const { data: departments } = await supabase.from('departments').select('*');

@@ -8,8 +8,8 @@
 import { initializeEnv, logEnvStatus } from '../config/envConfig.js';
 
 import { authService } from '../services/authService.js';
-import { employeeService } from '../services/employeeService.js';
 import { mcuService } from '../services/mcuService.js';
+import { analyticsEligibilityService } from '../services/analyticsEligibilityService.js';
 import { mcuExpiryService } from '../services/mcuExpiryService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { database } from '../services/database.js';
@@ -207,8 +207,8 @@ async function loadData() {
     // IMPORTANT: Load master data FIRST before employees
     departments = await masterDataService.getAllDepartments();
     const jobTitles = await masterDataService.getAllJobTitles();
-    // ✅ FIX: Load ONLY active employees (performance optimization)
-    employees = await employeeService.getActive();
+    const eligibleData = await analyticsEligibilityService.getCurrentModels();
+    employees = eligibleData.map(item => item.employee);
 
     // ✅ FIX: Build lookup Maps once for O(1) enrichment (performance optimization)
     const jobMap = new Map(jobTitles.map(j => [j.name, j]));
@@ -218,7 +218,7 @@ async function loadData() {
     employees = employees.map(emp => enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap));
 
     // Get latest MCU per employee (only for active employees)
-    latestMCUs = await mcuService.getActive();
+    latestMCUs = eligibleData.map(item => item.mcu);
 
     // Apply all filters (date range, employee type, department, MCU status)
     const filteredMCUs = latestMCUs.filter(mcu => {
@@ -642,20 +642,6 @@ async function updateMCUTrendChart() {
   if (!ctx) return;
 
   try {
-    // Get latest MCU per employee only (same as other charts)
-    const allMCUs = await database.getAll("mcus");
-    const validMCUs = allMCUs.filter(mcu => !mcu.deletedAt && mcu.mcuDate);
-
-    // Get only the latest MCU per employee
-    const latestMCUsMap = new Map();
-    validMCUs.forEach(mcu => {
-      const existing = latestMCUsMap.get(mcu.employeeId);
-      if (!existing || new Date(mcu.mcuDate) > new Date(existing.mcuDate)) {
-        latestMCUsMap.set(mcu.employeeId, mcu);
-      }
-    });
-    const latestMCUs = Array.from(latestMCUsMap.values());
-
     // Determine date range
     let startDate, endDate;
     if (currentDateRange.startDate && currentDateRange.endDate) {

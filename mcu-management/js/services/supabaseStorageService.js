@@ -337,7 +337,7 @@ export async function getFilesByMCU(mcuId) {
  * @param {string} userId - Current user ID
  * @returns {Object} Download result
  */
-export async function downloadFile(fileId, fileName, userId) {
+export async function downloadFile(fileId, fileName, userId, targetWindow = null) {
   try {
     if (!fileId) {
       return { success: false, error: 'No file ID provided' };
@@ -368,8 +368,12 @@ export async function downloadFile(fileId, fileName, userId) {
         error: result.error || 'Failed to generate download link'
       };
     }
-    // Open signed URL in new tab
-    window.open(result.signedUrl, '_blank');
+    // Reuse a window opened directly by the user when supplied, avoiding popup blocking.
+    if (targetWindow && !targetWindow.closed) {
+      targetWindow.location.href = result.signedUrl;
+    } else {
+      window.open(result.signedUrl, '_blank');
+    }
 
     return {
       success: true,

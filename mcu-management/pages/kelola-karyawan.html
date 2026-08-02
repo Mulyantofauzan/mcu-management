@@ -20,10 +20,10 @@
   <script src="../env-config.js"></script>
 
       <!-- Dexie (IndexedDB) - Fallback -->
-    <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
+    <script src="../assets/vendor/dexie/dexie.min.js"></script>
 
     <!-- Supabase - Production Database -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../assets/vendor/supabase/supabase.js"></script>
 
     <style>
         body {
@@ -155,6 +155,17 @@
                 <h1 class="text-2xl font-bold text-gray-900">Kelola Karyawan</h1>
                 <p class="text-gray-500">Manage data karyawan dan riwayat MCU</p>
             </div>
+
+            <section id="workflow-correction-section" class="card mb-6 hidden" aria-labelledby="workflow-correction-title">
+                <div class="flex items-center justify-between gap-3 mb-3">
+                    <div>
+                        <h2 id="workflow-correction-title" class="text-lg font-semibold text-gray-900">Tindakan MCU</h2>
+                        <p class="text-sm text-gray-500">Draft yang perlu dikirim dan data yang dikembalikan dokter.</p>
+                    </div>
+                    <span id="workflow-correction-count" class="badge badge-warning">0</span>
+                </div>
+                <div id="workflow-correction-list" class="space-y-2"></div>
+            </section>
 
             <!-- Stats -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
@@ -340,6 +351,7 @@
                 </button>
             </div>
             <div class="modal-body">
+                <div id="mcu-correction-alert" class="hidden mb-4 p-4 rounded-lg bg-yellow-50 border border-yellow-300 text-sm text-yellow-900"></div>
                 <!-- Employee Info -->
                 <div class="bg-gray-50 rounded-lg p-4 mb-4">
                     <h4 class="font-semibold text-gray-900 mb-2">Data Karyawan</h4>
@@ -501,12 +513,12 @@
 
                 <div class="modal-footer">
                     <div class="flex-1"></div>
-                    <button type="button" onclick="window.handleDeleteMCU()" class="btn btn-danger mr-2">
+                    <button id="delete-mcu-button" type="button" onclick="window.handleDeleteMCU()" class="btn btn-danger mr-2">
                         <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         Hapus MCU
                     </button>
                     <button type="button" onclick="window.closeMCUDetailModal()" class="btn btn-secondary">Tutup</button>
-                    <button type="button" onclick="window.editMCU()" class="btn btn-primary">
+                    <button id="edit-mcu-button" type="button" onclick="window.editMCU()" class="btn btn-primary">
                         <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                         Edit MCU
                     </button>
@@ -525,6 +537,7 @@
                 </button>
             </div>
             <div class="modal-body">
+                <div id="edit-mcu-correction-alert" class="hidden mb-4 p-4 rounded-lg bg-yellow-50 border border-yellow-300 text-sm text-yellow-900"></div>
                 <!-- Employee Summary -->
                 <div class="bg-blue-50 rounded-lg p-4 mb-6">
                     <h4 class="font-semibold text-gray-900 mb-3">Data Karyawan</h4>
@@ -820,6 +833,7 @@
                         <div><label class="label">Alasan Dirujuk</label><textarea id="edit-mcu-alasan" class="input" rows="2" placeholder="Contoh: Perlu konsultasi spesialis jantung / pemeriksaan lanjutan"></textarea></div>
                     </div>
 
+                    <div id="edit-medical-result-section">
                     <h4 class="font-semibold text-gray-900 mb-3">Hasil Awal</h4>
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <div>
@@ -858,6 +872,7 @@
                                 <textarea id="edit-mcu-final-notes" class="input" rows="3"></textarea>
                             </div>
                         </div>
+                    </div>
                     </div>
 
                     <!-- File Upload Section -->
@@ -1184,6 +1199,7 @@
                         <div id="add-file-upload-container" class="mb-4 required"></div>
                     </div>
 
+                    <div id="add-medical-result-section">
                     <h4 class="font-semibold text-gray-900 mb-3">Hasil</h4>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -1201,6 +1217,7 @@
                             <label class="label">Catatan Awal <span class="text-danger">*</span></label>
                             <textarea id="mcu-notes" class="input" rows="3" required></textarea>
                         </div>
+                    </div>
                     </div>
 
                     <div class="modal-footer">

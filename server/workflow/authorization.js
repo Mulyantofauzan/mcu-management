@@ -12,6 +12,7 @@ const ACTION_ROLES = Object.freeze({
   'doctor-profile': ['Dokter'],
   'download-referral': ['Admin', 'Petugas', 'Dokter'],
   settings: ['Admin'],
+  'expiry-preview': ['Admin'],
   'submit-review': ['Petugas'],
   'claim-review': ['Dokter'],
   'release-claim': ['Admin', 'Dokter'],

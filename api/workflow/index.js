@@ -28,7 +28,8 @@ const READ_ACTIONS = new Set([
   'joining-history',
   'doctor-profile',
   'download-referral',
-  'settings'
+  'settings',
+  'expiry-preview'
 ]);
 
 const MUTATION_ACTIONS = new Set([

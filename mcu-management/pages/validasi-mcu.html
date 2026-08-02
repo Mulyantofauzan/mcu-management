@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Validasi MCU - MADIS</title>
+  <link rel="icon" href="../assets/images/favicon.ico">
+  <link rel="stylesheet" href="../css/output.css">
+  <link rel="stylesheet" href="../css/sidebar.css">
+  <link rel="stylesheet" href="../css/workflow.css">
+  <script type="module" src="../js/appBootstrap.js"></script>
+</head>
+<body class="workflow-page">
+  <aside id="sidebar" class="sidebar fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 z-30">
+    <div class="flex flex-col h-full">
+      <div class="sidebar-brand"><h1 class="text-xl font-bold text-primary-600">MADIS</h1><p class="text-xs text-gray-500 mt-1">Medical Check-Up Analysis & Data Information System</p></div>
+      <nav class="flex-1 overflow-y-auto"></nav>
+      <div></div>
+    </div>
+  </aside>
+
+  <div class="ml-64 min-h-screen">
+    <main class="workflow-main">
+      <div class="workflow-heading">
+        <div><h1>Validasi MCU</h1><p>Review klinis tanpa mengubah data pemeriksaan mentah.</p></div>
+        <button id="refresh-queue" class="workflow-btn" type="button">Muat Ulang</button>
+      </div>
+
+      <div id="feature-message" class="workflow-alert workflow-alert-info" hidden></div>
+      <div class="workflow-tabs" role="tablist" aria-label="Antrian review">
+        <button class="workflow-tab" data-tab="pending" type="button">Pending <span data-count="pending"></span></button>
+        <button class="workflow-tab" data-tab="followup" type="button">Follow-Up <span data-count="followup"></span></button>
+        <button class="workflow-tab" data-tab="history" type="button">Riwayat</button>
+      </div>
+
+      <section class="workflow-card" aria-live="polite">
+        <div class="workflow-toolbar"><h2 id="queue-title">Menunggu Review</h2><span id="queue-meta" class="workflow-meta"></span></div>
+        <div id="review-list" class="workflow-list"></div>
+        <div id="review-empty" class="workflow-empty" hidden>Tidak ada data pada antrian ini.</div>
+      </section>
+    </main>
+  </div>
+
+  <div id="review-overlay" class="workflow-overlay" hidden>
+    <section class="workflow-panel" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+      <header class="workflow-panel-header">
+        <div><h2 id="detail-title" class="font-bold text-gray-900">Detail MCU</h2><p id="claim-timer" class="workflow-meta"></p></div>
+        <button id="close-detail" type="button" class="workflow-btn" aria-label="Tutup detail">Tutup</button>
+      </header>
+      <div class="workflow-panel-body">
+        <section class="workflow-card"><h3 class="font-semibold mb-3">Karyawan</h3><dl id="employee-info" class="workflow-info-grid"></dl></section>
+        <section class="workflow-card"><h3 class="font-semibold mb-3">Pemeriksaan MCU</h3><dl id="mcu-info" class="workflow-info-grid"></dl></section>
+        <section class="workflow-card"><h3 class="font-semibold mb-3">Laboratorium & Lampiran</h3><div id="supporting-data"></div></section>
+        <section class="workflow-card"><h3 class="font-semibold mb-3">Riwayat Penyakit</h3><div id="clinical-history" class="workflow-list"></div></section>
+        <section class="workflow-card"><h3 class="font-semibold mb-3">MCU Sebelumnya</h3><div id="prior-mcu-history" class="workflow-list"></div></section>
+        <section class="workflow-card"><h3 class="font-semibold mb-3">Riwayat Review</h3><div id="cycle-history" class="workflow-list"></div></section>
+
+        <section id="decision-card" class="workflow-card">
+          <div id="claim-message" class="workflow-alert workflow-alert-info mb-3">Claim MCU sebelum memberi keputusan.</div>
+          <div class="workflow-actions mb-3">
+            <button id="claim-review" type="button" class="workflow-btn workflow-btn-primary">Claim Review</button>
+            <button id="release-claim" type="button" class="workflow-btn" hidden>Lepas Claim</button>
+          </div>
+          <form id="decision-form" class="workflow-form-grid" hidden>
+            <div class="workflow-field">
+              <label for="medical-result">Hasil dokter</label>
+              <select id="medical-result">
+                <option value="">Pilih hasil</option>
+                <option>Fit</option>
+                <option>Fit With Note</option>
+                <option>Unfit</option>
+                <option>Follow-Up</option>
+                <option>Temporary Unfit</option>
+              </select>
+            </div>
+            <div class="workflow-field workflow-field-full">
+              <label for="clinical-notes">Catatan klinis</label>
+              <textarea id="clinical-notes" maxlength="4000" placeholder="Kesimpulan dan arahan dokter"></textarea>
+            </div>
+            <div class="workflow-field workflow-field-full">
+              <label for="rejection-reason">Alasan dikembalikan ke Petugas</label>
+              <textarea id="rejection-reason" maxlength="2000" placeholder="Diisi hanya bila data harus diperbaiki"></textarea>
+            </div>
+            <div class="workflow-actions workflow-field-full">
+              <button id="reject-review" type="button" class="workflow-btn workflow-btn-danger">Kembalikan ke Petugas</button>
+              <button id="approve-review" type="button" class="workflow-btn workflow-btn-primary">Setujui Hasil</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <script src="../js/sidebar-manager.js"></script>
+  <script type="module" src="../js/pages/validasi-mcu.js"></script>
+</body>
+</html>

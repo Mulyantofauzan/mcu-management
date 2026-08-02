@@ -26,6 +26,9 @@ import { tempFileStorage } from '../services/tempFileStorage.js';
 import { StaticLabForm } from '../components/staticLabForm.js';
 import { LAB_ITEMS_MAPPING, sortLabResultsByDisplayOrder } from '../data/labItemsMapping.js';
 import { mcuSuccessModal } from '../components/mcuSuccessModal.js';
+import { workflowService } from '../services/workflowService.js';
+import { workflowIdempotency } from '../utils/workflowIdempotency.js';
+import { ensureWorkflowAlerts, presentWorkflowError } from '../utils/workflowErrorPresenter.js';
 
 let employees = [];
 let filteredEmployees = [];
@@ -38,6 +41,10 @@ let showInactiveEmployees = false;
 let fileUploadWidget = null;
 let addFileUploadWidget = null;
 let generatedMCUIdForAdd = null;  // Store generated MCU ID for the add modal
+let workflowEnabled = false;
+let workflowStateKnown = false;
+let currentWorkflowDetail = null;
+let correctionQueue = [];
 
 // Lab form instances - initialized once on page load
 let labResultWidgetEdit = null;
@@ -278,6 +285,14 @@ async function init() {
 
         updateUserInfo();
 
+        try {
+            const bootstrap = await workflowService.bootstrap();
+            workflowEnabled = bootstrap.workflowEnabled === true;
+            workflowStateKnown = true;
+        } catch (error) {
+            workflowStateKnown = false;
+        }
+
         // ✅ Initialize lab forms ONCE on page load (truly permanent, like other form fields)
         await initLabForms();
 
@@ -285,6 +300,7 @@ async function init() {
         await populateDiseaseDropdowns();
 
         await loadData();
+        await loadCorrectionQueue();
 
         // ✅ NEW: Setup toggle for inactive employees (if button exists)
         setupInactiveToggle();
@@ -304,6 +320,101 @@ async function init() {
         // Still show page even on error
         document.body.classList.add('initialized');
     }
+}
+
+async function loadCorrectionQueue() {
+    const section = document.getElementById('workflow-correction-section');
+    const list = document.getElementById('workflow-correction-list');
+    const count = document.getElementById('workflow-correction-count');
+    const user = authService.getCurrentUser();
+    if (!section || !list || !count) return;
+
+    if (!workflowEnabled || user?.role !== 'Petugas') {
+        section.classList.add('hidden');
+        return;
+    }
+
+    try {
+        const queue = await workflowService.petugasQueue();
+        correctionQueue = queue.filter(item => ['draft', 'correction_required'].includes(item.workflow_status));
+        count.textContent = String(correctionQueue.length);
+        section.classList.toggle('hidden', correctionQueue.length === 0);
+        list.replaceChildren();
+
+        correctionQueue.forEach(item => {
+            const row = document.createElement('div');
+            const isDraft = item.workflow_status === 'draft';
+            row.className = `flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 border rounded-lg ${isDraft ? 'border-blue-200 bg-blue-50' : 'border-yellow-200 bg-yellow-50'}`;
+            const text = document.createElement('div');
+            const name = document.createElement('strong');
+            const meta = document.createElement('p');
+            name.textContent = item.employee?.name || item.employee_id;
+            meta.className = 'text-sm text-gray-600';
+            meta.textContent = `${item.mcu_id} · ${item.mcu_type || '-'} · ${formatDateDisplay(item.mcu_date)}`;
+            text.append(name, meta);
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'btn btn-sm btn-primary';
+            button.textContent = isDraft ? 'Kirim ke Review' : 'Lihat & Koreksi';
+            button.addEventListener('click', () => isDraft
+                ? resumeDraftReview(item, button)
+                : window.viewMCUDetail(item.mcu_id));
+            row.append(text, button);
+            list.appendChild(row);
+        });
+    } catch (error) {
+        await presentWorkflowError(error, { retry: loadCorrectionQueue });
+    }
+}
+
+async function resumeDraftReview(item, button) {
+    button.disabled = true;
+    try {
+        await submitMCUForReview(item.mcu_id, Number(item.workflow_version || 0));
+        const Swal = await ensureWorkflowAlerts();
+        await Swal.fire({
+            icon: 'success',
+            title: 'MCU Dikirim',
+            text: 'Data masuk ke antrean review Dokter.',
+            timer: 1600,
+            showConfirmButton: false
+        });
+        await loadCorrectionQueue();
+    } catch (error) {
+        await presentWorkflowError(error, {
+            retry: () => resumeDraftReview(item, button),
+            reload: loadCorrectionQueue
+        });
+    } finally {
+        button.disabled = false;
+    }
+}
+
+function latestRejectionReason(detail) {
+    return [...(detail?.cycles || [])]
+        .reverse()
+        .find(cycle => cycle.decision === 'rejected')?.rejection_reason || '';
+}
+
+function configureMedicalResultFields(sectionId, fieldIds, hidden) {
+    document.getElementById(sectionId)?.classList.toggle('hidden', hidden);
+    fieldIds.forEach(id => {
+        const field = document.getElementById(id);
+        if (!field) return;
+        field.disabled = hidden;
+        if (hidden) field.required = false;
+    });
+}
+
+async function submitMCUForReview(mcuId, expectedVersion) {
+    const scope = `submit-review:${mcuId}:${expectedVersion}`;
+    const result = await workflowService.mutate('submit-review', {
+        mcuId,
+        expectedVersion,
+        idempotencyKey: workflowIdempotency.get(scope)
+    }, scope);
+    workflowIdempotency.clear(scope);
+    return result;
 }
 
 // ✅ NEW: Setup toggle button for showing/hiding inactive employees
@@ -964,6 +1075,16 @@ function populateDoctorDropdown(selectId) {
 
 window.addMCUForEmployee = async function(employeeId) {
     try {
+        const currentUser = authService.getCurrentUser();
+        if (!workflowStateKnown) {
+            await presentWorkflowError({ code: 'WORKFLOW_NETWORK_ERROR', message: 'Status workflow belum dapat diverifikasi.' });
+            return;
+        }
+        if (workflowEnabled && currentUser?.role !== 'Petugas') {
+            await presentWorkflowError({ code: 'WORKFLOW_FORBIDDEN', message: 'Hanya Petugas yang dapat mencatat MCU baru.' });
+            return;
+        }
+
         // Find employee data
         const employee = employees.find(e => e.employeeId === employeeId);
         if (!employee) {
@@ -995,6 +1116,11 @@ window.addMCUForEmployee = async function(employeeId) {
         // Reset form
         document.getElementById('mcu-form').reset();
         document.getElementById('mcu-employee-id').value = employeeId;
+        configureMedicalResultFields(
+            'add-medical-result-section',
+            ['mcu-result', 'mcu-notes'],
+            workflowEnabled
+        );
 
         // ✅ CRITICAL: Clear lab widget state before opening modal
         // This ensures fresh lab data collection for each new MCU
@@ -1137,8 +1263,8 @@ window.handleAddMCU = async function(event) {
             keluhanUtama: document.getElementById('mcu-keluhan').value || null,
             diagnosisKerja: document.getElementById('mcu-diagnosis').value || null,
             alasanRujuk: document.getElementById('mcu-alasan').value || null,
-            initialResult: document.getElementById('mcu-result').value,
-            initialNotes: document.getElementById('mcu-notes').value,
+            initialResult: workflowEnabled ? null : document.getElementById('mcu-result').value,
+            initialNotes: workflowEnabled ? null : document.getElementById('mcu-notes').value,
             // ✅ Collect medical and family histories from Riwayat Kesehatan section
             medicalHistories: getMedicalHistoryData(),
             familyHistories: getFamilyHistoryData()
@@ -1146,7 +1272,7 @@ window.handleAddMCU = async function(event) {
 
         // 🔍 DEBUG: Log the collected data BEFORE passing to batch service
         // Validate form data
-        const validation = validateMCUForm(mcuData);
+        const validation = validateMCUForm(mcuData, { requireMedicalResult: !workflowEnabled });
         if (!validation.isValid) {
             displayValidationErrors(validation.errors, showToast);
             return;
@@ -1221,9 +1347,17 @@ window.handleAddMCU = async function(event) {
             updateSaveProgress(currentSaveStep, totalSaveSteps);
         };
 
-        // ✅ BATCH SAVE: Use MCU batch service to atomically save MCU + lab results
-        // This prevents race conditions and orphaned records on sequential MCU operations
-        const batchResult = await mcuBatchService.saveMCUWithLabResults(mcuData, labResults, currentUser);
+        // A failed review submission leaves a recoverable draft. Reuse it on retry.
+        const existingDraft = workflowEnabled ? await mcuService.getById(mcuData.mcuId) : null;
+        const batchResult = existingDraft
+            ? {
+                success: existingDraft.workflowStatus === 'draft',
+                data: { mcu: existingDraft, labSaved: [], labFailed: [] },
+                errors: existingDraft.workflowStatus === 'draft'
+                    ? []
+                    : ['MCU sudah berpindah status. Muat ulang data.']
+            }
+            : await mcuBatchService.saveMCUWithLabResults(mcuData, labResults, currentUser);
 
         // Update progress for MCU save
         updateSaveStepProgress();
@@ -1233,6 +1367,24 @@ window.handleAddMCU = async function(event) {
             const errorMsg = `⚠️ SEBAGIAN GAGAL atau ERROR:\n${batchResult.errors.join('\n')}\n\nMCU ID: ${batchResult.data.mcu?.mcuId || 'Unknown'}. Hubungi support!`;
             showToast(errorMsg, 'error');
             throw new Error(batchResult.errors[0] || 'Batch save failed');
+        }
+
+        if (workflowEnabled) {
+            const createdVersion = batchResult.data.mcu?.workflowVersion ?? 0;
+            try {
+                await submitMCUForReview(mcuData.mcuId, createdVersion);
+            } catch (error) {
+                hideUnifiedLoading();
+                await presentWorkflowError(error, {
+                    retry: async () => {
+                        await submitMCUForReview(mcuData.mcuId, createdVersion);
+                        closeAddMCUModal();
+                        showToast(`MCU ${mcuData.mcuId} tersimpan. Menunggu review dokter.`, 'success');
+                        await loadData();
+                    }
+                });
+                return;
+            }
         }
 
         // Update progress for each successful lab result
@@ -1263,13 +1415,16 @@ window.handleAddMCU = async function(event) {
         // Close add modal
         closeAddMCUModal();
 
-        // Show success modal with MCU details
-        mcuSuccessModal.show(
-            employeeName,
-            mcuData.mcuType,
-            mcuData.initialResult,
-            5  // Auto-dismiss after 5 seconds
-        );
+        if (workflowEnabled) {
+            showToast(`MCU ${mcuData.mcuId} tersimpan. Menunggu review dokter.`, 'success');
+        } else {
+            mcuSuccessModal.show(
+                employeeName,
+                mcuData.mcuType,
+                mcuData.initialResult,
+                5
+            );
+        }
 
         // Show warning toast if lab failed (in addition to success modal)
         if (labFailed > 0) {
@@ -1299,6 +1454,34 @@ window.viewMCUDetail = async function(mcuId) {
         if (!mcu) {
             showToast('MCU tidak ditemukan', 'error');
             return;
+        }
+
+        currentWorkflowDetail = null;
+        if (workflowEnabled) {
+            try {
+                currentWorkflowDetail = await workflowService.reviewDetail(mcuId);
+            } catch (error) {
+                await presentWorkflowError(error, { retry: () => window.viewMCUDetail(mcuId) });
+                return;
+            }
+        }
+
+        const currentUser = authService.getCurrentUser();
+        const workflowStatus = currentWorkflowDetail?.mcu?.workflow_status || mcu.workflowStatus;
+        const canCorrect = workflowEnabled
+            && currentUser?.role === 'Petugas'
+            && workflowStatus === 'correction_required';
+        const canUseLegacyActions = workflowStateKnown && !workflowEnabled;
+        document.getElementById('edit-mcu-button')?.classList.toggle('hidden', !(canCorrect || canUseLegacyActions));
+        document.getElementById('delete-mcu-button')?.classList.toggle('hidden', !canUseLegacyActions);
+
+        const correctionAlert = document.getElementById('mcu-correction-alert');
+        const rejectionReason = latestRejectionReason(currentWorkflowDetail);
+        if (correctionAlert) {
+            correctionAlert.textContent = canCorrect
+                ? `Dikembalikan dokter: ${rejectionReason || 'Periksa kembali data pemeriksaan.'}`
+                : '';
+            correctionAlert.classList.toggle('hidden', !canCorrect);
         }
 
         const emp = employees.find(e => e.employeeId === mcu.employeeId);
@@ -1782,11 +1965,42 @@ window.editMCU = async function() {
             return;
         }
 
+        if (!workflowStateKnown) {
+            await presentWorkflowError({ code: 'WORKFLOW_NETWORK_ERROR', message: 'Status workflow belum dapat diverifikasi.' });
+            return;
+        }
+        if (workflowEnabled) {
+            currentWorkflowDetail = currentWorkflowDetail?.mcu?.mcu_id === mcu.mcuId
+                ? currentWorkflowDetail
+                : await workflowService.reviewDetail(mcu.mcuId);
+            const user = authService.getCurrentUser();
+            if (user?.role !== 'Petugas' || currentWorkflowDetail.mcu.workflow_status !== 'correction_required') {
+                await presentWorkflowError({
+                    code: 'WORKFLOW_INVALID_TRANSITION',
+                    message: 'MCU ini tidak berada pada antrean koreksi Petugas.'
+                }, { reload: () => window.viewMCUDetail(mcu.mcuId) });
+                return;
+            }
+        }
+
         // Close detail modal first
         closeMCUDetailModal();
 
         // Open the modal FIRST so DOM elements are visible
         openModal('edit-mcu-modal');
+
+        configureMedicalResultFields(
+            'edit-medical-result-section',
+            ['edit-mcu-initial-result', 'edit-mcu-initial-notes', 'edit-mcu-final-result', 'edit-mcu-final-notes'],
+            workflowEnabled
+        );
+        const correctionAlert = document.getElementById('edit-mcu-correction-alert');
+        if (correctionAlert) {
+            correctionAlert.textContent = workflowEnabled
+                ? `Alasan koreksi dokter: ${latestRejectionReason(currentWorkflowDetail) || 'Periksa kembali data pemeriksaan.'}`
+                : '';
+            correctionAlert.classList.toggle('hidden', !workflowEnabled);
+        }
 
         // ✅ Setup custom disease input handlers for edit modal
         setupCustomDiseaseHandlersForEdit();
@@ -2098,6 +2312,21 @@ window.handleEditMCU = async function(event) {
 
     try {
         const currentUser = authService.getCurrentUser();
+        if (!workflowStateKnown) {
+            await presentWorkflowError({ code: 'WORKFLOW_NETWORK_ERROR', message: 'Status workflow belum dapat diverifikasi.' });
+            return;
+        }
+        if (workflowEnabled && (
+            currentUser?.role !== 'Petugas'
+            || currentWorkflowDetail?.mcu?.mcu_id !== mcuId
+            || currentWorkflowDetail?.mcu?.workflow_status !== 'correction_required'
+        )) {
+            await presentWorkflowError({
+                code: 'WORKFLOW_INVALID_TRANSITION',
+                message: 'MCU ini tidak dapat dikoreksi pada status sekarang.'
+            });
+            return;
+        }
 
         // ✅ FIX: Get doctor ID and convert to number
         const doctorSelect = document.getElementById('edit-mcu-doctor');
@@ -2159,9 +2388,14 @@ window.handleEditMCU = async function(event) {
             initialNotes: document.getElementById('edit-mcu-initial-notes').value
         };
 
+        if (workflowEnabled) {
+            delete updateData.initialResult;
+            delete updateData.initialNotes;
+        }
+
         // Add final result if filled
         const finalResult = document.getElementById('edit-mcu-final-result').value;
-        if (finalResult) {
+        if (!workflowEnabled && finalResult) {
             updateData.finalResult = finalResult;
             updateData.finalNotes = document.getElementById('edit-mcu-final-notes').value || null;
         }
@@ -2502,8 +2736,15 @@ window.handleEditMCU = async function(event) {
 
         // Show errors if any occurred
         if (batchResult.errors.length > 0) {
+            if (workflowEnabled) {
+                throw new Error(batchResult.errors.join('\n'));
+            }
             const errorMsg = `⚠️ Beberapa operasi gagal:\n${batchResult.errors.join('\n')}`;
             showToast(errorMsg, 'warning');
+        }
+
+        if (workflowEnabled) {
+            await submitMCUForReview(mcuId, currentWorkflowDetail.mcu.workflow_version);
         }
 
         // Hide loading after a brief delay to show completion
@@ -2511,8 +2752,14 @@ window.handleEditMCU = async function(event) {
             hideUnifiedLoading();
         }, 500);
 
-        showToast('Data MCU berhasil diupdate', 'success');
+        showToast(workflowEnabled
+            ? 'Koreksi dikirim kembali untuk review dokter.'
+            : 'Data MCU berhasil diupdate', 'success');
         closeEditMCUModal();
+
+        if (workflowEnabled) {
+            await loadCorrectionQueue();
+        }
 
         // Reload if viewing from detail
         if (window.currentMCUId === mcuId) {
@@ -2520,7 +2767,11 @@ window.handleEditMCU = async function(event) {
         }
     } catch (error) {
         hideUnifiedLoading();
-        showToast('Gagal mengupdate MCU: ' + error.message, 'error');
+        if (workflowEnabled) {
+            await presentWorkflowError(error, { retry: () => window.handleEditMCU(event) });
+        } else {
+            showToast('Gagal mengupdate MCU: ' + error.message, 'error');
+        }
     }
 };
 

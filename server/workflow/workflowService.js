@@ -55,6 +55,7 @@ class WorkflowService {
       'doctor-profile': () => this.getDoctorProfile(user.userId),
       'download-referral': () => this.getReferralDownload(payload),
       settings: () => this.getSettings(),
+      'expiry-preview': () => this.getExpiryPreview(payload, user),
       'submit-review': () => this.submitReview(payload, user, requestId),
       'claim-review': () => this.claimReview(payload, user, requestId),
       'release-claim': () => this.releaseClaim(payload, user, requestId),
@@ -126,10 +127,10 @@ class WorkflowService {
         this.supabase
           .from('mcus')
           .select('workflow_status')
-          .in('workflow_status', ['correction_required', 'followup_required'])
+          .in('workflow_status', ['draft', 'correction_required', 'followup_required'])
           .is('deleted_at', null)
       );
-      counts.correction = (data || []).filter(row => row.workflow_status === 'correction_required').length;
+      counts.correction = (data || []).filter(row => ['draft', 'correction_required'].includes(row.workflow_status)).length;
       counts.followup = (data || []).filter(row => row.workflow_status === 'followup_required').length;
     }
 
@@ -160,6 +161,7 @@ class WorkflowService {
           'workflow_version',
           'current_medical_result',
           'current_review_cycle',
+          'activated_at',
           'claimed_by',
           'claimed_at',
           'claim_expires_at',
@@ -171,21 +173,34 @@ class WorkflowService {
         .limit(200)
     );
 
-    return data || [];
+    return this.enrichMcuRows(data || []);
   }
 
   async getPetugasQueue() {
     const { data } = await this.query(
       this.supabase
         .from('mcus')
-        .select('mcu_id, employee_id, mcu_type, mcu_date, workflow_status, workflow_version, current_medical_result, current_review_cycle, updated_at')
-        .in('workflow_status', ['correction_required', 'followup_required'])
+        .select('mcu_id, employee_id, mcu_type, mcu_date, workflow_status, workflow_version, current_medical_result, current_review_cycle, current_share_cycle_id, current_share_status, updated_at')
+        .in('workflow_status', ['draft', 'correction_required', 'followup_required'])
         .is('deleted_at', null)
         .order('updated_at', { ascending: true })
         .limit(200)
     );
 
-    return data || [];
+    return this.enrichMcuRows(data || []);
+  }
+
+  async enrichMcuRows(rows) {
+    const employeeIds = [...new Set(rows.map(row => row.employee_id).filter(Boolean))];
+    if (!employeeIds.length) return rows;
+    const { data: employees } = await this.query(
+      this.supabase
+        .from('employees')
+        .select('employee_id, name, department, job_title, joining_status')
+        .in('employee_id', employeeIds)
+    );
+    const byId = new Map((employees || []).map(employee => [employee.employee_id, employee]));
+    return rows.map(row => ({ ...row, employee: byId.get(row.employee_id) || null }));
   }
 
   async getReviewDetail(mcuId) {
@@ -201,19 +216,79 @@ class WorkflowService {
     );
     if (!mcu) throw new WorkflowError(WORKFLOW_ERROR_CODES.NOT_FOUND);
 
-    const [employeeResult, labResult, cycleResult, fileResult] = await Promise.all([
+    const [
+      employeeResult,
+      labResult,
+      cycleResult,
+      fileResult,
+      followupResult,
+      medicalHistoryResult,
+      familyHistoryResult,
+      priorMcuResult
+    ] = await Promise.all([
       this.query(this.supabase.from('employees').select('*').eq('employee_id', mcu.employee_id).maybeSingle()),
       this.query(this.supabase.from('pemeriksaan_lab').select('*').eq('mcu_id', mcuId).is('deleted_at', null)),
       this.query(this.supabase.from('mcu_review_cycles').select('*').eq('mcu_id', mcuId).order('cycle_number')),
-      this.query(this.supabase.from('mcufiles').select('fileid, filename, filetype, filesize, uploadedat').eq('mcuid', mcuId).is('deletedat', null))
+      this.query(this.supabase.from('mcufiles').select('fileid, filename, filetype, filesize, uploadedat').eq('mcuid', mcuId).is('deletedat', null)),
+      this.query(this.supabase.from('mcu_followup_submissions').select('id, prior_review_cycle_id, evidence_notes, attachment_file_ids, submitted_by, created_at').eq('mcu_id', mcuId).order('created_at')),
+      this.query(this.supabase.from('medical_histories').select('id, disease_name, year_diagnosed, notes').eq('mcu_id', mcuId)),
+      this.query(this.supabase.from('family_histories').select('id, disease_name, family_member, age_at_diagnosis, status, notes').eq('mcu_id', mcuId)),
+      this.query(
+        this.supabase
+          .from('mcus')
+          .select('mcu_id, mcu_type, mcu_date, current_medical_result, initial_result, final_result, status, activated_at')
+          .eq('employee_id', mcu.employee_id)
+          .neq('mcu_id', mcuId)
+          .is('deleted_at', null)
+          .order('mcu_date', { ascending: false })
+          .limit(10)
+      )
     ]);
+
+    const cycleIds = (cycleResult.data || []).map(cycle => cycle.id);
+    const doctorIds = [...new Set((cycleResult.data || []).map(cycle => cycle.doctor_user_id).filter(Boolean))];
+    const labItemIds = [...new Set((labResult.data || []).map(lab => lab.lab_item_id).filter(Boolean))];
+    const [profileResult, documentResult, labItemResult] = await Promise.all([
+      doctorIds.length ? this.query(
+        this.supabase
+          .from('doctor_profiles')
+          .select('user_id, professional_name, registration_number')
+          .in('user_id', doctorIds)
+      ) : Promise.resolve({ data: [] }),
+      cycleIds.length ? this.query(
+        this.supabase
+          .from('mcu_review_documents')
+          .select('id, review_cycle_id, document_type, signature_version, created_at')
+          .in('review_cycle_id', cycleIds)
+      ) : Promise.resolve({ data: [] }),
+      labItemIds.length ? this.query(
+        this.supabase
+          .from('lab_items')
+          .select('id, name, unit, min_range_reference, max_range_reference')
+          .in('id', labItemIds)
+      ) : Promise.resolve({ data: [] })
+    ]);
+    const profiles = profileResult.data;
+    const profileById = new Map((profiles || []).map(profile => [profile.user_id, profile]));
+    const labItemById = new Map((labItemResult.data || []).map(item => [String(item.id), item]));
 
     return {
       mcu,
       employee: employeeResult.data,
-      labs: labResult.data || [],
-      cycles: cycleResult.data || [],
-      files: fileResult.data || []
+      labs: (labResult.data || []).map(lab => ({
+        ...lab,
+        labItem: labItemById.get(String(lab.lab_item_id)) || null
+      })),
+      cycles: (cycleResult.data || []).map(cycle => ({
+        ...cycle,
+        doctorProfile: profileById.get(cycle.doctor_user_id) || null
+      })),
+      files: fileResult.data || [],
+      documents: documentResult.data || [],
+      followupSubmissions: followupResult.data || [],
+      medicalHistories: medicalHistoryResult.data || [],
+      familyHistories: familyHistoryResult.data || [],
+      priorMcus: priorMcuResult.data || []
     };
   }
 
@@ -362,11 +437,13 @@ class WorkflowService {
   }
 
   async submitFollowup(payload, user, requestId) {
-    requireFields(payload, ['mcuId', 'expectedVersion', 'idempotencyKey']);
-    return this.rpc('workflow_submit_followup', {
+    requireFields(payload, ['mcuId', 'expectedVersion', 'evidenceNotes', 'idempotencyKey']);
+    return this.rpc('workflow_submit_followup_evidence', {
       p_mcu_id: payload.mcuId,
       p_actor_user_id: user.userId,
       p_expected_version: payload.expectedVersion,
+      p_evidence_notes: payload.evidenceNotes,
+      p_attachment_file_ids: payload.attachmentFileIds || [],
       p_request_id: requestId,
       p_idempotency_key: payload.idempotencyKey
     });
@@ -626,13 +703,28 @@ class WorkflowService {
 
   async updateExpirySetting(payload, user, requestId) {
     requireFields(payload, ['expectedVersion', 'expiryMonths', 'idempotencyKey']);
+    const impact = await this.getExpiryPreview(payload, user);
     return this.rpc('workflow_update_expiry_months', {
       p_actor_user_id: user.userId,
       p_expected_version: payload.expectedVersion,
       p_expiry_months: Number(payload.expiryMonths),
-      p_impact: payload.impact || {},
+      p_impact: impact,
       p_request_id: requestId,
       p_idempotency_key: payload.idempotencyKey
+    });
+  }
+
+  async getExpiryPreview(payload, user) {
+    requireFields(payload, ['expiryMonths']);
+    const expiryMonths = Number(payload.expiryMonths);
+    if (!Number.isInteger(expiryMonths) || expiryMonths < 1 || expiryMonths > 120) {
+      throw new WorkflowError(WORKFLOW_ERROR_CODES.VALIDATION_FAILED, {
+        details: { field: 'expiryMonths' }
+      });
+    }
+    return this.rpc('workflow_preview_expiry_impact', {
+      p_actor_user_id: user.userId,
+      p_expiry_months: expiryMonths
     });
   }
 
