@@ -55,6 +55,12 @@ async function init() {
       return;
     }
 
+    if (authService.isDoctor()) {
+      unifiedLoading.hide();
+      window.location.replace('pages/validasi-mcu.html');
+      return;
+    }
+
     // ✅ Initialize theme manager (light/dark mode) FIRST before rendering
     initThemeManager();
     unifiedLoading.updateProgress(15);
@@ -1155,10 +1161,14 @@ window.reseedDatabase = async function() {
   }
 };
 
-// Initialize on load
-supabaseReady.then(() => {
-  init();
-}).catch(err => {
-  // Still initialize even if Supabase wait failed
-  init();
-});
+// Route Doctors before dashboard data is requested.
+if (authService.isAuthenticated() && authService.isDoctor()) {
+  window.location.replace('pages/validasi-mcu.html');
+} else {
+  supabaseReady.then(() => {
+    init();
+  }).catch(err => {
+    // Still initialize even if Supabase wait failed
+    init();
+  });
+}

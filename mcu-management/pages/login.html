@@ -224,13 +224,14 @@
         btn.disabled = true;
         btn.textContent = 'Signing In...';
 
-        await authService.login(username, password);
+        const user = await authService.login(username, password);
 
         // Reset attempts on success
         resetLoginAttempts();
 
         showToast('Login berhasil!', 'success');
-        setTimeout(() => (window.location.href = '../index.html'), 600);
+        const landingPage = user?.role === 'Dokter' ? 'validasi-mcu.html' : '../index.html';
+        setTimeout(() => (window.location.href = landingPage), 600);
       } catch (err) {
         // Record failed attempt for rate limiting
         recordFailedAttempt();

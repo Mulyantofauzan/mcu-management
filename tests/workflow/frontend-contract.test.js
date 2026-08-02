@@ -67,6 +67,14 @@ test('user management exposes canonical doctor role', () => {
   assert.match(auth, /isDoctor\(\)/);
 });
 
+test('doctor login lands in the restricted clinical workspace', () => {
+  const login = read('mcu-management/pages/login.html');
+  const dashboard = read('mcu-management/js/pages/dashboard.js');
+  assert.match(login, /user\?\.role === 'Dokter' \? 'validasi-mcu\.html'/);
+  assert.match(dashboard, /authService\.isDoctor\(\)/);
+  assert.match(dashboard, /location\.replace\('pages\/validasi-mcu\.html'\)/);
+});
+
 test('workflow auth does not eagerly load database CDN', () => {
   const auth = read('mcu-management/js/services/authService.js');
   assert.doesNotMatch(auth, /^import \{ database \}/m);
