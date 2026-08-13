@@ -40,6 +40,22 @@ const ERROR_PRESENTATIONS = Object.freeze({
   }
 });
 
+const UPLOAD_ERROR_PRESENTATIONS = Object.freeze({
+  UPLOAD_UNAUTHORIZED: { icon: 'warning', title: 'Sesi Berakhir' },
+  UPLOAD_URL_EXPIRED: { icon: 'warning', title: 'Waktu Upload Habis' },
+  UPLOAD_URL_REJECTED: { icon: 'error', title: 'Izin Upload Ditolak' },
+  UPLOAD_NETWORK_ERROR: { icon: 'error', title: 'Koneksi Terputus' },
+  UPLOAD_CANCELLED: { icon: 'info', title: 'Upload Dibatalkan' },
+  UPLOAD_SIZE_INVALID: { icon: 'warning', title: 'Ukuran File Tidak Sesuai' },
+  UPLOAD_PDF_INVALID: { icon: 'error', title: 'PDF Tidak Valid' },
+  UPLOAD_FORBIDDEN: { icon: 'error', title: 'Upload Ditolak' },
+  UPLOAD_METADATA_FAILED: { icon: 'error', title: 'Data File Belum Tersimpan' },
+  UPLOAD_VERIFICATION_FAILED: { icon: 'error', title: 'Verifikasi Upload Gagal' },
+  UPLOAD_R2_FAILED: { icon: 'error', title: 'Penyimpanan Tidak Merespons' },
+  UPLOAD_API_FAILED: { icon: 'error', title: 'Layanan Upload Gagal' },
+  UPLOAD_SERVER_ERROR: { icon: 'error', title: 'Kesalahan Server' }
+});
+
 let assetPromise;
 
 function assetPath(file) {
@@ -108,4 +124,17 @@ export async function presentWorkflowError(error, handlers = {}) {
   return result;
 }
 
-export { ERROR_PRESENTATIONS };
+export async function presentUploadError(error) {
+  const Swal = await ensureWorkflowAlerts();
+  const presentation = UPLOAD_ERROR_PRESENTATIONS[error?.code]
+    || { icon: 'error', title: 'Upload Gagal' };
+  return Swal.fire({
+    icon: presentation.icon,
+    title: presentation.title,
+    text: error?.message || 'File belum berhasil diunggah. Silakan coba lagi.',
+    confirmButtonText: 'Tutup',
+    allowOutsideClick: false
+  });
+}
+
+export { ERROR_PRESENTATIONS, UPLOAD_ERROR_PRESENTATIONS };

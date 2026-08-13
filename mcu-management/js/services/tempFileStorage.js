@@ -10,6 +10,7 @@ class TempFileStorage {
     constructor() {
         // Store files by mcuId: { mcuId: [file1, file2, ...] }
         this.tempFiles = {};
+        this.pendingPreparations = {};
     }
 
     /**
@@ -58,6 +59,13 @@ class TempFileStorage {
         }
     }
 
+    retainFiles(mcuId, indexes) {
+        if (!this.tempFiles[mcuId] || !Array.isArray(indexes)) return;
+        const keep = new Set(indexes);
+        this.tempFiles[mcuId] = this.tempFiles[mcuId].filter((file, index) => keep.has(index));
+        if (this.tempFiles[mcuId].length === 0) delete this.tempFiles[mcuId];
+    }
+
     /**
      * Clear all temporary files for an MCU
      * @param {string} mcuId - MCU ID
@@ -73,6 +81,7 @@ class TempFileStorage {
      */
     clearAll() {
         this.tempFiles = {};
+        this.pendingPreparations = {};
     }
 
     /**
@@ -82,6 +91,21 @@ class TempFileStorage {
      */
     getTotalSize(mcuId) {
         return (this.tempFiles[mcuId] || []).reduce((sum, file) => sum + file.size, 0);
+    }
+
+    setPendingPreparation(mcuId, promise) {
+        this.pendingPreparations[mcuId] = promise;
+    }
+
+    clearPendingPreparation(mcuId, promise) {
+        if (this.pendingPreparations[mcuId] === promise) {
+            delete this.pendingPreparations[mcuId];
+        }
+    }
+
+    async waitForPending(mcuId) {
+        const pending = this.pendingPreparations[mcuId];
+        if (pending) await pending;
     }
 }
 

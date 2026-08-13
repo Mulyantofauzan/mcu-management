@@ -2,7 +2,8 @@
  * Supabase Storage Upload Service
  *
  * Frontend service untuk upload files ke Cloudflare R2
- * - Max 3MB per file
+ * - PDF max 5MB after local preparation
+ * - JPG/PNG max 3MB
  * - Supported: PDF, JPG, PNG
  * - Upload tracking dengan progress callback
  *
@@ -18,6 +19,158 @@ function getAuthHeaders(extraHeaders = {}) {
   return token
     ? { ...extraHeaders, Authorization: `Bearer ${token}` }
     : extraHeaders;
+}
+
+const PDF_MAX_SIZE = 5 * 1024 * 1024;
+const IMAGE_MAX_SIZE = 3 * 1024 * 1024;
+
+async function postUploadAction(payload) {
+  const response = await fetch('/api/compress-upload', {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(payload)
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result.success) {
+    const error = new Error(result.error || `Upload API gagal (HTTP ${response.status}).`);
+    error.code = result.code
+      || (response.status === 401 ? 'UPLOAD_UNAUTHORIZED' : 'UPLOAD_API_FAILED');
+    error.status = response.status;
+    throw error;
+  }
+  return result;
+}
+
+function putFileToSignedUrl(file, upload, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', upload.uploadUrl);
+    Object.entries(upload.requiredHeaders || {}).forEach(([name, value]) => {
+      xhr.setRequestHeader(name, value);
+    });
+    xhr.upload?.addEventListener('progress', (event) => {
+      if (event.lengthComputable) {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        onProgress?.(event.loaded, event.total, `Mengunggah: ${percent}%`);
+      }
+    });
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve();
+      } else {
+        const error = new Error(`Upload ke R2 gagal (HTTP ${xhr.status}).`);
+        error.code = /ExpiredRequest|request has expired/i.test(xhr.responseText || '')
+          ? 'UPLOAD_URL_EXPIRED'
+          : (xhr.status === 401 || xhr.status === 403
+              ? 'UPLOAD_URL_REJECTED'
+              : 'UPLOAD_R2_FAILED');
+        error.status = xhr.status;
+        reject(error);
+      }
+    });
+    xhr.addEventListener('error', () => {
+      const error = new Error('Koneksi terputus saat mengunggah PDF.');
+      error.code = 'UPLOAD_NETWORK_ERROR';
+      reject(error);
+    });
+    xhr.addEventListener('abort', () => {
+      const error = new Error('Upload PDF dibatalkan.');
+      error.code = 'UPLOAD_CANCELLED';
+      reject(error);
+    });
+    xhr.send(file);
+  });
+}
+
+async function uploadPdfDirect(file, employeeId, mcuId, onProgress) {
+  if (file.size > PDF_MAX_SIZE) {
+    throw new Error('PDF hasil persiapan melebihi batas penyimpanan 5 MB.');
+  }
+
+  let lastError;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const prepared = await postUploadAction({
+      action: 'prepare-pdf-upload',
+      employeeId,
+      mcuId,
+      fileName: file.name,
+      contentType: 'application/pdf',
+      contentLength: file.size
+    });
+    try {
+      await putFileToSignedUrl(file, prepared.upload, onProgress);
+      const confirmed = await postUploadAction({
+        action: 'confirm-pdf-upload',
+        objectKey: prepared.upload.objectKey,
+        fileName: file.name
+      });
+      return {
+        success: true,
+        fileName: confirmed.file.name,
+        originalSize: confirmed.file.size,
+        type: confirmed.file.type,
+        publicUrl: confirmed.storage.publicUrl,
+        storagePath: confirmed.storage.path,
+        message: confirmed.message
+      };
+    } catch (error) {
+      lastError = error;
+      if (!['UPLOAD_NETWORK_ERROR', 'UPLOAD_URL_EXPIRED'].includes(error.code) || attempt === 1) {
+        throw error;
+      }
+    }
+  }
+  throw lastError;
+}
+
+function uploadMultipartFile(file, employeeId, mcuId, onProgress) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('employeeId', employeeId);
+  formData.append('mcuId', mcuId);
+  const xhr = new XMLHttpRequest();
+
+  return new Promise((resolve, reject) => {
+    if (xhr.upload && onProgress) {
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          onProgress(event.loaded, event.total, `Mengunggah: ${percent}%`);
+        }
+      });
+    }
+    xhr.addEventListener('load', () => {
+      if (xhr.status === 200) {
+        try {
+          const response = JSON.parse(xhr.responseText);
+          resolve({
+            success: true,
+            fileName: file.name,
+            originalSize: response.file.size,
+            type: response.file.type,
+            publicUrl: response.storage.publicUrl,
+            storagePath: response.storage.path,
+            message: response.message
+          });
+        } catch (error) {
+          reject(new Error(`Failed to parse response: ${error.message}`));
+        }
+      } else {
+        try {
+          const errorResponse = JSON.parse(xhr.responseText);
+          reject(new Error(errorResponse.error || `Upload failed with status ${xhr.status}`));
+        } catch {
+          reject(new Error(`Upload failed with status ${xhr.status}`));
+        }
+      }
+    });
+    xhr.addEventListener('error', () => reject(new Error('Network error during upload')));
+    xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')));
+    xhr.open('POST', '/api/compress-upload');
+    const token = authService.getAccessToken();
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    xhr.send(formData);
+  });
 }
 
 /**
@@ -46,13 +199,13 @@ export async function uploadFileToSupabase(file, employeeId, mcuId, onProgress =
       );
     }
 
-    // Validate file size (3MB max)
-    const maxSize = 3 * 1024 * 1024;
+    const isPdf = file.type === 'application/pdf';
+    const maxSize = isPdf ? PDF_MAX_SIZE : IMAGE_MAX_SIZE;
     const warningSize = 2 * 1024 * 1024; // 2MB warning threshold
 
     if (file.size > maxSize) {
       throw new Error(
-        `File terlalu besar (${(file.size / 1024 / 1024).toFixed(1)}MB). Maksimal file 3MB per file`
+        `File terlalu besar (${(file.size / 1024 / 1024).toFixed(1)}MB). Maksimal ${maxSize / 1024 / 1024}MB per file`
       );
     }
 
@@ -62,68 +215,9 @@ export async function uploadFileToSupabase(file, employeeId, mcuId, onProgress =
       showToast(`Perhatian: File ${file.name} berukuran ${fileSizeMB}MB. Proses upload mungkin memakan waktu lebih lama.`, 'warning');
     }
 
-    // Create FormData
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('employeeId', employeeId);
-    formData.append('mcuId', mcuId);
-    // Upload dengan progress tracking
-    const xhr = new XMLHttpRequest();
-
-    return new Promise((resolve, reject) => {
-      // Track upload progress
-      if (xhr.upload && onProgress) {
-        xhr.upload.addEventListener('progress', (e) => {
-          if (e.lengthComputable) {
-            const percentComplete = Math.round((e.loaded / e.total) * 100);
-            onProgress(e.loaded, e.total, `Uploading: ${percentComplete}%`);
-          }
-        });
-      }
-
-      xhr.addEventListener('load', () => {
-        if (xhr.status === 200) {
-          try {
-            const response = JSON.parse(xhr.responseText);
-            resolve({
-              success: true,
-              fileName: file.name,
-              originalSize: response.file.size,
-              type: response.file.type,
-              publicUrl: response.storage.publicUrl,
-              storagePath: response.storage.path,
-              message: response.message
-            });
-          } catch (error) {
-            reject(new Error(`Failed to parse response: ${error.message}`));
-          }
-        } else {
-          try {
-            const errorResponse = JSON.parse(xhr.responseText);
-            reject(new Error(errorResponse.error || `Upload failed with status ${xhr.status}`));
-          } catch {
-            reject(new Error(`Upload failed with status ${xhr.status}`));
-          }
-        }
-      });
-
-      xhr.addEventListener('error', () => {
-        reject(new Error('Network error during upload'));
-      });
-
-      xhr.addEventListener('abort', () => {
-        reject(new Error('Upload cancelled'));
-      });
-
-      // Send request to API (using relative URL to work on any deployment)
-      const apiUrl = '/api/compress-upload';
-      xhr.open('POST', apiUrl);
-      const token = authService.getAccessToken();
-      if (token) {
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-      }
-      xhr.send(formData);
-    });
+    return isPdf
+      ? uploadPdfDirect(file, employeeId, mcuId, onProgress)
+      : uploadMultipartFile(file, employeeId, mcuId, onProgress);
   } catch (error) {
     throw error;
   }
@@ -174,13 +268,14 @@ export async function uploadFilesToSupabase(
     } catch (error) {
       results.push({
         success: false,
+        fileIndex: i,
         fileName: file.name,
-        error: error.message
+        error: error.message,
+        code: error.code || 'UPLOAD_API_FAILED'
       });
     }
   }
 
-  const successCount = results.filter((r) => r.success).length;
   return results;
 }
 
@@ -211,20 +306,15 @@ export async function uploadBatchFiles(files, employeeId, mcuId, userId, onProgr
     // Count successful and failed uploads
     const uploadedCount = results.filter(r => r.success).length;
     const failedCount = results.filter(r => !r.success).length;
-
-    if (uploadedCount === 0) {
-      return {
-        success: false,
-        uploadedCount: 0,
-        failedCount: failedCount,
-        error: 'All file uploads failed'
-      };
-    }
+    const firstFailure = results.find(result => !result.success);
 
     return {
-      success: true,
+      success: failedCount === 0,
       uploadedCount,
       failedCount,
+      failedIndexes: results.filter(result => !result.success).map(result => result.fileIndex),
+      error: firstFailure?.error,
+      errorCode: firstFailure?.code,
       message: `Uploaded ${uploadedCount} file(s)${failedCount > 0 ? `, ${failedCount} failed` : ''}`,
       results
     };

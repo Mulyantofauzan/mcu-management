@@ -57,6 +57,15 @@
       ]
     },
     {
+      "source": "/(.*).mjs",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
       "source": "/(.*).css",
       "headers": [
         {
@@ -99,7 +108,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://xqyuktsfjvdqfhulobai.supabase.co wss://xqyuktsfjvdqfhulobai.supabase.co https://madis-private-documents.fd1c39fefc64308d6692bb137a7a55c0.r2.cloudflarestorage.com; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://xqyuktsfjvdqfhulobai.supabase.co wss://xqyuktsfjvdqfhulobai.supabase.co https://madis-private-documents.fd1c39fefc64308d6692bb137a7a55c0.r2.cloudflarestorage.com https://mcu-files.fd1c39fefc64308d6692bb137a7a55c0.r2.cloudflarestorage.com; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
         }
       ]
     },

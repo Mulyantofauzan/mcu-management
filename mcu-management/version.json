@@ -1,7 +1,9 @@
 {
-  "version": "1.1.0",
-  "releaseDate": "2026-08-02",
+  "version": "1.2.0",
+  "releaseDate": "2026-08-09",
   "features": [
+    "Automatic local PDF compression with a 5 MB storage limit",
+    "Direct authenticated PDF upload to Cloudflare R2",
     "Doctor-led MCU approval and repeatable follow-up review",
     "Administrator joining decisions and audited WhatsApp confirmation",
     "Reviewed-data analytics eligibility with configurable calendar-month expiry",

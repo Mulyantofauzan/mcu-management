@@ -30,6 +30,8 @@
     "dotenv": "^17.2.3",
     "exceljs": "^4.4.0",
     "pako": "^2.1.0",
+    "pdf-lib": "1.17.1",
+    "pdfjs-dist": "5.4.149",
     "sweetalert2": "11.26.25"
   }
 }

@@ -19,7 +19,7 @@ import { tempFileStorage } from '../services/tempFileStorage.js';  // ✅ NEW: T
 import { StaticLabForm } from '../components/staticLabForm.js';
 import { workflowService } from '../services/workflowService.js';
 import { workflowIdempotency } from '../utils/workflowIdempotency.js';
-import { presentWorkflowError } from '../utils/workflowErrorPresenter.js';
+import { presentUploadError, presentWorkflowError } from '../utils/workflowErrorPresenter.js';
 
 let followUpList = [];
 let filteredList = [];
@@ -696,6 +696,10 @@ window.handleFollowUpSubmit = async function(event) {
     return;
   }
 
+  const submitForm = event.currentTarget || event.target;
+  if (submitForm?.dataset.submitting === 'true') return;
+  if (submitForm) submitForm.dataset.submitting = 'true';
+
   try {
     const currentUser = authService.getCurrentUser();
     showSaveLoading('Mempersiapkan update follow-up...');
@@ -708,6 +712,14 @@ window.handleFollowUpSubmit = async function(event) {
         : { finalResult: finalResult, finalNotes: finalNotes }),
       currentUser: currentUser
     };
+
+    try {
+      await tempFileStorage.waitForPending(mcuId);
+    } catch (error) {
+      hideSaveLoading();
+      showToast(`File belum siap: ${error.message}`, 'error');
+      return;
+    }
 
     // Upload files if any are pending
     const pendingFiles = tempFileStorage.getFiles(mcuId);
@@ -730,9 +742,13 @@ window.handleFollowUpSubmit = async function(event) {
           // Clear temporary files after successful upload
           tempFileStorage.clearFiles(mcuId);
         } else {
+          tempFileStorage.retainFiles(mcuId, uploadResult.failedIndexes);
           hideUploadLoading();
           hideSaveLoading();
-          showToast(`❌ File upload error: ${uploadResult.error}`, 'error');
+          await presentUploadError({
+            code: uploadResult.errorCode,
+            message: uploadResult.error
+          });
           return; // Don't proceed if file upload failed
         }
       } catch (error) {
@@ -759,6 +775,8 @@ window.handleFollowUpSubmit = async function(event) {
   } catch (error) {
     hideSaveLoading();
     showToast('Gagal mempersiapkan follow-up: ' + error.message, 'error');
+  } finally {
+    if (submitForm) delete submitForm.dataset.submitting;
   }
 };
 

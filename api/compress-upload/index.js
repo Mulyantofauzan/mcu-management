@@ -1,131 +1,162 @@
 /**
- * File Upload API - Cloudflare R2
- * Endpoint: POST /api/compress-upload
+ * MCU file upload endpoint.
  *
- * Flow:
- * - Accept file upload from client
- * - Validate file type and size (max 3MB)
- * - Store file in Cloudflare R2 bucket
- * - Save metadata + public URL to Supabase database
- *
- * IMPORTANT: This ONLY uploads to Cloudflare R2, NOT Supabase Storage
+ * JSON requests prepare and confirm direct PDF uploads to R2. Multipart
+ * requests remain available for the existing size-limited image path and
+ * cached clients that still submit small PDFs.
  */
 
 const busboy = require('busboy');
 const { uploadFileToStorage, ALLOWED_TYPES, MAX_FILE_SIZE } = require('../../server/r2StorageService');
+const { R2DirectUploadService, R2DirectUploadError } = require('../../server/r2DirectUploadService');
 const { setCorsHeaders, requireAuth } = require('../../server/auth-utils');
 
-/**
- * Main handler function
- */
-module.exports = async (req, res) => {
-  setCorsHeaders(req, res, 'POST, OPTIONS');
+function authenticatedUserId(auth) {
+  return auth?.app_user_id || auth?.sub || auth?.userId || null;
+}
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+function parseJsonBody(req) {
+  if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) return req.body;
+  if (Buffer.isBuffer(req.body)) return JSON.parse(req.body.toString('utf8'));
+  if (typeof req.body === 'string' && req.body.trim()) return JSON.parse(req.body);
+  return {};
+}
+
+async function handleDirectPdf(req, res, auth, directUploads) {
+  let body;
+  try {
+    body = parseJsonBody(req);
+  } catch {
+    return res.status(400).json({
+      success: false,
+      code: 'UPLOAD_VALIDATION_FAILED',
+      error: 'Payload JSON tidak valid.'
+    });
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  const userId = authenticatedUserId(auth);
+  if (!userId) {
+    return res.status(401).json({ success: false, code: 'UNAUTHORIZED', error: 'Unauthorized' });
   }
-
-  const auth = requireAuth(req, res);
-  if (!auth) return;
 
   try {
-    // Parse multipart/form-data
-    const bb = busboy({ headers: req.headers });
+    if (body.action === 'prepare-pdf-upload') {
+      const prepared = await directUploads.preparePdfUpload({
+        userId,
+        employeeId: body.employeeId,
+        mcuId: body.mcuId,
+        fileName: body.fileName,
+        contentType: body.contentType,
+        contentLength: body.contentLength
+      });
+      return res.status(200).json({ success: true, upload: prepared });
+    }
 
+    if (body.action === 'confirm-pdf-upload') {
+      const confirmed = await directUploads.confirmPdfUpload({
+        userId,
+        objectKey: body.objectKey,
+        fileName: body.fileName
+      });
+      return res.status(200).json({
+        success: true,
+        ...confirmed,
+        message: 'File uploaded successfully to Cloudflare R2'
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      code: 'UPLOAD_ACTION_INVALID',
+      error: 'Aksi upload tidak valid.'
+    });
+  } catch (error) {
+    const known = error instanceof R2DirectUploadError;
+    return res.status(known ? error.status : 500).json({
+      success: false,
+      code: known ? error.code : 'UPLOAD_SERVER_ERROR',
+      error: known ? error.message : 'Kesalahan server saat memproses upload.'
+    });
+  }
+}
+
+function handleMultipart(req, res, auth) {
+  try {
+    const bb = busboy({ headers: req.headers });
     let file = null;
-    let fields = {};
+    const fields = {};
     let completed = false;
-    let error_occurred = false;
+    let errorOccurred = false;
 
     return new Promise((resolve) => {
-      bb.on('file', (fieldname, fileStream, info) => {
-        if (error_occurred) {
+      const respond = (status, payload) => {
+        if (completed) return resolve();
+        completed = true;
+        res.status(status).json(payload);
+        return resolve();
+      };
+
+      bb.on('file', (fieldName, fileStream, info) => {
+        if (errorOccurred) {
           fileStream.resume();
           return;
         }
 
-        const { filename, encoding, mimeType } = info;
-
-        // Check file type
+        const { filename, mimeType } = info;
         if (!ALLOWED_TYPES[mimeType]) {
+          errorOccurred = true;
           fileStream.resume();
-          error_occurred = true;
-          return res.status(400).json({
-            error: 'File type not allowed. Only PDF and images (JPG/PNG) allowed.'
-          });
+          respond(400, { error: 'File type not allowed. Only PDF and images (JPG/PNG) allowed.' });
+          return;
         }
 
         let size = 0;
         const chunks = [];
-
         fileStream.on('data', (data) => {
           size += data.length;
           if (size > MAX_FILE_SIZE) {
-            fileStream.destroy();
-            error_occurred = true;
-            return res.status(413).json({
-              error: `File too large. Max size: ${MAX_FILE_SIZE / 1024 / 1024}MB`
-            });
+            errorOccurred = true;
+            fileStream.resume();
+            respond(413, { error: `File too large. Max size: ${MAX_FILE_SIZE / 1024 / 1024}MB` });
+            return;
           }
           chunks.push(data);
         });
-
         fileStream.on('end', () => {
-          file = {
-            filename,
-            mimeType,
-            buffer: Buffer.concat(chunks),
-            size
-          };
+          if (!errorOccurred) file = { filename, mimeType, buffer: Buffer.concat(chunks), size };
         });
-
-        fileStream.on('error', (error) => {
-          error_occurred = true;
-          return res.status(400).json({
-            error: `File stream error: ${error.message}`
-          });
+        fileStream.on('error', () => {
+          errorOccurred = true;
+          respond(400, { error: 'File stream error.' });
         });
       });
 
-      bb.on('field', (fieldname, val) => {
-        fields[fieldname] = val;
+      bb.on('field', (fieldName, value) => {
+        fields[fieldName] = value;
       });
 
       bb.on('close', async () => {
-        if (completed || error_occurred) return;
-        completed = true;
+        if (completed || errorOccurred) return;
+        const { employeeId, mcuId } = fields;
+        if (!employeeId || !mcuId) {
+          respond(400, { error: 'Missing required fields: employeeId, mcuId' });
+          return;
+        }
+        if (!file) {
+          respond(400, { error: 'No file provided' });
+          return;
+        }
 
         try {
-          // Validate required fields
-          const { employeeId, mcuId } = fields;
-          if (!employeeId || !mcuId) {
-            return res.status(400).json({
-              error: 'Missing required fields: employeeId, mcuId'
-            });
-          }
-
-          if (!file) {
-            return res.status(400).json({
-              error: 'No file provided'
-            });
-          }
-          console.log(`   Size: ${(file.size / 1024).toFixed(1)}KB`);
-          const fileType = ALLOWED_TYPES[file.mimeType];
-
-          // Upload to Supabase Storage
           const uploadResult = await uploadFileToStorage(
             file.buffer,
             file.filename,
             employeeId,
             mcuId,
             file.mimeType,
-            auth.app_user_id || auth.sub || 'system'
+            authenticatedUserId(auth) || 'system'
           );
-          return res.status(200).json({
+          respond(200, {
             success: true,
             file: {
               name: uploadResult.fileName,
@@ -140,24 +171,44 @@ module.exports = async (req, res) => {
             message: 'File uploaded successfully to Cloudflare R2'
           });
         } catch (error) {
-          return res.status(500).json({
-            error: error.message || 'Internal server error'
-          });
+          respond(500, { error: error.message || 'Internal server error' });
         }
       });
 
-      bb.on('error', (error) => {
-        error_occurred = true;
-        return res.status(400).json({
-          error: `Form parsing error: ${error.message}`
-        });
+      bb.on('error', () => {
+        errorOccurred = true;
+        respond(400, { error: 'Form parsing error.' });
       });
 
       req.pipe(bb);
     });
-  } catch (error) {
-    return res.status(500).json({
-      error: 'Internal server error'
-    });
+  } catch {
+    return res.status(400).json({ error: 'Form parsing error.' });
   }
-};
+}
+
+function createHandler(options = {}) {
+  const authenticate = options.requireAuth || requireAuth;
+  const cors = options.setCorsHeaders || setCorsHeaders;
+  let directUploads = options.directUploads || null;
+
+  return async (req, res) => {
+    cors(req, res, 'POST, OPTIONS');
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+    const auth = authenticate(req, res);
+    if (!auth) return;
+
+    const contentType = String(req.headers?.['content-type'] || '').toLowerCase();
+    if (contentType.includes('application/json')) {
+      directUploads ||= new R2DirectUploadService();
+      return handleDirectPdf(req, res, auth, directUploads);
+    }
+    return handleMultipart(req, res, auth);
+  };
+}
+
+module.exports = createHandler();
+module.exports.createHandler = createHandler;
+module.exports.parseJsonBody = parseJsonBody;

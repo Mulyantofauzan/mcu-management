@@ -13,6 +13,15 @@
 import { uploadFile, deleteFile, getFilesByMCU } from '../services/supabaseStorageService.js';
 import { isSupabaseEnabled } from '../config/supabase.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';
+import {
+    preparePdfForUpload,
+    getPdfErrorPresentation,
+    formatBytes
+} from '../services/pdfCompressionService.js';
+import { ensureWorkflowAlerts } from '../utils/workflowErrorPresenter.js';
+
+const IMAGE_MAX_BYTES = 3 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png']);
 
 export class FileUploadWidget {
     constructor(containerId, options = {}) {
@@ -244,11 +253,11 @@ export class FileUploadWidget {
                     <div class="upload-zone-icon">📁</div>
                     <p class="upload-zone-text">
                         Click to select file or drag & drop
-                        <small>PDF, JPG, PNG (Max 3MB per file)</small>
+                        <small>PDF maks. 25MB (disimpan maks. 5MB), JPG/PNG maks. 3MB</small>
                     </p>
                 </div>
 
-                <input type="file" id="file-input" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+                <input type="file" id="file-input" accept=".pdf,.jpg,.jpeg,.png" />
 
                 <div id="upload-message" class="upload-progress" style="display: none;"></div>
 
@@ -322,26 +331,34 @@ export class FileUploadWidget {
      */
     async uploadFileToStorage(file) {
         this.isUploading = true;
-        this.showProgress(`Adding ${file.name}...`);
+        this.showProgress(`Menyiapkan ${file.name}...`, 1);
 
         if (this.options.onUploadStart) {
             this.options.onUploadStart();
         }
 
+        const preparation = this.prepareSelectedFile(file);
+        tempFileStorage.setPendingPreparation(this.options.mcuId, preparation);
+
         try {
-            // Add file to temporary storage (in memory, not to Supabase yet)
-            tempFileStorage.addFile(this.options.mcuId, file);
+            const prepared = await preparation;
+            tempFileStorage.addFile(this.options.mcuId, prepared.file);
 
             this.isUploading = false;
-            this.showSuccess(`File ready to upload: ${file.name}`);
+            this.showSuccess(prepared.compressed
+                ? `PDF siap: ${formatBytes(prepared.originalSize)} menjadi ${formatBytes(prepared.finalSize)}`
+                : `File siap diunggah: ${prepared.file.name}`);
 
             // Add to local list for UI display
             this.addFileToList({
-                filename: file.name,
-                filetype: file.type,
-                filesize: file.size,
+                filename: prepared.file.name,
+                filetype: prepared.file.type,
+                filesize: prepared.file.size,
                 uploadedat: new Date().toISOString(),
-                isTemp: true // Mark as temporary (not yet in database)
+                isTemp: true,
+                compressionSummary: prepared.compressed
+                    ? `${formatBytes(prepared.originalSize)} → ${formatBytes(prepared.finalSize)}`
+                    : null
             });
 
             if (this.options.onUploadComplete) {
@@ -349,12 +366,64 @@ export class FileUploadWidget {
             }
         } catch (error) {
             this.isUploading = false;
-            this.showError(`Failed to add file: ${error.message}`);
+            await this.presentPreparationError(error);
 
             if (this.options.onError) {
                 this.options.onError(error.message);
             }
+        } finally {
+            tempFileStorage.clearPendingPreparation(this.options.mcuId, preparation);
         }
+    }
+
+    async prepareSelectedFile(file) {
+        if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+            return preparePdfForUpload(file, {
+                onProgress: ({ percent, message }) => this.showProgress(message, percent)
+            });
+        }
+
+        if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+            const error = new Error('File harus berupa PDF, JPG, atau PNG.');
+            error.code = 'FILE_TYPE_INVALID';
+            throw error;
+        }
+        if (file.size <= 0 || file.size > IMAGE_MAX_BYTES) {
+            const error = new Error('Ukuran JPG/PNG maksimal 3 MB.');
+            error.code = 'IMAGE_TOO_LARGE';
+            throw error;
+        }
+        return {
+            file,
+            originalSize: file.size,
+            finalSize: file.size,
+            compressed: false,
+            method: 'passthrough'
+        };
+    }
+
+    async presentPreparationError(error) {
+        const fallback = {
+            FILE_TYPE_INVALID: {
+                title: 'Format Tidak Didukung',
+                message: 'File harus berupa PDF, JPG, atau PNG.'
+            },
+            IMAGE_TOO_LARGE: {
+                title: 'Gambar Terlalu Besar',
+                message: 'Ukuran JPG/PNG maksimal 3 MB.'
+            }
+        }[error?.code];
+        const presentation = fallback || getPdfErrorPresentation(error);
+        this.showError(presentation.message);
+        try {
+            const Swal = await ensureWorkflowAlerts();
+            await Swal.fire({
+                icon: 'error',
+                title: presentation.title,
+                text: presentation.message,
+                confirmButtonText: 'Tutup'
+            });
+        } catch {}
     }
 
     /**
@@ -362,7 +431,8 @@ export class FileUploadWidget {
      */
     async loadFiles() {
         try {
-            const files = await getFilesByMCU(this.options.mcuId);
+            const result = await getFilesByMCU(this.options.mcuId);
+            const files = Array.isArray(result) ? result : (result.files || []);
 
             if (files.length > 0) {
                 this.uploadedFiles = files;
@@ -418,8 +488,8 @@ export class FileUploadWidget {
                 <div class="file-item-info">
                     <div class="file-item-icon">${fileIcon}</div>
                     <div class="file-item-details">
-                        <p class="file-item-name">${file.filename}</p>
-                        <p class="file-item-meta">${fileSize} • ${uploadDate}</p>
+                        <p class="file-item-name">${this.escapeHtml(file.filename)}</p>
+                        <p class="file-item-meta">${fileSize} • ${uploadDate}${file.compressionSummary ? ` • ${this.escapeHtml(file.compressionSummary)}` : ''}</p>
                     </div>
                 </div>
                 <div class="file-item-actions">
@@ -498,15 +568,25 @@ export class FileUploadWidget {
         return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
     }
 
+    escapeHtml(value) {
+        return String(value || '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
+
     /**
      * Show progress message
      */
-    showProgress(message) {
+    showProgress(message, percent = 1) {
         const messageDiv = this.container.querySelector('#upload-message');
+        const safePercent = Math.min(100, Math.max(1, Number(percent) || 1));
         messageDiv.innerHTML = `
-            <div>⏳ ${message}</div>
+            <div>⏳ ${this.escapeHtml(message)}</div>
             <div class="progress-bar">
-                <div class="progress-fill" style="width: 50%;"></div>
+                <div class="progress-fill" style="width: ${safePercent}%;"></div>
             </div>
         `;
         messageDiv.style.display = 'block';
@@ -518,7 +598,7 @@ export class FileUploadWidget {
     showSuccess(message) {
         this.clearMessage();
         const messageDiv = this.container.querySelector('#upload-message');
-        messageDiv.innerHTML = `<div class="success-message">✓ ${message}</div>`;
+        messageDiv.innerHTML = `<div class="success-message">✓ ${this.escapeHtml(message)}</div>`;
         messageDiv.style.display = 'block';
 
         setTimeout(() => this.clearMessage(), 3000);
@@ -530,7 +610,7 @@ export class FileUploadWidget {
     showError(message) {
         this.clearMessage();
         const messageDiv = this.container.querySelector('#upload-message');
-        messageDiv.innerHTML = `<div class="error-message">✕ ${message}</div>`;
+        messageDiv.innerHTML = `<div class="error-message">✕ ${this.escapeHtml(message)}</div>`;
         messageDiv.style.display = 'block';
 
         setTimeout(() => this.clearMessage(), 5000);

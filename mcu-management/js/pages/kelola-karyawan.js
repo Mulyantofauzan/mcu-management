@@ -28,7 +28,7 @@ import { LAB_ITEMS_MAPPING, sortLabResultsByDisplayOrder } from '../data/labItem
 import { mcuSuccessModal } from '../components/mcuSuccessModal.js';
 import { workflowService } from '../services/workflowService.js';
 import { workflowIdempotency } from '../utils/workflowIdempotency.js';
-import { ensureWorkflowAlerts, presentWorkflowError } from '../utils/workflowErrorPresenter.js';
+import { ensureWorkflowAlerts, presentUploadError, presentWorkflowError } from '../utils/workflowErrorPresenter.js';
 
 let employees = [];
 let filteredEmployees = [];
@@ -1207,6 +1207,9 @@ window.closeAddMCUModal = function() {
 
 window.handleAddMCU = async function(event) {
     event.preventDefault();
+    const submitForm = event.currentTarget || event.target;
+    if (submitForm?.dataset.submitting === 'true') return;
+    if (submitForm) submitForm.dataset.submitting = 'true';
 
     try {
         const currentUser = authService.getCurrentUser();
@@ -1278,6 +1281,13 @@ window.handleAddMCU = async function(event) {
             return;
         }
 
+        try {
+            await tempFileStorage.waitForPending(mcuData.mcuId);
+        } catch (error) {
+            showToast(`File belum siap: ${error.message}`, 'error');
+            return;
+        }
+
         // Show unified loading with step tracking
         const tempFiles = tempFileStorage.getFiles(mcuData.mcuId);
         showUnifiedLoading('Memproses...', 'Mengunggah file dan menyimpan data');
@@ -1299,14 +1309,14 @@ window.handleAddMCU = async function(event) {
                     }
                 );
 
-                if (!uploadResult.success && uploadResult.uploadedCount === 0) {
-                    // All uploads failed - don't proceed with MCU creation
+                if (!uploadResult.success) {
+                    tempFileStorage.retainFiles(mcuData.mcuId, uploadResult.failedIndexes);
                     hideUnifiedLoading();
-                    showToast(`❌ File upload ke R2 gagal: ${uploadResult.error}`, 'error');
+                    await presentUploadError({
+                        code: uploadResult.errorCode,
+                        message: uploadResult.error
+                    });
                     return;
-                } else if (uploadResult.failedCount > 0) {
-                    // Some uploads failed - warn user but continue
-                    showToast(`⚠️ ${uploadResult.failedCount} file gagal diunggah, tapi MCU akan disimpan`, 'warning');
                 }
             } catch (error) {
                 hideUnifiedLoading();
@@ -1440,6 +1450,8 @@ window.handleAddMCU = async function(event) {
         hideUnifiedLoading();
         showToast('Gagal menambah MCU: ' + error.message, 'error');
         // Note: Temporary files are kept in memory and will be cleared when user reopens the modal or reloads page
+    } finally {
+        if (submitForm) delete submitForm.dataset.submitting;
     }
 };
 
@@ -2307,6 +2319,9 @@ window.closeEditMCUModal = function() {
 
 window.handleEditMCU = async function(event) {
     event.preventDefault();
+    const submitForm = event.currentTarget || event.target;
+    if (submitForm?.dataset.submitting === 'true') return;
+    if (submitForm) submitForm.dataset.submitting = 'true';
 
     const mcuId = document.getElementById('edit-mcu-id').value;
 
@@ -2400,6 +2415,13 @@ window.handleEditMCU = async function(event) {
             updateData.finalNotes = document.getElementById('edit-mcu-final-notes').value || null;
         }
 
+        try {
+            await tempFileStorage.waitForPending(mcuId);
+        } catch (error) {
+            showToast(`File belum siap: ${error.message}`, 'error');
+            return;
+        }
+
         // Show unified loading with step tracking
         const tempFiles = tempFileStorage.getFiles(mcuId);
         showUnifiedLoading('Memproses...', 'Mengunggah file dan menyimpan data');
@@ -2421,12 +2443,14 @@ window.handleEditMCU = async function(event) {
                     }
                 );
 
-                if (!uploadResult.success && uploadResult.uploadedCount === 0) {
-                    // All uploads failed - warn but continue with MCU update
-                    showToast(`⚠️ File upload ke R2 gagal: ${uploadResult.error}`, 'warning');
-                } else if (uploadResult.failedCount > 0) {
-                    // Some uploads failed
-                    showToast(`⚠️ ${uploadResult.failedCount} file gagal diunggah`, 'warning');
+                if (!uploadResult.success) {
+                    tempFileStorage.retainFiles(mcuId, uploadResult.failedIndexes);
+                    hideUnifiedLoading();
+                    await presentUploadError({
+                        code: uploadResult.errorCode,
+                        message: uploadResult.error
+                    });
+                    return;
                 }
             } catch (error) {
                 hideUnifiedLoading();
@@ -2768,10 +2792,17 @@ window.handleEditMCU = async function(event) {
     } catch (error) {
         hideUnifiedLoading();
         if (workflowEnabled) {
-            await presentWorkflowError(error, { retry: () => window.handleEditMCU(event) });
+            await presentWorkflowError(error, {
+                retry: () => {
+                    if (submitForm) delete submitForm.dataset.submitting;
+                    return window.handleEditMCU(event);
+                }
+            });
         } else {
             showToast('Gagal mengupdate MCU: ' + error.message, 'error');
         }
+    } finally {
+        if (submitForm) delete submitForm.dataset.submitting;
     }
 };
 

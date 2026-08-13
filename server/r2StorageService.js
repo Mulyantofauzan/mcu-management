@@ -226,6 +226,7 @@ async function uploadFileToStorage(fileBuffer, fileName, employeeId, mcuId, mime
 
 module.exports = {
   uploadFileToStorage,
+  saveFileMetadata,
   generateStoragePath,
   getEmployeeName,
   generatePublicUrl,

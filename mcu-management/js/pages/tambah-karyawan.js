@@ -18,7 +18,7 @@ import { tempFileStorage } from '../services/tempFileStorage.js';
 import { createLabResultWidget } from '../components/labResultWidget.js';
 import { workflowService } from '../services/workflowService.js';
 import { workflowIdempotency } from '../utils/workflowIdempotency.js';
-import { presentWorkflowError } from '../utils/workflowErrorPresenter.js';
+import { presentUploadError, presentWorkflowError } from '../utils/workflowErrorPresenter.js';
 
 let searchResults = [];
 let jobTitles = [];
@@ -935,6 +935,9 @@ window.closeAddMCUModal = function() {
 
 window.handleAddMCU = async function(event) {
     event.preventDefault();
+    const submitForm = event.currentTarget || event.target;
+    if (submitForm?.dataset.submitting === 'true') return;
+    if (submitForm) submitForm.dataset.submitting = 'true';
 
     try {
         if (!workflowStateKnown) {
@@ -1022,6 +1025,13 @@ window.handleAddMCU = async function(event) {
             familyHistories: getFamilyHistoryData()
         };
 
+        try {
+            await tempFileStorage.waitForPending(mcuData.mcuId);
+        } catch (error) {
+            showToast(`File belum siap: ${error.message}`, 'error');
+            return;
+        }
+
         // Show unified loading with step tracking
         const tempFiles = tempFileStorage.getFiles(mcuData.mcuId);
         showUnifiedLoading('Memproses...', 'Mengunggah file dan menyimpan data');
@@ -1041,14 +1051,14 @@ window.handleAddMCU = async function(event) {
                     }
                 );
 
-                if (!uploadResult.success && uploadResult.uploadedCount === 0) {
-                    // All uploads failed - don't proceed with MCU creation
-                    showToast(`❌ File upload ke R2 gagal: ${uploadResult.error}`, 'error');
+                if (!uploadResult.success) {
+                    tempFileStorage.retainFiles(mcuData.mcuId, uploadResult.failedIndexes);
                     hideUnifiedLoading();
+                    await presentUploadError({
+                        code: uploadResult.errorCode,
+                        message: uploadResult.error
+                    });
                     return;
-                } else if (uploadResult.failedCount > 0) {
-                    // Some uploads failed - warn user but continue
-                    showToast(`⚠️ ${uploadResult.failedCount} file gagal diunggah, tapi MCU akan disimpan`, 'warning');
                 }
             } catch (uploadError) {
                 hideUnifiedLoading();
@@ -1155,6 +1165,8 @@ window.handleAddMCU = async function(event) {
     } catch (error) {
         hideUnifiedLoading();
         showToast('Gagal menambah MCU: ' + error.message, 'error');
+    } finally {
+        if (submitForm) delete submitForm.dataset.submitting;
     }
 };
 
