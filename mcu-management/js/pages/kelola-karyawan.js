@@ -419,12 +419,8 @@ async function submitMCUForReview(mcuId, expectedVersion) {
 
 // ✅ NEW: Setup toggle button for showing/hiding inactive employees
 function setupInactiveToggle() {
-    // Find all cards (filter card is first, employee table card is second)
-    const cards = document.querySelectorAll('.card');
-    if (cards.length < 2) return;
-
-    const filterCard = cards[0];  // Filter section card
-    const tableCard = cards[1];   // Employee table card
+    const filterCard = document.getElementById('filter-department')?.closest('.card');
+    if (!filterCard) return;
 
     let toggleBtn = document.getElementById('toggle-inactive-btn');
     if (!toggleBtn) {
@@ -434,8 +430,7 @@ function setupInactiveToggle() {
         toggleBtn.className = 'px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium mb-4';
         toggleBtn.textContent = 'Tampilkan Inactive';
 
-        // Insert between filter section and table
-        filterCard.parentNode.insertBefore(toggleBtn, tableCard);
+        filterCard.insertAdjacentElement('afterend', toggleBtn);
     }
 
     // Update button text and listen for clicks

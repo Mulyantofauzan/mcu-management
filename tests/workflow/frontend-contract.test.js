@@ -122,6 +122,14 @@ test('correction and periodic MCU paths submit raw data for doctor review', () =
   assert.match(page, /edit-medical-result-section/);
 });
 
+test('inactive employee toggle anchors to the filter card', () => {
+  const source = read('mcu-management/js/pages/kelola-karyawan.js');
+  assert.match(source, /getElementById\('filter-department'\)\?\.closest\('\.card'\)/);
+  assert.match(source, /filterCard\.insertAdjacentElement\('afterend', toggleBtn\)/);
+  assert.doesNotMatch(source, /querySelectorAll\('\.card'\)/);
+  assert.doesNotMatch(source, /insertBefore\(toggleBtn, tableCard\)/);
+});
+
 test('follow-up path submits evidence without a petugas medical result', () => {
   const source = read('mcu-management/js/pages/follow-up.js');
   assert.match(source, /evidenceNotes: followUpData\.evidenceNotes/);
