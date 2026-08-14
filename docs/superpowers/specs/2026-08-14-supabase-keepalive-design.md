@@ -77,6 +77,7 @@ The Worker performs no inserts, updates, deletes, RPC calls, or access to employ
 ## Retry And Logging
 
 - On a timeout, network error, or non-2xx response, wait briefly and retry once.
+- Disable Cloudflare's whole-event retry so the one internal retry remains the only retry.
 - Log one structured success event after a successful request.
 - Log one structured error event only after both attempts fail.
 - Logs may include timestamp, attempt count, duration, and HTTP status.

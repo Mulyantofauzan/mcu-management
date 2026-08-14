@@ -1,0 +1,13 @@
+{
+  "name": "madis-supabase-keepalive",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "validate": "wrangler deploy --dry-run"
+  },
+  "devDependencies": {
+    "wrangler": "4.123.0"
+  }
+}
