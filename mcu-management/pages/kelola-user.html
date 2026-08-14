@@ -25,35 +25,6 @@
     <!-- Supabase - Production Database -->
     <script src="../assets/vendor/supabase/supabase.js"></script>
 
-    <style>
-        body {
-            opacity: 0;
-            transition: opacity 0.2s ease-in;
-        }
-
-        body.initialized {
-            opacity: 1;
-        }
-
-        /* Safari fallback: show content after 5 seconds even if JS fails */
-        @media (prefers-reduced-motion: no-preference) {
-            body {
-                animation: safariShow 5s forwards;
-            }
-        }
-
-        @keyframes safariShow {
-            0% { opacity: 0; }
-            99% { opacity: 0; }
-            100% { opacity: 1; }
-        }
-
-        /* If initialized is set, show immediately and disable animation */
-        body.initialized {
-            animation: none;
-            opacity: 1 !important;
-        }
-    </style>
 </head>
 <body>
   <!-- Sidebar -->

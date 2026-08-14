@@ -28,59 +28,10 @@
     <!-- ExcelJS - Excel generation -->
     <script src="../assets/vendor/exceljs/exceljs.min.js"></script>
 
-    <style>
-        /* ✅ Loading overlay ALWAYS visible on top, with z-index priority */
-        #unified-loading-overlay {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            z-index: 99999 !important;
-            opacity: 1 !important;
-            visibility: visible !important;
-            display: flex !important;
-            background-color: rgba(255, 255, 255, 0.95) !important;
-            backdrop-filter: blur(2px) !important;
-            align-items: center !important;
-            justify-content: center !important;
-            width: 100% !important;
-            height: 100% !important;
-        }
-
-        /* Hide loading overlay when body is initialized */
-        body.initialized #unified-loading-overlay {
-            display: none !important;
-            visibility: hidden !important;
-        }
-
-        /* Page content - initially hidden until initialized */
-        body {
-            background-color: white;
-        }
-
-        body:not(.initialized) {
-            /* Hide all content except loading overlay during initialization */
-        }
-
-        body:not(.initialized) > *:not(#unified-loading-overlay) {
-            opacity: 0;
-            pointer-events: none;
-            visibility: hidden;
-        }
-
-        /* Show content when initialized */
-        body.initialized > *:not(#unified-loading-overlay):not(.sidebar-backdrop) {
-            opacity: 1 !important;
-            visibility: visible !important;
-            pointer-events: auto !important;
-            transition: opacity 0.2s ease-in;
-        }
-    </style>
 </head>
 <body>
   <!-- Unified Loading Overlay -->
-  <div id="unified-loading-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm" style="display: flex !important; visibility: visible !important; opacity: 1 !important;">
+  <div id="unified-loading-overlay" class="navigation-startup-overlay hidden fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
     <div class="flex flex-col items-center gap-6">
       <!-- Animated Spinner -->
       <div class="animate-spin">

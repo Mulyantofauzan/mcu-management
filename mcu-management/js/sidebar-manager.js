@@ -57,6 +57,7 @@
 
   let currentRole = 'Petugas';
   let counts = {};
+  const prefetchedPages = new Set();
 
   function currentUser() {
     try {
@@ -183,6 +184,65 @@
     document.body.append(backdrop, toggle);
   }
 
+  function internalNavigationTarget(event) {
+    const link = event.target.closest('#sidebar a.sidebar-link[href]');
+    if (!link || link.hasAttribute('download')) return null;
+    if (link.target && link.target !== '_self') return null;
+
+    try {
+      const url = new URL(link.href, window.location.href);
+      if (url.origin !== window.location.origin) return null;
+      return { link, url };
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function prefetchPage(event) {
+    const target = internalNavigationTarget(event);
+    if (!target || target.url.href === window.location.href) return;
+    if (prefetchedPages.has(target.url.href)) return;
+
+    prefetchedPages.add(target.url.href);
+    const hint = document.createElement('link');
+    hint.rel = 'prefetch';
+    hint.href = target.url.href;
+    document.head.appendChild(hint);
+  }
+
+  function setupNavigationEnhancement() {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar || sidebar.dataset.navigationReady === 'true') return;
+    sidebar.dataset.navigationReady = 'true';
+
+    const progress = document.createElement('div');
+    progress.id = 'madis-navigation-progress';
+    progress.setAttribute('aria-hidden', 'true');
+    progress.innerHTML = '<span></span>';
+    document.body.appendChild(progress);
+
+    const clearPending = () => {
+      document.body.classList.remove('madis-navigating');
+      document.body.removeAttribute('aria-busy');
+      progress.setAttribute('aria-hidden', 'true');
+    };
+
+    sidebar.addEventListener('pointerover', prefetchPage, { passive: true });
+    sidebar.addEventListener('focusin', prefetchPage);
+    sidebar.addEventListener('touchstart', prefetchPage, { passive: true });
+    sidebar.addEventListener('click', event => {
+      const target = internalNavigationTarget(event);
+      if (!target || event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+      document.body.classList.add('madis-navigating');
+      document.body.setAttribute('aria-busy', 'true');
+      progress.setAttribute('aria-hidden', 'false');
+      window.setTimeout(clearPending, 8000);
+    });
+    window.addEventListener('pageshow', clearPending);
+  }
+
   async function fetchBootstrap() {
     const token = localStorage.getItem('madisAccessToken');
     if (!token) return;
@@ -224,6 +284,7 @@
     renderNavigation();
     renderUser();
     setupMobileMenu();
+    setupNavigationEnhancement();
     document.dispatchEvent(new CustomEvent('madis:sidebar-ready', {
       detail: { role: currentRole }
     }));

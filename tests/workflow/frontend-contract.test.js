@@ -5,6 +5,12 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
+const authenticatedPages = [
+  'mcu-management/index.html',
+  ...fs.readdirSync(path.join(root, 'mcu-management/pages'))
+    .filter(file => file.endsWith('.html') && file !== 'login.html')
+    .map(file => `mcu-management/pages/${file}`)
+];
 
 test('workflow client uses bearer API and deduplicates mutations', () => {
   const source = read('mcu-management/js/services/workflowService.js');
@@ -53,16 +59,23 @@ test('sidebar has one canonical role-aware menu definition', () => {
   assert.doesNotMatch(read('mcu-management/js/utils/sidebarInit.js'), /pageMap|menu-kelola-user/);
 });
 
-test('loading overlay styles do not expose the mobile sidebar backdrop', () => {
-  [
-    'mcu-management/index.html',
-    'mcu-management/pages/assessment-rahma.html'
-  ].forEach(file => {
-    assert.match(
-      read(file),
-      /body\.initialized > \*:not\(#unified-loading-overlay\):not\(\.sidebar-backdrop\)/,
-      file
-    );
+test('menu navigation progressively enhances native links', () => {
+  const source = read('mcu-management/js/sidebar-manager.js');
+  const styles = read('mcu-management/css/sidebar.css');
+  assert.match(source, /rel = 'prefetch'/);
+  assert.match(source, /classList\.add\('madis-navigating'\)/);
+  assert.match(source, /event\.(metaKey|ctrlKey)/);
+  assert.doesNotMatch(source, /preventDefault\(\)|spaRouter/);
+  assert.match(styles, /@view-transition\s*{\s*navigation:\s*auto/);
+  assert.match(styles, /prefers-reduced-motion:\s*reduce/);
+});
+
+test('authenticated pages never hide the whole document during startup', () => {
+  authenticatedPages.forEach(file => {
+    const html = read(file);
+    assert.doesNotMatch(html, /body\s*{[^}]*opacity:\s*0/s, file);
+    assert.doesNotMatch(html, /body:not\(\.initialized\)\s*>\s*\*/s, file);
+    assert.doesNotMatch(html, /@keyframes\s+safariShow/, file);
   });
 });
 
