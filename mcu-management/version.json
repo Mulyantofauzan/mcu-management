@@ -1,7 +1,10 @@
 {
-  "version": "1.2.1",
-  "releaseDate": "2026-08-14",
+  "version": "1.2.3",
+  "releaseDate": "2026-08-21",
   "features": [
+    "Reliable MCU PDF validation and compression without transferable-buffer corruption",
+    "Canonical MCU form order across add, edit, and follow-up workflows",
+    "Centralized proportional SweetAlert notifications and confirmations",
     "Instant menu transitions without blank full-page loading",
     "Automatic local PDF compression with a 5 MB storage limit",
     "Direct authenticated PDF upload to Cloudflare R2",

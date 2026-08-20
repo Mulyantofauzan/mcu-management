@@ -14,7 +14,7 @@
  * 3. Stale-while-revalidate: Master data (fetch fresh, serve stale immediately)
  */
 
-const CACHE_VERSION = 'madis-v1.2.1';
+const CACHE_VERSION = 'madis-v1.2.3';
 const MAX_CACHE_ENTRIES = 200;
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
@@ -25,6 +25,7 @@ const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/css/output.css',
+  '/css/alerts.css',
   '/css/sidebar.css',
   '/css/workflow.css',
   '/js/appBootstrap.js',
@@ -32,6 +33,8 @@ const STATIC_ASSETS = [
   '/js/services/pdfCompressionService.js',
   '/js/services/pdfCompressionPolicy.mjs',
   '/js/workers/pdfCompressionWorker.mjs',
+  '/js/utils/mcuFormOrder.js',
+  '/js/utils/uiHelpers.js',
   '/js/utils/workflowErrorPresenter.js',
   '/assets/vendor/supabase/supabase.js',
   '/assets/vendor/chartjs/chart.umd.min.js',

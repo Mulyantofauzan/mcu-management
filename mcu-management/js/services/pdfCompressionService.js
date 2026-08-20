@@ -12,6 +12,7 @@ const PHASE_RANGES = Object.freeze({
   'full-raster': [60, 90],
   validating: [90, 98]
 });
+const PDF_PROCESSING_TIMEOUT_MS = 2 * 60 * 1000;
 
 export class PdfCompressionError extends Error {
   constructor(code, message) {
@@ -61,16 +62,32 @@ function assertPdfFile(file) {
   if (policy === 'invalid') {
     throw new PdfCompressionError(PDF_ERROR_CODES.CORRUPT, 'PDF kosong atau tidak valid.');
   }
+  return policy;
 }
 
 export async function preparePdfForUpload(file, { onProgress, signal } = {}) {
-  assertPdfFile(file);
+  const policy = assertPdfFile(file);
   const header = new Uint8Array(await file.slice(0, 5).arrayBuffer());
   if (!hasPdfHeader(header)) {
     throw new PdfCompressionError(
       PDF_ERROR_CODES.CORRUPT,
       'File tidak memiliki struktur PDF yang valid.'
     );
+  }
+  if (policy === 'passthrough') {
+    onProgress?.({
+      percent: 100,
+      message: `PDF siap diunggah: ${formatBytes(file.size)}.`,
+      phase: 'complete'
+    });
+    return {
+      file,
+      originalSize: file.size,
+      finalSize: file.size,
+      compressed: false,
+      method: 'passthrough',
+      pageCount: null
+    };
   }
   if (typeof Worker === 'undefined') {
     throw new PdfCompressionError(
@@ -91,6 +108,7 @@ export async function preparePdfForUpload(file, { onProgress, signal } = {}) {
     const finish = (callback) => {
       if (settled) return;
       settled = true;
+      clearTimeout(timeoutId);
       signal?.removeEventListener('abort', cancel);
       worker.terminate();
       callback();
@@ -99,6 +117,10 @@ export async function preparePdfForUpload(file, { onProgress, signal } = {}) {
       PDF_ERROR_CODES.CANCELLED,
       'Pemrosesan PDF dibatalkan.'
     )));
+    const timeoutId = setTimeout(() => finish(() => reject(new PdfCompressionError(
+      PDF_ERROR_CODES.PROCESSING_TIMEOUT,
+      'Pemrosesan PDF melebihi 2 menit. Coba lagi atau pilih PDF lain.'
+    ))), PDF_PROCESSING_TIMEOUT_MS);
 
     if (signal?.aborted) {
       cancel();
@@ -157,7 +179,7 @@ export async function preparePdfForUpload(file, { onProgress, signal } = {}) {
       action: 'prepare',
       fileName: file.name,
       buffer: sourceBuffer
-    }, [sourceBuffer]);
+    });
   });
 }
 
@@ -176,6 +198,7 @@ export function getPdfErrorPresentation(error) {
     [PDF_ERROR_CODES.SOURCE_TOO_LARGE]: ['PDF Terlalu Besar', 'Ukuran awal PDF maksimal 25 MB.'],
     [PDF_ERROR_CODES.RESULT_TOO_LARGE]: ['Hasil Masih Terlalu Besar', 'PDF tetap melebihi 5 MB pada batas kualitas yang aman.'],
     [PDF_ERROR_CODES.WORKER_UNAVAILABLE]: ['Browser Tidak Mendukung', 'Perbarui browser sebelum memproses PDF ini.'],
+    [PDF_ERROR_CODES.PROCESSING_TIMEOUT]: ['Pemrosesan Terlalu Lama', 'Coba lagi atau pilih PDF lain.'],
     [PDF_ERROR_CODES.PROCESSING_FAILED]: ['Kompresi Gagal', 'PDF tidak berubah dan tidak diunggah. Silakan coba lagi.']
   };
   const [title, fallback] = presentations[error?.code]
