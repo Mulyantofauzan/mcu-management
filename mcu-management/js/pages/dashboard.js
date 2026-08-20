@@ -14,7 +14,7 @@ import { mcuExpiryService } from '../services/mcuExpiryService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { database } from '../services/database.js';
 import { formatDateDisplay, isDateInRange } from '../utils/dateHelpers.js';
-import { showToast } from '../utils/uiHelpers.js';
+import { showConfirm, showToast } from '../utils/uiHelpers.js';
 import { sessionManager } from '../utils/sessionManager.js';
 import { checkAndSeedIfEmpty } from '../seedData.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
@@ -1150,14 +1150,19 @@ window.toggleDebugPanel = function() {
 
 // Seed function for manual trigger
 window.reseedDatabase = async function() {
-  if (confirm('Ini akan menghapus semua data dan membuat data baru. Lanjutkan?')) {
-    const result = await seedDatabase();
-    if (result.success) {
-      showToast('Database berhasil di-seed ulang', 'success');
-      await loadData();
-    } else {
-      showToast('Gagal seed database: ' + result.error, 'error');
-    }
+  const accepted = await showConfirm({
+    title: 'Seed Ulang Database?',
+    text: 'Ini akan menghapus semua data dan membuat data baru.',
+    confirmButtonText: 'Ya, Seed Ulang'
+  });
+  if (!accepted) return;
+
+  const result = await seedDatabase();
+  if (result.success) {
+    showToast('Database berhasil di-seed ulang', 'success');
+    await loadData();
+  } else {
+    showToast('Gagal seed database: ' + result.error, 'error');
   }
 };
 

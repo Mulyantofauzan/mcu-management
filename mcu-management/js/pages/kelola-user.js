@@ -4,7 +4,7 @@
  */
 
 import { authService } from '../services/authService.js';
-import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
+import { showConfirm, showToast, openModal, closeModal } from '../utils/uiHelpers.js';
 import { database } from '../services/database.js';
 import { getCurrentTimestamp } from '../utils/dateHelpers.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
@@ -380,7 +380,11 @@ window.deleteUser = async function(userId) {
         return;
     }
 
-    const confirmed = confirm(`Apakah Anda yakin ingin menghapus user "${user.displayName}"?\n\nTindakan ini tidak dapat dibatalkan.`);
+    const confirmed = await showConfirm({
+        title: 'Hapus User?',
+        text: `User "${user.displayName}" akan dihapus permanen.`,
+        confirmButtonText: 'Ya, Hapus'
+    });
     if (!confirmed) return;
 
     try {

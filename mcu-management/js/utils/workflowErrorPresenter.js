@@ -1,3 +1,5 @@
+import { ensureAppAlerts } from './uiHelpers.js';
+
 const ERROR_PRESENTATIONS = Object.freeze({
   WORKFLOW_UNAUTHORIZED: {
     icon: 'warning', title: 'Sesi Berakhir', action: 'Masuk Kembali'
@@ -56,34 +58,7 @@ const UPLOAD_ERROR_PRESENTATIONS = Object.freeze({
   UPLOAD_SERVER_ERROR: { icon: 'error', title: 'Kesalahan Server' }
 });
 
-let assetPromise;
-
-function assetPath(file) {
-  const prefix = window.location.pathname.includes('/pages/') ? '../' : './';
-  return `${prefix}assets/vendor/sweetalert2/${file}`;
-}
-
-export function ensureWorkflowAlerts() {
-  if (window.Swal) return Promise.resolve(window.Swal);
-  if (assetPromise) return assetPromise;
-
-  assetPromise = new Promise((resolve, reject) => {
-    if (!document.querySelector('link[data-workflow-alerts]')) {
-      const style = document.createElement('link');
-      style.rel = 'stylesheet';
-      style.href = assetPath('sweetalert2.min.css');
-      style.dataset.workflowAlerts = 'true';
-      document.head.appendChild(style);
-    }
-    const script = document.createElement('script');
-    script.src = assetPath('sweetalert2.all.min.js');
-    script.dataset.workflowAlerts = 'true';
-    script.onload = () => resolve(window.Swal);
-    script.onerror = () => reject(new Error('UI peringatan gagal dimuat.'));
-    document.head.appendChild(script);
-  });
-  return assetPromise;
-}
+export const ensureWorkflowAlerts = ensureAppAlerts;
 
 export async function presentWorkflowError(error, handlers = {}) {
   const Swal = await ensureWorkflowAlerts();

@@ -19,6 +19,7 @@ import {
     formatBytes
 } from '../services/pdfCompressionService.js';
 import { ensureWorkflowAlerts } from '../utils/workflowErrorPresenter.js';
+import { showConfirm } from '../utils/uiHelpers.js';
 
 const IMAGE_MAX_BYTES = 3 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png']);
@@ -505,9 +506,12 @@ export class FileUploadWidget {
      * Handle file deletion
      */
     async handleDelete(fileid) {
-        if (!confirm('Yakin ingin menghapus file ini?')) {
-            return;
-        }
+        const confirmed = await showConfirm({
+            title: 'Hapus File?',
+            text: 'File ini akan dihapus.',
+            confirmButtonText: 'Ya, Hapus'
+        });
+        if (!confirmed) return;
 
         // Find the file to determine if it's temporary or already uploaded
         const fileToDelete = this.uploadedFiles.find(f => f.fileid === fileid);

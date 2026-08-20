@@ -28,6 +28,7 @@ test('idempotency keys stay in memory', () => {
 
 test('workflow errors have local SweetAlert recovery UI', () => {
   const source = read('mcu-management/js/utils/workflowErrorPresenter.js');
+  const helpers = read('mcu-management/js/utils/uiHelpers.js');
   [
     'WORKFLOW_UNAUTHORIZED',
     'WORKFLOW_FORBIDDEN',
@@ -37,8 +38,50 @@ test('workflow errors have local SweetAlert recovery UI', () => {
     'WORKFLOW_NETWORK_ERROR',
     'WORKFLOW_DOCUMENT_FAILED'
   ].forEach(code => assert.match(source, new RegExp(code)));
-  assert.match(source, /assets\/vendor\/sweetalert2/);
-  assert.doesNotMatch(source, /https?:\/\//);
+  assert.match(helpers, /assets\/vendor\/sweetalert2/);
+  assert.doesNotMatch(`${source}\n${helpers}`, /https?:\/\//);
+});
+
+test('shared UI helpers own the proportional SweetAlert presentation', () => {
+  const helpers = read('mcu-management/js/utils/uiHelpers.js');
+  const workflow = read('mcu-management/js/utils/workflowErrorPresenter.js');
+  const styles = read('mcu-management/css/alerts.css');
+
+  assert.equal(fs.existsSync(path.join(root, 'mcu-management/assets/vendor/sweetalert2/sweetalert2.all.min.js')), true);
+  assert.equal(fs.existsSync(path.join(root, 'mcu-management/assets/vendor/sweetalert2/sweetalert2.min.css')), true);
+  assert.match(helpers, /export function ensureAppAlerts/);
+  assert.match(helpers, /sweetalert2\.all\.min\.js/);
+  assert.match(helpers, /sweetalert2\.min\.css/);
+  assert.match(helpers, /alerts\.css/);
+  assert.match(helpers, /position:\s*'top-end'/);
+  assert.match(helpers, /success:\s*2500/);
+  assert.match(helpers, /warning:\s*4500/);
+  assert.match(helpers, /export async function showConfirm/);
+  assert.match(helpers, /export function confirmDialog/);
+  assert.match(workflow, /ensureAppAlerts/);
+  assert.match(workflow, /ensureWorkflowAlerts/);
+  assert.match(styles, /max-width:\s*440px/);
+  assert.match(styles, /max-width:\s*360px/);
+  assert.match(styles, /body\.swal2-toast-shown[\s\S]*width:\s*100%/);
+  assert.match(styles, /justify-self:\s*center/);
+  assert.match(styles, /font-size:\s*10\.4px/);
+  assert.match(styles, /prefers-reduced-motion:\s*reduce/);
+  assert.doesNotMatch(`${helpers}\n${workflow}`, /https?:\/\//);
+});
+
+test('active production paths do not use native browser dialogs', () => {
+  const activeFiles = [
+    'mcu-management/js/sidebar-manager.js',
+    'mcu-management/pages/assessment-rahma.html',
+    'mcu-management/js/pages/dashboard.js',
+    'mcu-management/js/pages/kelola-user.js',
+    'mcu-management/js/components/fileUploadWidget.js',
+    'mcu-management/js/services/analysisDashboardService.js'
+  ];
+
+  activeFiles.forEach(file => {
+    assert.doesNotMatch(read(file), /\b(?:window\.)?(?:alert|confirm)\s*\(/, file);
+  });
 });
 
 test('doctor signature upload uses a contextual storage error title', () => {

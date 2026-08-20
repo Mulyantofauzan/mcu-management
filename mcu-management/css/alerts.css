@@ -1,0 +1,175 @@
+.swal2-container {
+  z-index: 10000;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.swal2-popup.madis-alert-popup {
+  width: calc(100vw - 32px);
+  max-width: 440px;
+  padding: 1.35rem 1.25rem 1.2rem;
+  border-radius: 16px;
+  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.2);
+}
+
+.swal2-icon.madis-alert-icon {
+  width: 5em;
+  height: 5em;
+  margin: 0.15rem auto 0.8rem;
+  font-size: 10.4px;
+}
+
+.swal2-icon.madis-alert-icon .swal2-icon-content {
+  font-size: 3em;
+}
+
+.swal2-title.madis-alert-title {
+  padding: 0;
+  color: #0f172a;
+  font-size: 20px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.swal2-html-container.madis-alert-body {
+  margin: 0.65rem 0 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.swal2-actions.madis-alert-actions {
+  gap: 0.65rem;
+  margin: 1.25rem 0 0;
+}
+
+.madis-alert-button {
+  min-height: 42px;
+  min-width: 100px;
+  padding: 0.6rem 1rem;
+  border: 0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.madis-alert-button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.3);
+  outline-offset: 2px;
+}
+
+.madis-alert-button-confirm {
+  color: #fff;
+  background: #2563eb;
+}
+
+.madis-alert-button-confirm:hover {
+  background: #1d4ed8;
+}
+
+.madis-alert-button-danger {
+  color: #fff;
+  background: #dc2626;
+}
+
+.madis-alert-button-danger:hover {
+  background: #b91c1c;
+}
+
+.madis-alert-button-cancel {
+  color: #334155;
+  background: #e2e8f0;
+}
+
+.madis-alert-button-cancel:hover {
+  background: #cbd5e1;
+}
+
+.swal2-popup.madis-alert-toast {
+  width: calc(100vw - 24px);
+  max-width: 360px;
+  min-height: 58px;
+  padding: 0.75rem 2.5rem 0.75rem 0.85rem;
+  border-radius: 12px;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.18);
+}
+
+.swal2-icon.madis-alert-toast-icon {
+  width: 2.8em;
+  min-width: 2.8em;
+  height: 2.8em;
+  margin: 0 0.65rem 0 0;
+  font-size: 10px;
+}
+
+.swal2-icon.madis-alert-toast-icon .swal2-icon-content {
+  font-size: 1.6em;
+}
+
+.swal2-title.madis-alert-toast-title {
+  margin: 0;
+  padding: 0;
+  color: #1e293b;
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.swal2-close.madis-alert-toast-close {
+  width: 34px;
+  height: 34px;
+  color: #64748b;
+  font-size: 1.5rem;
+}
+
+.swal2-timer-progress-bar.madis-alert-progress {
+  background: rgba(37, 99, 235, 0.45);
+}
+
+@media (max-width: 480px) {
+  body.swal2-toast-shown .swal2-container.swal2-top-end {
+    inset: 0 0 auto 0;
+    width: 100%;
+    max-width: none;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    justify-items: center;
+    gap: 0;
+    padding: 0.75rem;
+  }
+
+  body.swal2-toast-shown .swal2-container.swal2-top-end > .swal2-popup.swal2-toast {
+    grid-column: 1 / 2 !important;
+    grid-row: 1 / 2 !important;
+    justify-self: center;
+    width: 100%;
+    max-width: 360px;
+  }
+
+  .swal2-popup.madis-alert-popup {
+    padding: 1.15rem 1rem 1rem;
+  }
+
+  .swal2-actions.madis-alert-actions {
+    width: 100%;
+  }
+
+  .madis-alert-button {
+    flex: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swal2-container *,
+  .swal2-container *::before,
+  .swal2-container *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

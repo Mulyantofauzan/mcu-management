@@ -10,6 +10,7 @@ import { labService } from './labService.js';
 import { LAB_ITEMS_MAPPING } from '../data/labItemsMapping.js';
 import { evaluateVisionStatus, getGradeInfo } from '../utils/visionScaleHelper.js';
 import { analyticsEligibilityService } from './analyticsEligibilityService.js';
+import { showAlert } from '../utils/uiHelpers.js';
 
 class AnalysisDashboardService {
   constructor() {
@@ -45,7 +46,11 @@ class AnalysisDashboardService {
       this.showLoading(false);
     } catch (error) {
       this.showLoading(false);
-      alert('Error loading dashboard: ' + error.message);
+      await showAlert({
+        icon: 'error',
+        title: 'Analysis Gagal Dimuat',
+        text: error.message || 'Terjadi kesalahan saat memuat dashboard.'
+      });
     }
   }
 

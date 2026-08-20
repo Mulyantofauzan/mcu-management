@@ -73,6 +73,12 @@
     return inPages ? `../pages/${file}` : `./pages/${file}`;
   }
 
+  function uiHelpersHref() {
+    return window.location.pathname.includes('/pages/')
+      ? '../js/utils/uiHelpers.js'
+      : './js/utils/uiHelpers.js';
+  }
+
   function icon(name) {
     return `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${icons[name] || icons.file}"></path></svg>`;
   }
@@ -264,7 +270,18 @@
   }
 
   async function handleLogout() {
-    const accepted = window.confirm('Apa kamu yakin ingin logout?');
+    let accepted = false;
+    try {
+      const { showConfirm } = await import(uiHelpersHref());
+      accepted = await showConfirm({
+        title: 'Keluar dari MADIS?',
+        text: 'Sesi Anda akan diakhiri.',
+        confirmButtonText: 'Ya, Keluar',
+        destructive: false
+      });
+    } catch (error) {
+      return;
+    }
     if (!accepted) return;
     localStorage.removeItem('auth_token');
     localStorage.removeItem('madisAccessToken');

@@ -2,8 +2,95 @@
  * UI Helper Utilities
  * Toast notifications, modals, loading states, etc.
  */
-// Toast Notifications - SECURITY: XSS-safe implementation
-export function showToast(message, type = 'info') {
+const TOAST_TIMERS = Object.freeze({
+  success: 2500,
+  info: 2500,
+  warning: 4500,
+  error: 4500
+});
+
+let appAlertsPromise;
+
+function moduleAssetUrl(relativePath) {
+  return new URL(relativePath, import.meta.url).href;
+}
+
+function loadAlertStyle(href, name) {
+  const selector = `link[data-madis-alert-asset="${name}"]`;
+  if (document.querySelector(selector)) return Promise.resolve();
+
+  return new Promise((resolve, reject) => {
+    const style = document.createElement('link');
+    style.rel = 'stylesheet';
+    style.href = href;
+    style.dataset.madisAlertAsset = name;
+    style.onload = resolve;
+    style.onerror = () => {
+      style.remove();
+      reject(new Error(`Gagal memuat ${name}.`));
+    };
+    document.head.appendChild(style);
+  });
+}
+
+function loadAlertScript(href) {
+  if (window.Swal) return Promise.resolve();
+
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[data-madis-alert-asset="script"]');
+    if (existing) {
+      existing.addEventListener('load', resolve, { once: true });
+      existing.addEventListener('error', reject, { once: true });
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = href;
+    script.dataset.madisAlertAsset = 'script';
+    script.onload = resolve;
+    script.onerror = () => {
+      script.remove();
+      reject(new Error('Gagal memuat SweetAlert2.'));
+    };
+    document.head.appendChild(script);
+  });
+}
+
+export function ensureAppAlerts() {
+  if (appAlertsPromise) return appAlertsPromise;
+
+  const vendorStyle = moduleAssetUrl('../../assets/vendor/sweetalert2/sweetalert2.min.css');
+  const appStyle = moduleAssetUrl('../../css/alerts.css');
+  const script = moduleAssetUrl('../../assets/vendor/sweetalert2/sweetalert2.all.min.js');
+
+  appAlertsPromise = Promise.all([
+    loadAlertStyle(vendorStyle, 'vendor-style'),
+    loadAlertStyle(appStyle, 'app-style'),
+    loadAlertScript(script)
+  ]).then(() => {
+    if (!window.Swal) throw new Error('SweetAlert2 tidak tersedia.');
+    return window.Swal.mixin({
+      buttonsStyling: false,
+      customClass: {
+        popup: 'madis-alert-popup',
+        icon: 'madis-alert-icon',
+        title: 'madis-alert-title',
+        htmlContainer: 'madis-alert-body',
+        actions: 'madis-alert-actions',
+        confirmButton: 'madis-alert-button madis-alert-button-confirm',
+        cancelButton: 'madis-alert-button madis-alert-button-cancel'
+      }
+    });
+  }).catch(error => {
+    appAlertsPromise = null;
+    throw error;
+  });
+
+  return appAlertsPromise;
+}
+
+// SECURITY: fallback uses textContent for all user-facing text.
+function showFallbackToast(message, type = 'info') {
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
 
@@ -39,7 +126,7 @@ export function showToast(message, type = 'info') {
   messageDiv.className = 'flex-1';
   const messageP = document.createElement('p');
   messageP.className = 'text-sm font-medium text-gray-900';
-  messageP.textContent = message;  // SAFE: textContent auto-escapes HTML
+  messageP.textContent = String(message ?? '');  // SAFE: textContent auto-escapes HTML
   messageDiv.appendChild(messageP);
 
   // Close button
@@ -66,6 +153,36 @@ export function showToast(message, type = 'info') {
     toast.style.opacity = '0';
     setTimeout(() => toast.remove(), 300);
   }, 5000);
+}
+
+export function showToast(message, type = 'info') {
+  const icon = TOAST_TIMERS[type] ? type : 'info';
+  const timer = TOAST_TIMERS[icon];
+
+  void ensureAppAlerts().then(Swal => {
+    const Toast = Swal.mixin({
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      showCloseButton: true,
+      timer,
+      timerProgressBar: true,
+      customClass: {
+        popup: 'madis-alert-popup madis-alert-toast',
+        icon: 'madis-alert-toast-icon',
+        title: 'madis-alert-toast-title',
+        closeButton: 'madis-alert-toast-close',
+        timerProgressBar: 'madis-alert-progress'
+      },
+      didOpen: toast => {
+        toast.addEventListener('mouseenter', Swal.stopTimer);
+        toast.addEventListener('mouseleave', Swal.resumeTimer);
+        toast.addEventListener('focusin', Swal.stopTimer);
+        toast.addEventListener('focusout', Swal.resumeTimer);
+      }
+    });
+    return Toast.fire({ icon, title: String(message ?? '') });
+  }).catch(() => showFallbackToast(message, icon));
 }
 
 // Modal Management
@@ -116,80 +233,168 @@ export function hideLoading() {
   }
 }
 
-// Confirmation Dialog - SECURITY: XSS-safe implementation
-export function confirmDialog(message, onConfirm, onCancel = null) {
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
-  overlay.id = 'confirm-dialog';
+// SECURITY: fallback uses textContent and defaults to cancellation.
+function showFallbackDialog({
+  title,
+  text,
+  confirmButtonText,
+  cancelButtonText,
+  destructive,
+  showCancelButton
+}) {
+  return new Promise(resolve => {
+    document.getElementById('confirm-dialog')?.remove();
+    const previousFocus = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
 
-  // Create modal structure safely
-  const modal = document.createElement('div');
-  modal.className = 'modal max-w-md';
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'confirm-dialog';
 
-  // Header
-  const header = document.createElement('div');
-  header.className = 'modal-header';
-  const title = document.createElement('h3');
-  title.className = 'text-lg font-semibold text-gray-900';
-  title.textContent = 'Konfirmasi';
-  header.appendChild(title);
+    const modal = document.createElement('div');
+    modal.className = 'modal max-w-md';
+    modal.setAttribute('role', 'alertdialog');
+    modal.setAttribute('aria-modal', 'true');
 
-  // Body
-  const body = document.createElement('div');
-  body.className = 'modal-body';
-  const messageP = document.createElement('p');
-  messageP.className = 'text-gray-700';
-  messageP.textContent = message;  // SAFE: textContent auto-escapes
-  body.appendChild(messageP);
+    const header = document.createElement('div');
+    header.className = 'modal-header';
+    const heading = document.createElement('h3');
+    heading.className = 'text-lg font-semibold text-gray-900';
+    heading.textContent = title;
+    header.appendChild(heading);
 
-  // Footer
-  const footer = document.createElement('div');
-  footer.className = 'modal-footer';
+    const body = document.createElement('div');
+    body.className = 'modal-body';
+    const messageP = document.createElement('p');
+    messageP.className = 'text-gray-700';
+    messageP.textContent = text;
+    body.appendChild(messageP);
 
-  const cancelButton = document.createElement('button');
-  cancelButton.id = 'confirm-cancel';
-  cancelButton.className = 'btn btn-secondary';
-  cancelButton.textContent = 'Batal';
+    const footer = document.createElement('div');
+    footer.className = 'modal-footer';
 
-  const okButton = document.createElement('button');
-  okButton.id = 'confirm-ok';
-  okButton.className = 'btn btn-danger';
-  okButton.textContent = 'Ya, Lanjutkan';
+    const cancelButton = document.createElement('button');
+    cancelButton.id = 'confirm-cancel';
+    cancelButton.className = 'btn btn-secondary';
+    cancelButton.textContent = cancelButtonText;
 
-  footer.appendChild(cancelButton);
-  footer.appendChild(okButton);
+    const okButton = document.createElement('button');
+    okButton.id = 'confirm-ok';
+    okButton.className = `btn ${destructive ? 'btn-danger' : 'btn-primary'}`;
+    okButton.textContent = confirmButtonText;
 
-  // Assemble modal
-  modal.appendChild(header);
-  modal.appendChild(body);
-  modal.appendChild(footer);
-  overlay.appendChild(modal);
+    if (showCancelButton) footer.appendChild(cancelButton);
+    footer.appendChild(okButton);
 
-  document.body.appendChild(overlay);
-  document.body.style.overflow = 'hidden';
+    modal.appendChild(header);
+    modal.appendChild(body);
+    modal.appendChild(footer);
+    overlay.appendChild(modal);
 
-  okButton.onclick = () => {
-    overlay.remove();
-    document.body.style.overflow = 'auto';
-    if (onConfirm) onConfirm();
-  };
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
 
-  cancelButton.onclick = () => {
-    overlay.remove();
-    document.body.style.overflow = 'auto';
-    if (onCancel) onCancel();
-  };
-
-  // ESC key to cancel
-  const handleEscape = (e) => {
-    if (e.key === 'Escape') {
+    let settled = false;
+    const finish = isConfirmed => {
+      if (settled) return;
+      settled = true;
       overlay.remove();
-      document.body.style.overflow = 'auto';
-      if (onCancel) onCancel();
+      document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', handleEscape);
+      previousFocus?.focus?.();
+      resolve({ isConfirmed, isDismissed: !isConfirmed });
+    };
+
+    okButton.addEventListener('click', () => finish(true));
+    cancelButton.addEventListener('click', () => finish(false));
+
+    function handleEscape(event) {
+      if (event.key === 'Escape') {
+        finish(false);
+      }
     }
-  };
-  document.addEventListener('keydown', handleEscape);
+    document.addEventListener('keydown', handleEscape);
+    (showCancelButton ? cancelButton : okButton).focus();
+  });
+}
+
+export async function showAlert({
+  icon = 'info',
+  title = 'Informasi',
+  text = '',
+  confirmButtonText = 'Tutup',
+  allowOutsideClick = false
+} = {}) {
+  try {
+    const Swal = await ensureAppAlerts();
+    return await Swal.fire({
+      icon,
+      title,
+      text: String(text ?? ''),
+      confirmButtonText,
+      allowOutsideClick,
+      focusConfirm: true
+    });
+  } catch (error) {
+    return showFallbackDialog({
+      title,
+      text: String(text ?? ''),
+      confirmButtonText,
+      cancelButtonText: 'Batal',
+      destructive: false,
+      showCancelButton: false
+    });
+  }
+}
+
+export async function showConfirm({
+  icon = 'warning',
+  title = 'Konfirmasi',
+  text = '',
+  confirmButtonText = 'Ya, Lanjutkan',
+  cancelButtonText = 'Batal',
+  destructive = true
+} = {}) {
+  try {
+    const Swal = await ensureAppAlerts();
+    const result = await Swal.fire({
+      icon,
+      title,
+      text: String(text ?? ''),
+      confirmButtonText,
+      cancelButtonText,
+      showCancelButton: true,
+      allowOutsideClick: false,
+      focusCancel: true,
+      customClass: {
+        popup: 'madis-alert-popup',
+        icon: 'madis-alert-icon',
+        title: 'madis-alert-title',
+        htmlContainer: 'madis-alert-body',
+        actions: 'madis-alert-actions',
+        confirmButton: `madis-alert-button ${destructive ? 'madis-alert-button-danger' : 'madis-alert-button-confirm'}`,
+        cancelButton: 'madis-alert-button madis-alert-button-cancel'
+      }
+    });
+    return result.isConfirmed;
+  } catch (error) {
+    const result = await showFallbackDialog({
+      title,
+      text: String(text ?? ''),
+      confirmButtonText,
+      cancelButtonText,
+      destructive,
+      showCancelButton: true
+    });
+    return result.isConfirmed;
+  }
+}
+
+export function confirmDialog(message, onConfirm, onCancel = null) {
+  void showConfirm({ text: message }).then(confirmed => {
+    if (confirmed) onConfirm?.();
+    else onCancel?.();
+  }).catch(() => onCancel?.());
 }
 
 // Format numbers
