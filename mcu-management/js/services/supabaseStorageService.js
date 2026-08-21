@@ -2,7 +2,7 @@
  * Supabase Storage Upload Service
  *
  * Frontend service untuk upload files ke Cloudflare R2
- * - PDF max 5MB after local preparation
+ * - PDF target 5MB, fallback upload below 10MB
  * - JPG/PNG max 3MB
  * - Supported: PDF, JPG, PNG
  * - Upload tracking dengan progress callback
@@ -21,7 +21,7 @@ function getAuthHeaders(extraHeaders = {}) {
     : extraHeaders;
 }
 
-const PDF_MAX_SIZE = 5 * 1024 * 1024;
+const PDF_UPLOAD_LIMIT = 10 * 1024 * 1024;
 const IMAGE_MAX_SIZE = 3 * 1024 * 1024;
 
 async function postUploadAction(payload) {
@@ -83,8 +83,8 @@ function putFileToSignedUrl(file, upload, onProgress) {
 }
 
 async function uploadPdfDirect(file, employeeId, mcuId, onProgress) {
-  if (file.size > PDF_MAX_SIZE) {
-    throw new Error('PDF hasil persiapan melebihi batas penyimpanan 5 MB.');
+  if (file.size >= PDF_UPLOAD_LIMIT) {
+    throw new Error('PDF harus berukuran kurang dari 10 MB setelah persiapan.');
   }
 
   let lastError;
@@ -192,20 +192,22 @@ export async function uploadFileToSupabase(file, employeeId, mcuId, onProgress =
     }
 
     // Validate file type
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
-    if (!allowedTypes.includes(file.type)) {
+    const isPdf = String(file.name || '').toLowerCase().endsWith('.pdf');
+    const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!isPdf && !allowedImageTypes.includes(file.type)) {
       throw new Error(
         `File type not allowed. Only PDF and images (JPG/PNG) are supported. Got: ${file.type}`
       );
     }
 
-    const isPdf = file.type === 'application/pdf';
-    const maxSize = isPdf ? PDF_MAX_SIZE : IMAGE_MAX_SIZE;
+    const maxSize = isPdf ? PDF_UPLOAD_LIMIT : IMAGE_MAX_SIZE;
     const warningSize = 2 * 1024 * 1024; // 2MB warning threshold
 
-    if (file.size > maxSize) {
+    if (isPdf ? file.size >= maxSize : file.size > maxSize) {
       throw new Error(
-        `File terlalu besar (${(file.size / 1024 / 1024).toFixed(1)}MB). Maksimal ${maxSize / 1024 / 1024}MB per file`
+        isPdf
+          ? `File terlalu besar (${(file.size / 1024 / 1024).toFixed(1)}MB). PDF harus kurang dari 10MB setelah persiapan.`
+          : `File terlalu besar (${(file.size / 1024 / 1024).toFixed(1)}MB). Maksimal 3MB per file.`
       );
     }
 

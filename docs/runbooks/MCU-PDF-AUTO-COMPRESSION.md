@@ -2,7 +2,7 @@
 
 ## Purpose
 
-MADIS prepares MCU PDFs locally, stores at most 5 MB per PDF, and uploads the prepared bytes directly to the private `CLOUDFLARE_R2_BUCKET_NAME` bucket. The Vercel function only creates a five-minute upload URL and verifies the result.
+MADIS accepts non-empty `.pdf` files regardless of browser MIME or scanner-specific bytes. Files up to 5 MB upload unchanged. Larger files are compressed toward 5 MB; when compression fails, the original is accepted only when it remains below 10 MB. Uploads go directly to the private `CLOUDFLARE_R2_BUCKET_NAME` bucket. The Vercel function only creates a five-minute upload URL and verifies metadata.
 
 ## Required R2 CORS
 
@@ -45,14 +45,16 @@ The API deletes pending objects immediately after confirmation or validation fai
 2. Apply CORS and the pending-prefix lifecycle rule.
 3. Verify the Vercel project has the existing `CLOUDFLARE_R2_*` variables.
 4. Deploy the API and static client together.
-5. Upload a synthetic PDF under 3 MB.
-6. Upload a synthetic scan PDF over 3 MB and confirm the stored size is at most 5 MB.
-7. Confirm download still uses `/api/download-file` and a temporary signed URL.
+5. Upload a synthetic PDF under 5 MB with an empty or generic browser MIME.
+6. Upload a synthetic scan PDF over 5 MB and confirm compression targets 5 MB.
+7. Force compression failure for a PDF below 10 MB and confirm the original uploads.
+8. Confirm a 10 MB PDF is rejected when compression fails.
+9. Confirm download still uses `/api/download-file` and a temporary signed URL.
 
 ## Failure Checks
 
 - `PDF Terlalu Besar`: source exceeds 25 MB.
-- `Hasil Masih Terlalu Besar`: the 120 DPI/0.60 fallback remains over 5 MB.
+- `Hasil Masih Terlalu Besar`: a PDF of 10 MB or more cannot be compressed to the 5 MB target.
 - Browser reports `Load failed`: verify R2 CORS and the `mcu-files...r2.cloudflarestorage.com` CSP origin.
 - Confirmation fails: inspect object metadata and ensure `Content-Type` is `application/pdf`; do not log the signed URL or document bytes.
 - Repeated pending objects: verify the lifecycle prefix exactly matches `pending/mcu-uploads/`.

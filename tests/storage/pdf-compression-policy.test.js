@@ -11,8 +11,8 @@ const policyUrl = pathToFileURL(path.join(
 test('PDF size policy enforces approved thresholds', async () => {
   const policy = await import(policyUrl.href);
 
-  assert.equal(policy.getPdfSizePolicy(3 * policy.MB), 'passthrough');
-  assert.equal(policy.getPdfSizePolicy(3 * policy.MB + 1), 'compress');
+  assert.equal(policy.getPdfSizePolicy(5 * policy.MB), 'passthrough');
+  assert.equal(policy.getPdfSizePolicy(5 * policy.MB + 1), 'compress');
   assert.equal(policy.getPdfSizePolicy(25 * policy.MB), 'compress');
   assert.equal(policy.getPdfSizePolicy(25 * policy.MB + 1), 'reject');
   assert.equal(policy.getPdfSizePolicy(0), 'invalid');

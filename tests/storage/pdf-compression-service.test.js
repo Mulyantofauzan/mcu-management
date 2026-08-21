@@ -10,7 +10,25 @@ const servicePath = path.join(
   '../../mcu-management/js/services/pdfCompressionService.js'
 );
 
-test('small PDF passes through without starting a worker', async () => {
+function failingWorker(code = 'PDF_CORRUPT') {
+  return class FailingWorker {
+    listeners = {};
+
+    addEventListener(type, listener) {
+      this.listeners[type] = listener;
+    }
+
+    postMessage() {
+      queueMicrotask(() => this.listeners.message({
+        data: { type: 'error', code, message: 'PDF tidak dapat diproses.' }
+      }));
+    }
+
+    terminate() {}
+  };
+}
+
+test('PDF up to 5 MB passes through based on its extension', async () => {
   global.File = File;
   global.Worker = class UnexpectedWorker {
     constructor() {
@@ -19,8 +37,8 @@ test('small PDF passes through without starting a worker', async () => {
   };
 
   const { preparePdfForUpload } = await import(pathToFileURL(servicePath).href);
-  const file = new File([Buffer.from('%PDF-1.4\n%%EOF')], 'small.pdf', {
-    type: 'application/pdf'
+  const file = new File([Buffer.from('scanner-specific-content')], 'SMALL.PDF', {
+    type: 'application/octet-stream'
   });
   const progress = [];
   const result = await preparePdfForUpload(file, {
@@ -32,6 +50,46 @@ test('small PDF passes through without starting a worker', async () => {
   assert.equal(result.method, 'passthrough');
   assert.equal(result.pageCount, null);
   assert.equal(progress.at(-1).percent, 100);
+
+  delete global.File;
+  delete global.Worker;
+});
+
+test('failed compression falls back to the original PDF below 10 MB', async () => {
+  global.File = File;
+  global.Worker = failingWorker();
+
+  const { preparePdfForUpload } = await import(pathToFileURL(servicePath).href);
+  const file = new File([Buffer.alloc(5 * 1024 * 1024 + 1)], 'scanner.pdf', {
+    type: 'application/octet-stream'
+  });
+  const progress = [];
+  const result = await preparePdfForUpload(file, {
+    onProgress: event => progress.push(event)
+  });
+
+  assert.equal(result.file, file);
+  assert.equal(result.compressed, false);
+  assert.equal(result.method, 'compression-fallback');
+  assert.match(progress.at(-1).message, /file asli/i);
+
+  delete global.File;
+  delete global.Worker;
+});
+
+test('failed compression rejects an original PDF at 10 MB', async () => {
+  global.File = File;
+  global.Worker = failingWorker('PDF_PROCESSING_FAILED');
+
+  const { preparePdfForUpload } = await import(pathToFileURL(servicePath).href);
+  const file = new File([Buffer.alloc(10 * 1024 * 1024)], 'large.pdf', {
+    type: 'application/pdf'
+  });
+
+  await assert.rejects(
+    preparePdfForUpload(file),
+    error => error.code === 'PDF_PROCESSING_FAILED'
+  );
 
   delete global.File;
   delete global.Worker;

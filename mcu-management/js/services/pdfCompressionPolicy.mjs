@@ -1,6 +1,7 @@
 export const MB = 1024 * 1024;
-export const PDF_PASSTHROUGH_BYTES = 3 * MB;
+export const PDF_PASSTHROUGH_BYTES = 5 * MB;
 export const PDF_STORED_MAX_BYTES = 5 * MB;
+export const PDF_UPLOAD_LIMIT_BYTES = 10 * MB;
 export const PDF_SOURCE_MAX_BYTES = 25 * MB;
 
 export const PDF_COMPRESSION_PROFILES = Object.freeze([

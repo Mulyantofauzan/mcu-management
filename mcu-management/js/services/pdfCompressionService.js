@@ -1,8 +1,8 @@
 import {
   PDF_ERROR_CODES,
   PDF_SOURCE_MAX_BYTES,
-  getPdfSizePolicy,
-  hasPdfHeader
+  PDF_UPLOAD_LIMIT_BYTES,
+  getPdfSizePolicy
 } from './pdfCompressionPolicy.mjs';
 
 const PHASE_RANGES = Object.freeze({
@@ -43,10 +43,8 @@ function phaseMessage(message) {
 
 function assertPdfFile(file) {
   const fileName = String(file?.name || '');
-  const mimeType = String(file?.type || '').toLowerCase();
   if (!(file instanceof File)
-    || !fileName.toLowerCase().endsWith('.pdf')
-    || (mimeType && mimeType !== 'application/pdf')) {
+    || !fileName.toLowerCase().endsWith('.pdf')) {
     throw new PdfCompressionError(
       PDF_ERROR_CODES.INVALID_TYPE,
       'File harus berupa PDF.'
@@ -65,31 +63,33 @@ function assertPdfFile(file) {
   return policy;
 }
 
+function originalUploadResult(file, onProgress, method = 'passthrough') {
+  onProgress?.({
+    percent: 100,
+    message: method === 'compression-fallback'
+      ? `Kompresi tidak berhasil; file asli ${formatBytes(file.size)} siap diunggah.`
+      : `PDF siap diunggah: ${formatBytes(file.size)}.`,
+    phase: 'complete'
+  });
+  return {
+    file,
+    originalSize: file.size,
+    finalSize: file.size,
+    compressed: false,
+    method,
+    pageCount: null
+  };
+}
+
 export async function preparePdfForUpload(file, { onProgress, signal } = {}) {
   const policy = assertPdfFile(file);
-  const header = new Uint8Array(await file.slice(0, 5).arrayBuffer());
-  if (!hasPdfHeader(header)) {
-    throw new PdfCompressionError(
-      PDF_ERROR_CODES.CORRUPT,
-      'File tidak memiliki struktur PDF yang valid.'
-    );
-  }
   if (policy === 'passthrough') {
-    onProgress?.({
-      percent: 100,
-      message: `PDF siap diunggah: ${formatBytes(file.size)}.`,
-      phase: 'complete'
-    });
-    return {
-      file,
-      originalSize: file.size,
-      finalSize: file.size,
-      compressed: false,
-      method: 'passthrough',
-      pageCount: null
-    };
+    return originalUploadResult(file, onProgress);
   }
   if (typeof Worker === 'undefined') {
+    if (file.size < PDF_UPLOAD_LIMIT_BYTES) {
+      return originalUploadResult(file, onProgress, 'compression-fallback');
+    }
     throw new PdfCompressionError(
       PDF_ERROR_CODES.WORKER_UNAVAILABLE,
       'Browser tidak mendukung pemrosesan PDF aman.'
@@ -98,10 +98,21 @@ export async function preparePdfForUpload(file, { onProgress, signal } = {}) {
 
   onProgress?.({ percent: 1, message: 'Menyiapkan pemrosesan PDF...', phase: 'starting' });
   const sourceBuffer = await file.arrayBuffer();
-  const worker = new Worker(
-    new URL('../workers/pdfCompressionWorker.mjs', import.meta.url),
-    { type: 'module', name: 'madis-pdf-compression' }
-  );
+  let worker;
+  try {
+    worker = new Worker(
+      new URL('../workers/pdfCompressionWorker.mjs', import.meta.url),
+      { type: 'module', name: 'madis-pdf-compression' }
+    );
+  } catch {
+    if (file.size < PDF_UPLOAD_LIMIT_BYTES) {
+      return originalUploadResult(file, onProgress, 'compression-fallback');
+    }
+    throw new PdfCompressionError(
+      PDF_ERROR_CODES.WORKER_UNAVAILABLE,
+      'Browser tidak dapat menjalankan pemrosesan PDF.'
+    );
+  }
 
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -117,10 +128,17 @@ export async function preparePdfForUpload(file, { onProgress, signal } = {}) {
       PDF_ERROR_CODES.CANCELLED,
       'Pemrosesan PDF dibatalkan.'
     )));
-    const timeoutId = setTimeout(() => finish(() => reject(new PdfCompressionError(
+    const settleCompressionError = (error) => {
+      if (file.size < PDF_UPLOAD_LIMIT_BYTES && error?.code !== PDF_ERROR_CODES.CANCELLED) {
+        finish(() => resolve(originalUploadResult(file, onProgress, 'compression-fallback')));
+        return;
+      }
+      finish(() => reject(error));
+    };
+    const timeoutId = setTimeout(() => settleCompressionError(new PdfCompressionError(
       PDF_ERROR_CODES.PROCESSING_TIMEOUT,
-      'Pemrosesan PDF melebihi 2 menit. Coba lagi atau pilih PDF lain.'
-    ))), PDF_PROCESSING_TIMEOUT_MS);
+      'Pemrosesan PDF melebihi 2 menit.'
+    )), PDF_PROCESSING_TIMEOUT_MS);
 
     if (signal?.aborted) {
       cancel();
@@ -141,10 +159,10 @@ export async function preparePdfForUpload(file, { onProgress, signal } = {}) {
         return;
       }
       if (message.type === 'error') {
-        finish(() => reject(new PdfCompressionError(
+        settleCompressionError(new PdfCompressionError(
           message.code || PDF_ERROR_CODES.PROCESSING_FAILED,
           message.message || 'PDF gagal diproses.'
-        )));
+        ));
         return;
       }
       if (message.type === 'complete') {
@@ -170,16 +188,23 @@ export async function preparePdfForUpload(file, { onProgress, signal } = {}) {
       }
     });
 
-    worker.addEventListener('error', () => finish(() => reject(new PdfCompressionError(
+    worker.addEventListener('error', () => settleCompressionError(new PdfCompressionError(
       PDF_ERROR_CODES.PROCESSING_FAILED,
       'Worker pemrosesan PDF gagal dimuat.'
-    ))));
+    )));
 
-    worker.postMessage({
-      action: 'prepare',
-      fileName: file.name,
-      buffer: sourceBuffer
-    });
+    try {
+      worker.postMessage({
+        action: 'prepare',
+        fileName: file.name,
+        buffer: sourceBuffer
+      });
+    } catch {
+      settleCompressionError(new PdfCompressionError(
+        PDF_ERROR_CODES.PROCESSING_FAILED,
+        'PDF gagal dikirim ke proses kompresi.'
+      ));
+    }
   });
 }
 
@@ -196,10 +221,10 @@ export function getPdfErrorPresentation(error) {
     [PDF_ERROR_CODES.ENCRYPTED]: ['PDF Terkunci', 'Hapus kata sandi PDF sebelum mengunggahnya.'],
     [PDF_ERROR_CODES.INVALID_TYPE]: ['Format Tidak Sesuai', 'File harus berupa PDF.'],
     [PDF_ERROR_CODES.SOURCE_TOO_LARGE]: ['PDF Terlalu Besar', 'Ukuran awal PDF maksimal 25 MB.'],
-    [PDF_ERROR_CODES.RESULT_TOO_LARGE]: ['Hasil Masih Terlalu Besar', 'PDF tetap melebihi 5 MB pada batas kualitas yang aman.'],
+    [PDF_ERROR_CODES.RESULT_TOO_LARGE]: ['Hasil Masih Terlalu Besar', 'PDF berukuran 10 MB atau lebih dan tidak dapat diperkecil.'],
     [PDF_ERROR_CODES.WORKER_UNAVAILABLE]: ['Browser Tidak Mendukung', 'Perbarui browser sebelum memproses PDF ini.'],
     [PDF_ERROR_CODES.PROCESSING_TIMEOUT]: ['Pemrosesan Terlalu Lama', 'Coba lagi atau pilih PDF lain.'],
-    [PDF_ERROR_CODES.PROCESSING_FAILED]: ['Kompresi Gagal', 'PDF tidak berubah dan tidak diunggah. Silakan coba lagi.']
+    [PDF_ERROR_CODES.PROCESSING_FAILED]: ['Kompresi Gagal', 'PDF berukuran 10 MB atau lebih dan tidak dapat diproses.']
   };
   const [title, fallback] = presentations[error?.code]
     || presentations[PDF_ERROR_CODES.PROCESSING_FAILED];

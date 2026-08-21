@@ -2,7 +2,6 @@ const {
   S3Client,
   PutObjectCommand,
   HeadObjectCommand,
-  GetObjectCommand,
   CopyObjectCommand,
   DeleteObjectCommand
 } = require('@aws-sdk/client-s3');
@@ -13,7 +12,7 @@ const {
   generatePublicUrl
 } = require('./r2StorageService');
 
-const PDF_MAX_BYTES = 5 * 1024 * 1024;
+const PDF_UPLOAD_LIMIT_BYTES = 10 * 1024 * 1024;
 const UPLOAD_URL_EXPIRY_SECONDS = 5 * 60;
 const PDF_CONTENT_TYPE = 'application/pdf';
 
@@ -97,11 +96,11 @@ function assertPdfMetadata(contentType, contentLength) {
     );
   }
   if (!Number.isInteger(normalizedLength)
-    || normalizedLength < 5
-    || normalizedLength > PDF_MAX_BYTES) {
+    || normalizedLength <= 0
+    || normalizedLength >= PDF_UPLOAD_LIMIT_BYTES) {
     throw new R2DirectUploadError(
       'UPLOAD_SIZE_INVALID',
-      'Ukuran PDF hasil kompresi maksimal 5 MB.',
+      'Ukuran PDF harus kurang dari 10 MB.',
       400
     );
   }
@@ -120,16 +119,6 @@ function assertPendingKey(objectKey, userId) {
     throw new R2DirectUploadError('UPLOAD_FORBIDDEN', 'Upload tidak diizinkan.', 403);
   }
   return objectKey;
-}
-
-async function bodyToBuffer(body) {
-  if (!body) return Buffer.alloc(0);
-  if (typeof body.transformToByteArray === 'function') {
-    return Buffer.from(await body.transformToByteArray());
-  }
-  const chunks = [];
-  for await (const chunk of body) chunks.push(Buffer.from(chunk));
-  return Buffer.concat(chunks);
 }
 
 function encodeCopySource(bucket, objectKey) {
@@ -196,20 +185,6 @@ class R2DirectUploadService {
       const mcuId = assertSafeSegment(head.Metadata?.mcuid, 'MCU ID');
       if (head.Metadata?.owner !== owner || head.Metadata?.purpose !== 'mcu-pdf-upload') {
         throw new R2DirectUploadError('UPLOAD_FORBIDDEN', 'Pemilik upload tidak sesuai.', 403);
-      }
-
-      const headerResult = await this.client.send(new GetObjectCommand({
-        Bucket: this.config.bucket,
-        Key: pendingKey,
-        Range: 'bytes=0-4'
-      }));
-      const header = await bodyToBuffer(headerResult.Body);
-      if (header.toString('ascii') !== '%PDF-') {
-        throw new R2DirectUploadError(
-          'UPLOAD_PDF_INVALID',
-          'Objek yang diunggah bukan PDF yang valid.',
-          422
-        );
       }
 
       finalKey = `mcu_files/${employeeId}/${mcuId}/${this.uuid()}.pdf`;
@@ -283,7 +258,7 @@ class R2DirectUploadService {
 module.exports = {
   R2DirectUploadService,
   R2DirectUploadError,
-  PDF_MAX_BYTES,
+  PDF_UPLOAD_LIMIT_BYTES,
   UPLOAD_URL_EXPIRY_SECONDS,
   assertPdfMetadata,
   assertPendingKey,

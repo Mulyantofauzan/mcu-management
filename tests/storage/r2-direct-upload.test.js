@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
   R2DirectUploadService,
-  PDF_MAX_BYTES
+  PDF_UPLOAD_LIMIT_BYTES
 } = require('../../server/r2DirectUploadService');
 
 function serviceFixture(overrides = {}) {
@@ -23,9 +23,6 @@ function serviceFixture(overrides = {}) {
             purpose: 'mcu-pdf-upload'
           }
         };
-      }
-      if (name === 'GetObjectCommand') {
-        return { Body: { transformToByteArray: async () => Buffer.from('%PDF-') } };
       }
       return {};
     }
@@ -59,12 +56,12 @@ test('prepare binds a five-minute PDF upload to user and MCU metadata', async ()
     mcuId: 'MCU-1',
     fileName: 'hasil mcu.pdf',
     contentType: 'application/pdf',
-    contentLength: PDF_MAX_BYTES
+    contentLength: PDF_UPLOAD_LIMIT_BYTES - 1
   });
 
   assert.equal(result.expiresIn, 300);
   assert.match(result.objectKey, /^pending\/mcu-uploads\/user-1\//);
-  assert.equal(signedCommands[0].command.input.ContentLength, PDF_MAX_BYTES);
+  assert.equal(signedCommands[0].command.input.ContentLength, PDF_UPLOAD_LIMIT_BYTES - 1);
   assert.deepEqual(signedCommands[0].command.input.Metadata, {
     owner: 'user-1',
     employeeid: 'EMP-1',
@@ -74,7 +71,7 @@ test('prepare binds a five-minute PDF upload to user and MCU metadata', async ()
   assert.equal(signedCommands[0].options.expiresIn, 300);
 });
 
-test('prepare rejects a stored PDF over 5 MB', async () => {
+test('prepare rejects a stored PDF at the exclusive 10 MB limit', async () => {
   const { service } = serviceFixture();
   await assert.rejects(
     service.preparePdfUpload({
@@ -83,7 +80,7 @@ test('prepare rejects a stored PDF over 5 MB', async () => {
       mcuId: 'MCU-1',
       fileName: 'hasil.pdf',
       contentType: 'application/pdf',
-      contentLength: PDF_MAX_BYTES + 1
+      contentLength: PDF_UPLOAD_LIMIT_BYTES
     }),
     error => error.code === 'UPLOAD_SIZE_INVALID'
   );
@@ -114,7 +111,7 @@ test('presigned PUT binds content type without unsupported SDK checksums', async
   assert.equal(url.searchParams.has('x-amz-sdk-checksum-algorithm'), false);
 });
 
-test('confirm verifies PDF header, saves metadata, and removes pending object', async () => {
+test('confirm saves PDF metadata without inspecting scanner-specific bytes', async () => {
   const savedCalls = [];
   const { service, commands } = serviceFixture({
     saveMetadata: async (...args) => {
@@ -133,44 +130,8 @@ test('confirm verifies PDF header, saves metadata, and removes pending object', 
   assert.equal(savedCalls.length, 1);
   assert.deepEqual(
     commands.map(command => command.constructor.name),
-    ['HeadObjectCommand', 'GetObjectCommand', 'CopyObjectCommand', 'DeleteObjectCommand']
+    ['HeadObjectCommand', 'CopyObjectCommand', 'DeleteObjectCommand']
   );
-});
-
-test('confirm deletes pending object when the uploaded header is not PDF', async () => {
-  const { service, commands } = serviceFixture({
-    client: {
-      async send(command) {
-        commands.push(command);
-        if (command.constructor.name === 'HeadObjectCommand') {
-          return {
-            ContentType: 'application/pdf',
-            ContentLength: 1024,
-            Metadata: {
-              owner: 'user-1',
-              employeeid: 'EMP-1',
-              mcuid: 'MCU-1',
-              purpose: 'mcu-pdf-upload'
-            }
-          };
-        }
-        if (command.constructor.name === 'GetObjectCommand') {
-          return { Body: { transformToByteArray: async () => Buffer.from('HELLO') } };
-        }
-        return {};
-      }
-    }
-  });
-
-  await assert.rejects(
-    service.confirmPdfUpload({
-      userId: 'user-1',
-      objectKey: 'pending/mcu-uploads/user-1/upload.pdf',
-      fileName: 'hasil.pdf'
-    }),
-    error => error.code === 'UPLOAD_PDF_INVALID'
-  );
-  assert.equal(commands.at(-1).constructor.name, 'DeleteObjectCommand');
 });
 
 test('confirm cleans final and pending objects when metadata insertion fails', async () => {
@@ -211,9 +172,6 @@ test('confirmed final object remains valid when pending cleanup is deferred', as
               purpose: 'mcu-pdf-upload'
             }
           };
-        }
-        if (name === 'GetObjectCommand') {
-          return { Body: { transformToByteArray: async () => Buffer.from('%PDF-') } };
         }
         if (name === 'DeleteObjectCommand') throw new Error('temporary cleanup failure');
         return {};
