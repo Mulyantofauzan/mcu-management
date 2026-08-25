@@ -7,12 +7,32 @@
  */
 
 const busboy = require('busboy');
-const { uploadFileToStorage, ALLOWED_TYPES, MAX_FILE_SIZE } = require('../../server/r2StorageService');
+const { uploadFileToStorage, MAX_FILE_SIZE } = require('../../server/r2StorageService');
 const { R2DirectUploadService, R2DirectUploadError } = require('../../server/r2DirectUploadService');
 const { setCorsHeaders, requireAuth } = require('../../server/auth-utils');
 
 function authenticatedUserId(auth) {
   return auth?.app_user_id || auth?.sub || auth?.userId || null;
+}
+
+const CONTENT_TYPE_BY_EXTENSION = Object.freeze({
+  pdf: 'application/pdf',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg'
+});
+
+function normalizeMultipartFile(fileName) {
+  const normalized = String(fileName || '')
+    .split(/[\\/]/)
+    .pop()
+    .replace(/[\u0000-\u001f\u007f]/g, '')
+    .trim()
+    .slice(0, 180);
+  const extension = normalized.toLowerCase().split('.').pop();
+  const contentType = CONTENT_TYPE_BY_EXTENSION[extension];
+  if (!normalized || !contentType) return null;
+  return { fileName: normalized, contentType };
 }
 
 function parseJsonBody(req) {
@@ -102,11 +122,11 @@ function handleMultipart(req, res, auth) {
           return;
         }
 
-        const { filename, mimeType } = info;
-        if (!ALLOWED_TYPES[mimeType]) {
+        const normalizedFile = normalizeMultipartFile(info.filename);
+        if (!normalizedFile) {
           errorOccurred = true;
           fileStream.resume();
-          respond(400, { error: 'File type not allowed. Only PDF and images (JPG/PNG) allowed.' });
+          respond(400, { error: 'Format file tidak didukung. Gunakan PDF, PNG, JPG, atau JPEG.' });
           return;
         }
 
@@ -123,7 +143,14 @@ function handleMultipart(req, res, auth) {
           chunks.push(data);
         });
         fileStream.on('end', () => {
-          if (!errorOccurred) file = { filename, mimeType, buffer: Buffer.concat(chunks), size };
+          if (!errorOccurred) {
+            file = {
+              filename: normalizedFile.fileName,
+              mimeType: normalizedFile.contentType,
+              buffer: Buffer.concat(chunks),
+              size
+            };
+          }
         });
         fileStream.on('error', () => {
           errorOccurred = true;
@@ -212,3 +239,4 @@ function createHandler(options = {}) {
 module.exports = createHandler();
 module.exports.createHandler = createHandler;
 module.exports.parseJsonBody = parseJsonBody;
+module.exports.normalizeMultipartFile = normalizeMultipartFile;

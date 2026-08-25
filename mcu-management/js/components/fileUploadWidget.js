@@ -13,16 +13,9 @@
 import { uploadFile, deleteFile, getFilesByMCU } from '../services/supabaseStorageService.js';
 import { isSupabaseEnabled } from '../config/supabase.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';
-import {
-    preparePdfForUpload,
-    getPdfErrorPresentation,
-    formatBytes
-} from '../services/pdfCompressionService.js';
+import { validateMcuFile } from '../services/mcuFilePolicy.mjs';
 import { ensureWorkflowAlerts } from '../utils/workflowErrorPresenter.js';
 import { showConfirm } from '../utils/uiHelpers.js';
-
-const IMAGE_MAX_BYTES = 3 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png']);
 
 export class FileUploadWidget {
     constructor(containerId, options = {}) {
@@ -254,7 +247,7 @@ export class FileUploadWidget {
                     <div class="upload-zone-icon">📁</div>
                     <p class="upload-zone-text">
                         Click to select file or drag & drop
-                        <small>PDF maks. 25MB (target 5MB; fallback asli &lt;10MB), JPG/PNG maks. 3MB</small>
+                        <small>PDF kurang dari 10 MB, PNG/JPG maksimal 3 MB</small>
                     </p>
                 </div>
 
@@ -346,9 +339,7 @@ export class FileUploadWidget {
             tempFileStorage.addFile(this.options.mcuId, prepared.file);
 
             this.isUploading = false;
-            this.showSuccess(prepared.compressed
-                ? `PDF siap: ${formatBytes(prepared.originalSize)} menjadi ${formatBytes(prepared.finalSize)}`
-                : `File siap diunggah: ${prepared.file.name}`);
+            this.showSuccess(`File siap diunggah: ${prepared.file.name}`);
 
             // Add to local list for UI display
             this.addFileToList({
@@ -356,10 +347,7 @@ export class FileUploadWidget {
                 filetype: prepared.file.type,
                 filesize: prepared.file.size,
                 uploadedat: new Date().toISOString(),
-                isTemp: true,
-                compressionSummary: prepared.compressed
-                    ? `${formatBytes(prepared.originalSize)} → ${formatBytes(prepared.finalSize)}`
-                    : null
+                isTemp: true
             });
 
             if (this.options.onUploadComplete) {
@@ -378,43 +366,32 @@ export class FileUploadWidget {
     }
 
     async prepareSelectedFile(file) {
-        if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-            return preparePdfForUpload(file, {
-                onProgress: ({ percent, message }) => this.showProgress(message, percent)
-            });
-        }
-
-        if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
-            const error = new Error('File harus berupa PDF, JPG, atau PNG.');
-            error.code = 'FILE_TYPE_INVALID';
-            throw error;
-        }
-        if (file.size <= 0 || file.size > IMAGE_MAX_BYTES) {
-            const error = new Error('Ukuran JPG/PNG maksimal 3 MB.');
-            error.code = 'IMAGE_TOO_LARGE';
-            throw error;
-        }
-        return {
-            file,
-            originalSize: file.size,
-            finalSize: file.size,
-            compressed: false,
-            method: 'passthrough'
-        };
+        return validateMcuFile(file);
     }
 
     async presentPreparationError(error) {
         const fallback = {
             FILE_TYPE_INVALID: {
                 title: 'Format Tidak Didukung',
-                message: 'File harus berupa PDF, JPG, atau PNG.'
+                message: 'File harus berupa PDF, PNG, JPG, atau JPEG.'
+            },
+            FILE_EMPTY: {
+                title: 'File Kosong',
+                message: 'File kosong tidak dapat diunggah.'
+            },
+            PDF_TOO_LARGE: {
+                title: 'PDF Terlalu Besar',
+                message: 'Ukuran PDF harus kurang dari 10 MB.'
             },
             IMAGE_TOO_LARGE: {
                 title: 'Gambar Terlalu Besar',
                 message: 'Ukuran JPG/PNG maksimal 3 MB.'
             }
         }[error?.code];
-        const presentation = fallback || getPdfErrorPresentation(error);
+        const presentation = fallback || {
+            title: 'File Tidak Dapat Disiapkan',
+            message: error?.message || 'File belum dapat ditambahkan.'
+        };
         this.showError(presentation.message);
         try {
             const Swal = await ensureWorkflowAlerts();

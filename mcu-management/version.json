@@ -1,13 +1,12 @@
 {
-  "version": "1.2.4",
-  "releaseDate": "2026-08-21",
+  "version": "1.2.5",
+  "releaseDate": "2026-08-25",
   "features": [
-    "General .pdf uploads with automatic original-file fallback below 10 MB",
-    "Reliable MCU PDF validation and compression without transferable-buffer corruption",
+    "Passive MCU uploads for PDF, PNG, JPG, and JPEG without content parsing or compression",
+    "Guarded Add MCU form reads with contextual missing-field recovery",
     "Canonical MCU form order across add, edit, and follow-up workflows",
     "Centralized proportional SweetAlert notifications and confirmations",
     "Instant menu transitions without blank full-page loading",
-    "Automatic local PDF compression with a 5 MB target",
     "Direct authenticated PDF upload to Cloudflare R2",
     "Doctor-led MCU approval and repeatable follow-up review",
     "Administrator joining decisions and audited WhatsApp confirmation",

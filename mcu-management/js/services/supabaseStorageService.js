@@ -192,11 +192,12 @@ export async function uploadFileToSupabase(file, employeeId, mcuId, onProgress =
     }
 
     // Validate file type
-    const isPdf = String(file.name || '').toLowerCase().endsWith('.pdf');
-    const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-    if (!isPdf && !allowedImageTypes.includes(file.type)) {
+    const extension = String(file.name || '').toLowerCase().split('.').pop();
+    const isPdf = extension === 'pdf';
+    const isImage = ['png', 'jpg', 'jpeg'].includes(extension);
+    if (!isPdf && !isImage) {
       throw new Error(
-        `File type not allowed. Only PDF and images (JPG/PNG) are supported. Got: ${file.type}`
+        'Format file tidak didukung. Gunakan PDF, PNG, JPG, atau JPEG.'
       );
     }
 

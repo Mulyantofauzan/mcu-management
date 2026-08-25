@@ -84,6 +84,54 @@ test('active production paths do not use native browser dialogs', () => {
   });
 });
 
+test('MCU upload treats supported files as opaque attachments', () => {
+  const widget = read('mcu-management/js/components/fileUploadWidget.js');
+  const service = read('mcu-management/js/services/supabaseStorageService.js');
+  const serviceWorker = read('mcu-management/sw.js');
+
+  assert.match(widget, /mcuFilePolicy\.mjs/);
+  assert.doesNotMatch(widget, /pdfCompression|pdfjs|arrayBuffer\s*\(/i);
+  assert.match(service, /\.pdf|\.png|\.jpe?g/i);
+  assert.doesNotMatch(serviceWorker, /pdfCompression|pdfjs|pdf-lib/i);
+  [
+    'mcu-management/js/services/pdfCompressionPolicy.mjs',
+    'mcu-management/js/services/pdfCompressionService.js',
+    'mcu-management/js/workers/pdfCompressionWorker.mjs'
+  ].forEach(file => assert.equal(fs.existsSync(path.join(root, file)), false, file));
+});
+
+test('both Add MCU handlers use guarded form-scoped field reads', () => {
+  const reader = read('mcu-management/js/utils/mcuFormReader.js');
+  const addEmployee = read('mcu-management/js/pages/tambah-karyawan.js');
+  const manageEmployee = read('mcu-management/js/pages/kelola-karyawan.js');
+
+  assert.match(reader, /form\.querySelector/);
+  assert.match(reader, /MCU_FORM_FIELD_MISSING/);
+  [addEmployee, manageEmployee].forEach(source => {
+    assert.match(source, /createMcuFormReader\(submitForm\)/);
+    assert.doesNotMatch(source, /document\.getElementById\('mcu-doctor'\)\.value/);
+  });
+});
+
+test('every guarded Add MCU field exists inside its submitted form', () => {
+  [
+    ['mcu-management/js/pages/tambah-karyawan.js', 'mcu-management/pages/tambah-karyawan.html'],
+    ['mcu-management/js/pages/kelola-karyawan.js', 'mcu-management/pages/kelola-karyawan.html']
+  ].forEach(([sourceFile, pageFile]) => {
+    const source = read(sourceFile);
+    const page = read(pageFile);
+    const form = page.match(/<form id="mcu-form"[\s\S]*?<\/form>/)?.[0] || '';
+    const fieldIds = new Set(
+      [...source.matchAll(/readField\('([^']+)'\)/g)].map(match => match[1])
+    );
+
+    assert.ok(fieldIds.size > 0, `${sourceFile} must read MCU fields`);
+    fieldIds.forEach(fieldId => {
+      assert.match(form, new RegExp(`id=["']${fieldId}["']`), `${pageFile}: ${fieldId}`);
+    });
+  });
+});
+
 test('doctor signature upload uses a contextual storage error title', () => {
   const presenter = read('mcu-management/js/utils/workflowErrorPresenter.js');
   const profile = read('mcu-management/js/pages/profil-dokter.js');

@@ -10,7 +10,7 @@ import { labService } from '../services/labService.js';
 import { mcuBatchService } from '../services/mcuBatchService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
-import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
+import { showToast, openModal, closeModal, showAlert } from '../utils/uiHelpers.js';
 import { supabaseReady } from '../config/supabase.js';
 import FileUploadWidget from '../components/fileUploadWidget.js';
 import { generateMCUId } from '../utils/idGenerator.js';
@@ -19,6 +19,7 @@ import { createLabResultWidget } from '../components/labResultWidget.js';
 import { workflowService } from '../services/workflowService.js';
 import { workflowIdempotency } from '../utils/workflowIdempotency.js';
 import { presentUploadError, presentWorkflowError } from '../utils/workflowErrorPresenter.js';
+import { createMcuFormReader } from '../utils/mcuFormReader.js';
 
 let searchResults = [];
 let jobTitles = [];
@@ -940,6 +941,7 @@ window.handleAddMCU = async function(event) {
     if (submitForm) submitForm.dataset.submitting = 'true';
 
     try {
+        const readField = createMcuFormReader(submitForm);
         if (!workflowStateKnown) {
             await presentWorkflowError({
                 code: 'WORKFLOW_INTERNAL_ERROR',
@@ -961,8 +963,7 @@ window.handleAddMCU = async function(event) {
         }
 
         // ✅ FIX: Get doctor ID and convert to integer
-        const doctorSelect = document.getElementById('mcu-doctor');
-        const doctorValue = doctorSelect.value;
+        const doctorValue = readField('mcu-doctor');
         const doctorId = doctorValue ? parseInt(doctorValue, 10) : null;
 
         // Debug: Log doctor selection
@@ -975,9 +976,9 @@ window.handleAddMCU = async function(event) {
          * Helper function to get field value or "Lainnya" custom input
          */
         const getFieldValue = (fieldId, otherFieldId) => {
-            const value = document.getElementById(fieldId).value;
+            const value = readField(fieldId);
             if (value === 'Lainnya') {
-                const otherValue = document.getElementById(otherFieldId).value;
+                const otherValue = readField(otherFieldId);
                 return otherValue || null;
             }
             return value || null;
@@ -985,15 +986,15 @@ window.handleAddMCU = async function(event) {
 
         const mcuData = {
             mcuId: generatedMCUIdForAdd,  // Use pre-generated ID
-            employeeId: document.getElementById('mcu-employee-id').value,
-            mcuType: document.getElementById('mcu-type').value,
-            mcuDate: document.getElementById('mcu-date').value,
-            bmi: document.getElementById('mcu-bmi').value || null,
-            bloodPressure: document.getElementById('mcu-bp').value || null,
-            respiratoryRate: document.getElementById('mcu-rr').value || null,
-            pulse: document.getElementById('mcu-pulse').value || null,
-            temperature: document.getElementById('mcu-temp').value || null,
-            chestCircumference: document.getElementById('mcu-chest-circumference').value ? parseFloat(document.getElementById('mcu-chest-circumference').value) : null,
+            employeeId: readField('mcu-employee-id'),
+            mcuType: readField('mcu-type'),
+            mcuDate: readField('mcu-date'),
+            bmi: readField('mcu-bmi') || null,
+            bloodPressure: readField('mcu-bp') || null,
+            respiratoryRate: readField('mcu-rr') || null,
+            pulse: readField('mcu-pulse') || null,
+            temperature: readField('mcu-temp') || null,
+            chestCircumference: readField('mcu-chest-circumference') ? parseFloat(readField('mcu-chest-circumference')) : null,
             // 8-field vision structure with "Lainnya" support
             visionDistantUnaideLeft: getFieldValue('mcu-vision-distant-unaided-left', 'mcu-vision-distant-unaided-left-other'),
             visionDistantUnaideRight: getFieldValue('mcu-vision-distant-unaided-right', 'mcu-vision-distant-unaided-right-other'),
@@ -1008,18 +1009,18 @@ window.handleAddMCU = async function(event) {
             xray: getFieldValue('mcu-xray', 'mcu-xray-other'),
             ekg: getFieldValue('mcu-ekg', 'mcu-ekg-other'),
             treadmill: getFieldValue('mcu-treadmill', 'mcu-treadmill-other'),
-            hbsag: document.getElementById('mcu-hbsag').value || null,
+            hbsag: readField('mcu-hbsag') || null,
             napza: getFieldValue('mcu-napza', 'mcu-napza-other'),
             colorblind: getFieldValue('mcu-colorblind', 'mcu-colorblind-other'),
-            smokingStatus: document.getElementById('mcu-smoking-status').value || null,
-            exerciseFrequency: document.getElementById('mcu-exercise-frequency').value || null,
+            smokingStatus: readField('mcu-smoking-status') || null,
+            exerciseFrequency: readField('mcu-exercise-frequency') || null,
             doctor: doctorId,
-            recipient: document.getElementById('mcu-recipient').value || null,
-            keluhanUtama: document.getElementById('mcu-keluhan').value || null,
-            diagnosisKerja: document.getElementById('mcu-diagnosis').value || null,
-            alasanRujuk: document.getElementById('mcu-alasan').value || null,
-            initialResult: workflowEnabled ? null : document.getElementById('mcu-result').value,
-            initialNotes: workflowEnabled ? null : document.getElementById('mcu-notes').value,
+            recipient: readField('mcu-recipient') || null,
+            keluhanUtama: readField('mcu-keluhan') || null,
+            diagnosisKerja: readField('mcu-diagnosis') || null,
+            alasanRujuk: readField('mcu-alasan') || null,
+            initialResult: workflowEnabled ? null : readField('mcu-result'),
+            initialNotes: workflowEnabled ? null : readField('mcu-notes'),
             // Medical and Family History
             medicalHistories: getMedicalHistoryData(),
             familyHistories: getFamilyHistoryData()
@@ -1164,6 +1165,15 @@ window.handleAddMCU = async function(event) {
 
     } catch (error) {
         hideUnifiedLoading();
+        if (error?.code === 'MCU_FORM_FIELD_MISSING') {
+            await showAlert({
+                icon: 'warning',
+                title: 'Form MCU Belum Siap',
+                text: `Komponen ${error.fieldId} belum termuat. Tutup form, buka kembali, lalu coba simpan lagi.`,
+                confirmButtonText: 'Tutup'
+            });
+            return;
+        }
         showToast('Gagal menambah MCU: ' + error.message, 'error');
     } finally {
         if (submitForm) delete submitForm.dataset.submitting;

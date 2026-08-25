@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { createHandler } = require('../../api/compress-upload');
+const { createHandler, normalizeMultipartFile } = require('../../api/compress-upload');
 
 function responseFixture() {
   return {
@@ -92,4 +92,20 @@ test('unknown JSON action returns a specific 400 response', async () => {
 
   assert.equal(res.statusCode, 400);
   assert.equal(res.payload.code, 'UPLOAD_ACTION_INVALID');
+});
+
+test('multipart format follows filename extension instead of browser MIME', () => {
+  assert.deepEqual(normalizeMultipartFile('HASIL.PDF'), {
+    fileName: 'HASIL.PDF',
+    contentType: 'application/pdf'
+  });
+  assert.deepEqual(normalizeMultipartFile('scan.PNG'), {
+    fileName: 'scan.PNG',
+    contentType: 'image/png'
+  });
+  assert.deepEqual(normalizeMultipartFile('foto.jpeg'), {
+    fileName: 'foto.jpeg',
+    contentType: 'image/jpeg'
+  });
+  assert.equal(normalizeMultipartFile('laporan.docx'), null);
 });

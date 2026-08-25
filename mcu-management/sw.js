@@ -14,7 +14,7 @@
  * 3. Stale-while-revalidate: Master data (fetch fresh, serve stale immediately)
  */
 
-const CACHE_VERSION = 'madis-v1.2.4';
+const CACHE_VERSION = 'madis-v1.2.5';
 const MAX_CACHE_ENTRIES = 200;
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
@@ -30,9 +30,8 @@ const STATIC_ASSETS = [
   '/css/workflow.css',
   '/js/appBootstrap.js',
   '/js/services/workflowService.js',
-  '/js/services/pdfCompressionService.js',
-  '/js/services/pdfCompressionPolicy.mjs',
-  '/js/workers/pdfCompressionWorker.mjs',
+  '/js/services/mcuFilePolicy.mjs',
+  '/js/utils/mcuFormReader.js',
   '/js/utils/mcuFormOrder.js',
   '/js/utils/uiHelpers.js',
   '/js/utils/workflowErrorPresenter.js',
@@ -41,9 +40,6 @@ const STATIC_ASSETS = [
   '/assets/vendor/chartjs/chartjs-plugin-datalabels.min.js',
   '/assets/vendor/dexie/dexie.min.js',
   '/assets/vendor/pako/pako.min.js',
-  '/assets/vendor/pdfjs/pdf.min.mjs',
-  '/assets/vendor/pdfjs/pdf.worker.min.mjs',
-  '/assets/vendor/pdf-lib/pdf-lib.esm.min.js',
   '/assets/vendor/sweetalert2/sweetalert2.all.min.js',
   '/assets/vendor/sweetalert2/sweetalert2.min.css',
   '/assets/images/favicon.ico',
