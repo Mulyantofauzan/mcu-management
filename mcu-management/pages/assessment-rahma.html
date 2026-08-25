@@ -120,21 +120,6 @@
     <script src="../js/sidebar-manager.js"></script>
     <script type="module">
         import { initAssessmentRahmaDAshboard } from '../js/pages/assessment-rahma-dashboard.js';
-        import { authService } from '../js/services/authService.js';
-        import { showConfirm } from '../js/utils/uiHelpers.js';
-
-        // Handle logout
-        window.handleLogout = async function() {
-            const accepted = await showConfirm({
-                title: 'Keluar dari MADIS?',
-                text: 'Sesi Anda akan diakhiri.',
-                confirmButtonText: 'Ya, Keluar',
-                destructive: false
-            });
-            if (accepted) {
-                authService.logout();
-            }
-        };
 
         // Initialize dashboard immediately when DOM is ready
         async function init() {

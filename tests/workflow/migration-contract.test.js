@@ -11,7 +11,8 @@ const migrationFiles = [
   'migrations/20260802_04_mcu_workflow_security.sql',
   'migrations/20260802_05_mcu_workflow_operations.sql',
   'migrations/20260802_06_mcu_followup_evidence.sql',
-  'migrations/20260802_07_mcu_analytics_views.sql'
+  'migrations/20260802_07_mcu_analytics_views.sql',
+  'migrations/20260825_01_admin_operational_access.sql'
 ];
 
 function read(relativePath) {
@@ -124,4 +125,14 @@ test('expiry preview is server-authorized and bounded', () => {
   assert.match(analytics, /workflow_require_actor\(p_actor_user_id, ARRAY\['Admin'\]\)/);
   assert.match(analytics, /p_expiry_months < 1 OR p_expiry_months > 120/);
   assert.match(analytics, /TO service_role/);
+});
+
+test('Administrator inherits Petugas database operations', () => {
+  const access = read(migrationFiles[7]);
+
+  assert.match(access, /actor_role = 'Admin'[\s\S]*'Petugas' = ANY\(p_allowed_roles\)/);
+  assert.match(access, /actor_role NOT IN \('Admin', 'Petugas'\)/);
+  assert.match(access, /workflow_guard_mcus/);
+  assert.match(access, /workflow_guard_raw_child/);
+  assert.doesNotMatch(access, /doctor_decision|ARRAY\['Dokter', 'Admin'\]/);
 });

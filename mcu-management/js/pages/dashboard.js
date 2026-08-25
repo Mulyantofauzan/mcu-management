@@ -15,7 +15,6 @@ import { masterDataService } from '../services/masterDataService.js';
 import { database } from '../services/database.js';
 import { formatDateDisplay, isDateInRange } from '../utils/dateHelpers.js';
 import { showConfirm, showToast } from '../utils/uiHelpers.js';
-import { sessionManager } from '../utils/sessionManager.js';
 import { checkAndSeedIfEmpty } from '../seedData.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 import storageDiagnostic from '../utils/storageDiagnostic.js';  // ✅ Diagnostic tools for file upload troubleshooting
@@ -1137,10 +1136,6 @@ window.resetDateFilter = async function() {
 
   await loadData();
   showToast('Semua filter direset (tampilkan semua data)', 'success');
-};
-
-window.handleLogout = function() {
-  sessionManager.logout('User initiated logout');
 };
 
 window.toggleDebugPanel = function() {

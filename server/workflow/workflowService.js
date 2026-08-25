@@ -122,7 +122,7 @@ class WorkflowService {
       counts.review = result.count || 0;
     }
 
-    if (settings.workflowEnabled && user.role === 'Petugas') {
+    if (settings.workflowEnabled && ['Admin', 'Petugas'].includes(user.role)) {
       const { data } = await this.query(
         this.supabase
           .from('mcus')

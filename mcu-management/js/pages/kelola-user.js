@@ -405,10 +405,6 @@ window.deleteUser = async function(userId) {
     }
 };
 
-window.handleLogout = function() {
-    authService.logout();
-};
-
 // ✅ FIX: Wait for Supabase to be ready before initializing
 supabaseReady.then(() => {
   init();

@@ -285,10 +285,10 @@ async function configureWorkflowMode() {
         const bootstrap = await workflowService.bootstrap();
         workflowEnabled = bootstrap.workflowEnabled === true;
         workflowStateKnown = true;
-        if (workflowEnabled && bootstrap.role !== 'Petugas') {
+        if (workflowEnabled && !['Admin', 'Petugas'].includes(bootstrap.role)) {
             await presentWorkflowError({
                 code: 'WORKFLOW_FORBIDDEN',
-                message: 'Input data MCU hanya dapat dilakukan Petugas.'
+                message: 'Input data MCU hanya dapat dilakukan Petugas atau Administrator.'
             });
             window.location.href = '../index.html';
             return;
@@ -1204,10 +1204,6 @@ function disableMCUForm() {
         };
     }
 }
-
-window.handleLogout = function() {
-    authService.logout();
-};
 
 // Initialize
 // ✅ FIX: Wait for Supabase to be ready before initializing

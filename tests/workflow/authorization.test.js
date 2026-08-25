@@ -57,3 +57,15 @@ test('unknown action is rejected before service execution', () => {
     error => error.code === WORKFLOW_ERROR_CODES.ACTION_NOT_FOUND
   );
 });
+
+test('Admin inherits Petugas operations but not Doctor decisions', () => {
+  const admin = { role: 'Admin' };
+
+  ['petugas-queue', 'submit-review', 'submit-followup'].forEach(action => {
+    assert.doesNotThrow(() => authorizeAction(action, admin), action);
+  });
+  assert.throws(
+    () => authorizeAction('doctor-decision', admin),
+    error => error.code === WORKFLOW_ERROR_CODES.FORBIDDEN
+  );
+});

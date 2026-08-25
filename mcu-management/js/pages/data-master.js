@@ -20,7 +20,6 @@ window.closeCrudModal = function() { /* Will be overwritten by actual implementa
 window.handleSubmit = async function(event) { /* Will be overwritten by actual implementation */ };
 window.editItem = async function(id) { /* Will be overwritten by actual implementation */ };
 window.deleteItem = async function(id) { /* Will be overwritten by actual implementation */ };
-window.handleLogout = function() { /* Will be overwritten by actual implementation */ };
 
 /**
  * Show unified loading overlay
@@ -577,10 +576,6 @@ window.deleteItem = function(id) {
             }
         }
     );
-};
-
-window.handleLogout = function() {
-    authService.logout();
 };
 
 // ✅ FIX: Wait for Supabase to be ready before initializing

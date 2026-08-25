@@ -269,6 +269,16 @@
     }
   }
 
+  function clearSessionAndRedirect() {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('madisAccessToken');
+    localStorage.removeItem('currentUser');
+    sessionStorage.clear();
+    window.location.href = window.location.pathname.includes('/pages/')
+      ? 'login.html'
+      : 'pages/login.html';
+  }
+
   async function handleLogout() {
     let accepted = false;
     try {
@@ -280,16 +290,10 @@
         destructive: false
       });
     } catch (error) {
-      return;
+      accepted = true;
     }
     if (!accepted) return;
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('madisAccessToken');
-    localStorage.removeItem('currentUser');
-    sessionStorage.clear();
-    window.location.href = window.location.pathname.includes('/pages/')
-      ? 'login.html'
-      : 'pages/login.html';
+    clearSessionAndRedirect();
   }
 
   async function initialize() {

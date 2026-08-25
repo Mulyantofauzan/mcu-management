@@ -154,6 +154,35 @@ test('sidebar has one canonical role-aware menu definition', () => {
   assert.doesNotMatch(read('mcu-management/js/utils/sidebarInit.js'), /pageMap|menu-kelola-user/);
 });
 
+test('sidebar owns the only active logout handler', () => {
+  const sidebar = read('mcu-management/js/sidebar-manager.js');
+  const styles = read('mcu-management/css/sidebar.css');
+  const pageSources = [
+    ...fs.readdirSync(path.join(root, 'mcu-management/js/pages'))
+      .filter(file => file.endsWith('.js'))
+      .map(file => read(`mcu-management/js/pages/${file}`)),
+    ...authenticatedPages.map(read)
+  ].join('\n');
+
+  assert.match(sidebar, /addEventListener\('click', handleLogout\)/);
+  assert.match(sidebar, /clearSessionAndRedirect/);
+  assert.match(styles, /\.sidebar \.sidebar-logout\s*{[\s\S]*cursor:\s*pointer;/);
+  assert.doesNotMatch(pageSources, /window\.handleLogout\s*=/);
+});
+
+test('Administrator can use Petugas MCU entry and follow-up forms', () => {
+  const addEmployee = read('mcu-management/js/pages/tambah-karyawan.js');
+  const manageEmployee = read('mcu-management/js/pages/kelola-karyawan.js');
+  const followUp = read('mcu-management/js/pages/follow-up.js');
+
+  assert.match(addEmployee, /\['Admin', 'Petugas'\]\.includes\(bootstrap\.role\)/);
+  assert.match(manageEmployee, /authService\.hasRole\('Admin', 'Petugas'\)/);
+  assert.match(followUp, /\['Admin', 'Petugas'\]\.includes\(bootstrap\.role\)/);
+  [addEmployee, manageEmployee, followUp].forEach(source => {
+    assert.doesNotMatch(source, /role !== 'Petugas'/);
+  });
+});
+
 test('menu navigation progressively enhances native links', () => {
   const source = read('mcu-management/js/sidebar-manager.js');
   const styles = read('mcu-management/css/sidebar.css');

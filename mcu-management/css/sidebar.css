@@ -257,6 +257,7 @@ body.initialized .navigation-startup-overlay {
   height: 2.25rem;
   flex: 0 0 2.25rem;
   border-radius: 0.5rem;
+  cursor: pointer;
   transition: color 0.15s ease, background-color 0.15s ease;
 }
 

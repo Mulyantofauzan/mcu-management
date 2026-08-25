@@ -1,7 +1,9 @@
 {
-  "version": "1.2.6",
+  "version": "1.2.7",
   "releaseDate": "2026-08-25",
   "features": [
+    "Administrator operational access for employee, MCU, correction, and follow-up workflows",
+    "Canonical reliable logout handler across every authenticated page",
     "Visible logout control across all role sidebars",
     "Production MCU approval workflow activation",
     "Passive MCU uploads for PDF, PNG, JPG, and JPEG without content parsing or compression",

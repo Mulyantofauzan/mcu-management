@@ -330,7 +330,7 @@ async function loadCorrectionQueue() {
     const user = authService.getCurrentUser();
     if (!section || !list || !count) return;
 
-    if (!workflowEnabled || user?.role !== 'Petugas') {
+    if (!workflowEnabled || !authService.hasRole('Admin', 'Petugas')) {
         section.classList.add('hidden');
         return;
     }
@@ -1071,13 +1071,12 @@ function populateDoctorDropdown(selectId) {
 
 window.addMCUForEmployee = async function(employeeId) {
     try {
-        const currentUser = authService.getCurrentUser();
         if (!workflowStateKnown) {
             await presentWorkflowError({ code: 'WORKFLOW_NETWORK_ERROR', message: 'Status workflow belum dapat diverifikasi.' });
             return;
         }
-        if (workflowEnabled && currentUser?.role !== 'Petugas') {
-            await presentWorkflowError({ code: 'WORKFLOW_FORBIDDEN', message: 'Hanya Petugas yang dapat mencatat MCU baru.' });
+        if (workflowEnabled && !authService.hasRole('Admin', 'Petugas')) {
+            await presentWorkflowError({ code: 'WORKFLOW_FORBIDDEN', message: 'Hanya Petugas atau Administrator yang dapat mencatat MCU baru.' });
             return;
         }
 
@@ -1483,10 +1482,9 @@ window.viewMCUDetail = async function(mcuId) {
             }
         }
 
-        const currentUser = authService.getCurrentUser();
         const workflowStatus = currentWorkflowDetail?.mcu?.workflow_status || mcu.workflowStatus;
         const canCorrect = workflowEnabled
-            && currentUser?.role === 'Petugas'
+            && authService.hasRole('Admin', 'Petugas')
             && workflowStatus === 'correction_required';
         const canUseLegacyActions = workflowStateKnown && !workflowEnabled;
         document.getElementById('edit-mcu-button')?.classList.toggle('hidden', !(canCorrect || canUseLegacyActions));
@@ -1990,8 +1988,7 @@ window.editMCU = async function() {
             currentWorkflowDetail = currentWorkflowDetail?.mcu?.mcu_id === mcu.mcuId
                 ? currentWorkflowDetail
                 : await workflowService.reviewDetail(mcu.mcuId);
-            const user = authService.getCurrentUser();
-            if (user?.role !== 'Petugas' || currentWorkflowDetail.mcu.workflow_status !== 'correction_required') {
+            if (!authService.hasRole('Admin', 'Petugas') || currentWorkflowDetail.mcu.workflow_status !== 'correction_required') {
                 await presentWorkflowError({
                     code: 'WORKFLOW_INVALID_TRANSITION',
                     message: 'MCU ini tidak berada pada antrean koreksi Petugas.'
@@ -2331,13 +2328,12 @@ window.handleEditMCU = async function(event) {
     const mcuId = document.getElementById('edit-mcu-id').value;
 
     try {
-        const currentUser = authService.getCurrentUser();
         if (!workflowStateKnown) {
             await presentWorkflowError({ code: 'WORKFLOW_NETWORK_ERROR', message: 'Status workflow belum dapat diverifikasi.' });
             return;
         }
         if (workflowEnabled && (
-            currentUser?.role !== 'Petugas'
+            !authService.hasRole('Admin', 'Petugas')
             || currentWorkflowDetail?.mcu?.mcu_id !== mcuId
             || currentWorkflowDetail?.mcu?.workflow_status !== 'correction_required'
         )) {
@@ -3158,10 +3154,6 @@ function setupCustomDiseaseHandlersForEdit() {
 
 window.exportData = function() {
     exportEmployeeData(filteredEmployees, jobTitles, departments, 'data_karyawan');
-};
-
-window.handleLogout = function() {
-    authService.logout();
 };
 
 // ✅ FIX: Wait for Supabase to be ready before initializing

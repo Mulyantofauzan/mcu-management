@@ -317,8 +317,8 @@ async function configureWorkflowMode() {
     const bootstrap = await workflowService.bootstrap();
     workflowEnabled = bootstrap.workflowEnabled === true;
     workflowStateKnown = true;
-    if (workflowEnabled && bootstrap.role !== 'Petugas') {
-      await presentWorkflowError({ code: 'WORKFLOW_FORBIDDEN', message: 'Bukti follow-up hanya dapat diisi Petugas.' });
+    if (workflowEnabled && !['Admin', 'Petugas'].includes(bootstrap.role)) {
+      await presentWorkflowError({ code: 'WORKFLOW_FORBIDDEN', message: 'Bukti follow-up hanya dapat diisi Petugas atau Administrator.' });
       window.location.href = '../index.html';
       return;
     }
@@ -1317,10 +1317,6 @@ function displayChangeHistory(changes) {
     loadFollowUpList();
   }, 2000);
 }
-
-window.handleLogout = function() {
-  authService.logout();
-};
 
 // Initialize page when ready
 supabaseReady.then(() => {

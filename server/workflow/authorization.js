@@ -66,7 +66,9 @@ function authorizeAction(action, user) {
   if (!allowedRoles) {
     throw new WorkflowError(WORKFLOW_ERROR_CODES.ACTION_NOT_FOUND);
   }
-  if (!allowedRoles.includes(user.role)) {
+  const allowed = allowedRoles.includes(user.role)
+    || (user.role === 'Admin' && allowedRoles.includes('Petugas'));
+  if (!allowed) {
     throw new WorkflowError(WORKFLOW_ERROR_CODES.FORBIDDEN);
   }
 }
