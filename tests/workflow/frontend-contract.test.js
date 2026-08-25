@@ -141,12 +141,16 @@ test('doctor signature upload uses a contextual storage error title', () => {
 
 test('sidebar has one canonical role-aware menu definition', () => {
   const source = read('mcu-management/js/sidebar-manager.js');
+  const styles = read('mcu-management/css/sidebar.css');
   assert.match(source, /Admin:/);
   assert.match(source, /Petugas:/);
   assert.match(source, /Dokter:/);
   assert.match(source, /keputusan-bergabung\.html/);
   assert.match(source, /validasi-mcu\.html/);
   assert.match(source, /\/api\/workflow\?action=bootstrap/);
+  assert.match(source, /class="sidebar-logout/);
+  assert.match(source, /aria-label="Keluar dari aplikasi"/);
+  assert.match(styles, /\.sidebar \.sidebar-logout svg\s*{[\s\S]*width:\s*1\.125rem;[\s\S]*height:\s*1\.125rem;/);
   assert.doesNotMatch(read('mcu-management/js/utils/sidebarInit.js'), /pageMap|menu-kelola-user/);
 });
 

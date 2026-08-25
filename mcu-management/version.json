@@ -1,7 +1,9 @@
 {
-  "version": "1.2.5",
+  "version": "1.2.6",
   "releaseDate": "2026-08-25",
   "features": [
+    "Visible logout control across all role sidebars",
+    "Production MCU approval workflow activation",
     "Passive MCU uploads for PDF, PNG, JPG, and JPEG without content parsing or compression",
     "Guarded Add MCU form reads with contextual missing-field recovery",
     "Canonical MCU form order across add, edit, and follow-up workflows",

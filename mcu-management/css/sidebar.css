@@ -260,6 +260,13 @@ body.initialized .navigation-startup-overlay {
   transition: color 0.15s ease, background-color 0.15s ease;
 }
 
+.sidebar .sidebar-logout svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex: 0 0 1.125rem;
+  pointer-events: none;
+}
+
 .sidebar .sidebar-logout:hover {
   color: #dc2626;
   background: #fef2f2;
