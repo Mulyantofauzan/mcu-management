@@ -132,6 +132,30 @@ test('every guarded Add MCU field exists inside its submitted form', () => {
   });
 });
 
+test('canonical MCU ordering keeps persistent fields outside dynamic lab containers', () => {
+  const order = read('mcu-management/js/utils/mcuFormOrder.js');
+  const pages = [
+    'mcu-management/pages/tambah-karyawan.html',
+    'mcu-management/pages/kelola-karyawan.html',
+    'mcu-management/pages/follow-up.html'
+  ];
+
+  assert.match(order, /data-mcu-target="laboratory-static"/);
+  assert.match(order, /appendField\(form, '-hbsag', labStatic\)/);
+  assert.match(order, /appendField\(form, '-napza', labStatic\)/);
+  assert.doesNotMatch(order, /appendField\(form, '-(?:hbsag|napza)', lab\)/);
+
+  pages.forEach(pageFile => {
+    const page = read(pageFile);
+    const forms = [...page.matchAll(/<form[^>]*data-mcu-canonical-order[\s\S]*?<\/form>/g)];
+    assert.ok(forms.length > 0, `${pageFile} must have a canonical MCU form`);
+    forms.forEach(({ 0: form }) => {
+      assert.match(form, /data-mcu-target="laboratory"/);
+      assert.match(form, /data-mcu-target="laboratory-static"/);
+    });
+  });
+});
+
 test('doctor signature upload uses a contextual storage error title', () => {
   const presenter = read('mcu-management/js/utils/workflowErrorPresenter.js');
   const profile = read('mcu-management/js/pages/profil-dokter.js');

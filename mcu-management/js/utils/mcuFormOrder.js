@@ -17,12 +17,12 @@ export function sortByMcuOrder(nodes) {
 export function applyCanonicalMcuFormOrder(root = document) {
   root.querySelectorAll('form[data-mcu-canonical-order]').forEach((form) => {
     const metadata = form.querySelector('[data-mcu-target="metadata"]');
-    const lab = form.querySelector('[data-mcu-target="laboratory"]');
+    const labStatic = form.querySelector('[data-mcu-target="laboratory-static"]');
     const supporting = form.querySelector('[data-mcu-target="supporting"]');
 
     appendField(form, '-doctor', metadata);
-    appendField(form, '-hbsag', lab);
-    appendField(form, '-napza', lab);
+    appendField(form, '-hbsag', labStatic);
+    appendField(form, '-napza', labStatic);
 
     const colorBlind = directField(form, '-colorblind');
     if (colorBlind) {

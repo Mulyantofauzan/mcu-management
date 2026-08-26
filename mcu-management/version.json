@@ -1,7 +1,8 @@
 {
-  "version": "1.2.7",
-  "releaseDate": "2026-08-25",
+  "version": "1.2.8",
+  "releaseDate": "2026-08-27",
   "features": [
+    "Persistent HBsAg and NAPZA fields across dynamic laboratory form refreshes",
     "Administrator operational access for employee, MCU, correction, and follow-up workflows",
     "Canonical reliable logout handler across every authenticated page",
     "Visible logout control across all role sidebars",
