@@ -121,6 +121,32 @@ test('joining pagination normalizes invalid values and caps page size', () => {
   });
 });
 
+test('Administrator badge counts only candidates ready for a joining decision', async () => {
+  const { supabase, calls } = queryFixture({
+    app_settings: [{
+      data: [{ setting_key: 'mcu_approval_workflow_enabled', setting_value: true }],
+      error: null
+    }],
+    mcus: [{ data: [], error: null }],
+    employees: [{ data: null, count: 3, error: null }]
+  });
+  const service = new WorkflowService(supabase);
+
+  const result = await service.getBootstrap({ role: 'Admin' });
+
+  assert.equal(result.counts.joining, 3);
+  assert.ok(calls.some(call => call.table === 'employees'
+    && call.method === 'select'
+    && call.args[0].includes('mcus!inner')));
+  assert.ok(calls.some(call => call.table === 'employees'
+    && call.method === 'eq'
+    && call.args[0] === 'mcus.workflow_status'
+    && call.args[1] === 'completed'));
+  assert.ok(calls.some(call => call.table === 'employees'
+    && call.method === 'in'
+    && call.args[0] === 'mcus.current_medical_result'));
+});
+
 test('waiting pagination counts only candidates with terminal MCU records', async () => {
   const mcu = {
     mcu_id: 'MCU-2',

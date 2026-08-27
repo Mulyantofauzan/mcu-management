@@ -169,9 +169,12 @@ class WorkflowService {
       const result = await this.query(
         this.supabase
           .from('employees')
-          .select('employee_id', { count: 'exact', head: true })
+          .select('employee_id, mcus!inner(mcu_id)', { count: 'exact', head: true })
           .eq('joining_status', 'candidate')
           .is('deleted_at', null)
+          .eq('mcus.workflow_status', 'completed')
+          .is('mcus.deleted_at', null)
+          .in('mcus.current_medical_result', TERMINAL_MEDICAL_RESULTS)
       );
       counts.joining = result.count || 0;
     }
