@@ -75,13 +75,12 @@ const ALLOWED_TYPES = {
 /**
  * Helper function to get employee name by ID
  */
-async function getEmployeeName(employeeId) {
+async function getEmployeeName(employeeId, supabase = getSupabaseAdmin()) {
   try {
-    const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from('employees')
       .select('name')
-      .eq('employeeid', employeeId)
+      .eq('employee_id', employeeId)
       .single();
 
     if (error || !data) {
@@ -94,12 +93,11 @@ async function getEmployeeName(employeeId) {
   }
 }
 
-async function employeeExists(employeeId) {
-  const supabase = getSupabaseAdmin();
+async function employeeExists(employeeId, supabase = getSupabaseAdmin()) {
   const { data, error } = await supabase
     .from('employees')
-    .select('employeeid')
-    .eq('employeeid', employeeId)
+    .select('employee_id')
+    .eq('employee_id', employeeId)
     .maybeSingle();
   if (error) throw error;
   return Boolean(data);
