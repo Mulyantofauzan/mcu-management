@@ -2,17 +2,17 @@
  * Supabase Storage Upload Service
  *
  * Frontend service untuk upload files ke Cloudflare R2
- * - PDF target 5MB, fallback upload below 10MB
- * - JPG/PNG max 3MB
- * - Supported: PDF, JPG, PNG
+ * - PDF below 10 MiB; JPG/PNG up to 3 MiB
+ * - All supported files upload directly to R2 through signed URLs
  * - Upload tracking dengan progress callback
  *
  * Usage:
- * const result = await uploadFileToSupabase(file, employeeId, mcuId, progressCallback);
+ * const result = await uploadFileToSupabase(file, uploadContext, progressCallback);
  */
 
 import { showToast } from '../utils/uiHelpers.js';
 import { authService } from './authService.js';
+import { validateMcuFile } from './mcuFilePolicy.mjs';
 
 function getAuthHeaders(extraHeaders = {}) {
   const token = authService.getAccessToken();
@@ -20,9 +20,6 @@ function getAuthHeaders(extraHeaders = {}) {
     ? { ...extraHeaders, Authorization: `Bearer ${token}` }
     : extraHeaders;
 }
-
-const PDF_UPLOAD_LIMIT = 10 * 1024 * 1024;
-const IMAGE_MAX_SIZE = 3 * 1024 * 1024;
 
 async function postUploadAction(payload) {
   const response = await fetch('/api/compress-upload', {
@@ -36,6 +33,7 @@ async function postUploadAction(payload) {
     error.code = result.code
       || (response.status === 401 ? 'UPLOAD_UNAUTHORIZED' : 'UPLOAD_API_FAILED');
     error.status = response.status;
+    error.requestId = result.requestId;
     throw error;
   }
   return result;
@@ -69,12 +67,12 @@ function putFileToSignedUrl(file, upload, onProgress) {
       }
     });
     xhr.addEventListener('error', () => {
-      const error = new Error('Koneksi terputus saat mengunggah PDF.');
+      const error = new Error('Koneksi terputus saat mengunggah file.');
       error.code = 'UPLOAD_NETWORK_ERROR';
       reject(error);
     });
     xhr.addEventListener('abort', () => {
-      const error = new Error('Upload PDF dibatalkan.');
+      const error = new Error('Upload file dibatalkan.');
       error.code = 'UPLOAD_CANCELLED';
       reject(error);
     });
@@ -82,30 +80,26 @@ function putFileToSignedUrl(file, upload, onProgress) {
   });
 }
 
-async function uploadPdfDirect(file, employeeId, mcuId, onProgress) {
-  if (file.size >= PDF_UPLOAD_LIMIT) {
-    throw new Error('PDF harus berukuran kurang dari 10 MB setelah persiapan.');
-  }
-
+async function uploadDirect(file, context, onProgress) {
   let lastError;
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const prepared = await postUploadAction({
-      action: 'prepare-pdf-upload',
-      employeeId,
-      mcuId,
+      action: 'prepare-file-upload',
+      employeeId: context.employeeId,
+      mcuId: context.mcuId,
       fileName: file.name,
-      contentType: 'application/pdf',
       contentLength: file.size
     });
     try {
       await putFileToSignedUrl(file, prepared.upload, onProgress);
       const confirmed = await postUploadAction({
-        action: 'confirm-pdf-upload',
+        action: 'confirm-file-upload',
         objectKey: prepared.upload.objectKey,
         fileName: file.name
       });
       return {
         success: true,
+        fileId: confirmed.file.id,
         fileName: confirmed.file.name,
         originalSize: confirmed.file.size,
         type: confirmed.file.type,
@@ -123,121 +117,67 @@ async function uploadPdfDirect(file, employeeId, mcuId, onProgress) {
   throw lastError;
 }
 
-function uploadMultipartFile(file, employeeId, mcuId, onProgress) {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('employeeId', employeeId);
-  formData.append('mcuId', mcuId);
-  const xhr = new XMLHttpRequest();
+function currentUserId() {
+  const user = authService.getCurrentUser() || {};
+  return user.userId || user.user_id || user.id || null;
+}
 
-  return new Promise((resolve, reject) => {
-    if (xhr.upload && onProgress) {
-      xhr.upload.addEventListener('progress', (event) => {
-        if (event.lengthComputable) {
-          const percent = Math.round((event.loaded / event.total) * 100);
-          onProgress(event.loaded, event.total, `Mengunggah: ${percent}%`);
-        }
-      });
-    }
-    xhr.addEventListener('load', () => {
-      if (xhr.status === 200) {
-        try {
-          const response = JSON.parse(xhr.responseText);
-          resolve({
-            success: true,
-            fileName: file.name,
-            originalSize: response.file.size,
-            type: response.file.type,
-            publicUrl: response.storage.publicUrl,
-            storagePath: response.storage.path,
-            message: response.message
-          });
-        } catch (error) {
-          reject(new Error(`Failed to parse response: ${error.message}`));
-        }
-      } else {
-        try {
-          const errorResponse = JSON.parse(xhr.responseText);
-          reject(new Error(errorResponse.error || `Upload failed with status ${xhr.status}`));
-        } catch {
-          reject(new Error(`Upload failed with status ${xhr.status}`));
-        }
-      }
-    });
-    xhr.addEventListener('error', () => reject(new Error('Network error during upload')));
-    xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')));
-    xhr.open('POST', '/api/compress-upload');
-    const token = authService.getAccessToken();
-    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-    xhr.send(formData);
+function normalizeUploadContext(contextOrEmployeeId, mcuId = null, userId = null) {
+  const source = contextOrEmployeeId && typeof contextOrEmployeeId === 'object'
+    ? contextOrEmployeeId
+    : { employeeId: contextOrEmployeeId, mcuId, userId };
+  const context = Object.freeze({
+    employeeId: String(source.employeeId || '').normalize('NFKC').trim(),
+    mcuId: String(source.mcuId || '').normalize('NFKC').trim(),
+    userId: String(source.userId || currentUserId() || '').normalize('NFKC').trim()
   });
+  if (!context.employeeId || !context.mcuId || !context.userId) {
+    const error = new Error('Konteks Employee ID, MCU ID, atau pengguna tidak lengkap.');
+    error.code = 'UPLOAD_CONTEXT_INVALID';
+    throw error;
+  }
+  return context;
 }
 
 /**
  * Upload file ke Cloudflare R2
  * @param {File} file - File object dari input
- * @param {string} employeeId - Employee ID
- * @param {string} mcuId - MCU ID
+ * @param {Object|string} contextOrEmployeeId - Immutable context or legacy Employee ID
+ * @param {string|Function} mcuIdOrProgress - Legacy MCU ID or progress callback
  * @param {Function} onProgress - Optional progress callback (current, total, message)
  * @returns {Promise<Object>} Upload result dengan storage URL
  */
-export async function uploadFileToSupabase(file, employeeId, mcuId, onProgress = null) {
-  try {
-    // Validate inputs
-    if (!file) {
-      throw new Error('No file provided');
-    }
-    if (!employeeId || !mcuId) {
-      throw new Error('Missing employeeId or mcuId');
-    }
+export async function uploadFileToSupabase(
+  file,
+  contextOrEmployeeId,
+  mcuIdOrProgress = null,
+  onProgress = null
+) {
+  const legacyCall = typeof contextOrEmployeeId !== 'object';
+  const context = normalizeUploadContext(
+    contextOrEmployeeId,
+    legacyCall ? mcuIdOrProgress : null
+  );
+  const progress = legacyCall ? onProgress : mcuIdOrProgress;
+  validateMcuFile(file);
 
-    // Validate file type
-    const extension = String(file.name || '').toLowerCase().split('.').pop();
-    const isPdf = extension === 'pdf';
-    const isImage = ['png', 'jpg', 'jpeg'].includes(extension);
-    if (!isPdf && !isImage) {
-      throw new Error(
-        'Format file tidak didukung. Gunakan PDF, PNG, JPG, atau JPEG.'
-      );
-    }
-
-    const maxSize = isPdf ? PDF_UPLOAD_LIMIT : IMAGE_MAX_SIZE;
-    const warningSize = 2 * 1024 * 1024; // 2MB warning threshold
-
-    if (isPdf ? file.size >= maxSize : file.size > maxSize) {
-      throw new Error(
-        isPdf
-          ? `File terlalu besar (${(file.size / 1024 / 1024).toFixed(1)}MB). PDF harus kurang dari 10MB setelah persiapan.`
-          : `File terlalu besar (${(file.size / 1024 / 1024).toFixed(1)}MB). Maksimal 3MB per file.`
-      );
-    }
-
-    // Show warning if file > 2MB
-    if (file.size > warningSize) {
-      const fileSizeMB = (file.size / 1024 / 1024).toFixed(1);
-      showToast(`Perhatian: File ${file.name} berukuran ${fileSizeMB}MB. Proses upload mungkin memakan waktu lebih lama.`, 'warning');
-    }
-
-    return isPdf
-      ? uploadPdfDirect(file, employeeId, mcuId, onProgress)
-      : uploadMultipartFile(file, employeeId, mcuId, onProgress);
-  } catch (error) {
-    throw error;
+  if (file.size > 2 * 1024 * 1024) {
+    const fileSizeMB = (file.size / 1024 / 1024).toFixed(1);
+    showToast(`File ${file.name} berukuran ${fileSizeMB} MB. Upload mungkin lebih lama.`, 'warning');
   }
+  return uploadDirect(file, context, progress);
 }
 
 /**
  * Upload multiple files sequentially to Supabase
  * @param {File[]} files - Array of file objects
- * @param {string} employeeId - Employee ID
- * @param {string} mcuId - MCU ID
+ * @param {Object} context - Immutable upload context
  * @param {Function} onProgress - Optional progress callback
  * @returns {Promise<Object[]>} Array of upload results
  */
 export async function uploadFilesToSupabase(
   files,
-  employeeId,
-  mcuId,
+  context,
   onProgress = null
 ) {
   const results = [];
@@ -254,12 +194,8 @@ export async function uploadFilesToSupabase(
     try {
       const result = await uploadFileToSupabase(
         file,
-        employeeId,
-        mcuId,
+        context,
         (current, total, message) => {
-          const progressPercent = Math.round(
-            ((uploadedSize + current) / totalSize) * 100
-          );
           if (onProgress) {
             onProgress(uploadedSize + current, totalSize, `[${i + 1}/${files.length}] ${message}`);
           }
@@ -286,23 +222,32 @@ export async function uploadFilesToSupabase(
  * Upload batch of files to Supabase Storage
  * Wrapper untuk uploadFilesToSupabase dengan format return yang konsisten
  * @param {File[]} files - Array of file objects
- * @param {string} employeeId - Employee ID
- * @param {string} mcuId - MCU ID
- * @param {string} userId - User ID (not used in new API, kept for compatibility)
+ * @param {Object|string} contextOrEmployeeId - Immutable context or legacy Employee ID
  * @param {Function} onProgress - Optional progress callback
  * @returns {Promise<Object>} Upload result with success status and counts
  */
-export async function uploadBatchFiles(files, employeeId, mcuId, userId, onProgress = null) {
+export async function uploadBatchFiles(
+  files,
+  contextOrEmployeeId,
+  mcuIdOrProgress = null,
+  userId = null,
+  legacyProgress = null
+) {
   try {
+    const legacyCall = typeof contextOrEmployeeId !== 'object';
+    const context = normalizeUploadContext(
+      contextOrEmployeeId,
+      legacyCall ? mcuIdOrProgress : null,
+      legacyCall ? userId : null
+    );
+    const onProgress = legacyCall ? legacyProgress : mcuIdOrProgress;
     if (!files || files.length === 0) {
-      return { success: true, uploadedCount: 0, failedCount: 0 };
+      return { success: true, uploadedCount: 0, failedCount: 0, results: [] };
     }
 
-    // Upload files using new API
     const results = await uploadFilesToSupabase(
       files,
-      employeeId,
-      mcuId,
+      context,
       onProgress
     );
 
@@ -310,6 +255,22 @@ export async function uploadBatchFiles(files, employeeId, mcuId, userId, onProgr
     const uploadedCount = results.filter(r => r.success).length;
     const failedCount = results.filter(r => !r.success).length;
     const firstFailure = results.find(result => !result.success);
+
+    if (failedCount > 0) {
+      const rollback = await deleteOrphanedFiles(results, context);
+      return {
+        success: false,
+        uploadedCount: 0,
+        failedCount,
+        failedIndexes: files.map((file, index) => index),
+        error: rollback.success
+          ? firstFailure?.error
+          : `${firstFailure?.error || 'Upload gagal.'} Pembersihan file juga gagal.`,
+        errorCode: rollback.success ? firstFailure?.code : 'UPLOAD_ROLLBACK_FAILED',
+        message: 'Upload batch gagal dan dibatalkan.',
+        results
+      };
+    }
 
     return {
       success: failedCount === 0,
@@ -325,7 +286,11 @@ export async function uploadBatchFiles(files, employeeId, mcuId, userId, onProgr
     return {
       success: false,
       uploadedCount: 0,
-      error: error.message
+      failedCount: Array.isArray(files) ? files.length : 0,
+      failedIndexes: Array.isArray(files) ? files.map((file, index) => index) : [],
+      error: error.message,
+      errorCode: error.code || 'UPLOAD_API_FAILED',
+      results: []
     };
   }
 }
@@ -339,11 +304,35 @@ export async function saveUploadedFilesMetadata(mcuId, employeeId, userId) {
 }
 
 /**
- * Delete orphaned files (stub for compatibility)
- * New API doesn't create orphaned files, so this is a no-op
+ * Delete files created by a submission that failed before MCU persistence.
  */
-export async function deleteOrphanedFiles(mcuId, employeeId) {
-  return { success: true, deletedCount: 0 };
+export async function deleteOrphanedFiles(results, contextOrEmployeeId, mcuId = null, userId = null) {
+  const context = normalizeUploadContext(contextOrEmployeeId, mcuId, userId);
+  const uploaded = (Array.isArray(results) ? results : [])
+    .filter(result => result?.success && result.fileId);
+  let deletedCount = 0;
+  const errors = [];
+
+  for (const result of uploaded) {
+    try {
+      await postUploadAction({
+        action: 'rollback-file-upload',
+        employeeId: context.employeeId,
+        mcuId: context.mcuId,
+        fileId: result.fileId
+      });
+      deletedCount += 1;
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+
+  return {
+    success: errors.length === 0,
+    deletedCount,
+    error: errors[0]?.message,
+    errorCode: errors[0]?.code
+  };
 }
 
 /**

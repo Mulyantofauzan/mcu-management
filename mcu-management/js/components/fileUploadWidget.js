@@ -34,10 +34,25 @@ export class FileUploadWidget {
             onError: null,
             ...options
         };
+        this.uploadContext = Object.freeze({
+            employeeId: String(this.options.employeeId || '').normalize('NFKC').trim(),
+            mcuId: String(this.options.mcuId || '').normalize('NFKC').trim(),
+            userId: String(this.options.userId || '').normalize('NFKC').trim()
+        });
+        this.options = { ...this.options, ...this.uploadContext };
 
         this.uploadedFiles = [];
         this.isUploading = false;
         this.init();
+    }
+
+    getUploadContext() {
+        if (!this.uploadContext?.employeeId || !this.uploadContext?.mcuId || !this.uploadContext?.userId) {
+            const error = new Error('Konteks Employee ID, MCU ID, atau pengguna tidak lengkap.');
+            error.code = 'UPLOAD_CONTEXT_INVALID';
+            throw error;
+        }
+        return this.uploadContext;
     }
 
     /**
@@ -310,8 +325,8 @@ export class FileUploadWidget {
             return;
         }
 
-        if (!this.options.employeeId || !this.options.userId) {
-            this.showError('Missing required information (employeeId or userId)');
+        if (!this.uploadContext?.employeeId || !this.uploadContext?.mcuId || !this.uploadContext?.userId) {
+            this.showError('Data karyawan, MCU, atau pengguna belum lengkap.');
             return;
         }
 

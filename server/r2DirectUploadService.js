@@ -9,12 +9,21 @@ const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { randomUUID } = require('crypto');
 const {
   saveFileMetadata,
-  generatePublicUrl
+  generatePublicUrl,
+  employeeExists,
+  findFileMetadata,
+  deleteFileMetadata
 } = require('./r2StorageService');
 
 const PDF_UPLOAD_LIMIT_BYTES = 10 * 1024 * 1024;
+const IMAGE_UPLOAD_LIMIT_BYTES = 3 * 1024 * 1024;
 const UPLOAD_URL_EXPIRY_SECONDS = 5 * 60;
-const PDF_CONTENT_TYPE = 'application/pdf';
+const FILE_RULES = Object.freeze({
+  pdf: Object.freeze({ contentType: 'application/pdf', maxBytes: PDF_UPLOAD_LIMIT_BYTES, inclusive: false, type: 'pdf' }),
+  png: Object.freeze({ contentType: 'image/png', maxBytes: IMAGE_UPLOAD_LIMIT_BYTES, inclusive: true, type: 'image' }),
+  jpg: Object.freeze({ contentType: 'image/jpeg', maxBytes: IMAGE_UPLOAD_LIMIT_BYTES, inclusive: true, type: 'image' }),
+  jpeg: Object.freeze({ contentType: 'image/jpeg', maxBytes: IMAGE_UPLOAD_LIMIT_BYTES, inclusive: true, type: 'image' })
+});
 
 class R2DirectUploadError extends Error {
   constructor(code, message, status = 400, cause = null) {
@@ -57,7 +66,7 @@ function createClient(config) {
 }
 
 function assertSafeSegment(value, field) {
-  const normalized = String(value || '');
+  const normalized = String(value || '').normalize('NFKC').trim();
   if (!/^[a-zA-Z0-9._-]{1,128}$/.test(normalized)) {
     throw new R2DirectUploadError(
       'UPLOAD_VALIDATION_FAILED',
@@ -68,43 +77,47 @@ function assertSafeSegment(value, field) {
   return normalized;
 }
 
-function normalizePdfFileName(value) {
+function normalizeUploadFileName(value) {
   const normalized = String(value || '')
     .split(/[\\/]/)
     .pop()
     .replace(/[\u0000-\u001f\u007f]/g, '')
     .trim()
     .slice(0, 180);
-  if (!normalized || !normalized.toLowerCase().endsWith('.pdf')) {
+  const extension = normalized.toLowerCase().split('.').pop();
+  const rule = FILE_RULES[extension];
+  if (!normalized || !rule) {
     throw new R2DirectUploadError(
-      'UPLOAD_VALIDATION_FAILED',
-      'Nama file PDF tidak valid.',
+      'UPLOAD_TYPE_INVALID',
+      'Format file tidak didukung. Gunakan PDF, PNG, JPG, atau JPEG.',
       400
     );
   }
-  return normalized;
+  return { fileName: normalized, extension, ...rule };
 }
 
-function assertPdfMetadata(contentType, contentLength) {
-  const normalizedType = String(contentType || '').toLowerCase();
+function assertFileMetadata(file, contentLength, storedContentType = null) {
   const normalizedLength = Number(contentLength);
-  if (normalizedType !== PDF_CONTENT_TYPE) {
+  if (storedContentType && String(storedContentType).toLowerCase() !== file.contentType) {
     throw new R2DirectUploadError(
       'UPLOAD_VALIDATION_FAILED',
-      'Tipe file harus application/pdf.',
+      'Tipe file tersimpan tidak sesuai.',
       400
     );
   }
-  if (!Number.isInteger(normalizedLength)
-    || normalizedLength <= 0
-    || normalizedLength >= PDF_UPLOAD_LIMIT_BYTES) {
+  const tooLarge = file.inclusive
+    ? normalizedLength > file.maxBytes
+    : normalizedLength >= file.maxBytes;
+  if (!Number.isInteger(normalizedLength) || normalizedLength <= 0 || tooLarge) {
     throw new R2DirectUploadError(
       'UPLOAD_SIZE_INVALID',
-      'Ukuran PDF harus kurang dari 10 MB.',
+      file.extension === 'pdf'
+        ? 'Ukuran PDF harus kurang dari 10 MB.'
+        : 'Ukuran PNG/JPG/JPEG maksimal 3 MB.',
       400
     );
   }
-  return { contentType: normalizedType, contentLength: normalizedLength };
+  return { contentType: file.contentType, contentLength: normalizedLength };
 }
 
 function assertPendingKey(objectKey, userId) {
@@ -133,15 +146,36 @@ class R2DirectUploadService {
     this.uuid = options.uuid || randomUUID;
     this.saveMetadata = options.saveMetadata || saveFileMetadata;
     this.publicUrl = options.publicUrl || generatePublicUrl;
+    this.employeeExists = options.employeeExists || employeeExists;
+    this.findMetadata = options.findMetadata || findFileMetadata;
+    this.deleteMetadata = options.deleteMetadata || deleteFileMetadata;
   }
 
-  async preparePdfUpload({ userId, employeeId, mcuId, fileName, contentType, contentLength }) {
+  async prepareFileUpload({ userId, employeeId, mcuId, fileName, contentLength }) {
     const owner = assertSafeSegment(userId, 'User');
     const employee = assertSafeSegment(employeeId, 'Employee ID');
     const mcu = assertSafeSegment(mcuId, 'MCU ID');
-    const safeFileName = normalizePdfFileName(fileName);
-    const metadata = assertPdfMetadata(contentType, contentLength);
-    const objectKey = `pending/mcu-uploads/${owner}/${this.uuid()}.pdf`;
+    const file = normalizeUploadFileName(fileName);
+    const metadata = assertFileMetadata(file, contentLength);
+    let exists;
+    try {
+      exists = await this.employeeExists(employee);
+    } catch (error) {
+      throw new R2DirectUploadError(
+        'UPLOAD_EMPLOYEE_LOOKUP_FAILED',
+        'Data karyawan gagal diverifikasi.',
+        500,
+        error
+      );
+    }
+    if (!exists) {
+      throw new R2DirectUploadError(
+        'UPLOAD_EMPLOYEE_NOT_FOUND',
+        'Employee ID tidak ditemukan.',
+        404
+      );
+    }
+    const objectKey = `pending/mcu-uploads/${owner}/${this.uuid()}.${file.extension}`;
 
     const command = new PutObjectCommand({
       Bucket: this.config.bucket,
@@ -152,7 +186,7 @@ class R2DirectUploadService {
         owner,
         employeeid: employee,
         mcuid: mcu,
-        purpose: 'mcu-pdf-upload'
+        purpose: 'mcu-file-upload'
       }
     });
     const uploadUrl = await this.signUrl(this.client, command, {
@@ -163,16 +197,20 @@ class R2DirectUploadService {
     return {
       objectKey,
       uploadUrl,
-      fileName: safeFileName,
+      fileName: file.fileName,
       expiresIn: UPLOAD_URL_EXPIRY_SECONDS,
-      requiredHeaders: { 'Content-Type': PDF_CONTENT_TYPE }
+      requiredHeaders: { 'Content-Type': file.contentType }
     };
   }
 
-  async confirmPdfUpload({ userId, objectKey, fileName }) {
+  async preparePdfUpload(payload) {
+    return this.prepareFileUpload(payload);
+  }
+
+  async confirmFileUpload({ userId, objectKey, fileName }) {
     const owner = assertSafeSegment(userId, 'User');
     const pendingKey = assertPendingKey(objectKey, owner);
-    const safeFileName = normalizePdfFileName(fileName);
+    const file = normalizeUploadFileName(fileName);
     let finalKey = null;
 
     try {
@@ -180,31 +218,32 @@ class R2DirectUploadService {
         Bucket: this.config.bucket,
         Key: pendingKey
       }));
-      const metadata = assertPdfMetadata(head.ContentType, Number(head.ContentLength));
+      const metadata = assertFileMetadata(file, Number(head.ContentLength), head.ContentType);
       const employeeId = assertSafeSegment(head.Metadata?.employeeid, 'Employee ID');
       const mcuId = assertSafeSegment(head.Metadata?.mcuid, 'MCU ID');
-      if (head.Metadata?.owner !== owner || head.Metadata?.purpose !== 'mcu-pdf-upload') {
+      if (head.Metadata?.owner !== owner
+        || !['mcu-file-upload', 'mcu-pdf-upload'].includes(head.Metadata?.purpose)) {
         throw new R2DirectUploadError('UPLOAD_FORBIDDEN', 'Pemilik upload tidak sesuai.', 403);
       }
 
-      finalKey = `mcu_files/${employeeId}/${mcuId}/${this.uuid()}.pdf`;
+      finalKey = `mcu_files/${employeeId}/${mcuId}/${this.uuid()}.${file.extension}`;
       await this.client.send(new CopyObjectCommand({
         Bucket: this.config.bucket,
         Key: finalKey,
         CopySource: encodeCopySource(this.config.bucket, pendingKey),
-        ContentType: PDF_CONTENT_TYPE,
+        ContentType: file.contentType,
         MetadataDirective: 'REPLACE',
         Metadata: {
           owner,
           employeeid: employeeId,
           mcuid: mcuId,
-          purpose: 'mcu-pdf'
+          purpose: 'mcu-file'
         }
       }));
 
       const publicUrl = this.publicUrl(finalKey);
       const saved = await this.saveMetadata(
-        safeFileName,
+        file.fileName,
         employeeId,
         mcuId,
         metadata.contentLength,
@@ -224,9 +263,10 @@ class R2DirectUploadService {
       await this.deleteObject(pendingKey).catch(() => {});
       return {
         file: {
-          name: safeFileName,
+          id: saved.fileid,
+          name: file.fileName,
           size: metadata.contentLength,
-          type: 'pdf'
+          type: file.type
         },
         storage: {
           bucket: this.config.bucket,
@@ -240,11 +280,37 @@ class R2DirectUploadService {
       if (error instanceof R2DirectUploadError) throw error;
       throw new R2DirectUploadError(
         'UPLOAD_VERIFICATION_FAILED',
-        'Upload PDF gagal diverifikasi.',
+        'Upload file gagal diverifikasi.',
         500,
         error
       );
     }
+  }
+
+  async confirmPdfUpload(payload) {
+    return this.confirmFileUpload(payload);
+  }
+
+  async rollbackFileUpload({ userId, employeeId, mcuId, fileId }) {
+    const owner = assertSafeSegment(userId, 'User');
+    const employee = assertSafeSegment(employeeId, 'Employee ID');
+    const mcu = assertSafeSegment(mcuId, 'MCU ID');
+    const id = assertSafeSegment(fileId, 'File ID');
+    const metadata = await this.findMetadata(id);
+    if (!metadata) return { deleted: false };
+
+    const expectedPrefix = `mcu_files/${employee}/${mcu}/`;
+    if (String(metadata.uploadedby) !== owner
+      || metadata.employeeid !== employee
+      || metadata.mcuid !== mcu
+      || typeof metadata.supabase_storage_path !== 'string'
+      || !metadata.supabase_storage_path.startsWith(expectedPrefix)) {
+      throw new R2DirectUploadError('UPLOAD_FORBIDDEN', 'Rollback upload tidak diizinkan.', 403);
+    }
+
+    await this.deleteObject(metadata.supabase_storage_path);
+    await this.deleteMetadata(id);
+    return { deleted: true };
   }
 
   async deleteObject(objectKey) {
@@ -259,8 +325,10 @@ module.exports = {
   R2DirectUploadService,
   R2DirectUploadError,
   PDF_UPLOAD_LIMIT_BYTES,
+  IMAGE_UPLOAD_LIMIT_BYTES,
   UPLOAD_URL_EXPIRY_SECONDS,
-  assertPdfMetadata,
+  FILE_RULES,
+  assertFileMetadata,
   assertPendingKey,
-  normalizePdfFileName
+  normalizeUploadFileName
 };

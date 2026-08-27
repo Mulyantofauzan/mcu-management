@@ -14,7 +14,7 @@ import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
 import { generateRujukanPDF, generateRujukanBalikPDF } from '../utils/rujukanPDFGenerator.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 import FileUploadWidget from '../components/fileUploadWidget.js';
-import { uploadBatchFiles } from '../services/supabaseStorageService.js';  // ✅ NEW: File upload to Supabase
+import { deleteOrphanedFiles, uploadBatchFiles } from '../services/supabaseStorageService.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';  // ✅ NEW: Temp file management
 import { StaticLabForm } from '../components/staticLabForm.js';
 import { workflowService } from '../services/workflowService.js';
@@ -42,7 +42,9 @@ let pendingChanges = {
   detailData: null,        // MCU Detail fields (Step 2)
   labResults: null,        // Lab results (Step 2)
   mcuId: null,             // Current MCU ID being processed
-  currentMCU: null         // MCU data snapshot for change comparison (saved in Step 2)
+  currentMCU: null,        // MCU data snapshot for change comparison (saved in Step 2)
+  uploadContext: null,
+  uploadResults: []
 };
 
 // Unified loading overlay functions
@@ -659,7 +661,7 @@ window.openFollowUpModal = async function(mcuId) {
         followupFileUploadWidget = new FileUploadWidget('followup-file-upload-container', {
             employeeId: currentMCU.employeeId,
             mcuId: mcuId,
-            userId: currentUser.userId || currentUser.user_id,
+            userId: currentUser.userId || currentUser.user_id || currentUser.id,
             onUploadComplete: (result) => {
                 showToast('File berhasil diunggah', 'success');
             }
@@ -683,7 +685,7 @@ window.closeFollowUpModal = function() {
 window.handleFollowUpSubmit = async function(event) {
   event.preventDefault();
 
-  const mcuId = document.getElementById('followup-mcu-id').value;
+  const formMcuId = document.getElementById('followup-mcu-id').value;
   const finalResult = document.getElementById('fu-result').value;
   const finalNotes = document.getElementById('fu-notes').value;
 
@@ -701,11 +703,20 @@ window.handleFollowUpSubmit = async function(event) {
   if (submitForm) submitForm.dataset.submitting = 'true';
 
   try {
+    const uploadContext = followupFileUploadWidget.getUploadContext();
+    const mcuId = uploadContext.mcuId;
+    if (formMcuId && formMcuId !== mcuId) {
+      const error = new Error('Konteks MCU berubah. Tutup form lalu buka kembali.');
+      error.code = 'UPLOAD_CONTEXT_INVALID';
+      throw error;
+    }
     const currentUser = authService.getCurrentUser();
     showSaveLoading('Mempersiapkan update follow-up...');
 
     // ✅ STEP 1: Save follow-up data to MEMORY (not database)
     pendingChanges.mcuId = mcuId;
+    pendingChanges.uploadContext = uploadContext;
+    pendingChanges.uploadResults = [];
     pendingChanges.followUpData = {
       ...(workflowEnabled
         ? { evidenceNotes: finalNotes.trim() }
@@ -729,9 +740,7 @@ window.handleFollowUpSubmit = async function(event) {
       try {
         const uploadResult = await uploadBatchFiles(
           pendingFiles,
-          currentMCU.employeeId,
-          mcuId,
-          currentUser.userId || currentUser.user_id,
+          uploadContext,
           // Progress callback
           (current, total, message) => {
             updateUploadProgress(current, total);
@@ -739,8 +748,7 @@ window.handleFollowUpSubmit = async function(event) {
         );
 
         if (uploadResult.success) {
-          // Clear temporary files after successful upload
-          tempFileStorage.clearFiles(mcuId);
+          pendingChanges.uploadResults = uploadResult.results;
         } else {
           tempFileStorage.retainFiles(mcuId, uploadResult.failedIndexes);
           hideUploadLoading();
@@ -774,7 +782,11 @@ window.handleFollowUpSubmit = async function(event) {
 
   } catch (error) {
     hideSaveLoading();
-    showToast('Gagal mempersiapkan follow-up: ' + error.message, 'error');
+    if (error?.code?.startsWith('UPLOAD_')) {
+      await presentUploadError(error);
+    } else {
+      showToast('Gagal mempersiapkan follow-up: ' + error.message, 'error');
+    }
   } finally {
     if (submitForm) delete submitForm.dataset.submitting;
   }
@@ -956,12 +968,39 @@ window.toggleFinalResultSection = function() {
   }
 };
 
-window.closeMCUUpdateModal = function() {
-// [log removed]
+window.closeMCUUpdateModal = async function(preserveUploads = false) {
+  if (!preserveUploads && pendingChanges.uploadResults?.some(result => result.success)) {
+    showSaveLoading('Membatalkan dan membersihkan file...');
+    const rollback = await deleteOrphanedFiles(
+      pendingChanges.uploadResults,
+      pendingChanges.uploadContext
+    );
+    hideSaveLoading();
+    if (!rollback.success) {
+      await presentUploadError({
+        code: 'UPLOAD_ROLLBACK_FAILED',
+        message: rollback.error || 'File baru belum dapat dibersihkan. Silakan coba batal lagi.'
+      });
+      return;
+    }
+  }
+
+  if (!preserveUploads && pendingChanges.mcuId) {
+    tempFileStorage.clearFiles(pendingChanges.mcuId);
+    pendingChanges = {
+      followUpData: null,
+      detailData: null,
+      labResults: null,
+      mcuId: null,
+      currentMCU: null,
+      uploadContext: null,
+      uploadResults: []
+    };
+  }
+
   closeModal('mcu-update-modal');
   currentMCU = null;
   if (labResultWidgetUpdate) {
-// [log removed]
     labResultWidgetUpdate.clear();
   }
 };
@@ -1040,7 +1079,7 @@ window.handleDetailMCUUpdate = async function(event) {
     showToast('Data detail MCU tersimpan sementara. Finalisasi penyimpanan...', 'info');
 
     // Close detail modal
-    closeMCUUpdateModal();
+    closeMCUUpdateModal(true);
 
     // STEP 3: Do final atomic save with all data (follow-up + detail + lab)
     setTimeout(() => {
@@ -1233,13 +1272,16 @@ async function finalizeFollowUpUpdate() {
         mcuId,
         expectedVersion: originalMCU.workflowVersion,
         evidenceNotes: followUpData.evidenceNotes,
-        attachmentFileIds: [],
+        attachmentFileIds: (pendingChanges.uploadResults || [])
+          .filter(result => result.success && result.fileId)
+          .map(result => result.fileId),
         idempotencyKey: workflowIdempotency.get(scope)
       }, scope);
       workflowIdempotency.clear(scope);
     }
 
     hideSaveLoading();
+    tempFileStorage.clearFiles(mcuId);
 
     // Clear pending changes
     pendingChanges = {
@@ -1247,7 +1289,9 @@ async function finalizeFollowUpUpdate() {
       detailData: null,
       labResults: null,
       mcuId: null,
-      currentMCU: null
+      currentMCU: null,
+      uploadContext: null,
+      uploadResults: []
     };
 
     if (workflowEnabled) {

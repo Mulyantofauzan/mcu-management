@@ -94,6 +94,38 @@ async function getEmployeeName(employeeId) {
   }
 }
 
+async function employeeExists(employeeId) {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from('employees')
+    .select('employeeid')
+    .eq('employeeid', employeeId)
+    .maybeSingle();
+  if (error) throw error;
+  return Boolean(data);
+}
+
+async function findFileMetadata(fileId) {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from('mcufiles')
+    .select('fileid, employeeid, mcuid, uploadedby, supabase_storage_path')
+    .eq('fileid', fileId)
+    .maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+
+async function deleteFileMetadata(fileId) {
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase
+    .from('mcufiles')
+    .delete()
+    .eq('fileid', fileId);
+  if (error) throw error;
+  return true;
+}
+
 /**
  * Generate folder path for file storage
  * Format: mcu_files/{EmployeeId}/{MCU-ID} (simple format, avoids double naming)
@@ -230,6 +262,9 @@ module.exports = {
   generateStoragePath,
   getEmployeeName,
   generatePublicUrl,
+  employeeExists,
+  findFileMetadata,
+  deleteFileMetadata,
   ALLOWED_TYPES,
   MAX_FILE_SIZE,
   STORAGE_BUCKET

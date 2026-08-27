@@ -1,7 +1,10 @@
 {
-  "version": "1.2.10",
+  "version": "1.2.11",
   "releaseDate": "2026-08-27",
   "features": [
+    "Unified direct R2 upload for PDF, PNG, JPG, and JPEG attachments",
+    "Immutable employee and MCU upload context across add, edit, and follow-up forms",
+    "Authenticated orphan-file rollback when MCU persistence fails",
     "Joining decision badge matches the actionable reviewed-candidate queue",
     "Server-side pagination for Administrator joining queues and decision history",
     "Reliable employee and MCU identity initialization for quick Add MCU uploads",

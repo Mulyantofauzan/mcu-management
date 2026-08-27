@@ -1142,7 +1142,7 @@ window.addMCUForEmployee = async function(employeeId) {
             addFileUploadWidget = new FileUploadWidget('add-file-upload-container', {
                 employeeId: employeeId,
                 mcuId: generatedMCUIdForAdd, // Use generated ID (not yet saved to DB)
-                userId: currentUser.userId || currentUser.user_id,
+                userId: currentUser.userId || currentUser.user_id || currentUser.id,
                 skipDBInsert: true, // File uploaded to storage only, DB insert happens on MCU save
                 onUploadComplete: (result) => {
                     showToast('File berhasil diunggah', 'success');
@@ -1205,10 +1205,14 @@ window.handleAddMCU = async function(event) {
     const submitForm = event.currentTarget || event.target;
     if (submitForm?.dataset.submitting === 'true') return;
     if (submitForm) submitForm.dataset.submitting = 'true';
+    let uploadContext = null;
+    let uploadResult = { results: [] };
+    let mcuPersisted = false;
 
     try {
         const readField = createMcuFormReader(submitForm);
         const currentUser = authService.getCurrentUser();
+        uploadContext = addFileUploadWidget.getUploadContext();
 
         // ✅ FIX: Get doctor ID and convert to number (matching handleEditMCU logic)
         const doctorValue = readField('mcu-doctor');
@@ -1227,8 +1231,8 @@ window.handleAddMCU = async function(event) {
         };
 
         const mcuData = {
-            mcuId: generatedMCUIdForAdd, // Use the ID generated when modal opened
-            employeeId: readField('mcu-employee-id'),
+            mcuId: uploadContext.mcuId,
+            employeeId: uploadContext.employeeId,
             mcuType: readField('mcu-type'),
             mcuDate: readField('mcu-date'),
             bmi: readField('mcu-bmi') ? parseFloat(readField('mcu-bmi')) : null,
@@ -1293,11 +1297,9 @@ window.handleAddMCU = async function(event) {
 
             try {
                 const { uploadBatchFiles } = await import('../services/supabaseStorageService.js');
-                const uploadResult = await uploadBatchFiles(
+                uploadResult = await uploadBatchFiles(
                     tempFiles,
-                    mcuData.employeeId,
-                    mcuData.mcuId,
-                    currentUser.id,
+                    uploadContext,
                     // Progress callback
                     (current, total) => {
                         updateUploadProgress(current, total);
@@ -1324,9 +1326,6 @@ window.handleAddMCU = async function(event) {
             // No files to upload, skip upload step
             completeUploadStep();
         }
-
-        // ✅ CRITICAL: Clear temporary files ONLY after successful R2 upload
-        tempFileStorage.clearFiles(mcuData.mcuId);
 
         // ✅ CRITICAL: Collect lab results for batch processing
         let labResults = [];
@@ -1373,6 +1372,8 @@ window.handleAddMCU = async function(event) {
             showToast(errorMsg, 'error');
             throw new Error(batchResult.errors[0] || 'Batch save failed');
         }
+        mcuPersisted = true;
+        tempFileStorage.clearFiles(mcuData.mcuId);
 
         if (workflowEnabled) {
             const createdVersion = batchResult.data.mcu?.workflowVersion ?? 0;
@@ -1443,6 +1444,15 @@ window.handleAddMCU = async function(event) {
 
     } catch (error) {
         hideUnifiedLoading();
+        if (!mcuPersisted && uploadContext && uploadResult.results?.some(result => result.success)) {
+            const rollback = await deleteOrphanedFiles(uploadResult.results, uploadContext);
+            if (!rollback.success) {
+                await presentUploadError({
+                    code: 'UPLOAD_ROLLBACK_FAILED',
+                    message: 'Penyimpanan MCU gagal dan file baru belum dapat dibersihkan otomatis.'
+                });
+            }
+        }
         if (error?.code === 'MCU_FORM_FIELD_MISSING') {
             await showAlert({
                 icon: 'warning',
@@ -1450,6 +1460,10 @@ window.handleAddMCU = async function(event) {
                 text: `Komponen ${error.fieldId} belum termuat. Tutup form, buka kembali, lalu coba simpan lagi.`,
                 confirmButtonText: 'Tutup'
             });
+            return;
+        }
+        if (error?.code?.startsWith('UPLOAD_')) {
+            await presentUploadError(error);
             return;
         }
         showToast('Gagal menambah MCU: ' + error.message, 'error');
@@ -2027,7 +2041,7 @@ window.editMCU = async function() {
         fileUploadWidget = new FileUploadWidget('file-upload-container-edit', {
             employeeId: mcu.employeeId,
             mcuId: window.currentMCUId,
-            userId: currentUser?.userId || currentUser?.user_id,
+            userId: currentUser?.userId || currentUser?.user_id || currentUser?.id,
             onUploadComplete: () => {
                 showToast('File berhasil ditambahkan ke antrian upload', 'success');
             },
@@ -2326,8 +2340,12 @@ window.handleEditMCU = async function(event) {
     if (submitForm) submitForm.dataset.submitting = 'true';
 
     const mcuId = document.getElementById('edit-mcu-id').value;
+    let uploadContext = null;
+    let uploadResult = { results: [] };
+    let mcuPersisted = false;
 
     try {
+        uploadContext = fileUploadWidget.getUploadContext();
         if (!workflowStateKnown) {
             await presentWorkflowError({ code: 'WORKFLOW_NETWORK_ERROR', message: 'Status workflow belum dapat diverifikasi.' });
             return;
@@ -2433,11 +2451,9 @@ window.handleEditMCU = async function(event) {
 
             try {
                 const { uploadBatchFiles } = await import('../services/supabaseStorageService.js');
-                const uploadResult = await uploadBatchFiles(
+                uploadResult = await uploadBatchFiles(
                     tempFiles,
-                    updateData.employeeId || (await mcuService.getById(mcuId)).employeeId,
-                    mcuId,
-                    currentUser.id,
+                    uploadContext,
                     // Progress callback
                     (current, total) => {
                         updateUploadProgress(current, total);
@@ -2465,17 +2481,7 @@ window.handleEditMCU = async function(event) {
             completeUploadStep();
         }
 
-        // ✅ CRITICAL: Clear temporary files ONLY after upload attempt
-        tempFileStorage.clearFiles(mcuId);
-
-        // ✅ CRITICAL FIX: Get employeeId from hidden data attribute (stored when modal was populated)
-        const employeeIdElement = document.getElementById('edit-mcu-id');
-        const employeeId = employeeIdElement?.dataset?.employeeId;
-        if (!employeeId) {
-            hideUnifiedLoading();
-            showToast('Employee ID tidak ditemukan. Silakan reload halaman.', 'error');
-            throw new Error('Employee ID not found in edit form');
-        }
+        const employeeId = uploadContext.employeeId;
 
         // Collect lab results if widget exists
         let labResults = [];
@@ -2668,6 +2674,8 @@ window.handleEditMCU = async function(event) {
 
         // ✅ BATCH UPDATE: Use batch service for atomic MCU + lab update
         const batchResult = await mcuBatchService.updateMCUWithLabResults(mcuId, updateData, labResults, currentUser);
+        mcuPersisted = true;
+        tempFileStorage.clearFiles(mcuId);
 
         // Update progress for MCU update
         updateEditSaveStepProgress();
@@ -2792,7 +2800,18 @@ window.handleEditMCU = async function(event) {
         }
     } catch (error) {
         hideUnifiedLoading();
-        if (workflowEnabled) {
+        if (!mcuPersisted && uploadContext && uploadResult.results?.some(result => result.success)) {
+            const rollback = await deleteOrphanedFiles(uploadResult.results, uploadContext);
+            if (!rollback.success) {
+                await presentUploadError({
+                    code: 'UPLOAD_ROLLBACK_FAILED',
+                    message: 'Perubahan MCU gagal dan file baru belum dapat dibersihkan otomatis.'
+                });
+            }
+        }
+        if (error?.code?.startsWith('UPLOAD_')) {
+            await presentUploadError(error);
+        } else if (workflowEnabled) {
             await presentWorkflowError(error, {
                 retry: () => {
                     if (submitForm) delete submitForm.dataset.submitting;

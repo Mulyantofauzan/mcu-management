@@ -1,12 +1,12 @@
 /**
  * MCU file upload endpoint.
  *
- * JSON requests prepare and confirm direct PDF uploads to R2. Multipart
- * requests remain available for the existing size-limited image path and
- * cached clients that still submit small PDFs.
+ * JSON requests prepare, confirm, and roll back direct MCU uploads to R2.
+ * Multipart remains available only for cached clients from older releases.
  */
 
 const busboy = require('busboy');
+const { randomUUID } = require('crypto');
 const { uploadFileToStorage, MAX_FILE_SIZE } = require('../../server/r2StorageService');
 const { R2DirectUploadService, R2DirectUploadError } = require('../../server/r2DirectUploadService');
 const { setCorsHeaders, requireAuth } = require('../../server/auth-utils');
@@ -42,7 +42,8 @@ function parseJsonBody(req) {
   return {};
 }
 
-async function handleDirectPdf(req, res, auth, directUploads) {
+async function handleDirectUpload(req, res, auth, directUploads) {
+  const requestId = req.headers?.['x-request-id'] || randomUUID();
   let body;
   try {
     body = parseJsonBody(req);
@@ -50,18 +51,23 @@ async function handleDirectPdf(req, res, auth, directUploads) {
     return res.status(400).json({
       success: false,
       code: 'UPLOAD_VALIDATION_FAILED',
-      error: 'Payload JSON tidak valid.'
+      error: 'Payload JSON tidak valid.',
+      requestId
     });
   }
 
   const userId = authenticatedUserId(auth);
   if (!userId) {
-    return res.status(401).json({ success: false, code: 'UNAUTHORIZED', error: 'Unauthorized' });
+    return res.status(401).json({ success: false, code: 'UNAUTHORIZED', error: 'Unauthorized', requestId });
   }
 
   try {
-    if (body.action === 'prepare-pdf-upload') {
-      const prepared = await directUploads.preparePdfUpload({
+    if (['prepare-file-upload', 'prepare-pdf-upload'].includes(body.action)) {
+      const prepare = body.action === 'prepare-file-upload'
+        ? directUploads.prepareFileUpload?.bind(directUploads)
+        : (directUploads.prepareFileUpload || directUploads.preparePdfUpload)?.bind(directUploads);
+      if (!prepare) throw new Error('Direct upload preparation is unavailable.');
+      const prepared = await prepare({
         userId,
         employeeId: body.employeeId,
         mcuId: body.mcuId,
@@ -72,8 +78,12 @@ async function handleDirectPdf(req, res, auth, directUploads) {
       return res.status(200).json({ success: true, upload: prepared });
     }
 
-    if (body.action === 'confirm-pdf-upload') {
-      const confirmed = await directUploads.confirmPdfUpload({
+    if (['confirm-file-upload', 'confirm-pdf-upload'].includes(body.action)) {
+      const confirm = body.action === 'confirm-file-upload'
+        ? directUploads.confirmFileUpload?.bind(directUploads)
+        : (directUploads.confirmFileUpload || directUploads.confirmPdfUpload)?.bind(directUploads);
+      if (!confirm) throw new Error('Direct upload confirmation is unavailable.');
+      const confirmed = await confirm({
         userId,
         objectKey: body.objectKey,
         fileName: body.fileName
@@ -85,17 +95,34 @@ async function handleDirectPdf(req, res, auth, directUploads) {
       });
     }
 
+    if (body.action === 'rollback-file-upload') {
+      const rolledBack = await directUploads.rollbackFileUpload({
+        userId,
+        employeeId: body.employeeId,
+        mcuId: body.mcuId,
+        fileId: body.fileId
+      });
+      return res.status(200).json({ success: true, ...rolledBack });
+    }
+
     return res.status(400).json({
       success: false,
       code: 'UPLOAD_ACTION_INVALID',
-      error: 'Aksi upload tidak valid.'
+      error: 'Aksi upload tidak valid.',
+      requestId
     });
   } catch (error) {
     const known = error instanceof R2DirectUploadError;
+    console.error('MCU upload request failed', {
+      requestId,
+      action: body.action,
+      code: known ? error.code : 'UPLOAD_SERVER_ERROR'
+    });
     return res.status(known ? error.status : 500).json({
       success: false,
       code: known ? error.code : 'UPLOAD_SERVER_ERROR',
-      error: known ? error.message : 'Kesalahan server saat memproses upload.'
+      error: known ? error.message : 'Kesalahan server saat memproses upload.',
+      requestId
     });
   }
 }
@@ -230,7 +257,7 @@ function createHandler(options = {}) {
     const contentType = String(req.headers?.['content-type'] || '').toLowerCase();
     if (contentType.includes('application/json')) {
       directUploads ||= new R2DirectUploadService();
-      return handleDirectPdf(req, res, auth, directUploads);
+      return handleDirectUpload(req, res, auth, directUploads);
     }
     return handleMultipart(req, res, auth);
   };

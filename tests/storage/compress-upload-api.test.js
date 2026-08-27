@@ -52,6 +52,71 @@ test('JSON prepare action delegates with authenticated user ID', async () => {
   assert.equal(calls[0].userId, 'user-1');
 });
 
+test('canonical prepare action supports every accepted attachment type', async () => {
+  const calls = [];
+  const handler = createHandler({
+    requireAuth: () => ({ app_user_id: 'user-1' }),
+    setCorsHeaders: () => {},
+    directUploads: {
+      async prepareFileUpload(payload) {
+        calls.push(payload);
+        return { objectKey: 'pending/key.png', uploadUrl: 'https://upload.example' };
+      }
+    }
+  });
+  const res = responseFixture();
+
+  await handler({
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: {
+      action: 'prepare-file-upload',
+      employeeId: 'EMP-1',
+      mcuId: 'MCU-1',
+      fileName: 'scan.png',
+      contentLength: 1024
+    }
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.payload.success, true);
+  assert.equal(calls[0].fileName, 'scan.png');
+});
+
+test('rollback action delegates with authenticated upload context', async () => {
+  const calls = [];
+  const handler = createHandler({
+    requireAuth: () => ({ app_user_id: 'user-1' }),
+    setCorsHeaders: () => {},
+    directUploads: {
+      async rollbackFileUpload(payload) {
+        calls.push(payload);
+        return { deleted: true };
+      }
+    }
+  });
+  const res = responseFixture();
+
+  await handler({
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: {
+      action: 'rollback-file-upload',
+      employeeId: 'EMP-1',
+      mcuId: 'MCU-1',
+      fileId: 'file-1'
+    }
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(calls[0], {
+    userId: 'user-1',
+    employeeId: 'EMP-1',
+    mcuId: 'MCU-1',
+    fileId: 'file-1'
+  });
+});
+
 test('JSON confirm action returns the legacy-compatible response shape', async () => {
   const handler = createHandler({
     requireAuth: () => ({ sub: 'user-1' }),
@@ -75,6 +140,42 @@ test('JSON confirm action returns the legacy-compatible response shape', async (
   assert.equal(res.statusCode, 200);
   assert.equal(res.payload.file.name, 'hasil.pdf');
   assert.equal(res.payload.storage.path, 'mcu_files/EMP-1/MCU-1/file.pdf');
+});
+
+test('canonical confirm action returns the uploaded file ID', async () => {
+  const calls = [];
+  const handler = createHandler({
+    requireAuth: () => ({ app_user_id: 'user-1' }),
+    setCorsHeaders: () => {},
+    directUploads: {
+      async confirmFileUpload(payload) {
+        calls.push(payload);
+        return {
+          file: { id: 'file-1', name: 'scan.jpg', size: 1024, type: 'image' },
+          storage: { path: 'mcu_files/EMP-1/MCU-1/file.jpg', publicUrl: 'https://files.example' }
+        };
+      }
+    }
+  });
+  const res = responseFixture();
+
+  await handler({
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: {
+      action: 'confirm-file-upload',
+      objectKey: 'pending/mcu-uploads/user-1/file.jpg',
+      fileName: 'scan.jpg'
+    }
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.payload.file.id, 'file-1');
+  assert.deepEqual(calls[0], {
+    userId: 'user-1',
+    objectKey: 'pending/mcu-uploads/user-1/file.jpg',
+    fileName: 'scan.jpg'
+  });
 });
 
 test('unknown JSON action returns a specific 400 response', async () => {

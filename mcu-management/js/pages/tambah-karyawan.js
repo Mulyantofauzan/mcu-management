@@ -15,6 +15,7 @@ import { supabaseReady } from '../config/supabase.js';
 import FileUploadWidget from '../components/fileUploadWidget.js';
 import { generateMCUId } from '../utils/idGenerator.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';
+import { deleteOrphanedFiles } from '../services/supabaseStorageService.js';
 import { createLabResultWidget } from '../components/labResultWidget.js';
 import { workflowService } from '../services/workflowService.js';
 import { workflowIdempotency } from '../utils/workflowIdempotency.js';
@@ -675,7 +676,7 @@ window.openAddMCUForEmployee = async function(employeeId) {
         fileUploadWidget = new FileUploadWidget('mcu-file-upload-container', {
             employeeId: currentEmployee.employeeId,
             mcuId: generatedMCUIdForAdd,  // Use generated ID for temp file storage
-            userId: currentUser.userId || currentUser.user_id,
+            userId: currentUser.userId || currentUser.user_id || currentUser.id,
             onUploadComplete: () => {
                 // Refresh file list if needed
             },
@@ -913,6 +914,9 @@ window.handleAddMCU = async function(event) {
     const submitForm = event.currentTarget || event.target;
     if (submitForm?.dataset.submitting === 'true') return;
     if (submitForm) submitForm.dataset.submitting = 'true';
+    let uploadContext = null;
+    let uploadResult = { results: [] };
+    let mcuPersisted = false;
 
     try {
         const readField = createMcuFormReader(submitForm);
@@ -924,6 +928,7 @@ window.handleAddMCU = async function(event) {
             return;
         }
         const currentUser = authService.getCurrentUser();
+        uploadContext = fileUploadWidget.getUploadContext();
 
         // ✅ CRITICAL: Validate lab results BEFORE saving MCU
         // Lab inputs are generated via JavaScript, not HTML form, so required attribute doesn't work
@@ -959,8 +964,8 @@ window.handleAddMCU = async function(event) {
         };
 
         const mcuData = {
-            mcuId: generatedMCUIdForAdd,  // Use pre-generated ID
-            employeeId: readField('mcu-employee-id'),
+            mcuId: uploadContext.mcuId,
+            employeeId: uploadContext.employeeId,
             mcuType: readField('mcu-type'),
             mcuDate: readField('mcu-date'),
             bmi: readField('mcu-bmi') || null,
@@ -1016,11 +1021,9 @@ window.handleAddMCU = async function(event) {
             startUploadStep(tempFiles.length);
             try {
                 const { uploadBatchFiles } = await import('../services/supabaseStorageService.js');
-                const uploadResult = await uploadBatchFiles(
+                uploadResult = await uploadBatchFiles(
                     tempFiles,
-                    mcuData.employeeId,
-                    mcuData.mcuId,
-                    currentUser.id,
+                    uploadContext,
                     (current, total, message) => {
                         updateUploadProgress(current, total);
                     }
@@ -1046,9 +1049,6 @@ window.handleAddMCU = async function(event) {
             // No files to upload, skip upload step
             completeUploadStep();
         }
-
-        // ✅ CRITICAL: Clear temporary files ONLY after successful R2 upload
-        tempFileStorage.clearFiles(mcuData.mcuId);
 
         // Start save step
         startSaveStep();
@@ -1078,6 +1078,8 @@ window.handleAddMCU = async function(event) {
             showToast(errorMsg, 'error');
             throw new Error(batchResult.errors[0] || 'Batch save failed');
         }
+        mcuPersisted = true;
+        tempFileStorage.clearFiles(mcuData.mcuId);
 
         let workflowSubmission = null;
         if (workflowEnabled) {
@@ -1139,6 +1141,15 @@ window.handleAddMCU = async function(event) {
 
     } catch (error) {
         hideUnifiedLoading();
+        if (!mcuPersisted && uploadContext && uploadResult.results?.some(result => result.success)) {
+            const rollback = await deleteOrphanedFiles(uploadResult.results, uploadContext);
+            if (!rollback.success) {
+                await presentUploadError({
+                    code: 'UPLOAD_ROLLBACK_FAILED',
+                    message: 'Penyimpanan MCU gagal dan file baru belum dapat dibersihkan otomatis.'
+                });
+            }
+        }
         if (error?.code === 'MCU_FORM_FIELD_MISSING') {
             await showAlert({
                 icon: 'warning',
@@ -1146,6 +1157,10 @@ window.handleAddMCU = async function(event) {
                 text: `Komponen ${error.fieldId} belum termuat. Tutup form, buka kembali, lalu coba simpan lagi.`,
                 confirmButtonText: 'Tutup'
             });
+            return;
+        }
+        if (error?.code?.startsWith('UPLOAD_')) {
+            await presentUploadError(error);
             return;
         }
         showToast('Gagal menambah MCU: ' + error.message, 'error');

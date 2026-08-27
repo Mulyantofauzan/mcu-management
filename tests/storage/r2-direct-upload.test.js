@@ -2,7 +2,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
   R2DirectUploadService,
-  PDF_UPLOAD_LIMIT_BYTES
+  PDF_UPLOAD_LIMIT_BYTES,
+  IMAGE_UPLOAD_LIMIT_BYTES
 } = require('../../server/r2DirectUploadService');
 
 function serviceFixture(overrides = {}) {
@@ -42,6 +43,15 @@ function serviceFixture(overrides = {}) {
     },
     uuid: () => `uuid-${++uuid}`,
     saveMetadata: async () => ({ fileid: 'file-1' }),
+    employeeExists: async () => true,
+    findMetadata: async () => ({
+      fileid: 'file-1',
+      employeeid: 'EMP-1',
+      mcuid: 'MCU-1',
+      uploadedby: 'user-1',
+      supabase_storage_path: 'mcu_files/EMP-1/MCU-1/uuid-1.pdf'
+    }),
+    deleteMetadata: async () => true,
     publicUrl: key => `https://files.example/${key}`,
     ...overrides
   });
@@ -66,9 +76,102 @@ test('prepare binds a five-minute PDF upload to user and MCU metadata', async ()
     owner: 'user-1',
     employeeid: 'EMP-1',
     mcuid: 'MCU-1',
-    purpose: 'mcu-pdf-upload'
+    purpose: 'mcu-file-upload'
   });
   assert.equal(signedCommands[0].options.expiresIn, 300);
+});
+
+test('prepare normalizes and accepts the reported production employee ID', async () => {
+  const lookedUp = [];
+  const { service, signedCommands } = serviceFixture({
+    employeeExists: async employeeId => {
+      lookedUp.push(employeeId);
+      return true;
+    }
+  });
+
+  await service.prepareFileUpload({
+    userId: ' user-1 ',
+    employeeId: ' EMP-20251128-miix34l2-JE5CH\n',
+    mcuId: ' MCU-1 ',
+    fileName: 'hasil MCU.PDF',
+    contentLength: PDF_UPLOAD_LIMIT_BYTES - 1
+  });
+
+  assert.deepEqual(lookedUp, ['EMP-20251128-miix34l2-JE5CH']);
+  assert.equal(
+    signedCommands[0].command.input.Metadata.employeeid,
+    'EMP-20251128-miix34l2-JE5CH'
+  );
+});
+
+test('prepare distinguishes a missing employee from an invalid ID', async () => {
+  const { service } = serviceFixture({ employeeExists: async () => false });
+
+  await assert.rejects(
+    service.prepareFileUpload({
+      userId: 'user-1',
+      employeeId: 'EMP-404',
+      mcuId: 'MCU-1',
+      fileName: 'hasil.pdf',
+      contentLength: 1024
+    }),
+    error => error.code === 'UPLOAD_EMPLOYEE_NOT_FOUND' && error.status === 404
+  );
+});
+
+test('prepare rejects an employee ID with unsafe path characters', async () => {
+  const { service } = serviceFixture();
+
+  await assert.rejects(
+    service.prepareFileUpload({
+      userId: 'user-1',
+      employeeId: 'EMP/../../OTHER',
+      mcuId: 'MCU-1',
+      fileName: 'hasil.pdf',
+      contentLength: 1024
+    }),
+    error => error.code === 'UPLOAD_VALIDATION_FAILED'
+  );
+});
+
+test('prepare uses direct upload for every accepted extension', async () => {
+  const accepted = [
+    ['hasil.PDF', 'pdf', 'application/pdf', PDF_UPLOAD_LIMIT_BYTES - 1],
+    ['scan.PNG', 'png', 'image/png', IMAGE_UPLOAD_LIMIT_BYTES],
+    ['foto.JPG', 'jpg', 'image/jpeg', IMAGE_UPLOAD_LIMIT_BYTES],
+    ['foto.JPEG', 'jpeg', 'image/jpeg', IMAGE_UPLOAD_LIMIT_BYTES]
+  ];
+
+  for (const [fileName, extension, contentType, contentLength] of accepted) {
+    const { service, signedCommands } = serviceFixture();
+    const result = await service.prepareFileUpload({
+      userId: 'user-1',
+      employeeId: 'EMP-1',
+      mcuId: 'MCU-1',
+      fileName,
+      contentLength
+    });
+
+    assert.match(result.objectKey, new RegExp(`\\.${extension}$`));
+    assert.equal(result.requiredHeaders['Content-Type'], contentType);
+    assert.equal(signedCommands[0].command.input.ContentLength, contentLength);
+  }
+});
+
+test('prepare enforces the inclusive image limit', async () => {
+  const { service } = serviceFixture();
+
+  await assert.rejects(
+    service.prepareFileUpload({
+      userId: 'user-1',
+      employeeId: 'EMP-1',
+      mcuId: 'MCU-1',
+      fileName: 'scan.jpg',
+      contentLength: IMAGE_UPLOAD_LIMIT_BYTES + 1
+    }),
+    error => error.code === 'UPLOAD_SIZE_INVALID'
+  );
 });
 
 test('prepare rejects a stored PDF at the exclusive 10 MB limit', async () => {
@@ -94,7 +197,8 @@ test('presigned PUT binds content type without unsupported SDK checksums', async
       secretAccessKey: 'test-secret-key',
       bucket: 'mcu-files'
     },
-    uuid: () => '00000000-0000-4000-8000-000000000000'
+    uuid: () => '00000000-0000-4000-8000-000000000000',
+    employeeExists: async () => true
   });
   const prepared = await service.preparePdfUpload({
     userId: 'user-1',
@@ -126,12 +230,86 @@ test('confirm saves PDF metadata without inspecting scanner-specific bytes', asy
   });
 
   assert.equal(result.file.size, 1024);
+  assert.equal(result.file.id, 'file-1');
   assert.equal(result.storage.path, 'mcu_files/EMP-1/MCU-1/uuid-1.pdf');
   assert.equal(savedCalls.length, 1);
   assert.deepEqual(
     commands.map(command => command.constructor.name),
     ['HeadObjectCommand', 'CopyObjectCommand', 'DeleteObjectCommand']
   );
+});
+
+test('confirm preserves the server-controlled JPG extension and content type', async () => {
+  const commands = [];
+  const { service } = serviceFixture({
+    client: {
+      async send(command) {
+        commands.push(command);
+        if (command.constructor.name === 'HeadObjectCommand') {
+          return {
+            ContentType: 'image/jpeg',
+            ContentLength: 2048,
+            Metadata: {
+              owner: 'user-1',
+              employeeid: 'EMP-1',
+              mcuid: 'MCU-1',
+              purpose: 'mcu-file-upload'
+            }
+          };
+        }
+        return {};
+      }
+    }
+  });
+
+  const result = await service.confirmFileUpload({
+    userId: 'user-1',
+    objectKey: 'pending/mcu-uploads/user-1/upload.jpg',
+    fileName: 'foto MCU.JPG'
+  });
+  const copy = commands.find(command => command.constructor.name === 'CopyObjectCommand');
+
+  assert.equal(result.file.type, 'image');
+  assert.match(result.storage.path, /\.jpg$/);
+  assert.equal(copy.input.ContentType, 'image/jpeg');
+});
+
+test('rollback deletes only a file owned by the same upload context', async () => {
+  const deletedMetadata = [];
+  const { service, commands } = serviceFixture({
+    deleteMetadata: async fileId => {
+      deletedMetadata.push(fileId);
+      return true;
+    }
+  });
+
+  const result = await service.rollbackFileUpload({
+    userId: 'user-1',
+    employeeId: 'EMP-1',
+    mcuId: 'MCU-1',
+    fileId: 'file-1'
+  });
+
+  assert.equal(result.deleted, true);
+  assert.deepEqual(deletedMetadata, ['file-1']);
+  assert.equal(
+    commands.find(command => command.constructor.name === 'DeleteObjectCommand').input.Key,
+    'mcu_files/EMP-1/MCU-1/uuid-1.pdf'
+  );
+});
+
+test('rollback rejects a file from another employee context', async () => {
+  const { service, commands } = serviceFixture();
+  await assert.rejects(
+    service.rollbackFileUpload({
+      userId: 'user-1',
+      employeeId: 'EMP-OTHER',
+      mcuId: 'MCU-1',
+      fileId: 'file-1'
+    }),
+    error => error.code === 'UPLOAD_FORBIDDEN'
+  );
+  assert.equal(commands.length, 0);
 });
 
 test('confirm cleans final and pending objects when metadata insertion fails', async () => {

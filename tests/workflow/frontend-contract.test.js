@@ -100,6 +100,35 @@ test('MCU upload treats supported files as opaque attachments', () => {
   ].forEach(file => assert.equal(fs.existsSync(path.join(root, file)), false, file));
 });
 
+test('every MCU attachment uses direct upload with immutable modal context', () => {
+  const widget = read('mcu-management/js/components/fileUploadWidget.js');
+  const service = read('mcu-management/js/services/supabaseStorageService.js');
+  const entryPoints = [
+    read('mcu-management/js/pages/tambah-karyawan.js'),
+    read('mcu-management/js/pages/kelola-karyawan.js'),
+    read('mcu-management/js/pages/follow-up.js')
+  ];
+
+  assert.match(widget, /Object\.freeze\(\{[\s\S]*employeeId:[\s\S]*mcuId:[\s\S]*userId:/);
+  assert.match(widget, /getUploadContext\(\)/);
+  assert.match(service, /prepare-file-upload/);
+  assert.match(service, /confirm-file-upload/);
+  assert.match(service, /rollback-file-upload/);
+  assert.doesNotMatch(service, /uploadMultipartFile|new FormData\(/);
+  entryPoints.forEach(source => {
+    assert.match(source, /getUploadContext\(\)/);
+    assert.match(source, /uploadBatchFiles\(\s*tempFiles|uploadBatchFiles\(\s*pendingFiles/);
+  });
+});
+
+test('cancelling follow-up after upload rolls back new attachments', () => {
+  const source = read('mcu-management/js/pages/follow-up.js');
+
+  assert.match(source, /closeMCUUpdateModal = async function\(preserveUploads = false\)/);
+  assert.match(source, /deleteOrphanedFiles\(\s*pendingChanges\.uploadResults,\s*pendingChanges\.uploadContext/);
+  assert.match(source, /closeMCUUpdateModal\(true\)/);
+});
+
 test('both Add MCU handlers use guarded form-scoped field reads', () => {
   const reader = read('mcu-management/js/utils/mcuFormReader.js');
   const addEmployee = read('mcu-management/js/pages/tambah-karyawan.js');
@@ -294,7 +323,8 @@ test('inactive employee toggle anchors to the filter card', () => {
 test('follow-up path submits evidence without a petugas medical result', () => {
   const source = read('mcu-management/js/pages/follow-up.js');
   assert.match(source, /evidenceNotes: followUpData\.evidenceNotes/);
-  assert.match(source, /attachmentFileIds: \[\]/);
+  assert.match(source, /attachmentFileIds:[\s\S]{0,180}result\.fileId/);
+  assert.doesNotMatch(source, /attachmentFileIds: \[\]/);
   assert.match(source, /if \(!workflowEnabled\)[\s\S]{0,500}mergedUpdateData\.finalResult/);
   assert.match(source, /Bukti follow-up dikirim untuk review dokter/);
 });
