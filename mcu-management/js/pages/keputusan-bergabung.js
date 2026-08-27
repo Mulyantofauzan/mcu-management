@@ -4,7 +4,9 @@ import { workflowIdempotency } from '../utils/workflowIdempotency.js';
 import { ensureWorkflowAlerts, presentWorkflowError } from '../utils/workflowErrorPresenter.js';
 import { shareApprovedReview } from '../utils/whatsappShare.js';
 
-const state = { tab: 'waiting', waiting: [], history: [], selected: null };
+const PAGE_SIZE = 10;
+const emptyPage = () => ({ items: [], page: 1, pageSize: PAGE_SIZE, total: 0, totalPages: 0 });
+const state = { tab: 'waiting', waiting: emptyPage(), history: emptyPage(), selected: null };
 const $ = selector => document.querySelector(selector);
 
 function escapeHtml(value) {
@@ -29,19 +31,62 @@ function shareLabel(status) {
   }[status] || '-';
 }
 
-function rows() { return state.tab === 'waiting' ? state.waiting : state.history; }
+function activePage() { return state[state.tab]; }
+function rows() { return activePage().items; }
 
 function setTab(tab) {
+  if (!['waiting', 'history'].includes(tab)) return;
   state.tab = tab;
   document.querySelectorAll('[data-joining-tab]').forEach(button => button.classList.toggle('active', button.dataset.joiningTab === tab));
   renderList();
+  loadData(tab, 1);
+}
+
+function paginationTokens(currentPage, totalPages) {
+  const pages = [...new Set([1, currentPage - 1, currentPage, currentPage + 1, totalPages]
+    .filter(page => page >= 1 && page <= totalPages))].sort((left, right) => left - right);
+  const tokens = [];
+  pages.forEach((page, index) => {
+    if (index > 0 && page - pages[index - 1] > 1) tokens.push('ellipsis');
+    tokens.push(page);
+  });
+  return tokens;
+}
+
+function renderPagination(pageData) {
+  const container = $('#joining-pagination');
+  container.hidden = pageData.total === 0;
+  if (pageData.total === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const start = ((pageData.page - 1) * pageData.pageSize) + 1;
+  const end = Math.min(pageData.page * pageData.pageSize, pageData.total);
+  const pageButtons = paginationTokens(pageData.page, pageData.totalPages).map(token => (
+    token === 'ellipsis'
+      ? '<span class="workflow-page-ellipsis" aria-hidden="true">…</span>'
+      : `<button type="button" class="workflow-page-btn${token === pageData.page ? ' active' : ''}" data-page="${token}" ${token === pageData.page ? 'aria-current="page"' : ''}>${token}</button>`
+  )).join('');
+
+  container.innerHTML = `<span class="workflow-pagination-info">${start}-${end} dari ${pageData.total} data</span>
+    <div class="workflow-pagination-controls">
+      <button type="button" class="workflow-page-btn workflow-page-nav" data-page="${pageData.page - 1}" ${pageData.page <= 1 ? 'disabled' : ''}>Sebelumnya</button>
+      ${pageButtons}
+      <button type="button" class="workflow-page-btn workflow-page-nav" data-page="${pageData.page + 1}" ${pageData.page >= pageData.totalPages ? 'disabled' : ''}>Selanjutnya</button>
+    </div>`;
+
+  container.querySelectorAll('[data-page]:not(:disabled)').forEach(button => {
+    button.addEventListener('click', () => loadData(state.tab, Number(button.dataset.page)));
+  });
 }
 
 function renderList() {
   const data = rows();
+  const pageData = activePage();
   $('#joining-title').textContent = state.tab === 'waiting' ? 'Daftar Tunggu' : 'Riwayat Keputusan';
-  $('#joining-count').textContent = `${data.length} data`;
-  $('#joining-empty').hidden = data.length > 0;
+  $('#joining-count').textContent = `${pageData.total} data`;
+  $('#joining-empty').hidden = pageData.total > 0;
   $('#joining-list').innerHTML = data.map(row => {
     const mcu = row.mcu || {};
     const isCorrection = state.tab === 'history' && row.joining_status === 'not_joined';
@@ -55,20 +100,22 @@ function renderList() {
         : isCorrection ? `<button type="button" class="workflow-btn" data-correct="${escapeHtml(row.employee_id)}">Koreksi</button>` : '<span></span>'}
     </article>`;
   }).join('');
+  renderPagination(pageData);
   document.querySelectorAll('[data-decide]').forEach(button => button.addEventListener('click', () => openDecision(button.dataset.decide)));
   document.querySelectorAll('[data-correct]').forEach(button => button.addEventListener('click', () => correctDecision(button.dataset.correct)));
 }
 
-async function loadData() {
+async function loadData(tab = state.tab, page = 1) {
   $('#refresh-joining').disabled = true;
   try {
-    [state.waiting, state.history] = await Promise.all([
-      workflowService.joiningQueue(false),
-      workflowService.joiningQueue(true)
-    ]);
-    renderList();
+    const result = await workflowService.joiningQueue(tab === 'history', { page, pageSize: PAGE_SIZE });
+    if (result.totalPages > 0 && result.page > result.totalPages) {
+      return loadData(tab, result.totalPages);
+    }
+    state[tab] = result;
+    if (state.tab === tab) renderList();
   } catch (error) {
-    await presentWorkflowError(error, { retry: loadData });
+    await presentWorkflowError(error, { retry: () => loadData(tab, page) });
   } finally {
     $('#refresh-joining').disabled = false;
   }
@@ -79,7 +126,7 @@ function infoGrid(entries) {
 }
 
 function openDecision(employeeId) {
-  state.selected = state.waiting.find(row => row.employee_id === employeeId);
+  state.selected = state.waiting.items.find(row => row.employee_id === employeeId);
   if (!state.selected?.mcu) return;
   const { mcu } = state.selected;
   $('#joining-dialog-title').textContent = state.selected.name;
@@ -181,7 +228,7 @@ async function saveDecision(event) {
     const Swal = await ensureWorkflowAlerts();
     await Swal.fire({ icon: 'success', title: 'Keputusan Tersimpan', text: joiningStatus === 'joined' ? 'Karyawan ditandai bergabung.' : 'Kandidat ditandai tidak bergabung.' });
     closeDecision();
-    await loadData();
+    await loadData('waiting', state.waiting.page);
   } catch (error) {
     await presentWorkflowError(error, { reload: loadData });
   } finally {
@@ -190,7 +237,7 @@ async function saveDecision(event) {
 }
 
 async function correctDecision(employeeId) {
-  const row = state.history.find(item => item.employee_id === employeeId);
+  const row = state.history.items.find(item => item.employee_id === employeeId);
   const Swal = await ensureWorkflowAlerts();
   const answer = await Swal.fire({
     icon: 'warning',
@@ -211,7 +258,7 @@ async function correctDecision(employeeId) {
       idempotencyKey: workflowIdempotency.get(scope)
     }, scope);
     workflowIdempotency.clear(scope);
-    await loadData();
+    await loadData('history', state.history.page);
   } catch (error) {
     await presentWorkflowError(error, { reload: loadData });
   }
@@ -230,14 +277,14 @@ async function init() {
       return;
     }
     if (!bootstrap.workflowEnabled) return;
-    await loadData();
+    await loadData('waiting', 1);
   } catch (error) {
     await presentWorkflowError(error, { retry: init });
   }
 }
 
 document.querySelectorAll('[data-joining-tab]').forEach(button => button.addEventListener('click', () => setTab(button.dataset.joiningTab)));
-$('#refresh-joining').addEventListener('click', loadData);
+$('#refresh-joining').addEventListener('click', () => loadData(state.tab, 1));
 $('#close-joining').addEventListener('click', closeDecision);
 $('#share-whatsapp').addEventListener('click', shareWhatsApp);
 $('#joining-form').addEventListener('submit', saveDecision);

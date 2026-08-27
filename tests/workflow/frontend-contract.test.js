@@ -336,6 +336,29 @@ test('new workflow pages do not use raw browser alerts', () => {
   ].forEach(file => assert.doesNotMatch(read(file), /\balert\s*\(/, `${file} must use workflow error UI`));
 });
 
+test('joining decisions use server pagination for both tabs', () => {
+  const page = read('mcu-management/pages/keputusan-bergabung.html');
+  const source = read('mcu-management/js/pages/keputusan-bergabung.js');
+  const service = read('mcu-management/js/services/workflowService.js');
+
+  assert.match(page, /id="joining-pagination"/);
+  assert.match(source, /const PAGE_SIZE = 10/);
+  assert.match(source, /workflowService\.joiningQueue\(tab === 'history', \{ page, pageSize: PAGE_SIZE \}\)/);
+  assert.match(source, /loadData\(tab, 1\)/);
+  assert.match(source, /workflow-pagination-info/);
+  assert.doesNotMatch(source, /Promise\.all\(\[\s*workflowService\.joiningQueue/);
+  assert.match(service, /joiningQueue\(history = false, pagination = \{\}\)/);
+});
+
+test('quick Add MCU delegates to canonical form initialization', () => {
+  const source = read('mcu-management/js/pages/tambah-karyawan.js');
+  const quickAdd = source.match(/async function handleQuickMCUAdd[\s\S]*?\n}\n\nwindow\.handleSearch/)?.[0] || '';
+
+  assert.match(quickAdd, /await window\.openAddMCUForEmployee\(employeeId\)/);
+  assert.doesNotMatch(quickAdd, /\.reset\(|\.from\('employees'\)/);
+  assert.match(source, /document\.getElementById\('mcu-form'\)\.reset\(\);\s*document\.getElementById\('mcu-employee-id'\)\.value = employeeId/);
+});
+
 test('production pages do not depend on third-party CDN assets', () => {
   const productionFiles = [
     'mcu-management/index.html',

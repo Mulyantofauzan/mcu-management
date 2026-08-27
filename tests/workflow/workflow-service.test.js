@@ -1,6 +1,32 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { WorkflowService } = require('../../server/workflow/workflowService');
+const {
+  WorkflowService,
+  normalizePagination
+} = require('../../server/workflow/workflowService');
+
+function queryFixture(resultsByTable) {
+  const calls = [];
+  const queues = Object.fromEntries(
+    Object.entries(resultsByTable).map(([table, results]) => [table, [...results]])
+  );
+  const supabase = {
+    from(table) {
+      const result = queues[table]?.shift();
+      if (!result) throw new Error(`Unexpected query for ${table}`);
+      const query = {};
+      ['select', 'is', 'eq', 'in', 'order', 'limit', 'range'].forEach(method => {
+        query[method] = (...args) => {
+          calls.push({ table, method, args });
+          return query;
+        };
+      });
+      query.then = (resolve, reject) => Promise.resolve(result).then(resolve, reject);
+      return query;
+    }
+  };
+  return { supabase, calls };
+}
 
 test('terminal doctor approval never starts referral generation', async () => {
   const calls = [];
@@ -78,4 +104,75 @@ test('signature confirmation verifies private object before database mutation', 
   assert.equal(result.signatureVersion, 2);
   assert.equal(calls[0][0], 'head');
   assert.equal(calls[1][0], 'workflow_confirm_doctor_signature');
+});
+
+test('joining pagination normalizes invalid values and caps page size', () => {
+  assert.deepEqual(normalizePagination({ page: '3', pageSize: '10' }), {
+    page: 3,
+    pageSize: 10,
+    from: 20,
+    to: 29
+  });
+  assert.deepEqual(normalizePagination({ page: 0, pageSize: 500 }), {
+    page: 1,
+    pageSize: 50,
+    from: 0,
+    to: 49
+  });
+});
+
+test('waiting pagination counts only candidates with terminal MCU records', async () => {
+  const mcu = {
+    mcu_id: 'MCU-2',
+    employee_id: 'EMP-2',
+    workflow_status: 'completed',
+    current_medical_result: 'Fit'
+  };
+  const { supabase, calls } = queryFixture({
+    employees: [{
+      data: [{ employee_id: 'EMP-2', joining_status: 'candidate', mcus: [mcu] }],
+      count: 12,
+      error: null
+    }]
+  });
+  const service = new WorkflowService(supabase);
+
+  const result = await service.getJoiningQueue(false, { page: 2, pageSize: 10 });
+
+  assert.equal(result.page, 2);
+  assert.equal(result.total, 12);
+  assert.equal(result.totalPages, 2);
+  assert.equal(result.items[0].mcu, mcu);
+  assert.ok(calls.some(call => call.method === 'select' && call.args[0].includes('mcus!inner')));
+  assert.ok(calls.some(call => call.method === 'range' && call.args[0] === 10 && call.args[1] === 19));
+  assert.ok(calls.some(call => call.method === 'limit'
+    && call.args[0] === 1
+    && call.args[1]?.referencedTable === 'mcus'));
+});
+
+test('joining history uses stable server range and returns page metadata', async () => {
+  const { supabase, calls } = queryFixture({
+    employees: [{
+      data: [{ employee_id: 'EMP-11', joining_status: 'joined' }],
+      count: 11,
+      error: null
+    }],
+    mcus: [{ data: [{ mcu_id: 'MCU-11', employee_id: 'EMP-11' }], error: null }]
+  });
+  const service = new WorkflowService(supabase);
+
+  const result = await service.getJoiningQueue(true, { page: 3, pageSize: 5 });
+
+  assert.deepEqual(
+    { page: result.page, pageSize: result.pageSize, total: result.total, totalPages: result.totalPages },
+    { page: 3, pageSize: 5, total: 11, totalPages: 3 }
+  );
+  assert.equal(result.items[0].mcu.mcu_id, 'MCU-11');
+  assert.ok(calls.some(call => call.table === 'employees'
+    && call.method === 'range'
+    && call.args[0] === 10
+    && call.args[1] === 14));
+  assert.ok(calls.some(call => call.table === 'employees'
+    && call.method === 'order'
+    && call.args[0] === 'joining_decided_at'));
 });

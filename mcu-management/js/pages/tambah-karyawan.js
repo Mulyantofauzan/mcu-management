@@ -499,36 +499,10 @@ function populateDropdowns() {
  */
 async function handleQuickMCUAdd(employeeId, employeeName) {
     try {
-        // Find the employee in the employees table
-        const { data: employee, error } = await supabase
-            .from('employees')
-            .select('*')
-            .eq('employee_id', employeeId)
-            .single();
-
-        if (error) throw error;
-
-        // Set the employee in currentEmployee
-        currentEmployee = employee;
-
-        // Populate the employee summary in the modal
-        document.getElementById('mcu-emp-name').textContent = employee.name || '-';
-        document.getElementById('mcu-emp-id').textContent = employee.employee_id || '-';
-        document.getElementById('mcu-emp-job').textContent = employee.job_title || '-';
-        document.getElementById('mcu-emp-dept').textContent = employee.department || '-';
-
-        // Set the hidden employee ID field
-        document.getElementById('mcu-employee-id').value = employee.employee_id;
-
-        // Reset the form fields
-        document.getElementById('mcu-form').reset();
-        document.getElementById('mcu-type').value = '';
-        document.getElementById('mcu-date').value = '';
-
-        // Open the modal
-        openModal('add-mcu-modal');
-
-        showToast(`Form MCU untuk ${employeeName} siap diisi`, 'success');
+        await window.openAddMCUForEmployee(employeeId);
+        if (currentEmployee?.employeeId === employeeId) {
+            showToast(`Form MCU untuk ${employeeName} siap diisi`, 'success');
+        }
     } catch (error) {
         showToast('Error membuka form MCU: ' + error.message, 'error');
     }

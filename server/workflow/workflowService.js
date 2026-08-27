@@ -1,6 +1,7 @@
 const { randomUUID } = require('crypto');
 const {
   LOOPING_MEDICAL_RESULTS,
+  TERMINAL_MEDICAL_RESULTS,
   WORKFLOW_ERROR_CODES
 } = require('./constants');
 const { WorkflowError, normalizeWorkflowError } = require('./errors');
@@ -28,6 +29,36 @@ function requireFields(payload, fields) {
   }
 }
 
+const DEFAULT_PAGE_SIZE = 10;
+const MAX_PAGE_SIZE = 50;
+
+function normalizePagination(payload = {}) {
+  const requestedPage = Number(payload.page);
+  const requestedPageSize = Number(payload.pageSize);
+  const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const pageSize = Number.isInteger(requestedPageSize) && requestedPageSize > 0
+    ? Math.min(requestedPageSize, MAX_PAGE_SIZE)
+    : DEFAULT_PAGE_SIZE;
+
+  return {
+    page,
+    pageSize,
+    from: (page - 1) * pageSize,
+    to: (page * pageSize) - 1
+  };
+}
+
+function paginated(items, count, pagination) {
+  const total = Number(count) || 0;
+  return {
+    items,
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+    total,
+    totalPages: total === 0 ? 0 : Math.ceil(total / pagination.pageSize)
+  };
+}
+
 class WorkflowService {
   constructor(supabase, options = {}) {
     this.supabase = supabase || require('../supabaseAdmin').getSupabaseAdmin();
@@ -50,8 +81,8 @@ class WorkflowService {
       'review-detail': () => this.getReviewDetail(payload.mcuId),
       'review-history': () => this.getReviewHistory(payload),
       'petugas-queue': () => this.getPetugasQueue(),
-      'joining-queue': () => this.getJoiningQueue(false),
-      'joining-history': () => this.getJoiningQueue(true),
+      'joining-queue': () => this.getJoiningQueue(false, payload),
+      'joining-history': () => this.getJoiningQueue(true, payload),
       'doctor-profile': () => this.getDoctorProfile(user.userId),
       'download-referral': () => this.getReferralDownload(payload),
       settings: () => this.getSettings(),
@@ -304,27 +335,54 @@ class WorkflowService {
     return data || [];
   }
 
-  async getJoiningQueue(history) {
-    let employeeQuery = this.supabase
-      .from('employees')
-      .select('employee_id, name, department, job_title, employee_type, joining_status, joining_version, joining_decided_at, joining_decision_reason')
-      .is('deleted_at', null)
-      .limit(200);
+  async getJoiningQueue(history, payload = {}) {
+    const pagination = normalizePagination(payload);
+    const employeeFields = 'employee_id, name, department, job_title, employee_type, joining_status, joining_version, joining_decided_at, joining_decision_reason';
+    const mcuFields = 'mcu_id, employee_id, mcu_type, mcu_date, current_medical_result, workflow_status, workflow_version, current_share_status, activated_at';
 
-    employeeQuery = history
-      ? employeeQuery.in('joining_status', ['joined', 'not_joined'])
-      : employeeQuery.eq('joining_status', 'candidate');
+    if (!history) {
+      const { data: employees, count } = await this.query(
+        this.supabase
+          .from('employees')
+          .select(`${employeeFields}, mcus!inner(${mcuFields})`, { count: 'exact' })
+          .is('deleted_at', null)
+          .eq('joining_status', 'candidate')
+          .eq('mcus.workflow_status', 'completed')
+          .is('mcus.deleted_at', null)
+          .in('mcus.current_medical_result', TERMINAL_MEDICAL_RESULTS)
+          .order('employee_id', { ascending: false })
+          .order('activated_at', { referencedTable: 'mcus', ascending: false })
+          .limit(1, { referencedTable: 'mcus' })
+          .range(pagination.from, pagination.to)
+      );
 
-    const { data: employees } = await this.query(employeeQuery);
+      const items = (employees || []).map(({ mcus, ...employee }) => ({
+        ...employee,
+        mcu: Array.isArray(mcus) ? (mcus[0] || null) : (mcus || null)
+      }));
+      return paginated(items, count, pagination);
+    }
+
+    const { data: employees, count } = await this.query(
+      this.supabase
+        .from('employees')
+        .select(employeeFields, { count: 'exact' })
+        .is('deleted_at', null)
+        .in('joining_status', ['joined', 'not_joined'])
+        .order('joining_decided_at', { ascending: false, nullsFirst: false })
+        .order('employee_id', { ascending: false })
+        .range(pagination.from, pagination.to)
+    );
     const employeeIds = (employees || []).map(row => row.employee_id);
-    if (employeeIds.length === 0) return [];
+    if (employeeIds.length === 0) return paginated([], count, pagination);
 
     const { data: mcus } = await this.query(
       this.supabase
         .from('mcus')
-        .select('mcu_id, employee_id, mcu_type, mcu_date, current_medical_result, workflow_status, workflow_version, current_share_status, activated_at')
+        .select(mcuFields)
         .in('employee_id', employeeIds)
         .eq('workflow_status', 'completed')
+        .is('deleted_at', null)
         .order('activated_at', { ascending: false })
     );
 
@@ -333,9 +391,11 @@ class WorkflowService {
       if (!latestByEmployee.has(mcu.employee_id)) latestByEmployee.set(mcu.employee_id, mcu);
     });
 
-    return (employees || [])
-      .map(employee => ({ ...employee, mcu: latestByEmployee.get(employee.employee_id) || null }))
-      .filter(row => history || row.mcu);
+    const items = (employees || []).map(employee => ({
+      ...employee,
+      mcu: latestByEmployee.get(employee.employee_id) || null
+    }));
+    return paginated(items, count, pagination);
   }
 
   async getDoctorProfile(userId) {
@@ -749,6 +809,7 @@ class WorkflowService {
 module.exports = {
   WorkflowService,
   requireFields,
+  normalizePagination,
   unwrapSetting,
   createIdempotencyKey: randomUUID
 };

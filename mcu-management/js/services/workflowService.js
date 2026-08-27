@@ -89,8 +89,8 @@ class WorkflowService {
   petugasQueue() { return this.get('petugas-queue'); }
   reviewDetail(mcuId) { return this.get('review-detail', { mcuId }); }
   reviewHistory(mcuId) { return this.get('review-history', { mcuId }); }
-  joiningQueue(history = false) {
-    return this.get(history ? 'joining-history' : 'joining-queue');
+  joiningQueue(history = false, pagination = {}) {
+    return this.get(history ? 'joining-history' : 'joining-queue', pagination);
   }
   doctorProfile() { return this.get('doctor-profile'); }
   settings() { return this.get('settings'); }
