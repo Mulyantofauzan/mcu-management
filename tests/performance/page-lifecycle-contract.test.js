@@ -79,3 +79,23 @@ test('employee table does not wait for modal-only dependencies', () => {
   assert.match(source, /loadSecondaryData/);
   assert.match(source, /markInteractive\(\)/);
 });
+
+test('employee input defers MCU-only support modules', () => {
+  const source = read('mcu-management/js/pages/tambah-karyawan.js');
+
+  assert.doesNotMatch(source, /^import FileUploadWidget|^import \{ createLabResultWidget \}/m);
+  assert.match(source, /Promise\.allSettled\(\[\s*masterDataService\.getAllJobTitles\(\)/);
+  assert.match(source, /loadMcuSupportModules/);
+  assert.match(source, /markInteractive\(\)/);
+});
+
+test('follow-up list renders before modal support modules', () => {
+  const source = read('mcu-management/js/pages/follow-up.js');
+  const init = source.match(/async function init\(\)[\s\S]*?\n}\n\nasync function configureWorkflowMode/)?.[0] || '';
+
+  assert.doesNotMatch(source, /^import FileUploadWidget|^import \{ StaticLabForm \}/m);
+  assert.doesNotMatch(init, /await initLabForms/);
+  assert.match(source, /Promise\.allSettled\(\[\s*employeeService\.getAll\(\)/);
+  assert.match(source, /loadFollowUpSupportModules/);
+  assert.match(source, /markInteractive\(\)/);
+});

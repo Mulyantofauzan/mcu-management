@@ -11,12 +11,9 @@ import { labService } from '../services/labService.js';
 import { mcuBatchService } from '../services/mcuBatchService.js';  // ✅ NEW: Batch service for atomic updates
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
-import { generateRujukanPDF, generateRujukanBalikPDF } from '../utils/rujukanPDFGenerator.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
-import FileUploadWidget from '../components/fileUploadWidget.js';
 import { deleteOrphanedFiles, uploadBatchFiles } from '../services/supabaseStorageService.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';  // ✅ NEW: Temp file management
-import { StaticLabForm } from '../components/staticLabForm.js';
 import { workflowService } from '../services/workflowService.js';
 import { workflowIdempotency } from '../utils/workflowIdempotency.js';
 import { presentUploadError, presentWorkflowError } from '../utils/workflowErrorPresenter.js';
@@ -35,6 +32,36 @@ let labResultWidgetUpdate = null;  // Lab result widget for update modal
 let workflowEnabled = false;
 let workflowStateKnown = false;
 let currentWorkflowDetail = null;
+let followUpSupportModulesPromise = null;
+let referralModulePromise = null;
+
+const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
+
+function loadFollowUpSupportModules() {
+  if (!followUpSupportModulesPromise) {
+    followUpSupportModulesPromise = Promise.all([
+      import('../components/fileUploadWidget.js'),
+      import('../components/staticLabForm.js')
+    ]).then(([fileModule, labModule]) => ({
+      FileUploadWidget: fileModule.default,
+      StaticLabForm: labModule.StaticLabForm
+    })).catch(error => {
+      followUpSupportModulesPromise = null;
+      throw error;
+    });
+  }
+  return followUpSupportModulesPromise;
+}
+
+function loadReferralModule() {
+  if (!referralModulePromise) {
+    referralModulePromise = import('../utils/rujukanPDFGenerator.js').catch(error => {
+      referralModulePromise = null;
+      throw error;
+    });
+  }
+  return referralModulePromise;
+}
 
 // ✅ NEW: Temp state object for multi-step modal flow
 let pendingChanges = {
@@ -205,6 +232,7 @@ function hideUploadLoading() {
 // Download Surat Rujukan PDF from table action button
 window.downloadRujukanPDFAction = async function(mcuId) {
   try {
+    const { generateRujukanPDF } = await loadReferralModule();
     // Pastikan master data sudah loaded (termasuk doctors)
     if (!doctors || doctors.length === 0) {
       await loadMasterData();
@@ -254,7 +282,7 @@ window.downloadRujukanPDFAction = async function(mcuId) {
 };
 
 // Download Surat Rujukan Balik (Return Referral) from table action button
-window.downloadRujukanBalikAction = function(employeeId) {
+window.downloadRujukanBalikAction = async function(employeeId) {
   const employee = employees.find(e => e.employeeId === employeeId);
   if (!employee) {
     showToast('Data karyawan tidak ditemukan', 'error');
@@ -262,6 +290,7 @@ window.downloadRujukanBalikAction = function(employeeId) {
   }
 
   try {
+    const { generateRujukanBalikPDF } = await loadReferralModule();
     generateRujukanBalikPDF(employee);
     showToast('Surat Rujukan Balik siap dicetak. Gunakan Ctrl+S atau Simpan PDF di print dialog.', 'success');
   } catch (error) {
@@ -269,20 +298,6 @@ window.downloadRujukanBalikAction = function(employeeId) {
     showToast('Gagal membuat surat rujukan balik: ' + error.message, 'error');
   }
 };
-
-async function initLabForms() {
-  /**
-   * Initialize lab form ONCE on page load
-   * Form is permanent like other form fields - no re-rendering needed
-   */
-  try {
-    // Update modal lab form (lab-results-container-update)
-    if (!labResultWidgetUpdate) {
-      labResultWidgetUpdate = new StaticLabForm('lab-results-container-update');
-    }
-  } catch (error) {
-  }
-}
 
 async function init() {
   try {
@@ -292,25 +307,23 @@ async function init() {
       return;
     }
 
-    await configureWorkflowMode();
-
-    // Wait for sidebar to load before updating user info
-
     updateUserInfo();
+    pageLifecycle()?.setLoading('followup-stats', { retry: init });
+    pageLifecycle()?.setLoading('followup-table', { retry: init });
 
-    // ✅ Initialize lab form ONCE on page load (truly permanent, like other form fields)
-    await initLabForms();
+    const [workflowResult, masterResult] = await Promise.allSettled([
+      configureWorkflowMode(),
+      loadMasterData()
+    ]);
+    if (workflowResult.status === 'rejected') throw workflowResult.reason;
+    if (masterResult.status === 'rejected') throw masterResult.reason;
 
-    await loadMasterData();
-    await loadFollowUpList();
-
-
-    // Show page content after initialization complete
-    document.body.classList.add('initialized');
+    await window.loadFollowUpList({ throwOnError: true });
+    pageLifecycle()?.markInteractive();
   } catch (error) {
-    showToast('Error initializing page: ' + error.message, 'error');
-    // Still show page even on error
-    document.body.classList.add('initialized');
+    pageLifecycle()?.setError('followup-stats', error, init);
+    pageLifecycle()?.setError('followup-table', error, init);
+    showToast('Daftar follow-up belum dapat dimuat.', 'error');
   }
 }
 
@@ -379,23 +392,25 @@ function updateUserInfo() {
 }
 
 async function loadMasterData() {
-  try {
-    // ✅ FIX: Load ALL employees (including inactive) for follow-up list
-    // Follow-up MCUs might exist for inactive employees too
-    employees = await employeeService.getAll();
-    departments = await masterDataService.getAllDepartments();
-    jobTitles = await masterDataService.getAllJobTitles();
-    doctors = await masterDataService.getAllDoctors();
+  const [employeeResult, departmentResult, jobResult, doctorResult] = await Promise.allSettled([
+    employeeService.getAll(),
+    masterDataService.getAllDepartments(),
+    masterDataService.getAllJobTitles(),
+    masterDataService.getAllDoctors()
+  ]);
+  if (employeeResult.status === 'rejected') throw employeeResult.reason;
 
-    // ✅ FIX: Build lookup Maps once for O(1) enrichment (performance optimization)
-    const jobMap = new Map(jobTitles.map(j => [j.name, j]));
-    const deptMap = new Map(departments.map(d => [d.name, d]));
+  employees = employeeResult.value;
+  departments = departmentResult.status === 'fulfilled' ? departmentResult.value : [];
+  jobTitles = jobResult.status === 'fulfilled' ? jobResult.value : [];
+  doctors = doctorResult.status === 'fulfilled' ? doctorResult.value : [];
 
-    // Enrich employees with IDs using O(1) Map lookups (O(n) total instead of O(n²))
-    employees = employees.map(emp => enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap));
-  } catch (error) {
-    // Silent fail - master data load error will be handled gracefully
-  }
+  // ✅ FIX: Build lookup Maps once for O(1) enrichment (performance optimization)
+  const jobMap = new Map(jobTitles.map(j => [j.name, j]));
+  const deptMap = new Map(departments.map(d => [d.name, d]));
+
+  // Enrich employees with IDs using O(1) Map lookups (O(n) total instead of O(n²))
+  employees = employees.map(emp => enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap));
 }
 
 // ✅ FIX: Optimized enrichment using Map lookups - O(1) per employee instead of O(n)
@@ -424,7 +439,8 @@ function enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap) {
 //   return emp;
 // }
 
-window.loadFollowUpList = async function() {
+window.loadFollowUpList = async function({ throwOnError = false } = {}) {
+  pageLifecycle()?.setLoading('followup-table', { retry: window.loadFollowUpList });
   try {
     if (!workflowStateKnown) return;
     if (workflowEnabled) {
@@ -451,11 +467,19 @@ window.loadFollowUpList = async function() {
 
     updateStats();
     renderTable();
+    pageLifecycle()?.setReady('followup-stats');
+    if (followUpList.length === 0) {
+      pageLifecycle()?.setEmpty('followup-table', 'Tidak ada MCU yang memerlukan follow-up.');
+    } else {
+      pageLifecycle()?.setReady('followup-table');
+    }
 
     if (!workflowEnabled) showToast('Data berhasil dimuat', 'success');
   } catch (error) {
+    pageLifecycle()?.setError('followup-table', error, window.loadFollowUpList);
     if (workflowEnabled) await presentWorkflowError(error, { retry: window.loadFollowUpList });
     else showToast('Gagal memuat data: ' + error.message, 'error');
+    if (throwOnError) throw error;
   }
 };
 
@@ -609,6 +633,7 @@ window.downloadWorkflowReferralAction = async function(mcuId) {
 
 window.openFollowUpModal = async function(mcuId) {
   try {
+    const { FileUploadWidget } = await loadFollowUpSupportModules();
     currentMCU = await mcuService.getById(mcuId);
     if (!currentMCU) {
       showToast('MCU record tidak ditemukan', 'error');
@@ -794,6 +819,7 @@ window.handleFollowUpSubmit = async function(event) {
 
 window.openMCUUpdateModal = async function(mcuId) {
   try {
+    const { StaticLabForm } = await loadFollowUpSupportModules();
     currentMCU = await mcuService.getById(mcuId);
     if (!currentMCU) {
       showToast('MCU record tidak ditemukan', 'error');
@@ -923,10 +949,8 @@ window.openMCUUpdateModal = async function(mcuId) {
 
     // Open modal FIRST to ensure DOM container is visible
     openModal('mcu-update-modal');
-
-    // ✅ Use pre-initialized lab form (initialized once on page load)
-    // No need to reinit - form is permanent like other form fields
-    if (labResultWidgetUpdate) {
+    if (!labResultWidgetUpdate || !labResultWidgetUpdate.container) {
+      labResultWidgetUpdate = new StaticLabForm('lab-results-container-update');
     }
 
     // NUCLEAR: Clean up any phantom lab records with invalid values for THIS MCU ONLY before loading

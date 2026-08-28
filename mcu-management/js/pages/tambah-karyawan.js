@@ -12,11 +12,9 @@ import { masterDataService } from '../services/masterDataService.js';
 import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast, openModal, closeModal, showAlert } from '../utils/uiHelpers.js';
 import { supabaseReady } from '../config/supabase.js';
-import FileUploadWidget from '../components/fileUploadWidget.js';
 import { generateMCUId } from '../utils/idGenerator.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';
 import { deleteOrphanedFiles } from '../services/supabaseStorageService.js';
-import { createLabResultWidget } from '../components/labResultWidget.js';
 import { workflowService } from '../services/workflowService.js';
 import { workflowIdempotency } from '../utils/workflowIdempotency.js';
 import { presentUploadError, presentWorkflowError } from '../utils/workflowErrorPresenter.js';
@@ -32,6 +30,25 @@ let labResultWidget = null;  // Lab result widget instance
 let generatedMCUIdForAdd = null;  // Store generated MCU ID for file uploads
 let workflowEnabled = false;
 let workflowStateKnown = false;
+let mcuSupportModulesPromise = null;
+
+const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
+
+function loadMcuSupportModules() {
+    if (!mcuSupportModulesPromise) {
+        mcuSupportModulesPromise = Promise.all([
+            import('../components/fileUploadWidget.js'),
+            import('../components/labResultWidget.js')
+        ]).then(([fileModule, labModule]) => ({
+            FileUploadWidget: fileModule.default,
+            createLabResultWidget: labModule.createLabResultWidget
+        })).catch(error => {
+            mcuSupportModulesPromise = null;
+            throw error;
+        });
+    }
+    return mcuSupportModulesPromise;
+}
 
 /**
  * Sanitize string input to prevent XSS
@@ -243,12 +260,16 @@ async function init() {
             return;
         }
 
-        await configureWorkflowMode();
-
-        // Wait for sidebar to load before updating user info
-
         updateUserInfo();
-        await loadMasterData();
+        pageLifecycle()?.setLoading('employee-input-support', { retry: init });
+
+        const [workflowResult, masterResult] = await Promise.allSettled([
+            configureWorkflowMode(),
+            loadMasterData()
+        ]);
+        if (workflowResult.status === 'rejected') throw workflowResult.reason;
+        if (masterResult.status === 'rejected') throw masterResult.reason;
+
         populateDropdowns();
 
         // ✅ NEW: Initialize Super Search (Cmd+K global search)
@@ -262,22 +283,18 @@ async function init() {
             const employeeId = sessionStorage.getItem('prefilledEmployeeId');
             const employeeName = sessionStorage.getItem('prefilledEmployeeName');
             if (employeeId && employeeName) {
-                // Load the employee and open the Add MCU modal
-                setTimeout(() => {
-                    handleQuickMCUAdd(employeeId, employeeName);
-                }, 500);
+                await handleQuickMCUAdd(employeeId, employeeName);
                 // Clear sessionStorage
                 sessionStorage.removeItem('prefilledEmployeeId');
                 sessionStorage.removeItem('prefilledEmployeeName');
             }
         }
 
-        // Show page content after initialization complete
-        document.body.classList.add('initialized');
+        pageLifecycle()?.setReady('employee-input-support');
+        pageLifecycle()?.markInteractive();
     } catch (error) {
-        showToast('Error initializing page: ' + error.message, 'error');
-        // Still show page even on error
-        document.body.classList.add('initialized');
+        pageLifecycle()?.setError('employee-input-support', error, init);
+        showToast('Form belum siap. Silakan coba lagi.', 'error');
     }
 }
 
@@ -365,16 +382,19 @@ function updateUserInfo() {
 }
 
 async function loadMasterData() {
-    try {
-        jobTitles = await masterDataService.getAllJobTitles();
-        departments = await masterDataService.getAllDepartments();
-        doctors = await masterDataService.getAllDoctors();
-        // ✅ CRITICAL: Load lab items upfront so labResultWidget can use them
-        await labService.getAllLabItems();
-    } catch (error) {
+    const [jobResult, departmentResult, doctorResult, labResult] = await Promise.allSettled([
+        masterDataService.getAllJobTitles(),
+        masterDataService.getAllDepartments(),
+        masterDataService.getAllDoctors(),
+        labService.getAllLabItems()
+    ]);
+    const failure = [jobResult, departmentResult, doctorResult, labResult]
+        .find(result => result.status === 'rejected');
+    if (failure) throw failure.reason;
 
-        showToast('Gagal memuat data master', 'error');
-    }
+    jobTitles = jobResult.value;
+    departments = departmentResult.value;
+    doctors = doctorResult.value;
 }
 
 // ✅ FIX: Optimized enrichment using Map lookups - O(1) per employee instead of O(n)
@@ -561,7 +581,11 @@ window.handleSearch = async function() {
     }
 };
 
-window.openAddEmployeeModal = function() {
+window.openAddEmployeeModal = async function() {
+    if (jobTitles.length === 0 || departments.length === 0) {
+        await loadMasterData();
+        populateDropdowns();
+    }
     // Reset form
     document.getElementById('employee-form').reset();
     document.getElementById('vendor-field').classList.add('hidden');
@@ -627,10 +651,11 @@ window.handleAddEmployee = async function(event) {
 
 window.openAddMCUForEmployee = async function(employeeId) {
     try {
-        // ✅ CRITICAL: Ensure master data is loaded before opening modal
-        if (!doctors || doctors.length === 0) {
-            doctors = await masterDataService.getAllDoctors();
+        if (jobTitles.length === 0 || departments.length === 0 || doctors.length === 0) {
+            await loadMasterData();
+            populateDropdowns();
         }
+        const { FileUploadWidget, createLabResultWidget } = await loadMcuSupportModules();
 
         currentEmployee = await employeeService.getById(employeeId);
 
@@ -666,10 +691,6 @@ window.openAddMCUForEmployee = async function(employeeId) {
         populateDoctorDropdown('mcu-doctor');
 
         openModal('add-mcu-modal');
-
-        // ✅ CRITICAL: Wait for modal to be fully visible and DOM ready
-        // Increased from 100ms to 300ms to ensure Bootstrap modal transition completes
-        await new Promise(resolve => setTimeout(resolve, 300));
 
         // Initialize file upload widget for this MCU
         const currentUser = authService.getCurrentUser();
