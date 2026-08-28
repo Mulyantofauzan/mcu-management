@@ -9,11 +9,14 @@ const state = {
   tab: new URLSearchParams(window.location.search).get('tab') || 'pending',
   queue: [],
   history: [],
+  historyLoaded: false,
+  ready: false,
   detail: null,
   leaseTimer: null
 };
 
 const $ = selector => document.querySelector(selector);
+const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
 
 function escapeHtml(value) {
   return String(value ?? '-')
@@ -56,6 +59,7 @@ function setTab(tab) {
   else url.searchParams.set('tab', state.tab);
   history.replaceState(null, '', url);
   renderList();
+  if (state.ready && state.tab === 'history' && !state.historyLoaded) void loadHistoryData();
 }
 
 function queueForTab() {
@@ -105,18 +109,32 @@ function historyRow(item) {
 
 async function loadData() {
   $('#refresh-queue').disabled = true;
+  pageLifecycle()?.setLoading('doctor-review-list', { retry: loadData });
   try {
-    const [queue, historyRows] = await Promise.all([
-      workflowService.doctorQueue(),
-      workflowService.reviewHistory()
-    ]);
-    state.queue = queue;
-    state.history = historyRows;
-    renderList();
+    state.queue = await workflowService.doctorQueue();
+    if (state.tab !== 'history') renderList();
+    const rows = queueForTab();
+    if (rows.length === 0) pageLifecycle()?.setEmpty('doctor-review-list', 'Tidak ada MCU pada antrean ini.');
+    else pageLifecycle()?.setReady('doctor-review-list');
   } catch (error) {
+    pageLifecycle()?.setError('doctor-review-list', error, loadData);
     await presentWorkflowError(error, { retry: loadData });
   } finally {
     $('#refresh-queue').disabled = false;
+  }
+}
+
+async function loadHistoryData() {
+  pageLifecycle()?.setLoading('doctor-review-list', { retry: loadHistoryData });
+  try {
+    state.history = await workflowService.reviewHistory();
+    state.historyLoaded = true;
+    if (state.tab === 'history') renderList();
+    if (state.history.length === 0) pageLifecycle()?.setEmpty('doctor-review-list', 'Belum ada riwayat review.');
+    else pageLifecycle()?.setReady('doctor-review-list');
+  } catch (error) {
+    pageLifecycle()?.setError('doctor-review-list', error, loadHistoryData);
+    await presentWorkflowError(error, { retry: loadHistoryData });
   }
 }
 
@@ -466,16 +484,22 @@ async function init() {
     if (!bootstrap.workflowEnabled) {
       $('#feature-message').hidden = false;
       $('#feature-message').textContent = 'Workflow approval belum diaktifkan Administrator.';
+      pageLifecycle()?.setEmpty('doctor-review-list', 'Workflow approval belum diaktifkan.');
+      pageLifecycle()?.markInteractive();
       return;
     }
-    await loadData();
+    state.ready = true;
+    if (state.tab === 'history') await loadHistoryData();
+    else await loadData();
+    pageLifecycle()?.markInteractive();
   } catch (error) {
+    pageLifecycle()?.setError('doctor-review-list', error, init);
     await presentWorkflowError(error, { retry: init });
   }
 }
 
 document.querySelectorAll('[data-tab]').forEach(button => button.addEventListener('click', () => setTab(button.dataset.tab)));
-$('#refresh-queue').addEventListener('click', loadData);
+$('#refresh-queue').addEventListener('click', () => state.tab === 'history' ? loadHistoryData() : loadData());
 $('#close-detail').addEventListener('click', closeDetail);
 $('#claim-review').addEventListener('click', claimReview);
 $('#release-claim').addEventListener('click', releaseClaim);

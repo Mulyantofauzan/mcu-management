@@ -99,3 +99,21 @@ test('follow-up list renders before modal support modules', () => {
   assert.match(source, /loadFollowUpSupportModules/);
   assert.match(source, /markInteractive\(\)/);
 });
+
+test('doctor review defers history until its tab is opened', () => {
+  const source = read('mcu-management/js/pages/validasi-mcu.js');
+
+  assert.doesNotMatch(source, /Promise\.all\(\[\s*workflowService\.doctorQueue\(\),\s*workflowService\.reviewHistory\(\)/);
+  assert.match(source, /loadHistoryData/);
+  assert.match(source, /markInteractive\(\)/);
+});
+
+test('workflow list pages expose local readiness', () => {
+  const joining = read('mcu-management/js/pages/keputusan-bergabung.js');
+  const profile = read('mcu-management/js/pages/profil-dokter.js');
+
+  assert.match(joining, /setLoading\('joining-list'/);
+  assert.match(joining, /markInteractive\(\)/);
+  assert.match(profile, /setLoading\('doctor-profile'/);
+  assert.match(profile, /markInteractive\(\)/);
+});

@@ -8,6 +8,7 @@ const PAGE_SIZE = 10;
 const emptyPage = () => ({ items: [], page: 1, pageSize: PAGE_SIZE, total: 0, totalPages: 0 });
 const state = { tab: 'waiting', waiting: emptyPage(), history: emptyPage(), selected: null };
 const $ = selector => document.querySelector(selector);
+const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
 
 function escapeHtml(value) {
   return String(value ?? '-')
@@ -107,14 +108,20 @@ function renderList() {
 
 async function loadData(tab = state.tab, page = 1) {
   $('#refresh-joining').disabled = true;
+  pageLifecycle()?.setLoading('joining-list', { retry: () => loadData(tab, page) });
   try {
     const result = await workflowService.joiningQueue(tab === 'history', { page, pageSize: PAGE_SIZE });
     if (result.totalPages > 0 && result.page > result.totalPages) {
       return loadData(tab, result.totalPages);
     }
     state[tab] = result;
-    if (state.tab === tab) renderList();
+    if (state.tab === tab) {
+      renderList();
+      if (result.total === 0) pageLifecycle()?.setEmpty('joining-list', 'Tidak ada kandidat pada daftar ini.');
+      else pageLifecycle()?.setReady('joining-list');
+    }
   } catch (error) {
+    pageLifecycle()?.setError('joining-list', error, () => loadData(tab, page));
     await presentWorkflowError(error, { retry: () => loadData(tab, page) });
   } finally {
     $('#refresh-joining').disabled = false;
@@ -276,9 +283,15 @@ async function init() {
       window.location.href = '../index.html';
       return;
     }
-    if (!bootstrap.workflowEnabled) return;
+    if (!bootstrap.workflowEnabled) {
+      pageLifecycle()?.setEmpty('joining-list', 'Workflow approval belum diaktifkan.');
+      pageLifecycle()?.markInteractive();
+      return;
+    }
     await loadData('waiting', 1);
+    pageLifecycle()?.markInteractive();
   } catch (error) {
+    pageLifecycle()?.setError('joining-list', error, init);
     await presentWorkflowError(error, { retry: init });
   }
 }

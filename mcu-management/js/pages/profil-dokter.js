@@ -5,6 +5,7 @@ import { ensureWorkflowAlerts, presentWorkflowError } from '../utils/workflowErr
 
 const state = { profile: null };
 const $ = selector => document.querySelector(selector);
+const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
 
 function signatureVersion() {
   return Number(state.profile?.signature_version ?? state.profile?.signatureVersion ?? 0);
@@ -125,6 +126,7 @@ async function init() {
     window.location.href = 'login.html';
     return;
   }
+  pageLifecycle()?.setLoading('doctor-profile', { retry: init });
   try {
     const bootstrap = await workflowService.bootstrap();
     if (bootstrap.role !== 'Dokter') {
@@ -133,7 +135,10 @@ async function init() {
       return;
     }
     await loadProfile();
+    pageLifecycle()?.setReady('doctor-profile');
+    pageLifecycle()?.markInteractive();
   } catch (error) {
+    pageLifecycle()?.setError('doctor-profile', error, init);
     await presentWorkflowError(error, { retry: init });
   }
 }
