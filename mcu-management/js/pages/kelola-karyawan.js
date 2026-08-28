@@ -19,11 +19,9 @@ import { debounce } from '../utils/debounce.js';
 import { UI } from '../config/constants.js';
 import { safeGet, safeArray, isEmpty } from '../utils/nullSafety.js';
 import { supabaseReady } from '../config/supabase.js';
-import FileUploadWidget from '../components/fileUploadWidget.js';
 import FileListViewer from '../components/fileListViewer.js';
 import { deleteOrphanedFiles } from '../services/supabaseStorageService.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';
-import { StaticLabForm } from '../components/staticLabForm.js';
 import { LAB_ITEMS_MAPPING, sortLabResultsByDisplayOrder } from '../data/labItemsMapping.js';
 import { mcuSuccessModal } from '../components/mcuSuccessModal.js';
 import { workflowService } from '../services/workflowService.js';
@@ -46,6 +44,49 @@ let workflowEnabled = false;
 let workflowStateKnown = false;
 let currentWorkflowDetail = null;
 let correctionQueue = [];
+let workflowBootstrapPromise = null;
+let formComponentsPromise = null;
+
+const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
+
+function loadFormComponents() {
+    if (!formComponentsPromise) {
+        formComponentsPromise = Promise.all([
+            import('../components/fileUploadWidget.js'),
+            import('../components/staticLabForm.js')
+        ]).then(([fileModule, labModule]) => ({
+            FileUploadWidget: fileModule.default,
+            StaticLabForm: labModule.StaticLabForm
+        })).catch(error => {
+            formComponentsPromise = null;
+            throw error;
+        });
+    }
+    return formComponentsPromise;
+}
+
+async function ensureWorkflowState() {
+    if (workflowStateKnown) return workflowEnabled;
+    if (!workflowBootstrapPromise) {
+        workflowBootstrapPromise = workflowService.bootstrap()
+            .then(bootstrap => {
+                workflowEnabled = bootstrap.workflowEnabled === true;
+                workflowStateKnown = true;
+                return workflowEnabled;
+            })
+            .catch(error => {
+                workflowStateKnown = false;
+                workflowBootstrapPromise = null;
+                throw error;
+            });
+    }
+    return workflowBootstrapPromise;
+}
+
+async function ensureDoctorsLoaded() {
+    if (doctors.length === 0) doctors = await masterDataService.getAllDoctors();
+    return doctors;
+}
 
 // Lab form instances - initialized once on page load
 let labResultWidgetEdit = null;
@@ -256,25 +297,6 @@ function hideUploadLoading() {
   completeUploadStep();
 }
 
-async function initLabForms() {
-    /**
-     * Initialize all lab forms ONCE on page load
-     * Forms are permanent like other form fields - no re-rendering needed
-     */
-    try {
-        // Edit modal lab form (lab-results-container-edit)
-        if (!labResultWidgetEdit) {
-            labResultWidgetEdit = new StaticLabForm('lab-results-container-edit');
-        }
-
-        // Add modal lab form (lab-results-container-add-karyawan)
-        if (!labResultWidgetAdd) {
-            labResultWidgetAdd = new StaticLabForm('lab-results-container-add-karyawan');
-        }
-    } catch (error) {
-    }
-}
-
 async function init() {
     try {
         if (!authService.isAuthenticated()) {
@@ -282,26 +304,12 @@ async function init() {
             return;
         }
 
-        // Wait for sidebar to load before updating user info
-
         updateUserInfo();
+        pageLifecycle()?.setLoading('employees-stats', { retry: init });
+        pageLifecycle()?.setLoading('employees-table', { retry: init });
+        void loadSecondaryData();
 
-        try {
-            const bootstrap = await workflowService.bootstrap();
-            workflowEnabled = bootstrap.workflowEnabled === true;
-            workflowStateKnown = true;
-        } catch (error) {
-            workflowStateKnown = false;
-        }
-
-        // ✅ Initialize lab forms ONCE on page load (truly permanent, like other form fields)
-        await initLabForms();
-
-        // ✅ Populate disease dropdowns from Master Data
-        await populateDiseaseDropdowns();
-
-        await loadData();
-        await loadCorrectionQueue();
+        await loadData({ throwOnError: true });
 
         // ✅ NEW: Setup toggle for inactive employees (if button exists)
         setupInactiveToggle();
@@ -314,16 +322,17 @@ async function init() {
         // ✅ NEW: Add event delegation for dynamically generated Detail buttons
         setupDetailButtonDelegation();
 
-        // Show page content after initialization complete
-        document.body.classList.add('initialized');
+        pageLifecycle()?.setReady('employees-stats');
+        pageLifecycle()?.setReady('employees-table');
+        pageLifecycle()?.markInteractive();
     } catch (error) {
-        showToast('Error initializing page: ' + error.message, 'error');
-        // Still show page even on error
-        document.body.classList.add('initialized');
+        pageLifecycle()?.setError('employees-stats', error, init);
+        pageLifecycle()?.setError('employees-table', error, init);
+        showToast('Data karyawan belum dapat dimuat. Silakan coba lagi.', 'error');
     }
 }
 
-async function loadCorrectionQueue() {
+async function loadCorrectionQueue({ presentError = true } = {}) {
     const section = document.getElementById('workflow-correction-section');
     const list = document.getElementById('workflow-correction-list');
     const count = document.getElementById('workflow-correction-count');
@@ -332,7 +341,7 @@ async function loadCorrectionQueue() {
 
     if (!workflowEnabled || !authService.hasRole('Admin', 'Petugas')) {
         section.classList.add('hidden');
-        return;
+        return 0;
     }
 
     try {
@@ -363,9 +372,31 @@ async function loadCorrectionQueue() {
             row.append(text, button);
             list.appendChild(row);
         });
+        return correctionQueue.length;
     } catch (error) {
-        await presentWorkflowError(error, { retry: loadCorrectionQueue });
+        pageLifecycle()?.setError('employees-corrections', error, loadSecondaryData);
+        if (presentError) await presentWorkflowError(error, { retry: loadCorrectionQueue });
+        return null;
     }
+}
+
+async function loadSecondaryData() {
+    pageLifecycle()?.setLoading('employees-corrections', { retry: loadSecondaryData });
+    const [workflowResult, doctorResult] = await Promise.allSettled([
+        ensureWorkflowState(),
+        ensureDoctorsLoaded(),
+        populateDiseaseDropdowns()
+    ]);
+
+    if (doctorResult.status === 'fulfilled') doctors = doctorResult.value;
+    if (workflowResult.status === 'rejected') {
+        pageLifecycle()?.setError('employees-corrections', workflowResult.reason, loadSecondaryData);
+        return;
+    }
+
+    const queueCount = await loadCorrectionQueue({ presentError: false });
+    if (queueCount === null) return;
+    pageLifecycle()?.setReady('employees-corrections');
 }
 
 async function resumeDraftReview(item, button) {
@@ -513,30 +544,25 @@ function updateUserInfo() {
     }
 }
 
-async function loadData() {
+async function loadData({ throwOnError = false } = {}) {
     try {
         logger.info('Loading employee data...');
 
-        // IMPORTANT: Load master data FIRST before employees
-        jobTitles = await masterDataService.getAllJobTitles();
+        const [jobTitleResult, departmentResult, employeeResult] = await Promise.allSettled([
+            masterDataService.getAllJobTitles(),
+            masterDataService.getAllDepartments(),
+            showInactiveEmployees ? employeeService.getAll() : employeeService.getActive()
+        ]);
+        if (employeeResult.status === 'rejected') throw employeeResult.reason;
+
+        jobTitles = jobTitleResult.status === 'fulfilled' ? jobTitleResult.value : jobTitles;
         logger.database('select', 'jobTitles', jobTitles.length);
 
-        departments = await masterDataService.getAllDepartments();
+        departments = departmentResult.status === 'fulfilled' ? departmentResult.value : departments;
         logger.database('select', 'departments', departments.length);
 
-        doctors = await masterDataService.getAllDoctors();
-        logger.database('select', 'doctors', doctors.length);
-
-        // ✅ FIX: Load employees (active by default, but can show inactive)
-        if (showInactiveEmployees) {
-            // Load ALL employees including inactive
-            employees = await employeeService.getAll();
-            logger.database('select', 'employees (active + inactive)', employees.length);
-        } else {
-            // Load ONLY active employees (default view)
-            employees = await employeeService.getActive();
-            logger.database('select', 'employees (active only)', employees.length);
-        }
+        employees = employeeResult.value;
+        logger.database('select', showInactiveEmployees ? 'employees (active + inactive)' : 'employees (active only)', employees.length);
 
         // ✅ FIX: Build lookup Maps once for O(1) enrichment (performance optimization)
         const jobMap = new Map(jobTitles.map(j => [j.name, j]));
@@ -565,6 +591,7 @@ async function loadData() {
     } catch (error) {
         logger.error('Error loading employee data:', error);
         showToast('Gagal memuat data: ' + error.message, 'error');
+        if (throwOnError) throw error;
     }
 }
 
@@ -1072,8 +1099,12 @@ function populateDoctorDropdown(selectId) {
 window.addMCUForEmployee = async function(employeeId) {
     try {
         if (!workflowStateKnown) {
-            await presentWorkflowError({ code: 'WORKFLOW_NETWORK_ERROR', message: 'Status workflow belum dapat diverifikasi.' });
-            return;
+            try {
+                await ensureWorkflowState();
+            } catch (error) {
+                await presentWorkflowError({ code: 'WORKFLOW_NETWORK_ERROR', message: 'Status workflow belum dapat diverifikasi.' });
+                return;
+            }
         }
         if (workflowEnabled && !authService.hasRole('Admin', 'Petugas')) {
             await presentWorkflowError({ code: 'WORKFLOW_FORBIDDEN', message: 'Hanya Petugas atau Administrator yang dapat mencatat MCU baru.' });
@@ -1086,6 +1117,8 @@ window.addMCUForEmployee = async function(employeeId) {
             showToast('Karyawan tidak ditemukan', 'error');
             return;
         }
+        const { FileUploadWidget, StaticLabForm } = await loadFormComponents();
+        await ensureDoctorsLoaded();
 
         // Get job title and department
         // ✅ FIX: employees table stores names, not IDs! Match by name not ID
@@ -1158,7 +1191,6 @@ window.addMCUForEmployee = async function(employeeId) {
         // ✅ CRITICAL: Reinitialize lab widget when modal opens to ensure fresh state
         // This prevents stale data from previous modal sessions
         if (!labResultWidgetAdd || !labResultWidgetAdd.container) {
-            const { StaticLabForm } = await import('../components/staticLabForm.js');
             labResultWidgetAdd = new StaticLabForm('lab-results-container-add-karyawan');
         }
     } catch (error) {
@@ -1475,10 +1507,15 @@ window.handleAddMCU = async function(event) {
 
 window.viewMCUDetail = async function(mcuId) {
     try {
-        // ✅ FIX: Ensure master data is loaded (including doctors) before displaying
-        if (!doctors || doctors.length === 0) {
-            doctors = await masterDataService.getAllDoctors();
+        if (!workflowStateKnown) {
+            try {
+                await ensureWorkflowState();
+            } catch (error) {
+                await presentWorkflowError({ code: 'WORKFLOW_NETWORK_ERROR', message: 'Status workflow belum dapat diverifikasi.' });
+                return;
+            }
         }
+        await ensureDoctorsLoaded();
 
         const mcu = await mcuService.getById(mcuId);
         if (!mcu) {
@@ -1983,10 +2020,9 @@ window.editMCU = async function() {
     if (!window.currentMCUId) return;
 
     try {
+        const { FileUploadWidget, StaticLabForm } = await loadFormComponents();
         // ✅ CRITICAL: Ensure master data is loaded before opening edit modal
-        if (!doctors || doctors.length === 0) {
-            doctors = await masterDataService.getAllDoctors();
-        }
+        await ensureDoctorsLoaded();
 
         const mcu = await mcuService.getById(window.currentMCUId);
         if (!mcu) {
@@ -1995,8 +2031,12 @@ window.editMCU = async function() {
         }
 
         if (!workflowStateKnown) {
-            await presentWorkflowError({ code: 'WORKFLOW_NETWORK_ERROR', message: 'Status workflow belum dapat diverifikasi.' });
-            return;
+            try {
+                await ensureWorkflowState();
+            } catch (error) {
+                await presentWorkflowError({ code: 'WORKFLOW_NETWORK_ERROR', message: 'Status workflow belum dapat diverifikasi.' });
+                return;
+            }
         }
         if (workflowEnabled) {
             currentWorkflowDetail = currentWorkflowDetail?.mcu?.mcu_id === mcu.mcuId
@@ -2016,6 +2056,9 @@ window.editMCU = async function() {
 
         // Open the modal FIRST so DOM elements are visible
         openModal('edit-mcu-modal');
+        if (!labResultWidgetEdit || !labResultWidgetEdit.container) {
+            labResultWidgetEdit = new StaticLabForm('lab-results-container-edit');
+        }
 
         configureMedicalResultFields(
             'edit-medical-result-section',

@@ -294,7 +294,7 @@
             </div>
 
             <!-- KPI Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6" data-lifecycle-region="dashboard-primary" data-lifecycle-state="ready">
                 <div class="card">
                     <div class="flex items-center justify-between">
                         <div>
@@ -393,7 +393,7 @@
                     </div>
                 </div>
 
-                <a href="./pages/mcu-expiry-management.html" class="card cursor-pointer hover:shadow-lg transition">
+                <a href="./pages/mcu-expiry-management.html" class="card cursor-pointer hover:shadow-lg transition" data-lifecycle-region="dashboard-expiry" data-lifecycle-state="ready">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm text-gray-500">MCU Expired</p>
@@ -471,19 +471,19 @@
 
             <!-- Top Abnormalities Chart -->
             <div class="card">
-                <div id="top-abnormalities-container"></div>
+                <div id="top-abnormalities-container" data-lifecycle-region="dashboard-abnormalities" data-lifecycle-state="ready"></div>
             </div>
 
             <!-- Follow-Up List & Activity -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="card">
                     <h3 class="text-lg font-semibold mb-4">Perlu Follow-Up</h3>
-                    <div id="followup-list" class="space-y-4"></div>
+                    <div id="followup-list" class="space-y-4" data-lifecycle-region="dashboard-followup" data-lifecycle-state="ready"></div>
                 </div>
 
                 <div class="card">
                     <h3 class="text-lg font-semibold mb-4">Aktivitas Terbaru</h3>
-                    <div id="activity-list" class="space-y-4"></div>
+                    <div id="activity-list" class="space-y-4" data-lifecycle-region="dashboard-activity" data-lifecycle-state="ready"></div>
                 </div>
             </div>
 

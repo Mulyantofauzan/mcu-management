@@ -57,3 +57,25 @@ test('shared styles render local lifecycle feedback without covering the page', 
   assert.match(styles, /prefers-reduced-motion:\s*reduce/);
   assert.doesNotMatch(styles, /\.navigation-startup-overlay[\s\S]{0,300}height:\s*100%/);
 });
+
+test('dashboard renders primary data before secondary widgets', () => {
+  const source = read('mcu-management/js/pages/dashboard.js');
+  const init = source.match(/async function init\(\)[\s\S]*?\n}\n\nfunction updateUserInfo/)?.[0] || '';
+
+  assert.doesNotMatch(init, /unifiedLoading\.show/);
+  assert.doesNotMatch(init, /setTimeout\([^)]*150/);
+  assert.match(source, /Promise\.allSettled\(\[\s*masterDataService\.getAllDepartments\(\)/);
+  assert.match(source, /loadSecondaryDashboard/);
+  assert.match(source, /markInteractive\(\)/);
+});
+
+test('employee table does not wait for modal-only dependencies', () => {
+  const source = read('mcu-management/js/pages/kelola-karyawan.js');
+  const init = source.match(/async function init\(\)[\s\S]*?\n}\n\nasync function loadCorrectionQueue/)?.[0] || '';
+
+  assert.doesNotMatch(source, /^import FileUploadWidget|^import \{ StaticLabForm \}/m);
+  assert.doesNotMatch(init, /await initLabForms|await populateDiseaseDropdowns|await loadCorrectionQueue/);
+  assert.match(source, /Promise\.allSettled\(\[\s*masterDataService\.getAllJobTitles\(\)/);
+  assert.match(source, /loadSecondaryData/);
+  assert.match(source, /markInteractive\(\)/);
+});

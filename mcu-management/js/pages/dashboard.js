@@ -21,7 +21,6 @@ import storageDiagnostic from '../utils/storageDiagnostic.js';  // ✅ Diagnosti
 import { initThemeManager } from '../utils/themeManager.js';  // ✅ Dark mode / Light mode manager
 import { networkStatusManager } from '../utils/networkStatusManager.js';  // ✅ Network status monitoring
 import { topAbnormalitiesChartInstance } from '../components/topAbnormalitiesChart.js';  // ✅ Top abnormalities chart
-import { unifiedLoading } from '../utils/unifiedLoadingManager.js';  // ✅ Loading animation
 // Initialize environment variables immediately (before other module code runs)
 initializeEnv().then(() => {
   logEnvStatus();
@@ -39,87 +38,48 @@ let latestMCUs = [];
 let employees = [];
 let departments = [];
 let charts = {};
+let dashboardSourceData = [];
+
+const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
 
 // Initialize
 async function init() {
   try {
-    // Show loading overlay with progress bar
-    unifiedLoading.show('Memuat Dashboard...');
-    unifiedLoading.updateProgress(5);
-
     // Check auth - SECURITY: Require proper authentication
     if (!authService.isAuthenticated()) {
-      unifiedLoading.hide();
       window.location.href = 'pages/login.html';
       return;
     }
 
     if (authService.isDoctor()) {
-      unifiedLoading.hide();
       window.location.replace('pages/validasi-mcu.html');
       return;
     }
 
     // ✅ Initialize theme manager (light/dark mode) FIRST before rendering
     initThemeManager();
-    unifiedLoading.updateProgress(15);
-
-    unifiedLoading.updateProgress(25);
-
-    // Wait for sidebar to load before updating user info
-
-    // Update user info
     updateUserInfo();
-    unifiedLoading.updateProgress(30);
 
     // Show debug toggle for admin
     if (authService.isAdmin()) {
-      document.getElementById('debug-toggle').classList.remove('hidden');
+      document.getElementById('debug-toggle')?.classList.remove('hidden');
     }
-
-    // Check and seed if empty
-    const seedResult = await checkAndSeedIfEmpty();
-    if (seedResult.success && seedResult.counts) {
-
-    }
-
-    // ✅ FIX: Wait for Supabase to be ready before loading data
-    // This ensures MCU expiry service has fresh connection
-    await supabaseReady;
-    unifiedLoading.updateProgress(40);
 
     // Set default date range (empty = show all)
     setDateRange('', '');
+    pageLifecycle()?.setLoading('dashboard-primary', { retry: init });
 
-    // Update message during data loading
-    unifiedLoading.updateMessage('Memuat data karyawan dan MCU...');
-    unifiedLoading.updateProgress(50);
-
-    // Load data (which will also populate filter dropdowns)
     await loadData();
-    unifiedLoading.updateProgress(80);
-
-    // Initialize filter dropdowns after data loads
     await initializeFilters();
-    unifiedLoading.updateProgress(95);
+    pageLifecycle()?.setReady('dashboard-primary');
+    pageLifecycle()?.markInteractive();
 
-    // Final progress
-    await unifiedLoading.updateProgress(100);
-
-    // Brief pause for visual feedback
-    await new Promise(resolve => setTimeout(resolve, 150));
-
-    // Hide loading overlay
-    unifiedLoading.hide();
-
-    // Show page content after initialization complete
-    document.body.classList.add('initialized');
+    // Seeding is maintenance work and must not hold the dashboard UI.
+    checkAndSeedIfEmpty().catch(() => {});
 
   } catch (error) {
-    unifiedLoading.hide();
-    showToast('Error initializing dashboard: ' + error.message, 'error');
-    // Still show page even on error
-    document.body.classList.add('initialized');
+    pageLifecycle()?.setError('dashboard-primary', error, init);
+    showToast('Dashboard belum dapat dimuat. Silakan coba lagi.', 'error');
   }
 }
 
@@ -207,13 +167,20 @@ function enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap) {
 //   return emp;
 // }
 
-async function loadData() {
-  try {
-    // IMPORTANT: Load master data FIRST before employees
-    departments = await masterDataService.getAllDepartments();
-    const jobTitles = await masterDataService.getAllJobTitles();
-    const eligibleData = await analyticsEligibilityService.getCurrentModels();
-    employees = eligibleData.map(item => item.employee);
+async function loadData({ refresh = true } = {}) {
+  if (refresh || dashboardSourceData.length === 0) {
+    const [departmentResult, jobTitleResult, eligibleResult] = await Promise.allSettled([
+      masterDataService.getAllDepartments(),
+      masterDataService.getAllJobTitles(),
+      analyticsEligibilityService.getCurrentModels()
+    ]);
+
+    if (eligibleResult.status === 'rejected') throw eligibleResult.reason;
+
+    departments = departmentResult.status === 'fulfilled' ? departmentResult.value : [];
+    const jobTitles = jobTitleResult.status === 'fulfilled' ? jobTitleResult.value : [];
+    dashboardSourceData = eligibleResult.value;
+    employees = dashboardSourceData.map(item => item.employee);
 
     // ✅ FIX: Build lookup Maps once for O(1) enrichment (performance optimization)
     const jobMap = new Map(jobTitles.map(j => [j.name, j]));
@@ -223,12 +190,14 @@ async function loadData() {
     employees = employees.map(emp => enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap));
 
     // Get latest MCU per employee (only for active employees)
-    latestMCUs = eligibleData.map(item => item.mcu);
+    latestMCUs = dashboardSourceData.map(item => item.mcu);
+  }
 
-    // Apply all filters (date range, employee type, department, MCU status)
-    const filteredMCUs = latestMCUs.filter(mcu => {
+  const employeeById = new Map(employees.map(employee => [employee.employeeId, employee]));
+  // Apply all filters (date range, employee type, department, MCU status)
+  const filteredMCUs = latestMCUs.filter(mcu => {
       // Get employee for this MCU
-      const employee = employees.find(e => e.employeeId === mcu.employeeId);
+      const employee = employeeById.get(mcu.employeeId);
 
       // ✅ FIX: Exclude inactive employees (like soft-deleted)
       // Only include MCUs from active employees
@@ -266,27 +235,16 @@ async function loadData() {
       }
 
       return true;
-    });
+  });
 
-    // Update KPIs
-    await updateKPIs(filteredMCUs);
-
-    // Update charts
-    await updateCharts(filteredMCUs);
-
-    // Update follow-up list
-    updateFollowUpList();
-
-    // Update activity
-    await updateActivityList();
-
-  } catch (error) {
-
-    showToast('Error loading data: ' + error.message, 'error');
-  }
+  updateKPIs(filteredMCUs);
+  updateCharts(filteredMCUs);
+  loadSecondaryDashboard(filteredMCUs, { includeGlobal: refresh });
+  return filteredMCUs;
 }
 
-async function updateKPIs(filteredMCUs) {
+function updateKPIs(filteredMCUs) {
+
   // Total employees (all non-deleted AND with activeStatus = 'Active')
   // ✅ FIX: Exclude inactive employees like we exclude soft-deleted employees
   const activeEmployees = employees.filter(e => !e.deletedAt && e.activeStatus === 'Active');
@@ -326,31 +284,25 @@ async function updateKPIs(filteredMCUs) {
   document.getElementById('kpi-temporary-unfit').textContent = temporaryUnfit;
   document.getElementById('kpi-followup').textContent = followUp;
   document.getElementById('kpi-unfit').textContent = unfit;
-
-  // MCU Expired count (only EXPIRED, not WARNING)
-  try {
-    const expiryData = await mcuExpiryService.loadEmployeesWithMCU();
-    const expiredCount = expiryData.filter(emp => emp.expiryStatus === 'EXPIRED').length;
-    const kpiEl = document.getElementById('kpi-mcu-expired');
-    if (kpiEl) {
-      kpiEl.textContent = expiredCount;
-    }
-
-    // Update badge in sidebar (show total EXPIRED + WARNING)
-    const badgeEl = document.getElementById('badge-mcu-expiry');
-    if (badgeEl) {
-      const totalExpiredWarning = expiryData.filter(emp => emp.expiryStatus === 'EXPIRED' || emp.expiryStatus === 'WARNING').length;
-      badgeEl.textContent = totalExpiredWarning;
-    }
-  } catch (error) {
-    const kpiEl = document.getElementById('kpi-mcu-expired');
-    if (kpiEl) {
-      kpiEl.textContent = '0';
-    }
-  }
 }
 
-async function updateCharts(filteredMCUs) {
+async function updateExpiryKPI() {
+  // MCU Expired count (only EXPIRED, not WARNING)
+  const expiryData = await mcuExpiryService.loadEmployeesWithMCU();
+  const expiredCount = expiryData.filter(emp => emp.expiryStatus === 'EXPIRED').length;
+  const kpiEl = document.getElementById('kpi-mcu-expired');
+  if (kpiEl) kpiEl.textContent = expiredCount;
+
+  // Update badge in sidebar (show total EXPIRED + WARNING)
+  const badgeEl = document.getElementById('badge-mcu-expiry');
+  if (badgeEl) {
+    const totalExpiredWarning = expiryData.filter(emp => emp.expiryStatus === 'EXPIRED' || emp.expiryStatus === 'WARNING').length;
+    badgeEl.textContent = totalExpiredWarning;
+  }
+  return expiredCount;
+}
+
+function updateCharts(filteredMCUs) {
   // Chart 1: Distribution per Department
   updateDepartmentChart(filteredMCUs);
 
@@ -372,11 +324,6 @@ async function updateCharts(filteredMCUs) {
   // Chart 7: BMI Distribution
   updateBMIDistributionChart(filteredMCUs);
 
-  // Chart 8: Top Abnormalities (conditions found in MCU data) - Load asynchronously to prevent blocking
-  // Don't await - let it load in background
-  updateTopAbnormalitiesChart(filteredMCUs).catch(err => {
-    // Silently fail if chart loading errors
-  });
 }
 
 function updateDepartmentChart(filteredMCUs) {
@@ -887,21 +834,12 @@ function updateBMIDistributionChart(filteredMCUs) {
 }
 
 async function updateTopAbnormalitiesChart(filteredMCUs) {
-  try {
-    // Render top abnormalities chart
-    await topAbnormalitiesChartInstance.render(filteredMCUs, {
-      limit: 10, // Default top 10
-      view: 'bar' // Default view is bar chart
-    });
-
-    // Store reference for later updates
-    window.topAbnormalitiesChartInstance = topAbnormalitiesChartInstance;
-  } catch (error) {
-    const container = document.getElementById('top-abnormalities-container');
-    if (container) {
-      container.innerHTML = `<p class="text-red-600">Error loading abnormalities chart: ${error.message}</p>`;
-    }
-  }
+  await topAbnormalitiesChartInstance.render(filteredMCUs, {
+    limit: 10,
+    view: 'bar'
+  });
+  window.topAbnormalitiesChartInstance = topAbnormalitiesChartInstance;
+  return filteredMCUs.length;
 }
 
 async function updateFollowUpList() {
@@ -910,7 +848,7 @@ async function updateFollowUpList() {
 
   if (followUpMCUs.length === 0) {
     container.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">Tidak ada yang perlu follow-up</p>';
-    return;
+    return 0;
   }
 
   // Show first 5
@@ -950,6 +888,7 @@ async function updateFollowUpList() {
   }
 
   container.innerHTML = html;
+  return followUpMCUs.length;
 }
 
 async function updateActivityList() {
@@ -961,7 +900,7 @@ async function updateActivityList() {
     // Handle null/undefined/non-array activities
     if (!activities || !Array.isArray(activities) || activities.length === 0) {
       container.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">Belum ada aktivitas</p>';
-      return;
+      return 0;
     }
 
     // ✅ Pre-fetch MCU data to avoid multiple async calls in loop
@@ -1065,10 +1004,35 @@ async function updateActivityList() {
     }
 
     container.innerHTML = html;
+    return activities.length;
   } catch (error) {
-
-    container.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">Gagal memuat aktivitas</p>';
+    throw error;
   }
+}
+
+async function loadDashboardRegion(name, task) {
+  const lifecycle = pageLifecycle();
+  lifecycle?.setLoading(name, { retry: () => loadDashboardRegion(name, task) });
+  try {
+    await task();
+    lifecycle?.setReady(name);
+  } catch (error) {
+    lifecycle?.setError(name, new Error('Data belum dapat dimuat.'), () => loadDashboardRegion(name, task));
+  }
+}
+
+function loadSecondaryDashboard(filteredMCUs, { includeGlobal = true } = {}) {
+  const tasks = [
+    loadDashboardRegion('dashboard-abnormalities', () => updateTopAbnormalitiesChart(filteredMCUs))
+  ];
+  if (includeGlobal) {
+    tasks.push(
+      loadDashboardRegion('dashboard-expiry', updateExpiryKPI),
+      loadDashboardRegion('dashboard-followup', updateFollowUpList),
+      loadDashboardRegion('dashboard-activity', updateActivityList)
+    );
+  }
+  void Promise.allSettled(tasks);
 }
 
 // Initialize filter dropdowns
@@ -1076,6 +1040,7 @@ async function initializeFilters() {
   // Populate department dropdown
   const departmentSelect = document.getElementById('filter-department');
   if (departmentSelect && Array.isArray(departments) && departments.length > 0) {
+    departmentSelect.replaceChildren(departmentSelect.options[0]);
     departments.forEach(dept => {
       if (dept?.name) {
         const option = document.createElement('option');
@@ -1086,10 +1051,12 @@ async function initializeFilters() {
     });
   }
 
-  // Add event listeners to filters
-  document.getElementById('filter-employee-type')?.addEventListener('change', handleFilterChange);
-  document.getElementById('filter-department')?.addEventListener('change', handleFilterChange);
-  document.getElementById('filter-mcu-status')?.addEventListener('change', handleFilterChange);
+  if (document.body.dataset.dashboardFiltersReady !== 'true') {
+    document.getElementById('filter-employee-type')?.addEventListener('change', handleFilterChange);
+    document.getElementById('filter-department')?.addEventListener('change', handleFilterChange);
+    document.getElementById('filter-mcu-status')?.addEventListener('change', handleFilterChange);
+    document.body.dataset.dashboardFiltersReady = 'true';
+  }
 }
 
 // Handle filter changes (auto-apply when filter changes)
@@ -1101,7 +1068,7 @@ async function handleFilterChange() {
   currentFilters.employeeType = employeeTypeEl?.value || '';
   currentFilters.department = departmentEl?.value || '';
   currentFilters.mcuStatus = mcuStatusEl?.value || '';
-  await loadData();
+  await loadData({ refresh: false });
 }
 
 // Event Handlers
@@ -1115,7 +1082,7 @@ window.applyDateFilter = async function() {
   }
 
   currentDateRange = { startDate, endDate };
-  await loadData();
+  await loadData({ refresh: false });
   showToast('Filter diterapkan', 'success');
 };
 
@@ -1134,7 +1101,7 @@ window.resetDateFilter = async function() {
   document.getElementById('filter-department').value = '';
   document.getElementById('filter-mcu-status').value = '';
 
-  await loadData();
+  await loadData({ refresh: false });
   showToast('Semua filter direset (tampilkan semua data)', 'success');
 };
 
