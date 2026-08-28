@@ -11,6 +11,7 @@ import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Sup
 let currentTab = 'jobTitles';
 let currentData = [];
 let editingId = null;
+const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
 
 // ✅ Initialize window functions immediately (before init() runs)
 // This prevents onclick errors during page load
@@ -201,6 +202,7 @@ async function init() {
 
         updateUserInfo();
         await loadData();
+        pageLifecycle()?.markInteractive();
 
         // ✅ NEW: Initialize Super Search (Cmd+K global search)
         try {
@@ -210,6 +212,7 @@ async function init() {
         // Show page content after initialization complete
         document.body.classList.add('initialized');
     } catch (error) {
+        pageLifecycle()?.setError('master-data-table', error, init);
         showToast('Error initializing page: ' + error.message, 'error');
         // Still show page even on error
         document.body.classList.add('initialized');
@@ -256,13 +259,15 @@ function updateUserInfo() {
 }
 
 async function loadData() {
+    pageLifecycle()?.setLoading('master-data-table', { retry: loadData });
     try {
         const config = tabConfig[currentTab];
         currentData = await config.getAll();
 
         renderTable();
+        pageLifecycle()?.setReady('master-data-table');
     } catch (error) {
-
+        pageLifecycle()?.setError('master-data-table', error, loadData);
         showToast('Gagal memuat data: ' + error.message, 'error');
     }
 }

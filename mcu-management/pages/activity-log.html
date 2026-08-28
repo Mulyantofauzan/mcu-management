@@ -254,7 +254,7 @@
             </div>
 
             <!-- Table -->
-            <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="bg-white rounded-lg shadow overflow-hidden" data-lifecycle-region="activity-log" data-lifecycle-state="ready">
                 <div id="activity-log-container" class="p-6">
                     <div class="flex items-center justify-center py-12">
                         <div class="spinner"></div>
@@ -285,6 +285,7 @@
         let currentUser = null;
         let currentPage = 1;
         const itemsPerPage = 20;
+        const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
 
         // Initialize
         async function init() {
@@ -318,16 +319,18 @@
                 // Initialize service with database adapter (which has ActivityLog.getFiltered)
                 activityLogService = new ActivityLogService(databaseAdapter);
 
-                // Initialize sidebar
-                await initSidebar();
+                // Sidebar must not delay the audit table.
+                void initSidebar().catch(() => {});
 
                 // Load activity log
                 await loadActivityLog();
+                pageLifecycle()?.markInteractive();
 
                 // Mark page as initialized (triggers CSS fade-in)
                 document.body.classList.add('initialized');
 
             } catch (error) {
+                pageLifecycle()?.setError('activity-log', error, init);
                 showToast('Gagal memuat halaman: ' + error.message, 'error');
                 // Still mark as initialized to prevent stuck blank screen
                 document.body.classList.add('initialized');
@@ -336,6 +339,7 @@
 
         // Load activity log
         async function loadActivityLog() {
+            pageLifecycle()?.setLoading('activity-log', { retry: loadActivityLog });
             try {
                 // Check if service is initialized
                 if (!activityLogService) {
@@ -352,8 +356,10 @@
 
                 renderTable(result.data);
                 renderPagination(result.totalPages, currentPage);
+                pageLifecycle()?.setReady('activity-log');
 
             } catch (error) {
+                pageLifecycle()?.setError('activity-log', error, loadActivityLog);
                 showToast('Gagal memuat activity log: ' + error.message, 'error');
             }
         }

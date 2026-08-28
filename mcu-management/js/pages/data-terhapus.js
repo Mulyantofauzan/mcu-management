@@ -16,6 +16,7 @@ let jobTitles = [];
 let departments = [];
 let selectedEmployees = new Set();
 let selectedMCU = new Set();  // ✅ NEW: Selected deleted MCU
+const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
 
 async function init() {
     try {
@@ -36,6 +37,7 @@ async function init() {
 
         updateUserInfo();
         await loadData();
+        pageLifecycle()?.markInteractive();
 
         // ✅ NEW: Initialize Super Search (Cmd+K global search)
         try {
@@ -45,6 +47,7 @@ async function init() {
         // Show page content after initialization complete
         document.body.classList.add('initialized');
     } catch (error) {
+        pageLifecycle()?.setError('deleted-data', error, init);
         showToast('Error initializing page: ' + error.message, 'error');
         // Still show page even on error
         document.body.classList.add('initialized');
@@ -91,11 +94,19 @@ function updateUserInfo() {
 }
 
 async function loadData() {
+    pageLifecycle()?.setLoading('deleted-data', { retry: loadData });
     try {
-        deletedEmployees = await employeeService.getDeleted();
-        deletedMCU = await mcuService.getDeleted();  // ✅ NEW: Load deleted MCU
-        jobTitles = await masterDataService.getAllJobTitles();
-        departments = await masterDataService.getAllDepartments();
+        const [deletedEmployeeRows, deletedMCURows, jobTitleRows, departmentRows, allEmployees] = await Promise.all([
+            employeeService.getDeleted(),
+            mcuService.getDeleted(),
+            masterDataService.getAllJobTitles(),
+            masterDataService.getAllDepartments(),
+            employeeService.getAll()
+        ]);
+        deletedEmployees = deletedEmployeeRows;
+        deletedMCU = deletedMCURows;
+        jobTitles = jobTitleRows;
+        departments = departmentRows;
 
         // ✅ FIX: Build lookup Maps once for O(1) enrichment (performance optimization)
         const jobMap = new Map(jobTitles.map(j => [j.name, j]));
@@ -106,7 +117,6 @@ async function loadData() {
 
         // ✅ NEW: Enrich MCU data with employee names
         // Load ALL employees (active + deleted) for proper lookup since deleted MCU might belong to active employee
-        const allEmployees = await employeeService.getAll();
         const employeeMap = new Map(allEmployees.map(emp => [emp.employeeId, emp]));
         deletedMCU = deletedMCU.map(mcu => ({
             ...mcu,
@@ -117,8 +127,9 @@ async function loadData() {
         document.getElementById('mcu-total-count').textContent = deletedMCU.length;  // ✅ NEW: Update MCU count
         renderTable();
         renderMCUTable();  // ✅ NEW: Also render MCU table after loading data
+        pageLifecycle()?.setReady('deleted-data');
     } catch (error) {
-
+        pageLifecycle()?.setError('deleted-data', error, loadData);
         showToast('Gagal memuat data: ' + error.message, 'error');
     }
 }

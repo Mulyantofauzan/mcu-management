@@ -10,6 +10,8 @@ import { workflowService } from '../services/workflowService.js';
 import { workflowIdempotency } from '../utils/workflowIdempotency.js';
 import { ensureWorkflowAlerts, presentWorkflowError } from '../utils/workflowErrorPresenter.js';
 
+const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
+
 class MCUExpiryManagementPage {
   constructor() {
     this.allExpiryData = [];
@@ -23,6 +25,7 @@ class MCUExpiryManagementPage {
     this.allDepartments = [];
     this.expirySettingVersion = null;
     this.preview = null;
+    this.actionsBound = false;
   }
 
   async initialize() {
@@ -50,17 +53,22 @@ class MCUExpiryManagementPage {
         document.getElementById('user-initial').textContent = initial;
       }
 
-      // Initialize sidebar
-      await initSidebar();
+      // Sidebar must not delay the primary data.
+      void initSidebar().catch(() => {});
 
       // Load data
-      await this.loadExpiryData();
-      await this.loadExpirySetting();
       this.bindExpirySettingActions();
+      await Promise.all([
+        this.loadExpiryData(),
+        this.loadExpirySetting()
+      ]);
+      pageLifecycle()?.markInteractive();
 
       // Mark page as initialized
       document.body.classList.add('initialized');
     } catch (error) {
+      pageLifecycle()?.setError('expiry-data', error, () => this.initialize());
+      pageLifecycle()?.setError('expiry-setting', error, () => this.initialize());
       await presentWorkflowError({
         code: error?.code || 'WORKFLOW_INTERNAL_ERROR',
         message: error?.message || 'Halaman pengaturan MCU gagal dimuat.'
@@ -70,6 +78,7 @@ class MCUExpiryManagementPage {
   }
 
   async loadExpirySetting() {
+    pageLifecycle()?.setLoading('expiry-setting', { retry: () => this.loadExpirySetting() });
     try {
       const settings = await workflowService.settings();
       const row = settings.settings.find(item => item.setting_key === 'mcu_expiry_months');
@@ -78,12 +87,16 @@ class MCUExpiryManagementPage {
       this.preview = null;
       document.getElementById('expiry-impact-preview').classList.add('hidden');
       document.getElementById('apply-expiry-button').disabled = true;
+      pageLifecycle()?.setReady('expiry-setting');
     } catch (error) {
+      pageLifecycle()?.setError('expiry-setting', error, () => this.loadExpirySetting());
       await presentWorkflowError(error, { retry: () => this.loadExpirySetting() });
     }
   }
 
   bindExpirySettingActions() {
+    if (this.actionsBound) return;
+    this.actionsBound = true;
     document.getElementById('preview-expiry-button')?.addEventListener('click', () => this.previewExpiryImpact());
     document.getElementById('apply-expiry-button')?.addEventListener('click', () => this.applyExpirySetting());
     document.getElementById('expiry-months-input')?.addEventListener('input', () => {
@@ -151,6 +164,7 @@ class MCUExpiryManagementPage {
   }
 
   async loadExpiryData() {
+    pageLifecycle()?.setLoading('expiry-data', { retry: () => this.loadExpiryData() });
     try {
       // Load employees with MCU data
       this.allExpiryData = await mcuExpiryService.loadEmployeesWithMCU();
@@ -172,7 +186,9 @@ class MCUExpiryManagementPage {
       // Render table
       this.currentPage = 1;
       this.renderTable();
+      pageLifecycle()?.setReady('expiry-data');
     } catch (error) {
+      pageLifecycle()?.setError('expiry-data', error, () => this.loadExpiryData());
       await presentWorkflowError({
         code: error?.code || 'WORKFLOW_INTERNAL_ERROR',
         message: error?.message || 'Data masa berlaku MCU gagal dimuat.'

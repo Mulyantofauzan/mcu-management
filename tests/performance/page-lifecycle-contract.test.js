@@ -117,3 +117,44 @@ test('workflow list pages expose local readiness', () => {
   assert.match(profile, /setLoading\('doctor-profile'/);
   assert.match(profile, /markInteractive\(\)/);
 });
+
+test('administration tables expose local readiness', () => {
+  const pages = [
+    ['data-master', 'master-data-table'],
+    ['kelola-user', 'user-table'],
+    ['data-terhapus', 'deleted-data']
+  ];
+
+  pages.forEach(([page, region]) => {
+    const html = read(`mcu-management/pages/${page}.html`);
+    const source = read(`mcu-management/js/pages/${page}.js`);
+    assert.match(html, new RegExp(`data-lifecycle-region="${region}"`), `${page}: region`);
+    assert.match(source, new RegExp(`setLoading\\('${region}'`), `${page}: loading`);
+    assert.match(source, /markInteractive\(\)/, `${page}: interactive`);
+  });
+
+  const activity = read('mcu-management/pages/activity-log.html');
+  assert.match(activity, /data-lifecycle-region="activity-log"/);
+  assert.match(activity, /setLoading\('activity-log'/);
+  assert.match(activity, /markInteractive\(\)/);
+});
+
+test('independent administration reads start in parallel', () => {
+  const deleted = read('mcu-management/js/pages/data-terhapus.js');
+  const expiry = read('mcu-management/js/pages/mcu-expiry-management.js');
+
+  assert.match(deleted, /Promise\.all\(\[\s*employeeService\.getDeleted\(\),\s*mcuService\.getDeleted\(\),\s*masterDataService\.getAllJobTitles\(\),\s*masterDataService\.getAllDepartments\(\),\s*employeeService\.getAll\(\)/);
+  assert.match(expiry, /Promise\.all\(\[\s*this\.loadExpiryData\(\),\s*this\.loadExpirySetting\(\)/);
+  assert.match(expiry, /setLoading\('expiry-data'/);
+  assert.match(expiry, /setLoading\('expiry-setting'/);
+});
+
+test('all master data uses the shared five minute cache', () => {
+  const cache = read('mcu-management/js/utils/cacheManager.js');
+  const master = read('mcu-management/js/services/masterDataService.js');
+
+  assert.match(cache, /DEFAULT_TTL\s*=\s*5 \* 60 \* 1000/);
+  assert.match(master, /cacheManager\.get\('statusMCU:all'\)/);
+  assert.match(master, /cacheManager\.clear\('statusMCU:all'\)/);
+  assert.match(master, /cacheManager\.clear\(`statusMCU:\$\{id\}`\)/);
+});

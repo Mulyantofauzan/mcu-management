@@ -201,6 +201,7 @@ class MasterDataService {
       updatedAt: getCurrentTimestamp()
     };
     await database.add('statusMCU', status);
+    cacheManager.clear('statusMCU:all');
     // ✅ FIX: Log activity with details
     if (currentUser?.userId) {
       await database.logActivity('create', 'Status', status.statusId, currentUser.userId,
@@ -210,11 +211,20 @@ class MasterDataService {
   }
 
   async getAllStatus() {
-    return await database.getAll('statusMCU');
+    const cached = cacheManager.get('statusMCU:all');
+    if (cached) return cached;
+    const data = await database.getAll('statusMCU');
+    cacheManager.set('statusMCU:all', data);
+    return data;
   }
 
   async getStatusById(id) {
-    return await database.get('statusMCU', id);
+    const cacheKey = `statusMCU:${id}`;
+    const cached = cacheManager.get(cacheKey);
+    if (cached) return cached;
+    const data = await database.get('statusMCU', id);
+    cacheManager.set(cacheKey, data);
+    return data;
   }
 
   async updateStatus(id, data, currentUser) {
@@ -222,6 +232,8 @@ class MasterDataService {
       name: data.name,
       updatedAt: getCurrentTimestamp()
     });
+    cacheManager.clear('statusMCU:all');
+    cacheManager.clear(`statusMCU:${id}`);
     // ✅ FIX: Log activity with details
     if (currentUser?.userId) {
       await database.logActivity('update', 'Status', id, currentUser.userId,
@@ -236,6 +248,8 @@ class MasterDataService {
     const statusName = status?.name || 'Unknown';
 
     await database.delete('statusMCU', id);
+    cacheManager.clear('statusMCU:all');
+    cacheManager.clear(`statusMCU:${id}`);
     // ✅ FIX: Log activity with details
     if (currentUser?.userId) {
       await database.logActivity('delete', 'Status', id, currentUser.userId,

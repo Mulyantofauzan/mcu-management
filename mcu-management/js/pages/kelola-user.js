@@ -10,6 +10,7 @@ import { getCurrentTimestamp } from '../utils/dateHelpers.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 
 let users = [];
+const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
 
 /**
  * Safely escape HTML special characters to prevent XSS
@@ -79,6 +80,7 @@ async function init() {
 
         updateUserInfo();
         await loadUsers();
+        pageLifecycle()?.markInteractive();
 
         // ✅ NEW: Initialize Super Search (Cmd+K global search)
         try {
@@ -88,6 +90,7 @@ async function init() {
         // Show page content after initialization complete
         document.body.classList.add('initialized');
     } catch (error) {
+        pageLifecycle()?.setError('user-table', error, init);
         showToast('Error initializing page: ' + error.message, 'error');
         // Still show page even on error
         document.body.classList.add('initialized');
@@ -134,11 +137,13 @@ function updateUserInfo() {
 }
 
 async function loadUsers() {
+    pageLifecycle()?.setLoading('user-table', { retry: loadUsers });
     try {
         users = await database.getAll('users');
         renderTable();
+        pageLifecycle()?.setReady('user-table');
     } catch (error) {
-
+        pageLifecycle()?.setError('user-table', error, loadUsers);
         showToast('Gagal memuat data user: ' + error.message, 'error');
     }
 }
