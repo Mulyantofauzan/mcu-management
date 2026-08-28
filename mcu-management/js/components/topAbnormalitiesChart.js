@@ -206,14 +206,14 @@ class TopAbnormalitiesChart {
       this.currentView = view;
       this.filteredMCUs = filteredMCUs; // Store for dropdown updates
 
-      // Get abnormalities data
-      this.data = await abnormalitiesService.getTopAbnormalities(
+      const report = await abnormalitiesService.getAbnormalitiesReport(
         filteredMCUs,
         {
           limit: limit,
           includeTypes: ['lab', 'mcu']
         }
       );
+      this.data = report.items;
 
       // Get main container
       let container = document.getElementById(this.containerId);
@@ -222,7 +222,7 @@ class TopAbnormalitiesChart {
       }
 
       // Build HTML structure
-      const summaryStats = await abnormalitiesService.getAbnormalitiesSummary(filteredMCUs);
+      const summaryStats = report.summary;
 
       let html = `
         <div class="bg-white rounded-lg shadow p-6">

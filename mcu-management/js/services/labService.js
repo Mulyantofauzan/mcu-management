@@ -7,6 +7,7 @@
 
 import { supabase, supabaseReady, isSupabaseEnabled } from '../config/supabase.js';
 import { cacheManager } from '../utils/cacheManager.js';
+import { chunkUnique, runBatches } from '../utils/batchRunner.mjs';
 
 class LabService {
   // ============================================
@@ -179,6 +180,15 @@ class LabService {
   // PEMERIKSAAN LAB (Hasil Pemeriksaan)
   // ============================================
 
+  filterValidPemeriksaanLab(data) {
+    return (data || []).filter(item => {
+      if (!item?.lab_item_id) return false;
+      if (item.value === null || item.value === undefined || item.value === '') return false;
+      const value = Number.parseFloat(String(item.value).trim().replace(',', '.'));
+      return Number.isFinite(value) && value > 0;
+    });
+  }
+
   /**
    * Buat hasil pemeriksaan lab baru
    */
@@ -276,45 +286,7 @@ class LabService {
       if (error) throw error;
 // [log removed]
 
-      // ✅ FIXED: Relaxed filtering - only reject truly invalid data
-      // Accept values > 0 and valid numeric values. Skip empty values instead of rejecting them.
-      const validData = [];
-      const invalidData = [];
-
-      (data || []).forEach(item => {
-        if (!item) {
-          invalidData.push({item, reason: 'Item is null'});
-          return;
-        }
-        if (!item.lab_item_id) {
-          invalidData.push({item, reason: 'Missing lab_item_id'});
-          return;
-        }
-
-        // ✅ FIXED: Allow empty/null values (just skip them, don't add to either list)
-        // This allows items to be "not filled" without causing errors
-        if (item.value === null || item.value === undefined || item.value === '') {
-          // Don't add to validData OR invalidData - simply skip
-          return;
-        }
-
-        // Trim and handle comma decimal separator (Indonesian format: 99,5 -> 99.5)
-        let valueStr = String(item.value).trim();
-
-        // Replace comma with dot for European decimal format
-        valueStr = valueStr.replace(',', '.');
-
-        // Convert to number
-        const numValue = parseFloat(valueStr);
-
-        // ✅ FIXED: Only reject if value is non-numeric or <= 0
-        if (isNaN(numValue) || numValue <= 0) {
-          invalidData.push({item, reason: `Invalid numeric: '${item.value}' -> ${numValue}`});
-          return;
-        }
-
-        validData.push(item);
-      });
+      const validData = this.filterValidPemeriksaanLab(data);
 
       // ✅ CRITICAL: Cache the valid results to avoid repeated queries
       cacheManager.set(cacheKey, validData);
@@ -323,6 +295,52 @@ class LabService {
     } catch (error) {
       return [];
     }
+  }
+
+  async getPemeriksaanLabByMcuIds(mcuIds) {
+    await supabaseReady;
+    if (!isSupabaseEnabled()) return [];
+
+    const batches = chunkUnique(mcuIds, 100);
+    const batchResults = await runBatches(batches, async ids => {
+      const rows = [];
+      const pageSize = 1000;
+
+      for (let offset = 0; ; offset += pageSize) {
+        const { data, error } = await supabase
+          .from('pemeriksaan_lab')
+          .select(`
+            id,
+            mcu_id,
+            employee_id,
+            lab_item_id,
+            value,
+            unit,
+            min_range_reference,
+            max_range_reference,
+            notes,
+            created_at,
+            updated_at,
+            lab_items:lab_item_id(id, name, description, unit)
+          `)
+          .in('mcu_id', ids)
+          .is('deleted_at', null)
+          .not('lab_item_id', 'is', null)
+          .order('created_at', { ascending: true })
+          .range(offset, offset + pageSize - 1);
+
+        if (error) throw error;
+        rows.push(...(data || []));
+        if ((data || []).length < pageSize) break;
+      }
+      return rows;
+    }, 3);
+
+    const validData = this.filterValidPemeriksaanLab(batchResults.flat());
+    const grouped = new Map(batches.flat().map(id => [id, []]));
+    validData.forEach(item => grouped.get(String(item.mcu_id))?.push(item));
+    grouped.forEach((items, id) => cacheManager.set(`labResults:${id}`, items));
+    return validData;
   }
 
   /**

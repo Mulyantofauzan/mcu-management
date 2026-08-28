@@ -3,6 +3,8 @@
  * This runs on every page so a normal reload is enough to receive a release.
  */
 
+import { createPageLifecycle } from './utils/pageLifecycleManager.js';
+
 const VERSION_STORAGE_KEY = 'madis-app-version';
 const RELOAD_STORAGE_KEY = 'madis-reloaded-version';
 
@@ -43,16 +45,18 @@ function reloadOnce(version) {
   if (sessionStorage.getItem(RELOAD_STORAGE_KEY) === version) return;
 
   sessionStorage.setItem(RELOAD_STORAGE_KEY, version);
-  const url = new URL(window.location.href);
-  url.searchParams.set('appVersion', version);
-  window.location.replace(url.toString());
+  window.location.reload();
 }
 
 async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return null;
 
+  const hadController = Boolean(navigator.serviceWorker.controller);
   let controllerChanged = false;
+  let activationRequested = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController) return;
+    if (!activationRequested) return;
     if (controllerChanged) return;
     controllerChanged = true;
 
@@ -70,8 +74,8 @@ async function registerServiceWorker() {
     if (!worker) return;
 
     worker.addEventListener('statechange', () => {
-      if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-        worker.postMessage({ type: 'SKIP_WAITING' });
+      if (worker.state === 'installed' && hadController) {
+        showUpdateNotice(registration, localStorage.getItem(VERSION_STORAGE_KEY));
       }
     });
   });
@@ -79,14 +83,56 @@ async function registerServiceWorker() {
   await registration.update();
 
   if (registration.waiting) {
-    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    showUpdateNotice(registration, localStorage.getItem(VERSION_STORAGE_KEY));
   }
+
+  registration.activateWaitingWorker = () => {
+    activationRequested = true;
+    return activateWaitingWorker(registration);
+  };
 
   return registration;
 }
 
+function activateWaitingWorker(registration) {
+  if (!registration?.waiting) return false;
+  registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+  return true;
+}
+
+function showUpdateNotice(registration, version) {
+  if (!registration?.waiting || document.getElementById('madis-update-notice')) return;
+  const notice = document.createElement('div');
+  notice.id = 'madis-update-notice';
+  notice.className = 'madis-update-notice';
+  notice.setAttribute('role', 'status');
+  notice.innerHTML = '<span>Versi baru MADIS tersedia.</span><button type="button">Muat Ulang</button>';
+  notice.querySelector('button').addEventListener('click', () => {
+    registration.activateWaitingWorker?.();
+  });
+  document.body.appendChild(notice);
+  document.dispatchEvent(new CustomEvent('madis:update-available', {
+    detail: { version, activate: () => registration.activateWaitingWorker?.() }
+  }));
+}
+
+function initializePageLifecycle() {
+  const pageId = document.body?.dataset.pageId || 'madis';
+  const lifecycle = createPageLifecycle(pageId);
+  document.querySelectorAll('[data-lifecycle-region]').forEach(element => {
+    lifecycle.registerRegion(
+      element.dataset.lifecycleRegion,
+      element,
+      { initialState: element.dataset.lifecycleState || 'ready' }
+    );
+  });
+  lifecycle.markShellReady();
+  window.MADIS_PAGE_LIFECYCLE = lifecycle;
+}
+
 async function initializeApplication() {
   try {
+    initializePageLifecycle();
     const registrationPromise = registerServiceWorker().catch(() => null);
     const serverVersion = await fetchServerVersion();
 
@@ -107,11 +153,7 @@ async function initializeApplication() {
       await clearApplicationCaches();
 
       const registration = await registrationPromise;
-      if (registration?.waiting) {
-        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-      }
-
-      reloadOnce(serverVersion);
+      showUpdateNotice(registration, serverVersion);
       return;
     }
 

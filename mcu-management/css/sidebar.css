@@ -59,20 +59,84 @@ body.madis-navigating #madis-navigation-progress span {
 }
 
 .navigation-startup-overlay {
-  left: 16rem !important;
-  z-index: 20 !important;
-  display: flex !important;
-  width: calc(100% - 16rem) !important;
-  height: 100% !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  background: rgba(248, 250, 252, 0.88) !important;
-}
-
-body.initialized .navigation-startup-overlay {
   display: none !important;
   visibility: hidden !important;
   pointer-events: none !important;
+}
+
+[data-lifecycle-region] {
+  position: relative;
+}
+
+[data-lifecycle-state="loading"] {
+  min-height: 5rem;
+}
+
+.lifecycle-feedback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 5rem;
+  margin: 0.75rem 0;
+  padding: 1rem;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+[data-lifecycle-state="loading"] > .lifecycle-feedback {
+  background: linear-gradient(100deg, #f1f5f9 30%, #ffffff 50%, #f1f5f9 70%);
+  background-size: 200% 100%;
+  animation: lifecycle-shimmer 1.2s ease-in-out infinite;
+}
+
+.lifecycle-error {
+  color: #991b1b;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.lifecycle-retry {
+  flex: 0 0 auto;
+  padding: 0.5rem 0.75rem;
+  color: #ffffff;
+  background: #2563eb;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+
+.madis-update-notice {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 100001;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: calc(100vw - 2rem);
+  padding: 0.75rem 1rem;
+  color: #1e3a8a;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.75rem;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+  font-size: 0.875rem;
+}
+
+.madis-update-notice button {
+  padding: 0.45rem 0.7rem;
+  color: #ffffff;
+  background: #2563eb;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+
+@keyframes lifecycle-shimmer {
+  to { background-position: -200% 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -84,6 +148,10 @@ body.initialized .navigation-startup-overlay {
   body.madis-navigating #madis-navigation-progress span {
     animation: none;
     transform: scaleX(0.75);
+  }
+
+  [data-lifecycle-state="loading"] > .lifecycle-feedback {
+    animation: none;
   }
 }
 
@@ -476,8 +544,4 @@ body.initialized .navigation-startup-overlay {
     overflow: hidden;
   }
 
-  .navigation-startup-overlay {
-    left: 0 !important;
-    width: 100% !important;
-  }
 }

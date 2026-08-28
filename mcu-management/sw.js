@@ -29,6 +29,7 @@ const STATIC_ASSETS = [
   '/css/sidebar.css',
   '/css/workflow.css',
   '/js/appBootstrap.js',
+  '/js/utils/pageLifecycleManager.js',
   '/js/services/workflowService.js',
   '/js/services/mcuFilePolicy.mjs',
   '/js/utils/mcuFormReader.js',
@@ -59,7 +60,6 @@ self.addEventListener('install', (event) => {
         STATIC_ASSETS.map(url => cache.add(url))
       );
     })
-    .then(() => self.skipWaiting()) // Activate immediately
     .catch((error) => {
       // Silent fail - service worker installation errors are non-critical
     })
@@ -343,11 +343,11 @@ self.addEventListener('notificationclick', (event) => {
 
 // Log service worker lifecycle
 self.addEventListener('message', (event) => {
-  if (event.data.type === 'SKIP_WAITING') {
+  if (event.data?.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
 
-  if (event.data.type === 'GET_CACHE_STATS') {
+  if (event.data?.type === 'GET_CACHE_STATS') {
     caches.keys().then((names) => {
       const stats = { version: CACHE_VERSION, caches: names };
       event.ports[0].postMessage(stats);
