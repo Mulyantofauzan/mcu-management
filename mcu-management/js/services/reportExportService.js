@@ -59,6 +59,13 @@ class ReportExportService {
 
     // Sort lab items ONCE before the loop for consistent order
     const sortedLabItems = allLabItems.sort((a, b) => a.id - b.id);
+    const mcuIds = filteredMCUs.map(mcu => mcu.mcuId || mcu.mcu_id).filter(Boolean);
+    const labsByMcuId = new Map(mcuIds.map(mcuId => [String(mcuId), []]));
+    const allLabResults = await labService.getPemeriksaanLabByMcuIds(mcuIds);
+    allLabResults.forEach(lab => {
+      const results = labsByMcuId.get(String(lab.mcu_id || lab.mcuId));
+      if (results) results.push(lab);
+    });
 
     for (const mcu of filteredMCUs) {
       // Skip soft-deleted MCU
@@ -87,7 +94,7 @@ class ReportExportService {
       // Get all lab results for this MCU
       // Note: labService only returns non-empty values, so we build a map
       // and treat missing entries as empty/not-filled
-      const labResults = await labService.getPemeriksaanLabByMcuId(mcu.mcuId);
+      const labResults = labsByMcuId.get(String(mcu.mcuId || mcu.mcu_id)) || [];
 
       // Build lab results map - only includes filled values
       const labMap = {};

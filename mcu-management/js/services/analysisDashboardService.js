@@ -28,9 +28,9 @@ class AnalysisDashboardService {
    * Initialize dashboard on page load
    */
   async initializeDashboard() {
+    const lifecycle = window.MADIS_PAGE_LIFECYCLE;
+    lifecycle?.setLoading('analysis-data', { retry: () => this.initializeDashboard() });
     try {
-      this.showLoading(true);
-
       // Load initial data
       await this.loadDashboardData();
 
@@ -42,10 +42,9 @@ class AnalysisDashboardService {
 
       // Setup event listeners
       this.setupEventListeners();
-
-      this.showLoading(false);
+      lifecycle?.setReady('analysis-data');
     } catch (error) {
-      this.showLoading(false);
+      lifecycle?.setError('analysis-data', error, () => this.initializeDashboard());
       await showAlert({
         icon: 'error',
         title: 'Analysis Gagal Dimuat',
@@ -59,13 +58,15 @@ class AnalysisDashboardService {
    */
   async loadDashboardData() {
     try {
-      const currentData = await analyticsEligibilityService.getCurrentData();
+      const [currentData, departmentResult, jobTitleResult] = await Promise.all([
+        analyticsEligibilityService.getCurrentData(),
+        supabase.from('departments').select('*'),
+        supabase.from('job_titles').select('*')
+      ]);
       const employees = currentData.map(item => item.employee);
       const mcus = currentData.map(item => item.mcu);
-
-      // Get departments and job titles
-      const { data: departments } = await supabase.from('departments').select('*');
-      const { data: jobTitles } = await supabase.from('job_titles').select('*');
+      const departments = departmentResult.data || [];
+      const jobTitles = jobTitleResult.data || [];
 
       // Create map of latest MCU per employee
       const latestMCUPerEmployee = {};
@@ -76,28 +77,10 @@ class AnalysisDashboardService {
       });
 
       // Get lab results only for LATEST MCUs (lazy load all MCUs later if needed)
-      let labResults = [];
       const latestMCUIds = Object.values(latestMCUPerEmployee).map(m => m.mcu_id);
-
-      // Only query lab results if there are latest MCUs to query
-      // Batch queries to avoid hitting URL length limits
-      if (latestMCUIds.length > 0) {
-        const batchSize = 100;
-        for (let i = 0; i < latestMCUIds.length; i += batchSize) {
-          const batch = latestMCUIds.slice(i, i + batchSize);
-          const { data: labs, error: labError } = await supabase
-            .from('pemeriksaan_lab')
-            .select('*')
-            .in('mcu_id', batch)
-            .is('deleted_at', null);
-
-          if (labError) {
-            // Continue processing instead of throwing
-          } else {
-            labResults = labResults.concat(labs || []);
-          }
-        }
-      }
+      const labResults = latestMCUIds.length > 0
+        ? await labService.getPemeriksaanLabByMcuIds(latestMCUIds).catch(() => [])
+        : [];
 
       // ✅ Load lab items mapping for display purposes (name, unit)
       // Status is read directly from database 'notes' column, not calculated from ranges
@@ -208,35 +191,22 @@ class AnalysisDashboardService {
 
     try {
 
-      const historyData = await analyticsEligibilityService.getReviewedHistoryData();
+      const [historyData, departmentResult, jobTitleResult] = await Promise.all([
+        analyticsEligibilityService.getReviewedHistoryData(),
+        supabase.from('departments').select('*'),
+        supabase.from('job_titles').select('*')
+      ]);
       const allMcus = historyData.map(item => item.mcu);
       const employeeMap = new Map(historyData.map(item => [item.employee.employee_id, item.employee]));
       const employees = [...employeeMap.values()];
-
-      // Get departments and job titles
-      const { data: departments } = await supabase.from('departments').select('*');
-      const { data: jobTitles } = await supabase.from('job_titles').select('*');
+      const departments = departmentResult.data || [];
+      const jobTitles = jobTitleResult.data || [];
 
       // Get ALL lab results for all MCUs (with batching)
-      let allLabResults = [];
       const allMCUIds = allMcus.map(m => m.mcu_id);
-
-      if (allMCUIds.length > 0) {
-        const batchSize = 100;
-        for (let i = 0; i < allMCUIds.length; i += batchSize) {
-          const batch = allMCUIds.slice(i, i + batchSize);
-          const { data: labs, error: labError } = await supabase
-            .from('pemeriksaan_lab')
-            .select('*')
-            .in('mcu_id', batch)
-            .is('deleted_at', null);
-
-          if (labError) {
-          } else {
-            allLabResults = allLabResults.concat(labs || []);
-          }
-        }
-      }
+      const allLabResults = allMCUIds.length > 0
+        ? await labService.getPemeriksaanLabByMcuIds(allMCUIds).catch(() => [])
+        : [];
 
       // Build consolidated data for ALL MCUs per employee
       // This allows year-based filtering to show MCU from specific year
@@ -431,29 +401,12 @@ class AnalysisDashboardService {
       }
 
 
-      // Load lab data in batches
-      const batchSize = 100;
-      for (let i = 0; i < mcuIdsNeedingLabs.length; i += batchSize) {
-        const batch = mcuIdsNeedingLabs.slice(i, i + batchSize);
-        const { data: labs, error } = await supabase
-          .from('pemeriksaan_lab')
-          .select('*')
-          .in('mcu_id', batch)
-          .is('deleted_at', null);
-
-        if (error) {
-          continue;
-        }
-
-        // Add lab data to filtered items
-        labs?.forEach(lab => {
-          const item = this.filteredData.find(d => d.mcu.mcu_id === lab.mcu_id);
-          if (item) {
-            if (!item.labs) item.labs = {};
-            item.labs[lab.lab_item_id] = lab;
-          }
-        });
-      }
+      const labs = await labService.getPemeriksaanLabByMcuIds(mcuIdsNeedingLabs);
+      const itemByMcuId = new Map(this.filteredData.map(item => [String(item.mcu.mcu_id), item]));
+      labs.forEach(lab => {
+        const item = itemByMcuId.get(String(lab.mcu_id));
+        if (item) item.labs[lab.lab_item_id] = lab;
+      });
 
     } catch (error) {
     }
@@ -483,17 +436,19 @@ class AnalysisDashboardService {
    * Render all charts and statistics
    */
   async renderAllCharts() {
-    try {
-      this.updateSummaryCards();
-      this.renderMCUTrendChart();
-      this.renderBMIChart();
-      this.renderBloodPressureChart();
-      this.renderVisionChart();
-      this.renderFraminghamCharts();
-      this.renderExaminationCharts();
-      this.renderLabResultsCharts();
-    } catch (error) {
-    }
+    const renderers = [
+      () => this.updateSummaryCards(),
+      () => this.renderMCUTrendChart(),
+      () => this.renderBMIChart(),
+      () => this.renderBloodPressureChart(),
+      () => this.renderVisionChart(),
+      () => this.renderFraminghamCharts(),
+      () => this.renderExaminationCharts(),
+      () => this.renderLabResultsCharts()
+    ];
+    renderers.forEach(render => {
+      try { render(); } catch (error) { /* Keep other charts available. */ }
+    });
   }
 
   /**

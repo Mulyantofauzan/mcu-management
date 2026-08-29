@@ -1,8 +1,24 @@
 /**
  * Excel Export Service
  * Exports Jakarta Cardiovascular assessment data to Excel with styling
- * Uses ExcelJS from CDN (loaded in HTML)
+ * Loads local ExcelJS only when export is requested.
  */
+
+let excelPromise;
+
+function ensureExcelJS() {
+    if (window.ExcelJS) return Promise.resolve(window.ExcelJS);
+    if (excelPromise) return excelPromise;
+
+    excelPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = new URL('../../assets/vendor/exceljs/exceljs.min.js', import.meta.url).href;
+        script.onload = () => resolve(window.ExcelJS);
+        script.onerror = () => reject(new Error('ExcelJS gagal dimuat. Coba ekspor lagi.'));
+        document.head.appendChild(script);
+    });
+    return excelPromise;
+}
 
 /**
  * Add resume/summary sheet to workbook
@@ -117,12 +133,7 @@ function addResumeSummarySheet(workbook, allData) {
  */
 export async function exportToExcel(data, allData = null) {
     try {
-        // Wait for ExcelJS to be available (loaded from CDN)
-        if (typeof ExcelJS === 'undefined') {
-            throw new Error('ExcelJS library tidak tersedia. Pastikan koneksi internet stabil.');
-        }
-
-        const ExcelJSLib = window.ExcelJS;
+        const ExcelJSLib = await ensureExcelJS();
         const workbook = new ExcelJSLib.Workbook();
 
         // Add resume/summary sheet if allData is provided

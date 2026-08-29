@@ -19,10 +19,6 @@
     <!-- Environment Configuration -->
     <script src="../env-config.js"></script>
 
-    <!-- Chart.js -->
-    <script src="../assets/vendor/chartjs/chart.umd.min.js" defer></script>
-    <script src="../assets/vendor/chartjs/chartjs-plugin-datalabels.min.js" defer></script>
-
     <!-- Dexie (IndexedDB) - Fallback -->
     <script src="../assets/vendor/dexie/dexie.min.js" defer></script>
 
@@ -32,21 +28,6 @@
 </head>
 <body data-page-id="employee-health-history">
   <!-- Sidebar -->
-  <!-- Unified Loading Overlay -->
-  <div id="unified-loading-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
-    <div class="flex flex-col items-center gap-4">
-      <!-- Animated Spinner -->
-      <div class="animate-spin">
-        <svg class="w-10 h-10 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-        </svg>
-      </div>
-      <!-- Message -->
-      <p class="text-sm text-gray-700 font-medium" id="unified-loading-message">Memproses...</p>
-    </div>
-  </div>
-
-
     <aside id="sidebar" class="sidebar fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 z-30">
         <div class="flex flex-col h-full">
             <div class="p-6 border-b border-gray-200"><h1 class="text-xl font-bold text-primary-600">MADIS</h1><p class="text-xs text-gray-500 mt-1">Medical Check-Up Analysis & Data Information System</p></div>
@@ -124,7 +105,7 @@
             </div>
 
             <!-- EMPLOYEE SELECTOR SECTION -->
-            <div class="card mb-6">
+            <div class="card mb-6" data-lifecycle-region="health-directory" data-lifecycle-state="ready">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">Pilih Karyawan</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- Employee Dropdown -->
@@ -148,6 +129,7 @@
                 </div>
             </div>
 
+            <div data-lifecycle-region="health-results" data-lifecycle-state="ready">
             <!-- EMPLOYEE INFO -->
             <div id="employee-info-section" class="card mb-6" style="display: none;">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -216,6 +198,7 @@
                 <h3 class="text-lg font-semibold text-gray-900 mb-2">Pilih Karyawan</h3>
                 <p class="text-gray-500">Silakan pilih karyawan dari dropdown di atas untuk melihat riwayat kesehatan mereka</p>
             </div>
+            </div>
         </main>
     </div>
 
@@ -244,11 +227,32 @@
         };
 
         let allEmployees = [];
+        let allDepartments = [];
         let healthChart = null;
+        let chartPromise;
+        const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
+
+        function ensureHealthChart() {
+            if (window.Chart) return Promise.resolve(window.Chart);
+            if (chartPromise) return chartPromise;
+            chartPromise = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = '../assets/vendor/chartjs/chart.umd.min.js';
+                script.onload = () => resolve(window.Chart);
+                script.onerror = () => {
+                    chartPromise = null;
+                    reject(new Error('Grafik gagal dimuat.'));
+                };
+                document.head.appendChild(script);
+            });
+            return chartPromise;
+        }
 
         // Initialize page
         async function init() {
+            const retry = () => init();
             try {
+                pageLifecycle()?.setLoading('health-directory', { retry });
                 const user = authService.getCurrentUser();
                 if (user) {
                     const displayName = user?.displayName || 'User';
@@ -263,8 +267,7 @@
                     if (userRoleEl) userRoleEl.textContent = role;
                     if (userInitialEl) userInitialEl.textContent = initial;
 
-                    // Initialize sidebar - handles sidebar active link and admin menus
-                    await initSidebar();
+                    void initSidebar().catch(() => {});
                 }
 
             // Highlight active sidebar link
@@ -278,8 +281,10 @@
                 }
             });
 
-                // Load employees
-                allEmployees = await employeeService.getAll();
+                [allEmployees, allDepartments] = await Promise.all([
+                    employeeService.getAll(),
+                    masterDataService.getAllDepartments()
+                ]);
                 allEmployees.sort((a, b) => a.name.localeCompare(b.name));
 
                 const select = document.getElementById('employee-select');
@@ -290,18 +295,16 @@
                     select.appendChild(option);
                 });
 
-                // Mark page as initialized (triggers CSS fade-in)
+                pageLifecycle()?.setReady('health-directory');
+                pageLifecycle()?.markInteractive();
                 document.body.classList.add('initialized');
             } catch (error) {
+                pageLifecycle()?.setError('health-directory', error, retry);
                 showToast('Gagal memuat halaman: ' + error.message, 'error');
                 // Still mark as initialized to prevent stuck blank screen
                 document.body.classList.add('initialized');
             }
         }
-
-        // Cache for master data
-        let deptCache = new Map();
-        let jobTitleCache = new Map();
 
         // Handle employee selection
         window.onEmployeeSelect = async function() {
@@ -313,10 +316,13 @@
                 document.getElementById('status-summary-section').style.display = 'none';
                 document.getElementById('chart-section').style.display = 'none';
                 document.getElementById('history-section').style.display = 'none';
+                pageLifecycle()?.setReady('health-results');
                 return;
             }
 
+            const retry = () => window.onEmployeeSelect();
             try {
+                pageLifecycle()?.setLoading('health-results', { retry });
                 document.getElementById('empty-state').style.display = 'none';
 
                 // Get employee data
@@ -327,7 +333,10 @@
                 }
 
                 // Get MCU history
-                const allMCUs = await mcuService.getByEmployee(employeeId);
+                const [allMCUs] = await Promise.all([
+                    mcuService.getByEmployee(employeeId),
+                    ensureHealthChart()
+                ]);
                 const viewType = document.getElementById('view-type').value;
                 const filteredMCUs = filterMCUsByDateRange(allMCUs, viewType);
 
@@ -344,14 +353,14 @@
                     document.getElementById('status-summary-section').style.display = 'none';
                     document.getElementById('chart-section').style.display = 'none';
                     document.getElementById('history-section').style.display = 'none';
+                    pageLifecycle()?.setReady('health-results');
                     return;
                 }
 
                 // ✅ FIX: Match department by name (employees stores department as TEXT name)
-                const allDepts = await masterDataService.getAllDepartments();
                 // Normalize comparison: trim whitespace and case-insensitive as fallback
                 const empDept = (employee.department || '').trim();
-                const dept = allDepts.find(d =>
+                const dept = allDepartments.find(d =>
                     d.name === empDept ||
                     (d.name && d.name.trim().toLowerCase() === empDept.toLowerCase())
                 );
@@ -375,7 +384,9 @@
                 // Display history table
                 await displayHistoryTable(filteredMCUs);
                 document.getElementById('history-section').style.display = 'block';
+                pageLifecycle()?.setReady('health-results');
             } catch (error) {
+                pageLifecycle()?.setError('health-results', error, retry);
                 showToast('Gagal memuat data karyawan: ' + error.message, 'error');
             }
         };

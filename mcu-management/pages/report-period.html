@@ -28,21 +28,6 @@
 </head>
 <body data-page-id="report-period">
   <!-- Sidebar -->
-  <!-- Unified Loading Overlay -->
-  <div id="unified-loading-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
-    <div class="flex flex-col items-center gap-4">
-      <!-- Animated Spinner -->
-      <div class="animate-spin">
-        <svg class="w-10 h-10 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-        </svg>
-      </div>
-      <!-- Message -->
-      <p class="text-sm text-gray-700 font-medium" id="unified-loading-message">Memproses...</p>
-    </div>
-  </div>
-
-
     <aside id="sidebar" class="sidebar fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 z-30">
         <div class="flex flex-col h-full">
             <div class="p-6 border-b border-gray-200"><h1 class="text-xl font-bold text-primary-600">MADIS</h1><p class="text-xs text-gray-500 mt-1">Medical Check-Up Analysis & Data Information System</p></div>
@@ -120,7 +105,7 @@
             </div>
 
             <!-- FILTERS SECTION -->
-            <div class="card mb-6">
+            <div class="card mb-6" data-lifecycle-region="report-filters" data-lifecycle-state="ready">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">Filter Laporan</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <!-- Start Date -->
@@ -195,7 +180,7 @@
             </div>
 
             <!-- RESULTS TABLE -->
-            <div class="card">
+            <div class="card" data-lifecycle-region="report-results" data-lifecycle-state="ready">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg font-semibold text-gray-900">Hasil Laporan</h2>
                     <p class="text-sm text-gray-500" id="result-count"></p>
@@ -203,6 +188,7 @@
                 <div class="table-container" id="results-table">
                     <p class="text-center text-gray-500 py-8">Silakan isi filter dan klik "Buat Laporan" untuk melihat hasil</p>
                 </div>
+                <div id="report-pagination" class="mt-4"></div>
             </div>
         </main>
     </div>
@@ -213,7 +199,6 @@
         import { mcuService } from '../js/services/mcuService.js';
         import { employeeService } from '../js/services/employeeService.js';
         import { masterDataService } from '../js/services/masterDataService.js';
-        import { database } from '../js/services/database.js';  // ✅ FIX: Import database for MCU changes export
         import { showToast } from '../js/utils/uiHelpers.js';
         import { initSidebar } from '../js/utils/sidebarInit.js';
         import { supabaseReady } from '../js/config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
@@ -224,9 +209,13 @@
             window.location.href = 'login.html';
         }
 
+        const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
+
         // Initialize page
         async function init() {
+            const retry = () => init();
             try {
+                pageLifecycle()?.setLoading('report-filters', { retry });
                 const user = authService.getCurrentUser();
                 if (user) {
                     const displayName = user?.displayName || 'User';
@@ -241,8 +230,7 @@
                     if (userRoleEl) userRoleEl.textContent = role;
                     if (userInitialEl) userInitialEl.textContent = initial;
 
-                    // Initialize sidebar - handles sidebar active link and admin menus
-                    await initSidebar();
+                    void initSidebar().catch(() => {});
                 }
 
             // Highlight active sidebar link
@@ -273,9 +261,11 @@
                 document.getElementById('filter-start-date').valueAsDate = startDate;
                 document.getElementById('filter-end-date').valueAsDate = endDate;
 
-                // Mark page as initialized (triggers CSS fade-in)
+                pageLifecycle()?.setReady('report-filters');
+                pageLifecycle()?.markInteractive();
                 document.body.classList.add('initialized');
             } catch (error) {
+                pageLifecycle()?.setError('report-filters', error, retry);
                 showToast('Gagal memuat halaman: ' + error.message, 'error');
                 // Still mark as initialized to prevent stuck blank screen
                 document.body.classList.add('initialized');
@@ -292,9 +282,14 @@
         // ✅ FIX: Load all master data upfront instead of fetching per employee
         let allDepartments = [];
         let allJobTitles = [];
+        let reportContext = null;
+        let reportPage = 1;
+        let reportEmployeeCount = 0;
+        const REPORT_PAGE_SIZE = 50;
 
         // Generate report
         window.generateReport = async function() {
+            const retry = () => window.generateReport();
             try {
                 const startDateStr = document.getElementById('filter-start-date').value;
                 const endDateStr = document.getElementById('filter-end-date').value;
@@ -306,30 +301,32 @@
                     return;
                 }
 
-                // Show loading
-                const resultsTable = document.getElementById('results-table');
-                resultsTable.innerHTML = '<p class="text-center text-gray-500 py-8">Memproses data...</p>';
+                pageLifecycle()?.setLoading('report-results', { retry, timeout: 30000 });
+                document.getElementById('export-btn').disabled = true;
+                reportContext = null;
 
-                // ✅ FIX: Load master data once at the start
-                allDepartments = await masterDataService.getAllDepartments();
-                allJobTitles = await masterDataService.getAllJobTitles();
+                const [departments, jobTitles, allMCUs, employees] = await Promise.all([
+                    masterDataService.getAllDepartments(),
+                    masterDataService.getAllJobTitles(),
+                    mcuService.getAll(),
+                    employeeService.getAll()
+                ]);
+                allDepartments = departments;
+                allJobTitles = jobTitles;
 
                 // Get MCUs in date range
                 const startDate = new Date(startDateStr);
                 const endDate = new Date(endDateStr);
                 endDate.setHours(23, 59, 59, 999);
 
-                const allMCUs = await mcuService.getAll();
                 const filteredMCUs = allMCUs.filter(mcu => {
                     const mcuDate = new Date(mcu.mcuDate);
                     return mcuDate >= startDate && mcuDate <= endDate;
                 });
 
-                // Get all employees
-                const employees = await employeeService.getAll();
-
                 // Build report
                 const report = [];
+                const reportMCUs = [];
                 const uniqueEmployees = new Set();
 
                 for (const mcu of filteredMCUs) {
@@ -353,6 +350,7 @@
                     if (status && mcu.initialResult !== status) continue;
 
                     uniqueEmployees.add(employee.employeeId);
+                    reportMCUs.push(mcu);
 
                     // ✅ FIX: Match department by name (not ID, employees stores department as TEXT name)
                     // Normalize comparison: trim whitespace and case-insensitive as fallback
@@ -385,6 +383,14 @@
                 }
 
                 window.reportData = report;
+                reportEmployeeCount = uniqueEmployees.size;
+                reportPage = 1;
+                reportContext = {
+                    filteredMCUs: reportMCUs,
+                    employees,
+                    allDepartments,
+                    allJobTitles
+                };
 
                 // Display results
                 displayResults(report, uniqueEmployees.size);
@@ -393,10 +399,11 @@
                 displayStatistics(report, uniqueEmployees.size);
 
                 showToast('Laporan berhasil dibuat (' + report.length + ' data)', 'success');
-                document.getElementById('export-btn').disabled = false;
+                document.getElementById('export-btn').disabled = report.length === 0;
+                pageLifecycle()?.setReady('report-results');
             } catch (error) {
+                pageLifecycle()?.setError('report-results', error, retry);
                 showToast('Gagal membuat laporan: ' + error.message, 'error');
-                document.getElementById('results-table').innerHTML = '<p class="text-center text-red-500 py-8">Terjadi kesalahan saat membuat laporan</p>';
             }
         };
 
@@ -407,8 +414,14 @@
             if (data.length === 0) {
                 resultsTable.innerHTML = '<p class="text-center text-gray-500 py-8">Tidak ada data untuk periode ini</p>';
                 document.getElementById('result-count').textContent = '0 hasil';
+                document.getElementById('report-pagination').innerHTML = '';
                 return;
             }
+
+            const totalPages = Math.ceil(data.length / REPORT_PAGE_SIZE);
+            reportPage = Math.min(reportPage, totalPages);
+            const start = (reportPage - 1) * REPORT_PAGE_SIZE;
+            const pageData = data.slice(start, start + REPORT_PAGE_SIZE);
 
             let html = '<div class="table-container"><table class="table"><thead><tr>';
             html += '<th>No</th>';
@@ -423,9 +436,9 @@
             html += '<th>Hasil Akhir</th>';
             html += '</tr></thead><tbody>';
 
-            data.forEach((row, idx) => {
+            pageData.forEach((row, idx) => {
                 html += '<tr>';
-                html += `<td><span class="text-sm text-gray-600">${idx + 1}</span></td>`;
+                html += `<td><span class="text-sm text-gray-600">${start + idx + 1}</span></td>`;
                 html += `<td><span class="text-sm text-gray-600">${row.employeeId}</span></td>`;
                 html += `<td><span class="font-medium text-gray-900">${row.employeeName}</span></td>`;
                 html += `<td><span class="text-sm text-gray-600">${row.department}</span></td>`;
@@ -441,7 +454,24 @@
             html += '</tbody></table></div>';
             resultsTable.innerHTML = html;
             document.getElementById('result-count').textContent = `${data.length} hasil`;
+            document.getElementById('report-pagination').innerHTML = `
+                <div class="flex items-center justify-between gap-3">
+                    <span class="text-sm text-gray-500">${start + 1}-${Math.min(start + REPORT_PAGE_SIZE, data.length)} dari ${data.length}</span>
+                    <div class="flex items-center gap-2">
+                        <button class="btn btn-secondary" onclick="window.goToReportPage(${reportPage - 1})" ${reportPage === 1 ? 'disabled' : ''}>Sebelumnya</button>
+                        <span class="text-sm text-gray-600">Halaman ${reportPage} / ${totalPages}</span>
+                        <button class="btn btn-secondary" onclick="window.goToReportPage(${reportPage + 1})" ${reportPage === totalPages ? 'disabled' : ''}>Berikutnya</button>
+                    </div>
+                </div>`;
         }
+
+        window.goToReportPage = function(page) {
+            const totalPages = Math.ceil(window.reportData.length / REPORT_PAGE_SIZE);
+            if (page < 1 || page > totalPages) return;
+            reportPage = page;
+            displayResults(window.reportData, reportEmployeeCount);
+            document.querySelector('[data-lifecycle-region="report-results"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
 
         // Display statistics
         function displayStatistics(data, totalEmployees) {
@@ -467,50 +497,7 @@
                 const loadingModal = document.getElementById('export-loading-modal');
                 loadingModal.style.display = 'flex';
 
-                // Get all MCUs in current filter range
-                const startDateStr = document.getElementById('filter-start-date').value;
-                const endDateStr = document.getElementById('filter-end-date').value;
-                const departmentFilterValue = document.getElementById('filter-department').value;
-                const status = document.getElementById('filter-status').value;
-
-                // Load master data
-                const allDepartments = await masterDataService.getAllDepartments();
-                const allJobTitles = await masterDataService.getAllJobTitles();
-
-                // Get MCUs in date range
-                const startDate = new Date(startDateStr);
-                const endDate = new Date(endDateStr);
-                endDate.setHours(23, 59, 59, 999);
-
-                const allMCUs = await mcuService.getAll();
-                const filteredMCUs = allMCUs.filter(mcu => {
-                    const mcuDate = new Date(mcu.mcuDate);
-                    return mcuDate >= startDate && mcuDate <= endDate;
-                });
-
-                // Get all employees
-                const employees = await employeeService.getAll();
-
-                // Apply filters
-                const finalFilteredMCUs = filteredMCUs.filter(mcu => {
-                    if (mcu.deletedAt) return false;
-
-                    const employee = employees.find(e => e.employeeId === mcu.employeeId);
-                    if (!employee || employee.deletedAt) return false;
-
-                    // Filter by department
-                    if (departmentFilterValue) {
-                        const filterDept = allDepartments.find(d => d.id == departmentFilterValue);
-                        if (filterDept && employee.department !== filterDept.name) return false;
-                    }
-
-                    // Filter by status
-                    if (status && mcu.initialResult !== status) return false;
-
-                    return true;
-                });
-
-                if (finalFilteredMCUs.length === 0) {
+                if (!reportContext?.filteredMCUs.length) {
                     loadingModal.style.display = 'none';
                     showToast('Tidak ada data untuk di-export', 'warning');
                     return;
@@ -518,10 +505,10 @@
 
                 // Export using consolidated service
                 const result = await reportExportService.exportConsolidatedReport(
-                    finalFilteredMCUs,
-                    employees,
-                    allDepartments,
-                    allJobTitles
+                    reportContext.filteredMCUs,
+                    reportContext.employees,
+                    reportContext.allDepartments,
+                    reportContext.allJobTitles
                 );
 
                 // Hide loading modal

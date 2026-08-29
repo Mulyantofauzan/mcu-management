@@ -158,3 +158,41 @@ test('all master data uses the shared five minute cache', () => {
   assert.match(master, /cacheManager\.clear\('statusMCU:all'\)/);
   assert.match(master, /cacheManager\.clear\(`statusMCU:\$\{id\}`\)/);
 });
+
+test('report pages expose local readiness while keeping filters visible', () => {
+  const analysis = read('mcu-management/pages/analysis.html');
+  const period = read('mcu-management/pages/report-period.html');
+  const history = read('mcu-management/pages/employee-health-history.html');
+  const assessment = read('mcu-management/js/pages/assessment-rahma-dashboard.js');
+
+  assert.match(analysis, /data-lifecycle-region="analysis-data"/);
+  assert.match(period, /data-lifecycle-region="report-results"/);
+  assert.match(history, /data-lifecycle-region="health-results"/);
+  assert.match(assessment, /setLoading\('main'/);
+  assert.match(assessment, /markInteractive\(\)/);
+});
+
+test('report laboratory reads use the shared bounded batch service', () => {
+  const analysis = read('mcu-management/js/services/analysisDashboardService.js');
+  const assessment = read('mcu-management/js/pages/assessment-rahma-dashboard.js');
+  const exporter = read('mcu-management/js/services/reportExportService.js');
+
+  [analysis, assessment, exporter].forEach(source => {
+    assert.match(source, /getPemeriksaanLabByMcuIds\(/);
+  });
+  assert.doesNotMatch(analysis, /from\('pemeriksaan_lab'\)/);
+  assert.doesNotMatch(assessment, /mcuIds\.map\(mcuId\s*=>\s*labService\.getPemeriksaanLabByMcuId/);
+  assert.doesNotMatch(exporter, /for \(const mcu of filteredMCUs\)[\s\S]*?await labService\.getPemeriksaanLabByMcuId/);
+});
+
+test('report-only assets and data are loaded on demand', () => {
+  const history = read('mcu-management/pages/employee-health-history.html');
+  const assessment = read('mcu-management/pages/assessment-rahma.html');
+  const period = read('mcu-management/pages/report-period.html');
+
+  assert.doesNotMatch(history, /<script[^>]+chart\.umd\.min\.js/);
+  assert.match(history, /ensureHealthChart/);
+  assert.doesNotMatch(assessment, /<script[^>]+exceljs\.min\.js/);
+  assert.match(period, /reportContext/);
+  assert.match(period, /Promise\.all\(\[\s*masterDataService\.getAllDepartments\(\),\s*masterDataService\.getAllJobTitles\(\),\s*mcuService\.getAll\(\),\s*employeeService\.getAll\(\)/);
+});

@@ -16,7 +16,6 @@ import { formatDateDisplay, calculateAge } from '../utils/dateHelpers.js';
 import { showToast } from '../utils/uiHelpers.js';
 import { supabaseReady } from '../config/supabase.js';
 import { exportToExcel } from '../services/excelExportService.js';
-import { unifiedLoading } from '../utils/unifiedLoadingManager.js';
 import { analyticsEligibilityService } from '../services/analyticsEligibilityService.js';
 
 // State
@@ -31,6 +30,7 @@ let allLabResults = {}; // Cache: mcuId -> [lab results]
 let eligibleModelsPromise = null;
 let currentPage = 1;
 const itemsPerPage = 10;
+const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
 
 
 /**
@@ -267,28 +267,15 @@ async function loadAllMedicalHistories() {
 async function loadAllLabResults() {
     allLabResults = {};
     try {
-        // Get all unique MCU IDs from allMCUs
-        const mcuIds = [...new Set(allMCUs.map(mcu => mcu.mcuId || mcu.mcu_id))];
-
-        // Load lab results for all MCUs in parallel
-        const labPromises = mcuIds.map(mcuId =>
-            labService.getPemeriksaanLabByMcuId(mcuId)
-                .then(results => {
-                    return { mcuId, results };
-                })
-                .catch(error => {
-                    return { mcuId, results: [] };
-                })
-        );
-
-        const allResults = await Promise.all(labPromises);
-
-        // Cache by mcuId for fast lookup
-        allResults.forEach(({ mcuId, results }) => {
-            allLabResults[mcuId] = results || [];
+        const mcuIds = [...new Set(allMCUs.map(mcu => mcu.mcuId || mcu.mcu_id).filter(Boolean))];
+        mcuIds.forEach(mcuId => {
+            allLabResults[mcuId] = [];
         });
-
-        const totalLabCount = Object.values(allLabResults).reduce((sum, arr) => sum + arr.length, 0);
+        const results = await labService.getPemeriksaanLabByMcuIds(mcuIds);
+        results.forEach(result => {
+            const mcuId = result.mcu_id || result.mcuId;
+            if (allLabResults[mcuId]) allLabResults[mcuId].push(result);
+        });
     } catch (error) {
     }
 }
@@ -306,14 +293,12 @@ async function calculateAllAssessments() {
         try {
             // Skip inactive employees
             if (employee.activeStatus !== 'Active' && employee.activeStatus !== 'Aktif') {
-                unifiedLoading.updateProgress(50 + ((i + 1) / totalEmployees) * 40);
                 continue;
             }
 
             // Get latest MCU for this employee
             const employeeMCUs = allMCUs.filter(m => m.employeeId === employee.employeeId);
             if (employeeMCUs.length === 0) {
-                unifiedLoading.updateProgress(50 + ((i + 1) / totalEmployees) * 40);
                 continue;
             }
 
@@ -408,11 +393,7 @@ async function calculateAllAssessments() {
                 mcu: latestMCU,
                 metabolicSyndrome: metabolicSyndromeData
             });
-
-            // Update progress
-            unifiedLoading.updateProgress(50 + ((i + 1) / totalEmployees) * 40);
         } catch (error) {
-            unifiedLoading.updateProgress(50 + ((i + 1) / totalEmployees) * 40);
         }
     }
 
@@ -932,6 +913,7 @@ function renderDashboard() {
  * Initialize Jakarta Cardiovascular Dashboard
  */
 export async function initAssessmentRahmaDAshboard() {
+    const retry = () => initAssessmentRahmaDAshboard();
     try {
         await supabaseReady;
 
@@ -942,9 +924,10 @@ export async function initAssessmentRahmaDAshboard() {
             return;
         }
 
-        // Show unified loading spinner with progress bar
-        unifiedLoading.show('Memuat data... Harap tunggu sebentar');
-        unifiedLoading.updateProgress(5);
+        renderDashboard();
+        const exportButton = document.getElementById('export-excel-btn');
+        if (exportButton) exportButton.disabled = true;
+        pageLifecycle()?.setLoading('main', { retry, timeout: 30000 });
 
         // Load employees, MCUs, departments, job titles in parallel
         await Promise.all([
@@ -954,33 +937,17 @@ export async function initAssessmentRahmaDAshboard() {
             loadJobTitles(),
             loadAllMedicalHistories()
         ]);
-        unifiedLoading.updateProgress(40);
-
-        // Update loading message
-        unifiedLoading.updateMessage('Memproses data penilaian... Harap tunggu');
-        unifiedLoading.updateProgress(50);
 
         // Load lab results AFTER MCUs are loaded (depends on allMCUs)
         await loadAllLabResults();
-        unifiedLoading.updateProgress(70);
 
         // Always calculate fresh - parallel loading + pre-cached lab results already makes it fast
         // Caching localStorage can cause data to disappear, so we skip it for stability
         await calculateAllAssessments();
-        unifiedLoading.updateProgress(90);
 
         // Debug: Log loaded data
         if (cardiovascularData.length > 0) {
         }
-
-        // Complete progress
-        await unifiedLoading.updateProgress(100);
-
-        // Small delay to show 100% before hiding
-        await new Promise(resolve => setTimeout(resolve, 150));
-
-        // Hide loading spinner
-        unifiedLoading.hide();
 
         // Render dashboard
         renderDashboard();
@@ -991,9 +958,11 @@ export async function initAssessmentRahmaDAshboard() {
         // Setup filters after render
         setupFilters();
 
+        pageLifecycle()?.setReady('main');
+        pageLifecycle()?.markInteractive();
         document.body.classList.add('initialized');
     } catch (error) {
-        unifiedLoading.hide();
+        pageLifecycle()?.setError('main', error, retry);
         showToast('Gagal memuat data: ' + error.message, 'error');
         document.body.classList.add('initialized');
     }
