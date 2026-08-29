@@ -1,6 +1,6 @@
 {
   "name": "mcu-management",
-  "version": "1.1.0",
+  "version": "1.2.12",
   "description": "Aplikasi Web Manajemen Medical Check Up (MCU)",
   "main": "index.html",
   "scripts": {

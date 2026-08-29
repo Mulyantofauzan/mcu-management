@@ -15,14 +15,6 @@
   <link rel="stylesheet" href="../css/output.css" />
   <script type="module" src="../js/appBootstrap.js"></script>
 
-  <!-- Environment Configuration (must load first!) -->
-  <script src="../env-config.js"></script>
-
-  <!-- Dexie (IndexedDB) -->
-  <script src="../assets/vendor/dexie/dexie.min.js"></script>
-  <!-- Supabase -->
-  <script src="../assets/vendor/supabase/supabase.js"></script>
-
   <style>
     /* background gradient animation */
     body {
@@ -105,7 +97,7 @@
           &copy; 2025 SHE PST Site MHU
         </div>
         <div class="text-center">
-          <span class="text-xs font-semibold text-indigo-200 bg-indigo-500/30 px-2 py-1 rounded inline-block" id="app-version">v1.1.0</span>
+          <span class="text-xs font-semibold text-indigo-200 bg-indigo-500/30 px-2 py-1 rounded inline-block" id="app-version">v1.2.12</span>
         </div>
       </div>
     </div>
@@ -115,9 +107,23 @@
   <script type="module">
     import { authService } from '../js/services/authService.js';
     import { showToast } from '../js/utils/uiHelpers.js';
-    import { checkAndSeedIfEmpty } from '../js/seedData.js';
 
-    let dbReady = false;
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+
+    const localDependencies = authService.isLocalDevelopment()
+      ? loadScript('../env-config.js').then(() => Promise.all([
+          loadScript('../assets/vendor/dexie/dexie.min.js'),
+          loadScript('../assets/vendor/supabase/supabase.js')
+        ]))
+      : Promise.resolve();
 
     // Rate limiting configuration
     const RATE_LIMIT = {
@@ -129,20 +135,6 @@
     let loginAttempts = 0;
     let lockoutUntil = 0;
     let lastAttemptTime = 0;
-
-    async function initDatabase() {
-      try {
-        const result = await checkAndSeedIfEmpty();
-        if (result.success) {
-          // Database ready
-        }
-      } catch (err) {
-        // Database error
-      } finally {
-        dbReady = true;
-      }
-    }
-    initDatabase();
 
     /**
      * Check if login is rate-limited
@@ -205,11 +197,6 @@
         return;
       }
 
-      if (!dbReady) {
-        showToast('Database initializing...', 'warning');
-        return;
-      }
-
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value;
       const btn = document.getElementById('login-btn');
@@ -224,6 +211,7 @@
         btn.disabled = true;
         btn.textContent = 'Signing In...';
 
+        await localDependencies;
         const user = await authService.login(username, password);
 
         // Reset attempts on success

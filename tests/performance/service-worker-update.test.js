@@ -29,3 +29,26 @@ test('private API responses remain network-only', () => {
   assert.match(apiBranch, /networkOnlyStrategy/);
   assert.doesNotMatch(apiBranch, /caches|cache\.put|API_CACHE/);
 });
+
+test('warm code navigation uses stale while revalidate without private API cache', () => {
+  const worker = read('mcu-management/sw.js');
+  const codeBranch = worker.match(/if \(url\.pathname\.endsWith\('\.js'\)[\s\S]*?\n  }/)?.[0] || '';
+
+  assert.match(codeBranch, /staleWhileRevalidateStrategy/);
+  assert.doesNotMatch(worker, /const API_CACHE|apiNetworkFirstStrategy/);
+});
+
+test('login critical path contains no demo database seeding', () => {
+  const login = read('mcu-management/pages/login.html');
+
+  assert.doesNotMatch(login, /seedData|checkAndSeedIfEmpty|dbReady|initDatabase/);
+});
+
+test('application and service-worker release versions stay aligned', () => {
+  const worker = read('mcu-management/sw.js');
+  const manifest = JSON.parse(read('mcu-management/version.json'));
+  const cacheVersion = worker.match(/const CACHE_VERSION = 'madis-v([^']+)'/)?.[1];
+
+  assert.equal(cacheVersion, manifest.version);
+  assert.match(worker, /'\/js\/utils\/pageLifecycleManager\.js'/);
+});

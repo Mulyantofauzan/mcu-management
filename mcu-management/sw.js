@@ -9,16 +9,15 @@
  * - Background sync for offline operations
  *
  * Cache Strategies:
- * 1. Cache-first: Static assets (CSS, JS, images)
- * 2. Network-first: API calls with fallback to cache
- * 3. Stale-while-revalidate: Master data (fetch fresh, serve stale immediately)
+ * 1. Cache-first: Images and fonts
+ * 2. Network-first: HTML and JSON
+ * 3. Stale-while-revalidate: Local JS and CSS
  */
 
-const CACHE_VERSION = 'madis-v1.2.11';
+const CACHE_VERSION = 'madis-v1.2.12';
 const MAX_CACHE_ENTRIES = 200;
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
-const API_CACHE = `${CACHE_VERSION}-api`;
 
 // Static assets to cache on install
 const STATIC_ASSETS = [
@@ -115,9 +114,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Unhashed code and styles must revalidate on every normal reload.
+  // Warm navigation uses cache immediately while updating local code in background.
   if (url.pathname.endsWith('.js') || url.pathname.endsWith('.mjs') || url.pathname.endsWith('.css')) {
-    event.respondWith(networkFirstStrategy(request));
+    event.respondWith(staleWhileRevalidateStrategy(request, event));
     return;
   }
 
@@ -208,60 +207,26 @@ async function networkFirstStrategy(request) {
 }
 
 /**
- * API Network-first strategy: For API calls with special handling and timeouts
- */
-async function apiNetworkFirstStrategy(request) {
-  const cacheKey = new Request(request, { method: 'GET' });
-
-  try {
-    // API request with longer timeout (15s for Supabase)
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-
-    const response = await fetch(request, { signal: controller.signal });
-    clearTimeout(timeout);
-
-    // Cache successful API responses
-    if (response.ok && response.status === 200) {
-      const cache = await caches.open(API_CACHE);
-      cache.put(cacheKey, response.clone());
-    }
-
-    return response;
-  } catch (error) {
-    // Network failed or timeout: return cached API response
-    const cached = await caches.match(cacheKey);
-
-    if (cached) {
-      return cached;
-    }
-
-    // No cache available: return error response
-    return new Response(
-      JSON.stringify({ error: 'Offline - API not available' }),
-      { status: 503, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
-}
-
-/**
  * Stale-while-revalidate strategy: Serve cache immediately, update in background
- * Good for: Master data (departments, doctors, etc.)
+ * Good for: Local JS and CSS
  */
-async function staleWhileRevalidateStrategy(request) {
+async function staleWhileRevalidateStrategy(request, event) {
   const cached = await caches.match(request);
-
-  // Fetch fresh data in background
-  const fetchPromise = fetch(request).then((response) => {
+  const refresh = fetch(request).then(async (response) => {
     if (response.ok) {
-      const cache = caches.open(DYNAMIC_CACHE);
-      cache.then((c) => c.put(request, response.clone()));
+      const cache = await caches.open(DYNAMIC_CACHE);
+      await cache.put(request, response.clone());
+      await trimCache(DYNAMIC_CACHE, MAX_CACHE_ENTRIES);
     }
     return response;
-  });
+  }).catch(() => null);
 
-  // Return cached immediately, or wait for network
-  return cached || fetchPromise;
+  if (cached) {
+    event.waitUntil(refresh);
+    return cached;
+  }
+
+  return await refresh || new Response('Resource unavailable', { status: 503 });
 }
 
 /**
