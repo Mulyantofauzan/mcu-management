@@ -42,6 +42,8 @@ test('login critical path contains no demo database seeding', () => {
   const login = read('mcu-management/pages/login.html');
 
   assert.doesNotMatch(login, /seedData|checkAndSeedIfEmpty|dbReady|initDatabase/);
+  assert.match(login, /<label for="username"/);
+  assert.match(login, /<label for="password"/);
 });
 
 test('application and service-worker release versions stay aligned', () => {
