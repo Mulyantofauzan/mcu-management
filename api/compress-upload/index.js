@@ -54,6 +54,10 @@ function normalizePrepareContext(body) {
   };
 }
 
+function hasStaleMultipartContext(fields) {
+  return fields?.employeeId === '[object Object]';
+}
+
 async function handleDirectUpload(req, res, auth, directUploads) {
   const requestId = req.headers?.['x-request-id'] || randomUUID();
   let body;
@@ -209,6 +213,14 @@ function handleMultipart(req, res, auth) {
           respond(400, { error: 'Missing required fields: employeeId, mcuId' });
           return;
         }
+        if (hasStaleMultipartContext(fields)) {
+          respond(409, {
+            success: false,
+            code: 'UPLOAD_CLIENT_STALE',
+            error: 'Halaman upload masih memakai modul lama. Muat ulang halaman sekali, lalu coba kembali.'
+          });
+          return;
+        }
         if (!file) {
           respond(400, { error: 'No file provided' });
           return;
@@ -280,3 +292,4 @@ module.exports = createHandler();
 module.exports.createHandler = createHandler;
 module.exports.parseJsonBody = parseJsonBody;
 module.exports.normalizeMultipartFile = normalizeMultipartFile;
+module.exports.hasStaleMultipartContext = hasStaleMultipartContext;

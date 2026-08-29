@@ -117,7 +117,29 @@ test('every MCU attachment uses direct upload with immutable modal context', () 
   assert.doesNotMatch(service, /uploadMultipartFile|new FormData\(/);
   entryPoints.forEach(source => {
     assert.match(source, /getUploadContext\(\)/);
-    assert.match(source, /uploadBatchFiles\(\s*tempFiles|uploadBatchFiles\(\s*pendingFiles/);
+    const calls = [...source.matchAll(/uploadBatchFiles\(([\s\S]*?)\n\s*\);/g)];
+    assert.ok(calls.length > 0);
+    calls.forEach(([, args]) => {
+      assert.match(
+        args,
+        /^\s*(?:tempFiles|pendingFiles),\s*uploadContext\.employeeId,\s*uploadContext\.mcuId,\s*uploadContext\.userId,/
+      );
+    });
+  });
+});
+
+test('Add MCU binds the existing employee ID separately from the generated MCU ID', () => {
+  const entryPoints = [
+    read('mcu-management/js/pages/tambah-karyawan.js'),
+    read('mcu-management/js/pages/kelola-karyawan.js')
+  ];
+
+  entryPoints.forEach(source => {
+    assert.match(source, /const canonicalEmployeeId = String\([^;]*employeeId/);
+    assert.match(source, /addMcuForm\.dataset\.employeeId = canonicalEmployeeId/);
+    assert.match(source, /addMcuForm\.dataset\.mcuId = generatedMCUIdForAdd/);
+    assert.match(source, /employeeId: canonicalEmployeeId/);
+    assert.doesNotMatch(source, /employeeId:\s*generateEmployeeId\(/);
   });
 });
 
@@ -386,7 +408,7 @@ test('quick Add MCU delegates to canonical form initialization', () => {
 
   assert.match(quickAdd, /await window\.openAddMCUForEmployee\(employeeId\)/);
   assert.doesNotMatch(quickAdd, /\.reset\(|\.from\('employees'\)/);
-  assert.match(source, /document\.getElementById\('mcu-form'\)\.reset\(\);\s*document\.getElementById\('mcu-employee-id'\)\.value = employeeId/);
+  assert.match(source, /addMcuForm\.reset\(\);[\s\S]*addMcuForm\.dataset\.employeeId = canonicalEmployeeId/);
 });
 
 test('production pages do not depend on third-party CDN assets', () => {

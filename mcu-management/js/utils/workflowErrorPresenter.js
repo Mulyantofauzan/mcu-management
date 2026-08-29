@@ -44,6 +44,7 @@ const ERROR_PRESENTATIONS = Object.freeze({
 
 const UPLOAD_ERROR_PRESENTATIONS = Object.freeze({
   UPLOAD_UNAUTHORIZED: { icon: 'warning', title: 'Sesi Berakhir' },
+  UPLOAD_CLIENT_STALE: { icon: 'warning', title: 'Halaman Perlu Dimuat Ulang' },
   UPLOAD_CONTEXT_INVALID: { icon: 'warning', title: 'Data Karyawan Tidak Valid' },
   UPLOAD_TYPE_INVALID: { icon: 'warning', title: 'File Tidak Didukung' },
   UPLOAD_EMPLOYEE_NOT_FOUND: { icon: 'error', title: 'Karyawan Tidak Ditemukan' },

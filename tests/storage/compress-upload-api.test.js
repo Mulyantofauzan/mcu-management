@@ -1,6 +1,10 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { createHandler, normalizeMultipartFile } = require('../../api/compress-upload');
+const {
+  createHandler,
+  normalizeMultipartFile,
+  hasStaleMultipartContext
+} = require('../../api/compress-upload');
 
 function responseFixture() {
   return {
@@ -116,6 +120,11 @@ test('prepare unwraps upload context sent by a stale upload service', async () =
   assert.equal(calls[0].employeeId, 'EMP-20251128-miix34l2-JE5CH');
   assert.equal(calls[0].mcuId, 'MCU-20260829-TEST');
   assert.equal(calls[0].userId, 'user-1');
+});
+
+test('multipart detects an object context already flattened by a stale client', () => {
+  assert.equal(hasStaleMultipartContext({ employeeId: '[object Object]' }), true);
+  assert.equal(hasStaleMultipartContext({ employeeId: 'EMP-20251128-miix34l2-JE5CH' }), false);
 });
 
 test('rollback action delegates with authenticated upload context', async () => {

@@ -1136,14 +1136,14 @@ window.addMCUForEmployee = async function(employeeId) {
 
         // Fill employee summary
         document.getElementById('mcu-emp-name').textContent = employee.name;
-        document.getElementById('mcu-emp-id').textContent = employee.employeeId;
+        const canonicalEmployeeId = String(employee.employeeId || '').normalize('NFKC').trim();
+        document.getElementById('mcu-emp-id').textContent = canonicalEmployeeId;
         document.getElementById('mcu-emp-job').textContent = jobTitle?.name || empJobTitle || '-';
         document.getElementById('mcu-emp-dept').textContent = department?.name || empDept || '-';
-        document.getElementById('mcu-employee-id').value = employeeId;
+        const addMcuForm = document.getElementById('mcu-form');
 
-        // Reset form
-        document.getElementById('mcu-form').reset();
-        document.getElementById('mcu-employee-id').value = employeeId;
+        // Reset form before binding the existing employee identity.
+        addMcuForm.reset();
         configureMedicalResultFields(
             'add-medical-result-section',
             ['mcu-result', 'mcu-notes'],
@@ -1165,6 +1165,9 @@ window.addMCUForEmployee = async function(employeeId) {
 
         // Generate MCU ID at the start (but don't save to DB yet)
         generatedMCUIdForAdd = generateMCUId();
+        addMcuForm.dataset.employeeId = canonicalEmployeeId;
+        addMcuForm.dataset.mcuId = generatedMCUIdForAdd;
+        document.getElementById('mcu-employee-id').value = canonicalEmployeeId;
 
         // Initialize file upload widget with the generated MCU ID
         // skipDBInsert=true: File only saved to storage, metadata saved when MCU is created
@@ -1173,7 +1176,7 @@ window.addMCUForEmployee = async function(employeeId) {
             addFileContainer.innerHTML = '';
             const currentUser = authService.getCurrentUser();
             addFileUploadWidget = new FileUploadWidget('add-file-upload-container', {
-                employeeId: employeeId,
+                employeeId: canonicalEmployeeId,
                 mcuId: generatedMCUIdForAdd, // Use generated ID (not yet saved to DB)
                 userId: currentUser.userId || currentUser.user_id || currentUser.id,
                 skipDBInsert: true, // File uploaded to storage only, DB insert happens on MCU save
@@ -1224,6 +1227,8 @@ window.closeAddMCUModal = function() {
     const mcuForm = document.getElementById('mcu-form');
     if (mcuForm) {
         mcuForm.reset();
+        delete mcuForm.dataset.employeeId;
+        delete mcuForm.dataset.mcuId;
         // Remove MCU ID display div if it exists
         const mcuIdDiv = mcuForm.querySelector('.bg-green-50');
         if (mcuIdDiv) {
@@ -1244,7 +1249,19 @@ window.handleAddMCU = async function(event) {
     try {
         const readField = createMcuFormReader(submitForm);
         const currentUser = authService.getCurrentUser();
-        uploadContext = addFileUploadWidget.getUploadContext();
+        const widgetContext = addFileUploadWidget.getUploadContext();
+        const formEmployeeId = String(submitForm.dataset.employeeId || '').normalize('NFKC').trim();
+        const formMcuId = String(submitForm.dataset.mcuId || '').normalize('NFKC').trim();
+        if (widgetContext.employeeId !== formEmployeeId || widgetContext.mcuId !== formMcuId) {
+            const error = new Error('Konteks karyawan atau MCU berubah. Tutup form lalu buka kembali.');
+            error.code = 'UPLOAD_CONTEXT_INVALID';
+            throw error;
+        }
+        uploadContext = Object.freeze({
+            employeeId: formEmployeeId,
+            mcuId: formMcuId,
+            userId: widgetContext.userId
+        });
 
         // ✅ FIX: Get doctor ID and convert to number (matching handleEditMCU logic)
         const doctorValue = readField('mcu-doctor');
@@ -1331,7 +1348,9 @@ window.handleAddMCU = async function(event) {
                 const { uploadBatchFiles } = await import('../services/supabaseStorageService.js');
                 uploadResult = await uploadBatchFiles(
                     tempFiles,
-                    uploadContext,
+                    uploadContext.employeeId,
+                    uploadContext.mcuId,
+                    uploadContext.userId,
                     // Progress callback
                     (current, total) => {
                         updateUploadProgress(current, total);
@@ -2496,7 +2515,9 @@ window.handleEditMCU = async function(event) {
                 const { uploadBatchFiles } = await import('../services/supabaseStorageService.js');
                 uploadResult = await uploadBatchFiles(
                     tempFiles,
-                    uploadContext,
+                    uploadContext.employeeId,
+                    uploadContext.mcuId,
+                    uploadContext.userId,
                     // Progress callback
                     (current, total) => {
                         updateUploadProgress(current, total);

@@ -672,14 +672,14 @@ window.openAddMCUForEmployee = async function(employeeId) {
 
         // Fill employee summary
         document.getElementById('mcu-emp-name').textContent = currentEmployee.name;
-        document.getElementById('mcu-emp-id').textContent = currentEmployee.employeeId;
+        const canonicalEmployeeId = String(currentEmployee.employeeId || '').normalize('NFKC').trim();
+        document.getElementById('mcu-emp-id').textContent = canonicalEmployeeId;
         document.getElementById('mcu-emp-job').textContent = job?.name || '-';
         document.getElementById('mcu-emp-dept').textContent = dept?.name || '-';
-        document.getElementById('mcu-employee-id').value = employeeId;
+        const addMcuForm = document.getElementById('mcu-form');
 
-        // Reset form
-        document.getElementById('mcu-form').reset();
-        document.getElementById('mcu-employee-id').value = employeeId;
+        // Reset form before binding the existing employee identity.
+        addMcuForm.reset();
 
         // Set default date to today
         const today = new Date().toISOString().split('T')[0];
@@ -687,6 +687,9 @@ window.openAddMCUForEmployee = async function(employeeId) {
 
         // Generate MCU ID upfront for file uploads
         generatedMCUIdForAdd = generateMCUId();
+        addMcuForm.dataset.employeeId = canonicalEmployeeId;
+        addMcuForm.dataset.mcuId = generatedMCUIdForAdd;
+        document.getElementById('mcu-employee-id').value = canonicalEmployeeId;
         // ✅ Populate doctor dropdown
         populateDoctorDropdown('mcu-doctor');
 
@@ -695,7 +698,7 @@ window.openAddMCUForEmployee = async function(employeeId) {
         // Initialize file upload widget for this MCU
         const currentUser = authService.getCurrentUser();
         fileUploadWidget = new FileUploadWidget('mcu-file-upload-container', {
-            employeeId: currentEmployee.employeeId,
+            employeeId: canonicalEmployeeId,
             mcuId: generatedMCUIdForAdd,  // Use generated ID for temp file storage
             userId: currentUser.userId || currentUser.user_id || currentUser.id,
             onUploadComplete: () => {
@@ -916,6 +919,8 @@ window.closeAddMCUModal = function() {
     const mcuForm = document.getElementById('mcu-form');
     if (mcuForm) {
         mcuForm.reset();
+        delete mcuForm.dataset.employeeId;
+        delete mcuForm.dataset.mcuId;
         // Remove MCU ID display div if it exists
         const mcuIdDiv = mcuForm.querySelector('.bg-green-50');
         if (mcuIdDiv) {
@@ -949,7 +954,19 @@ window.handleAddMCU = async function(event) {
             return;
         }
         const currentUser = authService.getCurrentUser();
-        uploadContext = fileUploadWidget.getUploadContext();
+        const widgetContext = fileUploadWidget.getUploadContext();
+        const formEmployeeId = String(submitForm.dataset.employeeId || '').normalize('NFKC').trim();
+        const formMcuId = String(submitForm.dataset.mcuId || '').normalize('NFKC').trim();
+        if (widgetContext.employeeId !== formEmployeeId || widgetContext.mcuId !== formMcuId) {
+            const error = new Error('Konteks karyawan atau MCU berubah. Tutup form lalu buka kembali.');
+            error.code = 'UPLOAD_CONTEXT_INVALID';
+            throw error;
+        }
+        uploadContext = Object.freeze({
+            employeeId: formEmployeeId,
+            mcuId: formMcuId,
+            userId: widgetContext.userId
+        });
 
         // ✅ CRITICAL: Validate lab results BEFORE saving MCU
         // Lab inputs are generated via JavaScript, not HTML form, so required attribute doesn't work
@@ -1044,7 +1061,9 @@ window.handleAddMCU = async function(event) {
                 const { uploadBatchFiles } = await import('../services/supabaseStorageService.js');
                 uploadResult = await uploadBatchFiles(
                     tempFiles,
-                    uploadContext,
+                    uploadContext.employeeId,
+                    uploadContext.mcuId,
+                    uploadContext.userId,
                     (current, total, message) => {
                         updateUploadProgress(current, total);
                     }

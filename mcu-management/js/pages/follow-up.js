@@ -765,7 +765,9 @@ window.handleFollowUpSubmit = async function(event) {
       try {
         const uploadResult = await uploadBatchFiles(
           pendingFiles,
-          uploadContext,
+          uploadContext.employeeId,
+          uploadContext.mcuId,
+          uploadContext.userId,
           // Progress callback
           (current, total, message) => {
             updateUploadProgress(current, total);
