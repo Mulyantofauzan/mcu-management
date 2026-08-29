@@ -1,11 +1,12 @@
 {
-  "version": "1.2.12",
+  "version": "1.2.13",
   "releaseDate": "2026-08-29",
   "features": [
     "Progressive page lifecycle with local loading and retry states",
     "Batched dashboard, report, and laboratory reads",
     "Lazy report assets and bounded report rendering",
-    "Warm navigation cache with background code revalidation",
+    "Release-consistent JavaScript loading with cached offline fallback",
+    "Backward-compatible MCU upload context for stale browser sessions",
     "Lean production login without demo database seeding",
     "Unified direct R2 upload for PDF, PNG, JPG, and JPEG attachments",
     "Immutable employee and MCU upload context across add, edit, and follow-up forms",

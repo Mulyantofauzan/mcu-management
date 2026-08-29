@@ -42,6 +42,18 @@ function parseJsonBody(req) {
   return {};
 }
 
+function normalizePrepareContext(body) {
+  const staleContext = body.employeeId
+    && typeof body.employeeId === 'object'
+    && !Array.isArray(body.employeeId)
+    ? body.employeeId
+    : null;
+  return {
+    employeeId: staleContext?.employeeId ?? body.employeeId,
+    mcuId: staleContext?.mcuId ?? body.mcuId
+  };
+}
+
 async function handleDirectUpload(req, res, auth, directUploads) {
   const requestId = req.headers?.['x-request-id'] || randomUUID();
   let body;
@@ -63,14 +75,15 @@ async function handleDirectUpload(req, res, auth, directUploads) {
 
   try {
     if (['prepare-file-upload', 'prepare-pdf-upload'].includes(body.action)) {
+      const context = normalizePrepareContext(body);
       const prepare = body.action === 'prepare-file-upload'
         ? directUploads.prepareFileUpload?.bind(directUploads)
         : (directUploads.prepareFileUpload || directUploads.preparePdfUpload)?.bind(directUploads);
       if (!prepare) throw new Error('Direct upload preparation is unavailable.');
       const prepared = await prepare({
         userId,
-        employeeId: body.employeeId,
-        mcuId: body.mcuId,
+        employeeId: context.employeeId,
+        mcuId: context.mcuId,
         fileName: body.fileName,
         contentType: body.contentType,
         contentLength: body.contentLength

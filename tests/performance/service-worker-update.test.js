@@ -30,11 +30,12 @@ test('private API responses remain network-only', () => {
   assert.doesNotMatch(apiBranch, /caches|cache\.put|API_CACHE/);
 });
 
-test('warm code navigation uses stale while revalidate without private API cache', () => {
+test('code navigation uses one network-first release without private API cache', () => {
   const worker = read('mcu-management/sw.js');
   const codeBranch = worker.match(/if \(url\.pathname\.endsWith\('\.js'\)[\s\S]*?\n  }/)?.[0] || '';
 
-  assert.match(codeBranch, /staleWhileRevalidateStrategy/);
+  assert.match(codeBranch, /networkFirstStrategy/);
+  assert.doesNotMatch(codeBranch, /staleWhileRevalidateStrategy/);
   assert.doesNotMatch(worker, /const API_CACHE|apiNetworkFirstStrategy/);
 });
 

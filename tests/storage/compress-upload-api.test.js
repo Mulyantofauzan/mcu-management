@@ -83,6 +83,41 @@ test('canonical prepare action supports every accepted attachment type', async (
   assert.equal(calls[0].fileName, 'scan.png');
 });
 
+test('prepare unwraps upload context sent by a stale upload service', async () => {
+  const calls = [];
+  const handler = createHandler({
+    requireAuth: () => ({ app_user_id: 'user-1' }),
+    setCorsHeaders: () => {},
+    directUploads: {
+      async prepareFileUpload(payload) {
+        calls.push(payload);
+        return { objectKey: 'pending/key.pdf', uploadUrl: 'https://upload.example' };
+      }
+    }
+  });
+  const res = responseFixture();
+
+  await handler({
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: {
+      action: 'prepare-file-upload',
+      employeeId: {
+        employeeId: 'EMP-20251128-miix34l2-JE5CH',
+        mcuId: 'MCU-20260829-TEST',
+        userId: 'ignored-client-user'
+      },
+      fileName: 'hasil.pdf',
+      contentLength: 1024
+    }
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(calls[0].employeeId, 'EMP-20251128-miix34l2-JE5CH');
+  assert.equal(calls[0].mcuId, 'MCU-20260829-TEST');
+  assert.equal(calls[0].userId, 'user-1');
+});
+
 test('rollback action delegates with authenticated upload context', async () => {
   const calls = [];
   const handler = createHandler({

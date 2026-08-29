@@ -11,10 +11,11 @@
  * Cache Strategies:
  * 1. Cache-first: Images and fonts
  * 2. Network-first: HTML and JSON
- * 3. Stale-while-revalidate: Local JS and CSS
+ * 3. Network-first: Local JS modules to keep one release consistent
+ * 4. Stale-while-revalidate: Local CSS
  */
 
-const CACHE_VERSION = 'madis-v1.2.12';
+const CACHE_VERSION = 'madis-v1.2.13';
 const MAX_CACHE_ENTRIES = 200;
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
@@ -114,8 +115,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Warm navigation uses cache immediately while updating local code in background.
-  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.mjs') || url.pathname.endsWith('.css')) {
+  // Never mix JS modules from different releases.
+  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.mjs')) {
+    event.respondWith(networkFirstStrategy(request));
+    return;
+  }
+
+  if (url.pathname.endsWith('.css')) {
     event.respondWith(staleWhileRevalidateStrategy(request, event));
     return;
   }
