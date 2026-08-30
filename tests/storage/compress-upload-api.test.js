@@ -4,7 +4,7 @@ const {
   createHandler,
   normalizeMultipartFile,
   hasStaleMultipartContext
-} = require('../../api/compress-upload');
+} = require('../../api/mcu-file-upload');
 
 function responseFixture() {
   return {

@@ -16,13 +16,7 @@ function serviceFixture(overrides = {}) {
       if (name === 'HeadObjectCommand') {
         return {
           ContentType: 'application/pdf',
-          ContentLength: 1024,
-          Metadata: {
-            owner: 'user-1',
-            employeeid: 'EMP-1',
-            mcuid: 'MCU-1',
-            purpose: 'mcu-pdf-upload'
-          }
+          ContentLength: 1024
         };
       }
       return {};
@@ -58,7 +52,7 @@ function serviceFixture(overrides = {}) {
   return { service, commands, signedCommands };
 }
 
-test('prepare binds a five-minute PDF upload to user and MCU metadata', async () => {
+test('prepare binds a five-minute PDF upload to an identity-bearing object key', async () => {
   const { service, signedCommands } = serviceFixture();
   const result = await service.preparePdfUpload({
     userId: 'user-1',
@@ -70,14 +64,9 @@ test('prepare binds a five-minute PDF upload to user and MCU metadata', async ()
   });
 
   assert.equal(result.expiresIn, 300);
-  assert.match(result.objectKey, /^pending\/mcu-uploads\/user-1\//);
+  assert.equal(result.objectKey, 'pending/mcu-uploads/user-1/EMP-1/MCU-1/uuid-1.pdf');
   assert.equal(signedCommands[0].command.input.ContentLength, PDF_UPLOAD_LIMIT_BYTES - 1);
-  assert.deepEqual(signedCommands[0].command.input.Metadata, {
-    owner: 'user-1',
-    employeeid: 'EMP-1',
-    mcuid: 'MCU-1',
-    purpose: 'mcu-file-upload'
-  });
+  assert.equal(signedCommands[0].command.input.Metadata, undefined);
   assert.equal(signedCommands[0].options.expiresIn, 300);
 });
 
@@ -100,8 +89,8 @@ test('prepare normalizes and accepts the reported production employee ID', async
 
   assert.deepEqual(lookedUp, ['EMP-20251128-miix34l2-JE5CH']);
   assert.equal(
-    signedCommands[0].command.input.Metadata.employeeid,
-    'EMP-20251128-miix34l2-JE5CH'
+    signedCommands[0].command.input.Key,
+    'pending/mcu-uploads/user-1/EMP-20251128-miix34l2-JE5CH/MCU-1/uuid-1.pdf'
   );
 });
 
@@ -211,11 +200,12 @@ test('presigned PUT binds content type without unsupported SDK checksums', async
   const url = new URL(prepared.uploadUrl);
 
   assert.match(url.searchParams.get('X-Amz-SignedHeaders'), /content-type/);
+  assert.equal([...url.searchParams.keys()].some(key => key.startsWith('x-amz-meta-')), false);
   assert.equal(url.searchParams.has('x-amz-checksum-crc32'), false);
   assert.equal(url.searchParams.has('x-amz-sdk-checksum-algorithm'), false);
 });
 
-test('confirm saves PDF metadata without inspecting scanner-specific bytes', async () => {
+test('confirm succeeds without custom R2 metadata', async () => {
   const savedCalls = [];
   const { service, commands } = serviceFixture({
     saveMetadata: async (...args) => {
@@ -225,7 +215,7 @@ test('confirm saves PDF metadata without inspecting scanner-specific bytes', asy
   });
   const result = await service.confirmPdfUpload({
     userId: 'user-1',
-    objectKey: 'pending/mcu-uploads/user-1/upload.pdf',
+    objectKey: 'pending/mcu-uploads/user-1/EMP-1/MCU-1/upload.pdf',
     fileName: 'hasil mcu.pdf'
   });
 
@@ -248,13 +238,7 @@ test('confirm preserves the server-controlled JPG extension and content type', a
         if (command.constructor.name === 'HeadObjectCommand') {
           return {
             ContentType: 'image/jpeg',
-            ContentLength: 2048,
-            Metadata: {
-              owner: 'user-1',
-              employeeid: 'EMP-1',
-              mcuid: 'MCU-1',
-              purpose: 'mcu-file-upload'
-            }
+            ContentLength: 2048
           };
         }
         return {};
@@ -264,7 +248,7 @@ test('confirm preserves the server-controlled JPG extension and content type', a
 
   const result = await service.confirmFileUpload({
     userId: 'user-1',
-    objectKey: 'pending/mcu-uploads/user-1/upload.jpg',
+    objectKey: 'pending/mcu-uploads/user-1/EMP-1/MCU-1/upload.jpg',
     fileName: 'foto MCU.JPG'
   });
   const copy = commands.find(command => command.constructor.name === 'CopyObjectCommand');
@@ -317,7 +301,7 @@ test('confirm cleans final and pending objects when metadata insertion fails', a
   await assert.rejects(
     service.confirmPdfUpload({
       userId: 'user-1',
-      objectKey: 'pending/mcu-uploads/user-1/upload.pdf',
+      objectKey: 'pending/mcu-uploads/user-1/EMP-1/MCU-1/upload.pdf',
       fileName: 'hasil.pdf'
     }),
     error => error.code === 'UPLOAD_METADATA_FAILED'
@@ -328,7 +312,7 @@ test('confirm cleans final and pending objects when metadata insertion fails', a
     .map(command => command.input.Key);
   assert.deepEqual(deletedKeys, [
     'mcu_files/EMP-1/MCU-1/uuid-1.pdf',
-    'pending/mcu-uploads/user-1/upload.pdf'
+    'pending/mcu-uploads/user-1/EMP-1/MCU-1/upload.pdf'
   ]);
 });
 
@@ -342,13 +326,7 @@ test('confirmed final object remains valid when pending cleanup is deferred', as
         if (name === 'HeadObjectCommand') {
           return {
             ContentType: 'application/pdf',
-            ContentLength: 1024,
-            Metadata: {
-              owner: 'user-1',
-              employeeid: 'EMP-1',
-              mcuid: 'MCU-1',
-              purpose: 'mcu-pdf-upload'
-            }
+            ContentLength: 1024
           };
         }
         if (name === 'DeleteObjectCommand') throw new Error('temporary cleanup failure');
@@ -359,7 +337,7 @@ test('confirmed final object remains valid when pending cleanup is deferred', as
 
   const result = await service.confirmPdfUpload({
     userId: 'user-1',
-    objectKey: 'pending/mcu-uploads/user-1/upload.pdf',
+    objectKey: 'pending/mcu-uploads/user-1/EMP-1/MCU-1/upload.pdf',
     fileName: 'hasil.pdf'
   });
 
@@ -367,5 +345,64 @@ test('confirmed final object remains valid when pending cleanup is deferred', as
   assert.equal(
     commands.filter(command => command.constructor.name === 'DeleteObjectCommand').length,
     1
+  );
+});
+
+test('confirm rejects a malformed legacy pending key', async () => {
+  const { service, commands } = serviceFixture();
+
+  await assert.rejects(
+    service.confirmFileUpload({
+      userId: 'user-1',
+      objectKey: 'pending/mcu-uploads/user-1/upload.pdf',
+      fileName: 'hasil.pdf'
+    }),
+    error => error.code === 'UPLOAD_KEY_INVALID' && error.status === 400
+  );
+  assert.equal(commands.length, 0);
+});
+
+test('confirm rejects a pending key owned by another user', async () => {
+  const { service, commands } = serviceFixture();
+
+  await assert.rejects(
+    service.confirmFileUpload({
+      userId: 'user-1',
+      objectKey: 'pending/mcu-uploads/user-2/EMP-1/MCU-1/upload.pdf',
+      fileName: 'hasil.pdf'
+    }),
+    error => error.code === 'UPLOAD_FORBIDDEN' && error.status === 403
+  );
+  assert.equal(commands.length, 0);
+});
+
+test('confirm rejects a file name extension that differs from the signed key', async () => {
+  const { service, commands } = serviceFixture();
+
+  await assert.rejects(
+    service.confirmFileUpload({
+      userId: 'user-1',
+      objectKey: 'pending/mcu-uploads/user-1/EMP-1/MCU-1/upload.pdf',
+      fileName: 'hasil.jpg'
+    }),
+    error => error.code === 'UPLOAD_KEY_INVALID' && error.status === 400
+  );
+  assert.equal(commands.length, 0);
+});
+
+test('confirm rejects an employee removed after prepare', async () => {
+  const { service, commands } = serviceFixture({ employeeExists: async () => false });
+
+  await assert.rejects(
+    service.confirmFileUpload({
+      userId: 'user-1',
+      objectKey: 'pending/mcu-uploads/user-1/EMP-1/MCU-1/upload.pdf',
+      fileName: 'hasil.pdf'
+    }),
+    error => error.code === 'UPLOAD_EMPLOYEE_NOT_FOUND' && error.status === 404
+  );
+  assert.deepEqual(
+    commands.map(command => command.constructor.name),
+    ['HeadObjectCommand', 'DeleteObjectCommand']
   );
 });

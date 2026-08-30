@@ -2,7 +2,7 @@
   "name": "mcu-management-api",
   "version": "1.0.0",
   "description": "Vercel Serverless API for MCU Management System",
-  "main": "compress-upload/index.js",
+  "main": "mcu-file-upload/index.js",
   "engines": {
     "node": "22.x"
   },

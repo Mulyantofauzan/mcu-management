@@ -114,6 +114,8 @@ test('every MCU attachment uses direct upload with immutable modal context', () 
   assert.match(service, /prepare-file-upload/);
   assert.match(service, /confirm-file-upload/);
   assert.match(service, /rollback-file-upload/);
+  assert.match(service, /\/api\/mcu-file-upload/);
+  assert.doesNotMatch(service, /fetch\('\/api\/compress-upload'/);
   assert.doesNotMatch(service, /uploadMultipartFile|new FormData\(/);
   entryPoints.forEach(source => {
     assert.match(source, /getUploadContext\(\)/);

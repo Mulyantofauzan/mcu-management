@@ -120,18 +120,47 @@ function assertFileMetadata(file, contentLength, storedContentType = null) {
   return { contentType: file.contentType, contentLength: normalizedLength };
 }
 
-function assertPendingKey(objectKey, userId) {
-  const expectedPrefix = `pending/mcu-uploads/${userId}/`;
-  const valid = typeof objectKey === 'string'
-    && objectKey.startsWith(expectedPrefix)
+function parsePendingKey(objectKey, userId) {
+  const owner = assertSafeSegment(userId, 'User');
+  const basePrefix = 'pending/mcu-uploads/';
+  const structurallySafe = typeof objectKey === 'string'
+    && objectKey.startsWith(basePrefix)
     && objectKey.length <= 500
     && !objectKey.includes('..')
     && !objectKey.includes('\\')
     && /^[a-zA-Z0-9/_\-.]+$/.test(objectKey);
-  if (!valid) {
+  if (!structurallySafe) {
+    throw new R2DirectUploadError('UPLOAD_KEY_INVALID', 'Sesi upload tidak valid.', 400);
+  }
+
+  const segments = objectKey.split('/');
+  if (segments.length !== 6) {
+    throw new R2DirectUploadError('UPLOAD_KEY_INVALID', 'Sesi upload tidak valid.', 400);
+  }
+  if (segments[2] !== owner) {
     throw new R2DirectUploadError('UPLOAD_FORBIDDEN', 'Upload tidak diizinkan.', 403);
   }
-  return objectKey;
+
+  const employeeId = String(segments[3] || '').normalize('NFKC').trim();
+  const mcuId = String(segments[4] || '').normalize('NFKC').trim();
+  const fileMatch = /^([a-zA-Z0-9_-]{1,128})\.(pdf|png|jpg|jpeg)$/.exec(segments[5]);
+  if (!/^[a-zA-Z0-9._-]{1,128}$/.test(employeeId)
+    || !/^[a-zA-Z0-9._-]{1,128}$/.test(mcuId)
+    || !fileMatch) {
+    throw new R2DirectUploadError('UPLOAD_KEY_INVALID', 'Sesi upload tidak valid.', 400);
+  }
+
+  return {
+    objectKey,
+    owner,
+    employeeId,
+    mcuId,
+    extension: fileMatch[2]
+  };
+}
+
+function assertPendingKey(objectKey, userId) {
+  return parsePendingKey(objectKey, userId).objectKey;
 }
 
 function encodeCopySource(bucket, objectKey) {
@@ -151,15 +180,10 @@ class R2DirectUploadService {
     this.deleteMetadata = options.deleteMetadata || deleteFileMetadata;
   }
 
-  async prepareFileUpload({ userId, employeeId, mcuId, fileName, contentLength }) {
-    const owner = assertSafeSegment(userId, 'User');
-    const employee = assertSafeSegment(employeeId, 'Employee ID');
-    const mcu = assertSafeSegment(mcuId, 'MCU ID');
-    const file = normalizeUploadFileName(fileName);
-    const metadata = assertFileMetadata(file, contentLength);
+  async requireEmployee(employeeId) {
     let exists;
     try {
-      exists = await this.employeeExists(employee);
+      exists = await this.employeeExists(employeeId);
     } catch (error) {
       throw new R2DirectUploadError(
         'UPLOAD_EMPLOYEE_LOOKUP_FAILED',
@@ -175,19 +199,22 @@ class R2DirectUploadService {
         404
       );
     }
-    const objectKey = `pending/mcu-uploads/${owner}/${this.uuid()}.${file.extension}`;
+  }
+
+  async prepareFileUpload({ userId, employeeId, mcuId, fileName, contentLength }) {
+    const owner = assertSafeSegment(userId, 'User');
+    const employee = assertSafeSegment(employeeId, 'Employee ID');
+    const mcu = assertSafeSegment(mcuId, 'MCU ID');
+    const file = normalizeUploadFileName(fileName);
+    const metadata = assertFileMetadata(file, contentLength);
+    await this.requireEmployee(employee);
+    const objectKey = `pending/mcu-uploads/${owner}/${employee}/${mcu}/${this.uuid()}.${file.extension}`;
 
     const command = new PutObjectCommand({
       Bucket: this.config.bucket,
       Key: objectKey,
       ContentType: metadata.contentType,
-      ContentLength: metadata.contentLength,
-      Metadata: {
-        owner,
-        employeeid: employee,
-        mcuid: mcu,
-        purpose: 'mcu-file-upload'
-      }
+      ContentLength: metadata.contentLength
     });
     const uploadUrl = await this.signUrl(this.client, command, {
       expiresIn: UPLOAD_URL_EXPIRY_SECONDS,
@@ -209,8 +236,12 @@ class R2DirectUploadService {
 
   async confirmFileUpload({ userId, objectKey, fileName }) {
     const owner = assertSafeSegment(userId, 'User');
-    const pendingKey = assertPendingKey(objectKey, owner);
+    const pending = parsePendingKey(objectKey, owner);
+    const pendingKey = pending.objectKey;
     const file = normalizeUploadFileName(fileName);
+    if (pending.extension !== file.extension) {
+      throw new R2DirectUploadError('UPLOAD_KEY_INVALID', 'Sesi upload tidak sesuai dengan file.', 400);
+    }
     let finalKey = null;
 
     try {
@@ -219,12 +250,8 @@ class R2DirectUploadService {
         Key: pendingKey
       }));
       const metadata = assertFileMetadata(file, Number(head.ContentLength), head.ContentType);
-      const employeeId = assertSafeSegment(head.Metadata?.employeeid, 'Employee ID');
-      const mcuId = assertSafeSegment(head.Metadata?.mcuid, 'MCU ID');
-      if (head.Metadata?.owner !== owner
-        || !['mcu-file-upload', 'mcu-pdf-upload'].includes(head.Metadata?.purpose)) {
-        throw new R2DirectUploadError('UPLOAD_FORBIDDEN', 'Pemilik upload tidak sesuai.', 403);
-      }
+      const { employeeId, mcuId } = pending;
+      await this.requireEmployee(employeeId);
 
       finalKey = `mcu_files/${employeeId}/${mcuId}/${this.uuid()}.${file.extension}`;
       await this.client.send(new CopyObjectCommand({
@@ -330,5 +357,6 @@ module.exports = {
   FILE_RULES,
   assertFileMetadata,
   assertPendingKey,
+  parsePendingKey,
   normalizeUploadFileName
 };

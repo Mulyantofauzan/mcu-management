@@ -15,7 +15,7 @@
  * 4. Stale-while-revalidate: Local CSS
  */
 
-const CACHE_VERSION = 'madis-v1.2.14';
+const CACHE_VERSION = 'madis-v1.2.15';
 const MAX_CACHE_ENTRIES = 200;
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;

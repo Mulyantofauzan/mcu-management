@@ -55,6 +55,7 @@ const UPLOAD_ERROR_PRESENTATIONS = Object.freeze({
   UPLOAD_CANCELLED: { icon: 'info', title: 'Upload Dibatalkan' },
   UPLOAD_SIZE_INVALID: { icon: 'warning', title: 'Ukuran File Tidak Sesuai' },
   UPLOAD_PDF_INVALID: { icon: 'error', title: 'PDF Tidak Valid' },
+  UPLOAD_KEY_INVALID: { icon: 'warning', title: 'Sesi Upload Kedaluwarsa' },
   UPLOAD_FORBIDDEN: { icon: 'error', title: 'Upload Ditolak' },
   UPLOAD_METADATA_FAILED: { icon: 'error', title: 'Data File Belum Tersimpan' },
   UPLOAD_VERIFICATION_FAILED: { icon: 'error', title: 'Verifikasi Upload Gagal' },

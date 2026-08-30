@@ -2,7 +2,7 @@
   "buildCommand": "cd mcu-management && npm run build",
   "outputDirectory": "mcu-management/dist",
   "functions": {
-    "api/compress-upload/index.js": {
+    "api/mcu-file-upload/index.js": {
       "maxDuration": 60
     },
     "api/get-mcu-files/index.js": {
@@ -127,6 +127,10 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/api/compress-upload",
+      "destination": "/api/mcu-file-upload"
+    },
     {
       "source": "/:path*",
       "destination": "/index.html"

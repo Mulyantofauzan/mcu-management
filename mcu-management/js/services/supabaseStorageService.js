@@ -22,7 +22,7 @@ function getAuthHeaders(extraHeaders = {}) {
 }
 
 async function postUploadAction(payload) {
-  const response = await fetch('/api/compress-upload', {
+  const response = await fetch('/api/mcu-file-upload', {
     method: 'POST',
     headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(payload)
