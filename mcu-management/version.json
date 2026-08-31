@@ -1,7 +1,8 @@
 {
-  "version": "1.2.15",
-  "releaseDate": "2026-08-30",
+  "version": "1.2.16",
+  "releaseDate": "2026-08-31",
   "features": [
+    "WhatsApp share opens with an encoded review summary without clipboard permission",
     "R2 upload confirmation derives Employee and MCU identity from a server-signed object key",
     "Canonical MCU file endpoint with backward-compatible legacy route",
     "Progressive page lifecycle with local loading and retry states",

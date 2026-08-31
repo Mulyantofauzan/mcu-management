@@ -47,20 +47,8 @@ export function buildApprovedSummary(detail) {
   ].join('\n');
 }
 
-async function copyText(text) {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
-    return;
-  }
-  const area = document.createElement('textarea');
-  area.value = text;
-  area.style.position = 'fixed';
-  area.style.opacity = '0';
-  document.body.appendChild(area);
-  area.select();
-  const copied = document.execCommand('copy');
-  area.remove();
-  if (!copied) throw new Error('Clipboard unavailable');
+export function buildWhatsAppUrl(summary) {
+  return `https://wa.me/?text=${encodeURIComponent(summary)}`;
 }
 
 async function downloadReferral(reviewCycleId) {
@@ -76,20 +64,25 @@ async function downloadReferral(reviewCycleId) {
 
 export async function shareApprovedReview(detail, whatsappWindow) {
   const cycle = approvedCycle(detail);
-  try {
-    const summary = buildApprovedSummary(detail);
-    await copyText(summary);
-    if (LOOPING_RESULTS.includes(cycle.medical_result)) {
-      await downloadReferral(cycle.id);
-    }
-    if (!whatsappWindow || whatsappWindow.closed) throw new Error('Popup blocked');
-    whatsappWindow.location.href = 'https://web.whatsapp.com/';
-    return { summary, reviewCycleId: cycle.id, hasDocument: LOOPING_RESULTS.includes(cycle.medical_result) };
-  } catch (cause) {
-    whatsappWindow?.close();
+  const summary = buildApprovedSummary(detail);
+  if (!whatsappWindow || whatsappWindow.closed) {
     throw new WorkflowApiError({
       code: 'WORKFLOW_WHATSAPP_FAILED',
-      message: 'Ringkasan tidak dapat disiapkan. Izinkan pop-up dan akses clipboard, lalu coba lagi.'
+      message: 'Pop-up WhatsApp diblokir. Izinkan pop-up untuk MADIS, lalu coba lagi.'
     }, 0);
   }
+
+  const hasDocument = LOOPING_RESULTS.includes(cycle.medical_result);
+  if (hasDocument) await downloadReferral(cycle.id);
+
+  try {
+    whatsappWindow.location.href = buildWhatsAppUrl(summary);
+  } catch (cause) {
+    whatsappWindow.close();
+    throw new WorkflowApiError({
+      code: 'WORKFLOW_WHATSAPP_FAILED',
+      message: 'WhatsApp tidak dapat dibuka. Coba lagi.'
+    }, 0);
+  }
+  return { summary, reviewCycleId: cycle.id, hasDocument };
 }

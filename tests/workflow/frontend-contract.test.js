@@ -309,7 +309,10 @@ test('WhatsApp summary uses approved review and excludes raw labs', () => {
   assert.match(source, /Catatan:/);
   assert.match(source, /Dokter:/);
   assert.doesNotMatch(source, /labs|pemeriksaan_lab|SGOT|SGPT/);
-  assert.match(source, /web\.whatsapp\.com/);
+  assert.match(source, /https:\/\/wa\.me\/\?text=\$\{encodeURIComponent\(summary\)\}/);
+  assert.doesNotMatch(source, /navigator\.clipboard|execCommand\('copy'\)/);
+  assert.match(source, /if \(hasDocument\) await downloadReferral\(cycle\.id\)/);
+  assert.match(source, /Pop-up WhatsApp diblokir/);
 });
 
 test('MCU entry separates examiner metadata from doctor decision', () => {
