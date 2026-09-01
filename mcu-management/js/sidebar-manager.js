@@ -45,6 +45,7 @@
       { page: 'kelola-karyawan', file: 'kelola-karyawan.html', label: 'Kelola Karyawan', icon: 'users', badge: 'correction' },
       { page: 'follow-up', file: 'follow-up.html', label: 'Bukti Follow-Up', icon: 'clipboard', badge: 'followup' },
       { page: 'data-master', file: 'data-master.html', label: 'Data Master', icon: 'database' },
+      { page: 'mcu-expiry-management', file: 'mcu-expiry-management.html', label: 'MCU Expired', icon: 'clock', legacyBadge: 'badge-mcu-expiry' },
       { group: 'reports', label: 'Laporan', icon: 'file', children: reports }
     ],
     Dokter: [

@@ -48,6 +48,22 @@ let workflowBootstrapPromise = null;
 let formComponentsPromise = null;
 
 const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
+const EDITABLE_WORKFLOW_STATUSES = Object.freeze(['pending_review', 'correction_required']);
+
+function isEditableWorkflowStatus(status) {
+    return EDITABLE_WORKFLOW_STATUSES.includes(status);
+}
+
+async function requireEditableWorkflowDetail(mcuId) {
+    const detail = await workflowService.reviewDetail(mcuId);
+    if (!authService.hasRole('Admin', 'Petugas') || !isEditableWorkflowStatus(detail?.mcu?.workflow_status)) {
+        throw {
+            code: 'WORKFLOW_INVALID_TRANSITION',
+            message: 'MCU sedang direview atau hasilnya sudah final sehingga tidak dapat diedit.'
+        };
+    }
+    return detail;
+}
 
 function loadFormComponents() {
     if (!formComponentsPromise) {
@@ -1553,20 +1569,21 @@ window.viewMCUDetail = async function(mcuId) {
         }
 
         const workflowStatus = currentWorkflowDetail?.mcu?.workflow_status || mcu.workflowStatus;
-        const canCorrect = workflowEnabled
+        const canEdit = workflowEnabled
             && authService.hasRole('Admin', 'Petugas')
-            && workflowStatus === 'correction_required';
+            && isEditableWorkflowStatus(workflowStatus);
+        const needsCorrection = workflowStatus === 'correction_required';
         const canUseLegacyActions = workflowStateKnown && !workflowEnabled;
-        document.getElementById('edit-mcu-button')?.classList.toggle('hidden', !(canCorrect || canUseLegacyActions));
+        document.getElementById('edit-mcu-button')?.classList.toggle('hidden', !(canEdit || canUseLegacyActions));
         document.getElementById('delete-mcu-button')?.classList.toggle('hidden', !canUseLegacyActions);
 
         const correctionAlert = document.getElementById('mcu-correction-alert');
         const rejectionReason = latestRejectionReason(currentWorkflowDetail);
         if (correctionAlert) {
-            correctionAlert.textContent = canCorrect
+            correctionAlert.textContent = needsCorrection
                 ? `Dikembalikan dokter: ${rejectionReason || 'Periksa kembali data pemeriksaan.'}`
                 : '';
-            correctionAlert.classList.toggle('hidden', !canCorrect);
+            correctionAlert.classList.toggle('hidden', !needsCorrection);
         }
 
         const emp = employees.find(e => e.employeeId === mcu.employeeId);
@@ -2058,14 +2075,10 @@ window.editMCU = async function() {
             }
         }
         if (workflowEnabled) {
-            currentWorkflowDetail = currentWorkflowDetail?.mcu?.mcu_id === mcu.mcuId
-                ? currentWorkflowDetail
-                : await workflowService.reviewDetail(mcu.mcuId);
-            if (!authService.hasRole('Admin', 'Petugas') || currentWorkflowDetail.mcu.workflow_status !== 'correction_required') {
-                await presentWorkflowError({
-                    code: 'WORKFLOW_INVALID_TRANSITION',
-                    message: 'MCU ini tidak berada pada antrean koreksi Petugas.'
-                }, { reload: () => window.viewMCUDetail(mcu.mcuId) });
+            try {
+                currentWorkflowDetail = await requireEditableWorkflowDetail(mcu.mcuId);
+            } catch (error) {
+                await presentWorkflowError(error, { reload: () => window.viewMCUDetail(mcu.mcuId) });
                 return;
             }
         }
@@ -2086,10 +2099,11 @@ window.editMCU = async function() {
         );
         const correctionAlert = document.getElementById('edit-mcu-correction-alert');
         if (correctionAlert) {
-            correctionAlert.textContent = workflowEnabled
+            const needsCorrection = currentWorkflowDetail?.mcu?.workflow_status === 'correction_required';
+            correctionAlert.textContent = workflowEnabled && needsCorrection
                 ? `Alasan koreksi dokter: ${latestRejectionReason(currentWorkflowDetail) || 'Periksa kembali data pemeriksaan.'}`
                 : '';
-            correctionAlert.classList.toggle('hidden', !workflowEnabled);
+            correctionAlert.classList.toggle('hidden', !workflowEnabled || !needsCorrection);
         }
 
         // ✅ Setup custom disease input handlers for edit modal
@@ -2405,6 +2419,8 @@ window.handleEditMCU = async function(event) {
     let uploadContext = null;
     let uploadResult = { results: [] };
     let mcuPersisted = false;
+    let workflowEditStatus = null;
+    let workflowEditVersion = null;
 
     try {
         uploadContext = fileUploadWidget.getUploadContext();
@@ -2412,16 +2428,15 @@ window.handleEditMCU = async function(event) {
             await presentWorkflowError({ code: 'WORKFLOW_NETWORK_ERROR', message: 'Status workflow belum dapat diverifikasi.' });
             return;
         }
-        if (workflowEnabled && (
-            !authService.hasRole('Admin', 'Petugas')
-            || currentWorkflowDetail?.mcu?.mcu_id !== mcuId
-            || currentWorkflowDetail?.mcu?.workflow_status !== 'correction_required'
-        )) {
-            await presentWorkflowError({
-                code: 'WORKFLOW_INVALID_TRANSITION',
-                message: 'MCU ini tidak dapat dikoreksi pada status sekarang.'
-            });
-            return;
+        if (workflowEnabled) {
+            try {
+                currentWorkflowDetail = await requireEditableWorkflowDetail(mcuId);
+                workflowEditStatus = currentWorkflowDetail.mcu.workflow_status;
+                workflowEditVersion = Number(currentWorkflowDetail.mcu.workflow_version || 0);
+            } catch (error) {
+                await presentWorkflowError(error, { reload: () => window.viewMCUDetail(mcuId) });
+                return;
+            }
         }
 
         // ✅ FIX: Get doctor ID and convert to number
@@ -2573,6 +2588,18 @@ window.handleEditMCU = async function(event) {
 
         // ✅ Get existing MCU to compare and track field changes
         const existingMCU = await mcuService.getById(mcuId);
+
+        if (workflowEnabled) {
+            const freshDetail = await requireEditableWorkflowDetail(mcuId);
+            const freshVersion = Number(freshDetail.mcu.workflow_version || 0);
+            if (freshDetail.mcu.workflow_status !== workflowEditStatus || freshVersion !== workflowEditVersion) {
+                throw {
+                    code: 'WORKFLOW_VERSION_CONFLICT',
+                    message: 'Status MCU berubah saat form dibuka. Muat ulang detail sebelum menyimpan.'
+                };
+            }
+            currentWorkflowDetail = freshDetail;
+        }
 
         // ✅ Handle medical and family history updates
         let historyChanges = []; // Track changes for mcuChanges table
@@ -2840,7 +2867,7 @@ window.handleEditMCU = async function(event) {
             showToast(errorMsg, 'warning');
         }
 
-        if (workflowEnabled) {
+        if (workflowEnabled && workflowEditStatus === 'correction_required') {
             await submitMCUForReview(mcuId, currentWorkflowDetail.mcu.workflow_version);
         }
 
@@ -2849,12 +2876,15 @@ window.handleEditMCU = async function(event) {
             hideUnifiedLoading();
         }, 500);
 
-        showToast(workflowEnabled
-            ? 'Koreksi dikirim kembali untuk review dokter.'
-            : 'Data MCU berhasil diupdate', 'success');
+        const successMessage = !workflowEnabled
+            ? 'Data MCU berhasil diupdate'
+            : workflowEditStatus === 'correction_required'
+                ? 'Koreksi dikirim kembali untuk review dokter.'
+                : 'Data MCU diperbarui dan tetap menunggu review dokter.';
+        showToast(successMessage, 'success');
         closeEditMCUModal();
 
-        if (workflowEnabled) {
+        if (workflowEnabled && workflowEditStatus === 'correction_required') {
             await loadCorrectionQueue();
         }
 

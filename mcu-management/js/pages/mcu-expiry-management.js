@@ -26,6 +26,7 @@ class MCUExpiryManagementPage {
     this.expirySettingVersion = null;
     this.preview = null;
     this.actionsBound = false;
+    this.isAdmin = false;
   }
 
   async initialize() {
@@ -38,11 +39,12 @@ class MCUExpiryManagementPage {
 
       // Set user info
       const user = authService.getCurrentUser();
-      if (user?.role !== 'Admin') {
-        await presentWorkflowError({ code: 'WORKFLOW_FORBIDDEN', message: 'Halaman ini hanya untuk Administrator.' });
+      if (!['Admin', 'Petugas'].includes(user?.role)) {
+        await presentWorkflowError({ code: 'WORKFLOW_FORBIDDEN', message: 'Halaman ini hanya untuk Administrator atau Petugas.' });
         window.location.href = '../index.html';
         return;
       }
+      this.isAdmin = user.role === 'Admin';
       if (user) {
         const displayName = user?.displayName || 'User';
         const role = user?.role || 'Petugas';
@@ -56,19 +58,24 @@ class MCUExpiryManagementPage {
       // Sidebar must not delay the primary data.
       void initSidebar().catch(() => {});
 
-      // Load data
-      this.bindExpirySettingActions();
-      await Promise.all([
-        this.loadExpiryData(),
-        this.loadExpirySetting()
-      ]);
+      const settingRegion = document.querySelector('[data-lifecycle-region="expiry-setting"]');
+      settingRegion?.classList.toggle('hidden', !this.isAdmin);
+
+      const loadTasks = [this.loadExpiryData()];
+      if (this.isAdmin) {
+        this.bindExpirySettingActions();
+        loadTasks.push(this.loadExpirySetting());
+      } else {
+        pageLifecycle()?.setReady('expiry-setting');
+      }
+      await Promise.all(loadTasks);
       pageLifecycle()?.markInteractive();
 
       // Mark page as initialized
       document.body.classList.add('initialized');
     } catch (error) {
       pageLifecycle()?.setError('expiry-data', error, () => this.initialize());
-      pageLifecycle()?.setError('expiry-setting', error, () => this.initialize());
+      if (this.isAdmin) pageLifecycle()?.setError('expiry-setting', error, () => this.initialize());
       await presentWorkflowError({
         code: error?.code || 'WORKFLOW_INTERNAL_ERROR',
         message: error?.message || 'Halaman pengaturan MCU gagal dimuat.'

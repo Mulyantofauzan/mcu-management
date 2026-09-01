@@ -260,6 +260,33 @@ test('Administrator can use Petugas MCU entry and follow-up forms', () => {
   });
 });
 
+test('Petugas can view MCU expiry without Administrator settings access', () => {
+  const sidebar = read('mcu-management/js/sidebar-manager.js');
+  const page = read('mcu-management/pages/mcu-expiry-management.html');
+  const source = read('mcu-management/js/pages/mcu-expiry-management.js');
+  const authorization = read('server/workflow/authorization.js');
+
+  assert.match(sidebar, /Petugas:\s*\[[\s\S]*mcu-expiry-management\.html'[\s\S]*label: 'MCU Expired'/);
+  assert.match(source, /\['Admin', 'Petugas'\]\.includes\(user\?\.role\)/);
+  assert.match(page, /data-lifecycle-region="expiry-setting"[^>]*class="[^"]*hidden|class="[^"]*hidden[^"]*"[^>]*data-lifecycle-region="expiry-setting"/);
+  assert.match(source, /settingRegion\?\.classList\.toggle\('hidden', !this\.isAdmin\)/);
+  assert.match(source, /if \(this\.isAdmin\) \{[\s\S]*loadTasks\.push\(this\.loadExpirySetting\(\)\)/);
+  assert.match(authorization, /settings: \['Admin'\]/);
+  assert.match(authorization, /'expiry-preview': \['Admin'\]/);
+  assert.match(authorization, /'update-expiry-setting': \['Admin'\]/);
+});
+
+test('Petugas MCU edit is limited to pending review and requested correction', () => {
+  const source = read('mcu-management/js/pages/kelola-karyawan.js');
+
+  assert.match(source, /EDITABLE_WORKFLOW_STATUSES = Object\.freeze\(\['pending_review', 'correction_required'\]\)/);
+  assert.match(source, /requireEditableWorkflowDetail\(mcuId\)/);
+  assert.match(source, /freshDetail\.mcu\.workflow_status !== workflowEditStatus \|\| freshVersion !== workflowEditVersion/);
+  assert.match(source, /workflowEnabled && workflowEditStatus === 'correction_required'[\s\S]*submitMCUForReview/);
+  assert.match(source, /workflowEditStatus === 'correction_required'[\s\S]*Koreksi dikirim kembali untuk review dokter\./);
+  assert.match(source, /Data MCU diperbarui dan tetap menunggu review dokter\./);
+});
+
 test('menu navigation progressively enhances native links', () => {
   const source = read('mcu-management/js/sidebar-manager.js');
   const styles = read('mcu-management/css/sidebar.css');

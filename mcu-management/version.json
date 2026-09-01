@@ -1,7 +1,9 @@
 {
-  "version": "1.2.16",
-  "releaseDate": "2026-08-31",
+  "version": "1.2.17",
+  "releaseDate": "2026-09-01",
   "features": [
+    "Petugas read-only access to MCU expired and warning lists",
+    "Petugas MCU editing before Doctor review or after correction requests",
     "WhatsApp share opens with an encoded review summary without clipboard permission",
     "R2 upload confirmation derives Employee and MCU identity from a server-signed object key",
     "Canonical MCU file endpoint with backward-compatible legacy route",

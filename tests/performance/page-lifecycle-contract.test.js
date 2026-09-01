@@ -144,7 +144,9 @@ test('independent administration reads start in parallel', () => {
   const expiry = read('mcu-management/js/pages/mcu-expiry-management.js');
 
   assert.match(deleted, /Promise\.all\(\[\s*employeeService\.getDeleted\(\),\s*mcuService\.getDeleted\(\),\s*masterDataService\.getAllJobTitles\(\),\s*masterDataService\.getAllDepartments\(\),\s*employeeService\.getAll\(\)/);
-  assert.match(expiry, /Promise\.all\(\[\s*this\.loadExpiryData\(\),\s*this\.loadExpirySetting\(\)/);
+  assert.match(expiry, /const loadTasks = \[this\.loadExpiryData\(\)\]/);
+  assert.match(expiry, /if \(this\.isAdmin\) \{[\s\S]*loadTasks\.push\(this\.loadExpirySetting\(\)\)/);
+  assert.match(expiry, /await Promise\.all\(loadTasks\)/);
   assert.match(expiry, /setLoading\('expiry-data'/);
   assert.match(expiry, /setLoading\('expiry-setting'/);
 });
