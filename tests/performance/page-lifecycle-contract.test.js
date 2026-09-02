@@ -198,3 +198,18 @@ test('report-only assets and data are loaded on demand', () => {
   assert.match(period, /reportContext/);
   assert.match(period, /Promise\.all\(\[\s*masterDataService\.getAllDepartments\(\),\s*masterDataService\.getAllJobTitles\(\),\s*mcuService\.getAll\(\),\s*employeeService\.getAll\(\)/);
 });
+
+test('assessment table and Excel export include employee organization columns', () => {
+  const assessment = read('mcu-management/js/pages/assessment-rahma-dashboard.js');
+  const excel = read('mcu-management/js/services/excelExportService.js');
+
+  assert.match(assessment, />Jabatan<\/th>/);
+  assert.match(assessment, />Departemen<\/th>/);
+  assert.match(assessment, /\$\{item\.jobTitle \|\| '-'\}/);
+  assert.match(assessment, /\$\{item\.department \|\| '-'\}/);
+  assert.match(assessment, /colspan="22"/);
+  assert.match(excel, /'No',\s*'Nama',\s*'Jabatan',\s*'Departemen'/);
+  assert.match(excel, /item\.jobTitle \|\| '-'/);
+  assert.match(excel, /item\.department \|\| '-'/);
+  assert.match(excel, /xSplit:\s*4/);
+});

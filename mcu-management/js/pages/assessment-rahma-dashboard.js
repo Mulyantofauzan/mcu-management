@@ -519,7 +519,7 @@ function renderTable() {
     const paginatedData = filteredData.slice(start, end);
 
     if (paginatedData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="20" class="px-4 py-6 text-center text-gray-500">Tidak ada data</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="22" class="px-4 py-6 text-center text-gray-500">Tidak ada data</td></tr>';
         return;
     }
 
@@ -567,6 +567,8 @@ function renderTable() {
             <tr class="${rowBgColor}">
                 <td class="px-3 py-3 text-sm text-center" style="position: sticky; left: 0; z-index: 10; background-color: #ffffff; min-width: 50px; width: 50px; border: 1px solid #d1d5db; border-right: 2px solid #d1d5db;">${start + index + 1}</td>
                 <td class="px-3 py-3 text-sm font-medium text-center" style="position: sticky; left: 50px; z-index: 10; background-color: #ffffff; min-width: 200px; width: 200px; white-space: normal; word-wrap: break-word; border: 1px solid #d1d5db; border-left: none;">${item.name}</td>
+                <td class="px-3 py-3 text-sm text-center" style="position: sticky; left: 250px; z-index: 10; background-color: #ffffff; min-width: 180px; width: 180px; white-space: normal; word-wrap: break-word; border: 1px solid #d1d5db; border-left: none;">${item.jobTitle || '-'}</td>
+                <td class="px-3 py-3 text-sm text-center" style="position: sticky; left: 430px; z-index: 10; background-color: #ffffff; min-width: 160px; width: 160px; white-space: normal; word-wrap: break-word; border: 1px solid #d1d5db; border-left: none; border-right: 2px solid #d1d5db;">${item.department || '-'}</td>
 
                 <!-- Jakarta Cardiovascular Score Columns (scores only) -->
                 <td class="px-3 py-3 text-sm text-center border border-gray-300" style="background-color: #fffbeb;">${item.scores.jk}</td>
@@ -848,11 +850,13 @@ function renderDashboard() {
         <!-- Data Table -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
             <div class="overflow-x-auto" style="min-height: 400px;">
-                <table class="text-sm border-collapse" style="min-width: 2400px; width: 100%;">
+                <table class="text-sm border-collapse" style="min-width: 2740px; width: 100%;">
                     <thead class="bg-gray-100 border-b-2 border-gray-300">
                         <tr style="height: 60px; vertical-align: middle;">
                             <th class="px-3 py-3 text-center font-semibold" rowspan="2" style="min-width: 50px; width: 50px; background-color: #ffffff; position: sticky; left: 0; z-index: 20; vertical-align: middle; border: 1px solid #d1d5db; border-right: 2px solid #d1d5db;">No</th>
                             <th class="px-3 py-3 text-center font-semibold" rowspan="2" style="min-width: 200px; width: 200px; background-color: #ffffff; position: sticky; left: 50px; z-index: 20; vertical-align: middle; border: 1px solid #d1d5db; border-left: none;">Nama</th>
+                            <th class="px-3 py-3 text-center font-semibold" rowspan="2" style="min-width: 180px; width: 180px; background-color: #ffffff; position: sticky; left: 250px; z-index: 20; vertical-align: middle; border: 1px solid #d1d5db; border-left: none;">Jabatan</th>
+                            <th class="px-3 py-3 text-center font-semibold" rowspan="2" style="min-width: 160px; width: 160px; background-color: #ffffff; position: sticky; left: 430px; z-index: 20; vertical-align: middle; border: 1px solid #d1d5db; border-left: none; border-right: 2px solid #d1d5db;">Departemen</th>
 
                             <!-- Jakarta Cardiovascular Score Header -->
                             <th class="px-3 py-3 text-center font-semibold border border-gray-300" colspan="9" style="background-color: #fcd34d;">Jakarta Cardiovascular Score</th>
@@ -891,7 +895,7 @@ function renderDashboard() {
                     </thead>
                     <tbody id="data-table">
                         <tr>
-                            <td colspan="20" class="px-4 py-6 text-center text-gray-500">Memuat data...</td>
+                            <td colspan="22" class="px-4 py-6 text-center text-gray-500">Memuat data...</td>
                         </tr>
                     </tbody>
                 </table>

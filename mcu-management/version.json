@@ -1,7 +1,8 @@
 {
-  "version": "1.2.18",
-  "releaseDate": "2026-09-02",
+  "version": "1.2.19",
+  "releaseDate": "2026-09-03",
   "features": [
+    "Employee job title and department columns in cardiovascular assessment table and Excel export",
     "Actionable legacy Follow-Up and Temporary Unfit records in the Petugas workflow",
     "Employee-named read-only Doctor review history with cycle-aware WhatsApp sharing",
     "Petugas read-only access to MCU expired and warning lists",

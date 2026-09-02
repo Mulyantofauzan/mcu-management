@@ -147,6 +147,8 @@ export async function exportToExcel(data, allData = null) {
         worksheet.columns = [
             { width: 8 },      // No
             { width: 25 },     // Nama
+            { width: 24 },     // Jabatan
+            { width: 20 },     // Departemen
             { width: 12 },     // JK (CV)
             { width: 12 },     // Umur (CV)
             { width: 12 },     // TD (CV)
@@ -186,6 +188,8 @@ export async function exportToExcel(data, allData = null) {
         const header1 = worksheet.addRow([
             'No',
             'Nama',
+            'Jabatan',
+            'Departemen',
             '', '', '', '', '', '', '', '', '',  // Jakarta CV columns (9 cols, but merged)
             '', '', '', '', '', '', '',           // Sindrom Metabolik columns (7 cols, but merged)
             '',                                   // Risk Total
@@ -193,32 +197,34 @@ export async function exportToExcel(data, allData = null) {
         ]);
 
         // Merge cells for category headers
-        worksheet.mergeCells('C7:K7');  // Jakarta Cardiovascular Score
-        worksheet.mergeCells('L7:R7');  // Sindrom Metabolik
+        worksheet.mergeCells(`E${header1.number}:M${header1.number}`);  // Jakarta Cardiovascular Score
+        worksheet.mergeCells(`N${header1.number}:T${header1.number}`);  // Sindrom Metabolik
 
         // Style category headers
-        const header1Range = worksheet.getRow(7);
+        const header1Range = header1;
         header1Range.getCell(1).value = 'No';
         header1Range.getCell(2).value = 'Nama';
-        header1Range.getCell(3).value = 'Jakarta Cardiovascular Score';
-        header1Range.getCell(12).value = 'Sindrom Metabolik';
-        header1Range.getCell(19).value = 'Risk Total';
-        header1Range.getCell(20).value = 'Risk Level';
+        header1Range.getCell(3).value = 'Jabatan';
+        header1Range.getCell(4).value = 'Departemen';
+        header1Range.getCell(5).value = 'Jakarta Cardiovascular Score';
+        header1Range.getCell(14).value = 'Sindrom Metabolik';
+        header1Range.getCell(21).value = 'Risk Total';
+        header1Range.getCell(22).value = 'Risk Level';
 
         header1Range.eachCell((cell, colNum) => {
-            if (colNum <= 2) {
+            if (colNum <= 4) {
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
                 cell.font = { bold: true, size: 11, color: { argb: 'FF1F2937' } };
-            } else if (colNum >= 3 && colNum <= 11) {
+            } else if (colNum >= 5 && colNum <= 13) {
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFCD34D' } };
                 cell.font = { bold: true, size: 11, color: { argb: 'FF1F2937' } };
-            } else if (colNum >= 12 && colNum <= 18) {
+            } else if (colNum >= 14 && colNum <= 20) {
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF93C5FD' } };
                 cell.font = { bold: true, size: 11, color: { argb: 'FF1F2937' } };
-            } else if (colNum === 19) {
+            } else if (colNum === 21) {
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFECACA' } };
                 cell.font = { bold: true, size: 11, color: { argb: 'FF1F2937' } };
-            } else if (colNum === 20) {
+            } else if (colNum === 22) {
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } };
                 cell.font = { bold: true, size: 11, color: { argb: 'FF1F2937' } };
             }
@@ -237,6 +243,8 @@ export async function exportToExcel(data, allData = null) {
         const header2 = worksheet.addRow([
             'No',
             'Nama',
+            'Jabatan',
+            'Departemen',
             'JK', 'Umur', 'TD', 'IMT', 'Merokok', 'Diabetes', 'Aktivitas Fisik', 'Nilai', 'Risk',
             'LP', 'TG', 'HDL', 'TD', 'GDP', 'Nilai', 'Risk',
             'Risk Total',
@@ -244,15 +252,15 @@ export async function exportToExcel(data, allData = null) {
         ]);
 
         header2.eachCell((cell, colNum) => {
-            if (colNum <= 2) {
+            if (colNum <= 4) {
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
-            } else if (colNum >= 3 && colNum <= 11) {
+            } else if (colNum >= 5 && colNum <= 13) {
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } };
-            } else if (colNum >= 12 && colNum <= 18) {
+            } else if (colNum >= 14 && colNum <= 20) {
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } };
-            } else if (colNum === 19) {
+            } else if (colNum === 21) {
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFECACA' } };
-            } else if (colNum === 20) {
+            } else if (colNum === 22) {
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } };
             }
             cell.font = { bold: true, size: 10, color: { argb: 'FF1F2937' } };
@@ -299,6 +307,8 @@ export async function exportToExcel(data, allData = null) {
             const row = worksheet.addRow([
                 idx + 1,
                 item.name || '-',
+                item.jobTitle || '-',
+                item.department || '-',
                 item.scores?.jk !== undefined ? item.scores.jk : '-',
                 item.scores?.umur !== undefined ? item.scores.umur : '-',
                 item.scores?.td !== undefined ? item.scores.td : '-',
@@ -321,15 +331,15 @@ export async function exportToExcel(data, allData = null) {
 
             // Style data row
             row.eachCell((cell, colNum) => {
-                if (colNum === 1 || colNum === 2) {
+                if (colNum <= 4) {
                     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
-                } else if (colNum >= 3 && colNum <= 11) {
+                } else if (colNum >= 5 && colNum <= 13) {
                     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } };
-                } else if (colNum >= 12 && colNum <= 18) {
+                } else if (colNum >= 14 && colNum <= 20) {
                     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } };
-                } else if (colNum === 19) {
+                } else if (colNum === 21) {
                     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: riskTotalBgColor } };
-                } else if (colNum === 20) {
+                } else if (colNum === 22) {
                     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: rowBgColor } };
                 }
 
@@ -346,9 +356,9 @@ export async function exportToExcel(data, allData = null) {
             row.height = 18;
         });
 
-        // Freeze panes (freeze first 2 columns and header rows)
+        // Freeze panes (freeze employee identity columns and header rows)
         worksheet.views = [
-            { state: 'frozen', xSplit: 2, ySplit: 8 }
+            { state: 'frozen', xSplit: 4, ySplit: header2.number }
         ];
 
         // Generate file
