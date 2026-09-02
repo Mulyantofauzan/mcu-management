@@ -154,15 +154,26 @@ class WorkflowService {
     }
 
     if (settings.workflowEnabled && ['Admin', 'Petugas'].includes(user.role)) {
-      const { data } = await this.query(
-        this.supabase
-          .from('mcus')
-          .select('workflow_status')
-          .in('workflow_status', ['draft', 'correction_required', 'followup_required'])
-          .is('deleted_at', null)
-      );
+      const [{ data }, legacyResult] = await Promise.all([
+        this.query(
+          this.supabase
+            .from('mcus')
+            .select('workflow_status')
+            .in('workflow_status', ['draft', 'correction_required', 'followup_required'])
+            .is('deleted_at', null)
+        ),
+        this.query(
+          this.supabase
+            .from('mcus')
+            .select('mcu_id', { count: 'exact', head: true })
+            .eq('workflow_status', 'approved_legacy')
+            .in('current_medical_result', LOOPING_MEDICAL_RESULTS)
+            .is('deleted_at', null)
+        )
+      ]);
       counts.correction = (data || []).filter(row => ['draft', 'correction_required'].includes(row.workflow_status)).length;
-      counts.followup = (data || []).filter(row => row.workflow_status === 'followup_required').length;
+      counts.followup = (data || []).filter(row => row.workflow_status === 'followup_required').length
+        + (legacyResult.count || 0);
     }
 
     if (settings.workflowEnabled && user.role === 'Admin') {
@@ -211,17 +222,37 @@ class WorkflowService {
   }
 
   async getPetugasQueue() {
-    const { data } = await this.query(
-      this.supabase
-        .from('mcus')
-        .select('mcu_id, employee_id, mcu_type, mcu_date, workflow_status, workflow_version, current_medical_result, current_review_cycle, current_share_cycle_id, current_share_status, updated_at')
-        .in('workflow_status', ['draft', 'correction_required', 'followup_required'])
-        .is('deleted_at', null)
-        .order('updated_at', { ascending: true })
-        .limit(200)
+    const fields = 'mcu_id, employee_id, mcu_type, mcu_date, workflow_status, workflow_version, current_medical_result, current_review_cycle, current_share_cycle_id, current_share_status, updated_at';
+    const [currentResult, legacyResult] = await Promise.all([
+      this.query(
+        this.supabase
+          .from('mcus')
+          .select(fields)
+          .in('workflow_status', ['draft', 'correction_required', 'followup_required'])
+          .is('deleted_at', null)
+          .order('updated_at', { ascending: true })
+          .limit(200)
+      ),
+      this.query(
+        this.supabase
+          .from('mcus')
+          .select(fields)
+          .eq('workflow_status', 'approved_legacy')
+          .in('current_medical_result', LOOPING_MEDICAL_RESULTS)
+          .is('deleted_at', null)
+          .order('updated_at', { ascending: true })
+          .limit(200)
+      )
+    ]);
+    const byMcuId = new Map(
+      [...(currentResult.data || []), ...(legacyResult.data || [])]
+        .map(row => [row.mcu_id, row])
     );
+    const rows = [...byMcuId.values()]
+      .sort((a, b) => String(a.updated_at || '').localeCompare(String(b.updated_at || '')))
+      .slice(0, 200);
 
-    return this.enrichMcuRows(data || []);
+    return this.enrichMcuRows(rows);
   }
 
   async enrichMcuRows(rows) {
@@ -326,7 +357,7 @@ class WorkflowService {
     };
   }
 
-  async getReviewHistory(payload) {
+  async getReviewHistory(payload = {}) {
     let query = this.supabase
       .from('mcu_review_cycles')
       .select('id, mcu_id, cycle_number, review_stage, decision, medical_result, clinical_notes, rejection_reason, doctor_user_id, finalized_at')
@@ -335,7 +366,37 @@ class WorkflowService {
 
     if (payload.mcuId) query = query.eq('mcu_id', payload.mcuId);
     const { data } = await this.query(query);
-    return data || [];
+    const cycles = data || [];
+    const mcuIds = [...new Set(cycles.map(cycle => cycle.mcu_id).filter(Boolean))];
+    if (!mcuIds.length) return cycles;
+
+    const { data: mcus } = await this.query(
+      this.supabase
+        .from('mcus')
+        .select('mcu_id, employee_id, mcu_type, mcu_date')
+        .in('mcu_id', mcuIds)
+    );
+    const mcuById = new Map((mcus || []).map(mcu => [mcu.mcu_id, mcu]));
+    const employeeIds = [...new Set((mcus || []).map(mcu => mcu.employee_id).filter(Boolean))];
+    const { data: employees } = employeeIds.length
+      ? await this.query(
+        this.supabase
+          .from('employees')
+          .select('employee_id, name, department')
+          .in('employee_id', employeeIds)
+      )
+      : { data: [] };
+    const employeeById = new Map((employees || []).map(employee => [employee.employee_id, employee]));
+
+    return cycles.map(cycle => {
+      const mcu = mcuById.get(cycle.mcu_id) || null;
+      return {
+        ...cycle,
+        mcu,
+        employee_id: mcu?.employee_id || null,
+        employee: employeeById.get(mcu?.employee_id) || null
+      };
+    });
   }
 
   async getJoiningQueue(history, payload = {}) {

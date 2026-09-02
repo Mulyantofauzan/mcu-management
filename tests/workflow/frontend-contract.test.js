@@ -383,6 +383,14 @@ test('follow-up path submits evidence without a petugas medical result', () => {
   assert.match(source, /Bukti follow-up dikirim untuk review dokter/);
 });
 
+test('follow-up page exposes actionable legacy rows without fake referrals', () => {
+  const source = read('mcu-management/js/pages/follow-up.js');
+
+  assert.match(source, /\['followup_required', 'approved_legacy'\]\.includes/);
+  assert.match(source, /employeeName: row\.employee\?\.name/);
+  assert.match(source, /const referralButton = mcu\.currentShareCycleId/);
+});
+
 test('analytics pages use the centralized eligibility service', () => {
   const service = read('mcu-management/js/services/analyticsEligibilityService.js');
   assert.match(service, /v_analytics_eligible_current/);
@@ -409,6 +417,22 @@ test('doctor review exposes clinical evidence and post-approval sharing', () => 
   assert.match(source, /downloadFile/);
   assert.match(source, /shareApprovedReview/);
   assert.match(source, /Bagikan ke WhatsApp/);
+});
+
+test('doctor history is employee-named and final decisions are read-only', () => {
+  const page = read('mcu-management/pages/validasi-mcu.html');
+  const source = read('mcu-management/js/pages/validasi-mcu.js');
+  const whatsapp = read('mcu-management/js/utils/whatsappShare.js');
+
+  assert.match(source, /employee\.name \|\| employeeId \|\| item\.mcu_id/);
+  assert.match(source, /data-review-cycle/);
+  assert.match(source, /state\.selectedReviewCycleId/);
+  assert.match(source, /Keputusan final hanya dapat dilihat/);
+  assert.match(source, /\$\('#medical-result'\)\.disabled = true/);
+  assert.match(source, /\$\('#approve-review'\)\.disabled = true/);
+  assert.match(page, /id="share-review"/);
+  assert.match(whatsapp, /requestedCycleId/);
+  assert.match(whatsapp, /requested\?\.decision !== 'approved'/);
 });
 
 test('new workflow pages do not use raw browser alerts', () => {

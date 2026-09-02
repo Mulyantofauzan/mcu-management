@@ -446,10 +446,12 @@ window.loadFollowUpList = async function({ throwOnError = false } = {}) {
     if (workflowEnabled) {
       const queue = await workflowService.petugasQueue();
       followUpList = queue
-        .filter(row => row.workflow_status === 'followup_required')
+        .filter(row => ['followup_required', 'approved_legacy'].includes(row.workflow_status))
         .map(row => ({
           mcuId: row.mcu_id,
           employeeId: row.employee_id,
+          employeeName: row.employee?.name,
+          employeeDepartment: row.employee?.department,
           mcuType: row.mcu_type,
           mcuDate: row.mcu_date,
           initialResult: row.current_medical_result,
@@ -539,26 +541,28 @@ function renderTable() {
 
   paginatedList.forEach(mcu => {
     const employee = employees.find(e => e.employeeId === mcu.employeeId);
-    if (!employee) return;
-
-    const dept = departments.find(d => d.id === employee.departmentId);
+    const dept = departments.find(d => d.id === employee?.departmentId);
+    const employeeName = employee?.name || mcu.employeeName || mcu.employeeId;
+    const departmentName = dept?.name || mcu.employeeDepartment || '-';
 
     // Get initial notes and truncate if too long
     const notes = (mcu.initialNotes || '');
     const displayNotes = notes.length > 100 ? notes.substring(0, 100) + '...' : notes || '-';
 
     html += '<tr>';
-    html += `<td><span class="font-medium text-gray-900">${employee.name}</span></td>`;
-    html += `<td><span class="text-sm text-gray-600">${employee.employeeId}</span></td>`;
-    html += `<td>${dept?.name || '-'}</td>`;
+    html += `<td><span class="font-medium text-gray-900">${employeeName}</span></td>`;
+    html += `<td><span class="text-sm text-gray-600">${mcu.employeeId}</span></td>`;
+    html += `<td>${departmentName}</td>`;
     html += `<td>${formatDateDisplay(mcu.mcuDate)}</td>`;
     html += `<td><span class="badge badge-warning">${mcu.initialResult}</span></td>`;
     html += `<td title="${notes}"><span class="text-xs text-gray-600" style="display: block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayNotes}</span></td>`;
+    const referralButton = mcu.currentShareCycleId ? `
+        <button onclick="downloadWorkflowReferralAction('${mcu.mcuId}')" class="btn btn-sm btn-secondary" title="Download Surat Rujukan" style="padding: 0.375rem 0.75rem; background-color: #3b82f6; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
+          📄 Rujukan
+        </button>` : '';
     html += `<td>
       <div class="flex gap-2">
-        <button onclick="${workflowEnabled ? 'downloadWorkflowReferralAction' : 'downloadRujukanPDFAction'}('${mcu.mcuId}')" class="btn btn-sm btn-secondary" title="Download Surat Rujukan" style="padding: 0.375rem 0.75rem; background-color: #3b82f6; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
-          📄 Rujukan
-        </button>
+        ${workflowEnabled ? referralButton : `<button onclick="downloadRujukanPDFAction('${mcu.mcuId}')" class="btn btn-sm btn-secondary" title="Download Surat Rujukan" style="padding: 0.375rem 0.75rem; background-color: #3b82f6; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">📄 Rujukan</button>`}
         <button onclick="openFollowUpModal('${mcu.mcuId}')" class="btn btn-sm btn-primary">
           Update
         </button>

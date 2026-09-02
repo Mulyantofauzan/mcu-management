@@ -1,7 +1,9 @@
 {
-  "version": "1.2.17",
-  "releaseDate": "2026-09-01",
+  "version": "1.2.18",
+  "releaseDate": "2026-09-02",
   "features": [
+    "Actionable legacy Follow-Up and Temporary Unfit records in the Petugas workflow",
+    "Employee-named read-only Doctor review history with cycle-aware WhatsApp sharing",
     "Petugas read-only access to MCU expired and warning lists",
     "Petugas MCU editing before Doctor review or after correction requests",
     "WhatsApp share opens with an encoded review summary without clipboard permission",

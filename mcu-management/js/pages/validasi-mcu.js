@@ -3,7 +3,7 @@ import { workflowService } from '../services/workflowService.js';
 import { downloadFile } from '../services/supabaseStorageService.js';
 import { workflowIdempotency } from '../utils/workflowIdempotency.js';
 import { ensureWorkflowAlerts, presentWorkflowError } from '../utils/workflowErrorPresenter.js';
-import { shareApprovedReview } from '../utils/whatsappShare.js';
+import { approvedCycle, shareApprovedReview } from '../utils/whatsappShare.js';
 
 const state = {
   tab: new URLSearchParams(window.location.search).get('tab') || 'pending',
@@ -12,6 +12,7 @@ const state = {
   historyLoaded: false,
   ready: false,
   detail: null,
+  selectedReviewCycleId: null,
   leaseTimer: null
 };
 
@@ -82,7 +83,10 @@ function renderList() {
     ? historyRow(item)
     : queueRow(item)).join('');
   document.querySelectorAll('[data-open-mcu]').forEach(button => {
-    button.addEventListener('click', () => openDetail(button.dataset.openMcu));
+    button.addEventListener('click', () => openDetail(
+      button.dataset.openMcu,
+      button.dataset.reviewCycle || null
+    ));
   });
 }
 
@@ -98,12 +102,14 @@ function queueRow(item) {
 }
 
 function historyRow(item) {
+  const employee = item.employee || {};
+  const employeeId = item.employee_id || item.mcu?.employee_id;
   return `<article class="workflow-list-item">
-    <div><strong>${escapeHtml(item.mcu_id)}</strong><small>Siklus ${escapeHtml(item.cycle_number)}</small></div>
+    <div><strong>${escapeHtml(employee.name || employeeId || item.mcu_id)}</strong><small>${escapeHtml(employeeId)} · ${escapeHtml(item.mcu_id)} · Siklus ${escapeHtml(item.cycle_number)}</small></div>
     <div><strong>${escapeHtml(item.decision === 'approved' ? item.medical_result : 'Dikembalikan')}</strong><small>${escapeHtml(item.review_stage)}</small></div>
     <div><span class="workflow-status ${item.decision === 'approved' ? 'workflow-status-success' : 'workflow-status-danger'}">${escapeHtml(item.decision)}</span></div>
     <div><strong>${formatDate(item.finalized_at, true)}</strong><small>${escapeHtml(item.doctor_user_id)}</small></div>
-    <button type="button" class="workflow-btn" data-open-mcu="${escapeHtml(item.mcu_id)}">Lihat</button>
+    <button type="button" class="workflow-btn" data-open-mcu="${escapeHtml(item.mcu_id)}" data-review-cycle="${escapeHtml(item.id)}">Lihat</button>
   </article>`;
 }
 
@@ -248,6 +254,10 @@ function renderDetail() {
     <div><strong>Siklus ${escapeHtml(cycle.cycle_number)} · ${escapeHtml(cycle.decision)}</strong><small>${escapeHtml(cycle.medical_result || cycle.rejection_reason)}</small></div>
     <div><strong>${escapeHtml(cycle.doctorProfile?.professional_name || cycle.doctor_user_id)}</strong><small>${formatDate(cycle.finalized_at, true)}</small></div>
   </div>`).join('') : '<p class="workflow-meta">Belum ada keputusan sebelumnya.</p>';
+  const selectedCycle = cycles.find(cycle => cycle.id === state.selectedReviewCycleId) || null;
+  $('#medical-result').value = selectedCycle?.decision === 'approved' ? selectedCycle.medical_result || '' : '';
+  $('#clinical-notes').value = selectedCycle?.clinical_notes || '';
+  $('#rejection-reason').value = selectedCycle?.rejection_reason || '';
   updateClaimUi();
 }
 
@@ -267,16 +277,19 @@ async function setShareStatus(detail, nextStatus, failureReason = null) {
   return result;
 }
 
-async function shareCurrentApproval(mcuId) {
+async function shareCurrentApproval(mcuId, reviewCycleId = null) {
   const popup = window.open('about:blank', '_blank');
   if (popup) popup.opener = null;
   let detail;
+  let trackShareStatus = false;
   try {
     detail = await workflowService.reviewDetail(mcuId);
-    if (['not_started', 'failed'].includes(detail.mcu.current_share_status)) {
+    const cycle = approvedCycle(detail, reviewCycleId);
+    trackShareStatus = cycle?.id === detail.mcu.current_share_cycle_id;
+    if (trackShareStatus && ['not_started', 'failed'].includes(detail.mcu.current_share_status)) {
       await setShareStatus(detail, 'prepared');
     }
-    await shareApprovedReview(detail, popup);
+    await shareApprovedReview(detail, popup, reviewCycleId);
     const Swal = await ensureWorkflowAlerts();
     const confirmation = await Swal.fire({
       icon: 'question',
@@ -286,15 +299,15 @@ async function shareCurrentApproval(mcuId) {
       cancelButtonText: 'Belum',
       showCancelButton: true
     });
-    if (confirmation.isConfirmed && detail.mcu.current_share_status === 'prepared') {
+    if (trackShareStatus && confirmation.isConfirmed && detail.mcu.current_share_status === 'prepared') {
       await setShareStatus(detail, 'confirmed_by_user');
     }
   } catch (error) {
     popup?.close();
-    if (detail?.mcu?.current_share_status === 'prepared') {
+    if (trackShareStatus && detail?.mcu?.current_share_status === 'prepared') {
       await setShareStatus(detail, 'failed', 'Persiapan WhatsApp gagal di browser').catch(() => {});
     }
-    await presentWorkflowError(error, { retry: () => shareCurrentApproval(mcuId) });
+    await presentWorkflowError(error, { retry: () => shareCurrentApproval(mcuId, reviewCycleId) });
   }
 }
 
@@ -319,6 +332,36 @@ function ownsClaim() {
 
 function updateClaimUi() {
   const mcu = state.detail?.mcu;
+  const selectedCycle = state.detail?.cycles?.find(cycle => cycle.id === state.selectedReviewCycleId) || null;
+  const isHistory = Boolean(selectedCycle);
+  if (isHistory) {
+    clearInterval(state.leaseTimer);
+    $('#claim-review').hidden = false;
+    $('#claim-review').disabled = true;
+    $('#release-claim').hidden = false;
+    $('#release-claim').disabled = true;
+    $('#decision-form').hidden = false;
+    $('#medical-result').disabled = true;
+    $('#clinical-notes').readOnly = true;
+    $('#rejection-reason').readOnly = true;
+    $('#approve-review').disabled = true;
+    $('#reject-review').disabled = true;
+    $('#share-review').hidden = selectedCycle.decision !== 'approved';
+    $('#share-review').disabled = selectedCycle.decision !== 'approved';
+    $('#claim-message').hidden = false;
+    $('#claim-message').textContent = 'Keputusan final hanya dapat dilihat. Hasil review tidak dapat diubah.';
+    $('#claim-timer').textContent = '';
+    return;
+  }
+
+  $('#claim-review').disabled = false;
+  $('#release-claim').disabled = false;
+  $('#medical-result').disabled = false;
+  $('#clinical-notes').readOnly = false;
+  $('#rejection-reason').readOnly = false;
+  $('#approve-review').disabled = false;
+  $('#reject-review').disabled = false;
+  $('#share-review').hidden = true;
   const own = ownsClaim();
   const canClaim = ['pending_review', 'in_review'].includes(mcu?.workflow_status) && !own;
   $('#claim-review').hidden = !canClaim;
@@ -350,14 +393,18 @@ function updateClaimUi() {
   }
 }
 
-async function openDetail(mcuId) {
+async function openDetail(mcuId, reviewCycleId = null) {
   try {
     state.detail = await workflowService.reviewDetail(mcuId);
+    state.selectedReviewCycleId = reviewCycleId;
+    if (reviewCycleId && !state.detail.cycles?.some(cycle => cycle.id === reviewCycleId)) {
+      throw { code: 'WORKFLOW_NOT_FOUND', message: 'Siklus review tidak ditemukan.' };
+    }
     renderDetail();
     $('#review-overlay').hidden = false;
     document.body.style.overflow = 'hidden';
   } catch (error) {
-    await presentWorkflowError(error, { retry: () => openDetail(mcuId) });
+    await presentWorkflowError(error, { retry: () => openDetail(mcuId, reviewCycleId) });
   }
 }
 
@@ -366,6 +413,7 @@ function closeDetail() {
   $('#review-overlay').hidden = true;
   document.body.style.overflow = '';
   state.detail = null;
+  state.selectedReviewCycleId = null;
 }
 
 async function claimReview() {
@@ -505,6 +553,10 @@ $('#claim-review').addEventListener('click', claimReview);
 $('#release-claim').addEventListener('click', releaseClaim);
 $('#approve-review').addEventListener('click', () => submitDecision('approved'));
 $('#reject-review').addEventListener('click', () => submitDecision('rejected'));
+$('#share-review').addEventListener('click', () => shareCurrentApproval(
+  state.detail.mcu.mcu_id,
+  state.selectedReviewCycleId
+));
 $('#review-overlay').addEventListener('click', event => {
   if (event.target === $('#review-overlay')) closeDetail();
 });

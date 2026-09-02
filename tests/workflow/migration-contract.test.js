@@ -12,7 +12,8 @@ const migrationFiles = [
   'migrations/20260802_05_mcu_workflow_operations.sql',
   'migrations/20260802_06_mcu_followup_evidence.sql',
   'migrations/20260802_07_mcu_analytics_views.sql',
-  'migrations/20260825_01_admin_operational_access.sql'
+  'migrations/20260825_01_admin_operational_access.sql',
+  'migrations/20260902_01_legacy_followup_compatibility.sql'
 ];
 
 function read(relativePath) {
@@ -135,4 +136,15 @@ test('Administrator inherits Petugas database operations', () => {
   assert.match(access, /workflow_guard_mcus/);
   assert.match(access, /workflow_guard_raw_child/);
   assert.doesNotMatch(access, /doctor_decision|ARRAY\['Dokter', 'Admin'\]/);
+});
+
+test('legacy looping results can enter review without a fabricated cycle', () => {
+  const compatibility = read(migrationFiles[8]);
+
+  assert.match(compatibility, /ALTER COLUMN prior_review_cycle_id DROP NOT NULL/);
+  assert.match(compatibility, /workflow_status = 'approved_legacy'/);
+  assert.match(compatibility, /current_medical_result IN \('Follow-Up', 'Temporary Unfit'\)/);
+  assert.match(compatibility, /mcu_record\.workflow_status/);
+  assert.match(compatibility, /'legacyFollowup', is_legacy_followup/);
+  assert.doesNotMatch(compatibility, /INSERT INTO public\.mcu_review_cycles/);
 });

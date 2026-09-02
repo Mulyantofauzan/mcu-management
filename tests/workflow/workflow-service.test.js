@@ -127,7 +127,10 @@ test('Administrator badge counts only candidates ready for a joining decision', 
       data: [{ setting_key: 'mcu_approval_workflow_enabled', setting_value: true }],
       error: null
     }],
-    mcus: [{ data: [], error: null }],
+    mcus: [
+      { data: [], error: null },
+      { data: null, count: 2, error: null }
+    ],
     employees: [{ data: null, count: 3, error: null }]
   });
   const service = new WorkflowService(supabase);
@@ -135,6 +138,7 @@ test('Administrator badge counts only candidates ready for a joining decision', 
   const result = await service.getBootstrap({ role: 'Admin' });
 
   assert.equal(result.counts.joining, 3);
+  assert.equal(result.counts.followup, 2);
   assert.ok(calls.some(call => call.table === 'employees'
     && call.method === 'select'
     && call.args[0].includes('mcus!inner')));
@@ -145,6 +149,81 @@ test('Administrator badge counts only candidates ready for a joining decision', 
   assert.ok(calls.some(call => call.table === 'employees'
     && call.method === 'in'
     && call.args[0] === 'mcus.current_medical_result'));
+});
+
+test('Petugas queue includes actionable legacy follow-up and enriches employees', async () => {
+  const current = {
+    mcu_id: 'MCU-NEW',
+    employee_id: 'EMP-1',
+    workflow_status: 'followup_required',
+    updated_at: '2026-09-01T00:00:00Z'
+  };
+  const legacy = {
+    mcu_id: 'MCU-OLD',
+    employee_id: 'EMP-2',
+    workflow_status: 'approved_legacy',
+    current_medical_result: 'Temporary Unfit',
+    updated_at: '2026-09-02T00:00:00Z'
+  };
+  const { supabase, calls } = queryFixture({
+    mcus: [
+      { data: [current], error: null },
+      { data: [legacy], error: null }
+    ],
+    employees: [{
+      data: [
+        { employee_id: 'EMP-1', name: 'Baru' },
+        { employee_id: 'EMP-2', name: 'Legacy' }
+      ],
+      error: null
+    }]
+  });
+  const service = new WorkflowService(supabase);
+
+  const result = await service.getPetugasQueue();
+
+  assert.deepEqual(result.map(row => row.mcu_id), ['MCU-NEW', 'MCU-OLD']);
+  assert.equal(result[1].employee.name, 'Legacy');
+  assert.ok(calls.some(call => call.table === 'mcus'
+    && call.method === 'eq'
+    && call.args[0] === 'workflow_status'
+    && call.args[1] === 'approved_legacy'));
+  assert.ok(calls.some(call => call.table === 'mcus'
+    && call.method === 'in'
+    && call.args[0] === 'current_medical_result'));
+});
+
+test('review history enriches names without per-row employee queries', async () => {
+  const { supabase, calls } = queryFixture({
+    mcu_review_cycles: [{
+      data: [
+        { id: 'CYCLE-1', mcu_id: 'MCU-1', decision: 'approved' },
+        { id: 'CYCLE-2', mcu_id: 'MCU-2', decision: 'approved' }
+      ],
+      error: null
+    }],
+    mcus: [{
+      data: [
+        { mcu_id: 'MCU-1', employee_id: 'EMP-1' },
+        { mcu_id: 'MCU-2', employee_id: 'EMP-2' }
+      ],
+      error: null
+    }],
+    employees: [{
+      data: [
+        { employee_id: 'EMP-1', name: 'Satu' },
+        { employee_id: 'EMP-2', name: 'Dua' }
+      ],
+      error: null
+    }]
+  });
+  const service = new WorkflowService(supabase);
+
+  const result = await service.getReviewHistory();
+
+  assert.equal(result[0].employee.name, 'Satu');
+  assert.equal(result[1].employee_id, 'EMP-2');
+  assert.equal(calls.filter(call => call.table === 'employees' && call.method === 'select').length, 1);
 });
 
 test('waiting pagination counts only candidates with terminal MCU records', async () => {

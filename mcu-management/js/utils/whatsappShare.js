@@ -17,16 +17,22 @@ function formatDate(value, withTime = false) {
   }).format(date);
 }
 
-export function approvedCycle(detail) {
+export function approvedCycle(detail, requestedCycleId = null) {
+  const requested = (detail?.cycles || []).find(cycle => cycle.id === requestedCycleId);
+  if (requestedCycleId && requested?.decision !== 'approved') return null;
+  if (requested?.decision === 'approved' && !LOOPING_RESULTS.includes(requested.medical_result)) {
+    return requested;
+  }
   const cycleId = detail?.mcu?.current_share_cycle_id;
   return (detail?.cycles || []).find(cycle => cycle.id === cycleId)
     || [...(detail?.cycles || [])].reverse().find(cycle => cycle.decision === 'approved')
+    || (requested?.decision === 'approved' ? requested : null)
     || null;
 }
 
-export function buildApprovedSummary(detail) {
+export function buildApprovedSummary(detail, requestedCycleId = null) {
   const { employee = {}, mcu = {} } = detail || {};
-  const cycle = approvedCycle(detail);
+  const cycle = approvedCycle(detail, requestedCycleId);
   if (!cycle || cycle.decision !== 'approved') {
     throw new WorkflowApiError({
       code: 'WORKFLOW_INVALID_TRANSITION',
@@ -62,9 +68,9 @@ async function downloadReferral(reviewCycleId) {
   link.remove();
 }
 
-export async function shareApprovedReview(detail, whatsappWindow) {
-  const cycle = approvedCycle(detail);
-  const summary = buildApprovedSummary(detail);
+export async function shareApprovedReview(detail, whatsappWindow, requestedCycleId = null) {
+  const cycle = approvedCycle(detail, requestedCycleId);
+  const summary = buildApprovedSummary(detail, requestedCycleId);
   if (!whatsappWindow || whatsappWindow.closed) {
     throw new WorkflowApiError({
       code: 'WORKFLOW_WHATSAPP_FAILED',
