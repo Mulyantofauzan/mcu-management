@@ -24,7 +24,7 @@ const ACTION_ROLES = Object.freeze({
   'save-doctor-profile': ['Dokter'],
   'create-signature-upload': ['Dokter'],
   'confirm-signature-upload': ['Dokter'],
-  'regenerate-referral': ['Admin', 'Dokter'],
+  'regenerate-referral': ['Admin', 'Petugas', 'Dokter'],
   'update-expiry-setting': ['Admin'],
   'set-feature-flag': ['Admin']
 });

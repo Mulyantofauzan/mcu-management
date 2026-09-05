@@ -260,20 +260,21 @@ test('Administrator can use Petugas MCU entry and follow-up forms', () => {
   });
 });
 
-test('Petugas can view MCU expiry without Administrator settings access', () => {
+test('Admin and Petugas share fixed-duration MCU expiry view', () => {
   const sidebar = read('mcu-management/js/sidebar-manager.js');
   const page = read('mcu-management/pages/mcu-expiry-management.html');
   const source = read('mcu-management/js/pages/mcu-expiry-management.js');
-  const authorization = read('server/workflow/authorization.js');
+  const dashboard = read('mcu-management/js/pages/dashboard.js');
 
   assert.match(sidebar, /Petugas:\s*\[[\s\S]*mcu-expiry-management\.html'[\s\S]*label: 'MCU Expired'/);
+  assert.match(sidebar, /Admin:\s*\[[\s\S]*mcu-expiry-management\.html'[\s\S]*label: 'MCU Expired'/);
   assert.match(source, /\['Admin', 'Petugas'\]\.includes\(user\?\.role\)/);
-  assert.match(page, /data-lifecycle-region="expiry-setting"[^>]*class="[^"]*hidden|class="[^"]*hidden[^"]*"[^>]*data-lifecycle-region="expiry-setting"/);
-  assert.match(source, /settingRegion\?\.classList\.toggle\('hidden', !this\.isAdmin\)/);
-  assert.match(source, /if \(this\.isAdmin\) \{[\s\S]*loadTasks\.push\(this\.loadExpirySetting\(\)\)/);
-  assert.match(authorization, /settings: \['Admin'\]/);
-  assert.match(authorization, /'expiry-preview': \['Admin'\]/);
-  assert.match(authorization, /'update-expiry-setting': \['Admin'\]/);
+  assert.match(page, /MCU berlaku 12 bulan dan Surat Sehat berlaku 3 bulan/);
+  assert.match(page, /Jenis Dokumen/);
+  assert.match(page, /Berlaku Sampai/);
+  assert.match(dashboard, /'Surat Sehat': 0/);
+  assert.doesNotMatch(page, /expiry-months-input|Preview Dampak/);
+  assert.doesNotMatch(source, /loadExpirySetting|update-expiry-setting/);
 });
 
 test('Petugas MCU edit is limited to pending review and requested correction', () => {
@@ -366,6 +367,12 @@ test('correction and periodic MCU paths submit raw data for doctor review', () =
   assert.match(page, /edit-medical-result-section/);
 });
 
+test('doctor review submission requires an active MCU attachment', () => {
+  const service = read('server/workflow/workflowService.js');
+  assert.match(service, /from\('mcufiles'\)[\s\S]{0,240}count: 'exact', head: true/);
+  assert.match(service, /Minimal satu dokumen MCU wajib diunggah/);
+});
+
 test('inactive employee toggle anchors to the filter card', () => {
   const source = read('mcu-management/js/pages/kelola-karyawan.js');
   assert.match(source, /getElementById\('filter-department'\)\?\.closest\('\.card'\)/);
@@ -379,16 +386,22 @@ test('follow-up path submits evidence without a petugas medical result', () => {
   assert.match(source, /evidenceNotes: followUpData\.evidenceNotes/);
   assert.match(source, /attachmentFileIds:[\s\S]{0,180}result\.fileId/);
   assert.doesNotMatch(source, /attachmentFileIds: \[\]/);
+  assert.match(source, /mcuTypeField\.disabled = true/);
   assert.match(source, /if \(!workflowEnabled\)[\s\S]{0,500}mergedUpdateData\.finalResult/);
   assert.match(source, /Bukti follow-up dikirim untuk review dokter/);
 });
 
 test('follow-up page exposes actionable legacy rows without fake referrals', () => {
   const source = read('mcu-management/js/pages/follow-up.js');
+  const authorization = read('server/workflow/authorization.js');
 
   assert.match(source, /\['followup_required', 'approved_legacy'\]\.includes/);
   assert.match(source, /employeeName: row\.employee\?\.name/);
   assert.match(source, /const referralButton = mcu\.currentShareCycleId/);
+  assert.match(source, /error\?\.code !== 'WORKFLOW_NOT_FOUND'/);
+  assert.match(source, /workflowService\.mutate\('regenerate-referral'/);
+  assert.match(source, /workflowService\.get\('download-referral'/);
+  assert.match(authorization, /'regenerate-referral': \['Admin', 'Petugas', 'Dokter'\]/);
 });
 
 test('analytics pages use the centralized eligibility service', () => {

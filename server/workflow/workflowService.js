@@ -493,6 +493,18 @@ class WorkflowService {
 
   async submitReview(payload, user, requestId) {
     requireFields(payload, ['mcuId', 'expectedVersion', 'idempotencyKey']);
+    const { count } = await this.query(
+      this.supabase
+        .from('mcufiles')
+        .select('fileid', { count: 'exact', head: true })
+        .eq('mcuid', payload.mcuId)
+        .is('deletedat', null)
+    );
+    if (!count) {
+      throw new WorkflowError(WORKFLOW_ERROR_CODES.VALIDATION_FAILED, {
+        message: 'Minimal satu dokumen MCU wajib diunggah sebelum dikirim ke Dokter.'
+      });
+    }
     return this.rpc('workflow_submit_review', {
       p_mcu_id: payload.mcuId,
       p_actor_user_id: user.userId,

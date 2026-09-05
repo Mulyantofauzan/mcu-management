@@ -6,8 +6,6 @@
 import { authService } from '../services/authService.js';
 import { initSidebar } from '../utils/sidebarInit.js';
 import { mcuExpiryService } from '../services/mcuExpiryService.js';
-import { workflowService } from '../services/workflowService.js';
-import { workflowIdempotency } from '../utils/workflowIdempotency.js';
 import { ensureWorkflowAlerts, presentWorkflowError } from '../utils/workflowErrorPresenter.js';
 
 const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
@@ -23,10 +21,6 @@ class MCUExpiryManagementPage {
     this.filterStatus = '';
     this.sortBy = 'days'; // 'days' or 'status'
     this.allDepartments = [];
-    this.expirySettingVersion = null;
-    this.preview = null;
-    this.actionsBound = false;
-    this.isAdmin = false;
   }
 
   async initialize() {
@@ -44,7 +38,6 @@ class MCUExpiryManagementPage {
         window.location.href = '../index.html';
         return;
       }
-      this.isAdmin = user.role === 'Admin';
       if (user) {
         const displayName = user?.displayName || 'User';
         const role = user?.role || 'Petugas';
@@ -58,115 +51,18 @@ class MCUExpiryManagementPage {
       // Sidebar must not delay the primary data.
       void initSidebar().catch(() => {});
 
-      const settingRegion = document.querySelector('[data-lifecycle-region="expiry-setting"]');
-      settingRegion?.classList.toggle('hidden', !this.isAdmin);
-
-      const loadTasks = [this.loadExpiryData()];
-      if (this.isAdmin) {
-        this.bindExpirySettingActions();
-        loadTasks.push(this.loadExpirySetting());
-      } else {
-        pageLifecycle()?.setReady('expiry-setting');
-      }
-      await Promise.all(loadTasks);
+      await this.loadExpiryData();
       pageLifecycle()?.markInteractive();
 
       // Mark page as initialized
       document.body.classList.add('initialized');
     } catch (error) {
       pageLifecycle()?.setError('expiry-data', error, () => this.initialize());
-      if (this.isAdmin) pageLifecycle()?.setError('expiry-setting', error, () => this.initialize());
       await presentWorkflowError({
         code: error?.code || 'WORKFLOW_INTERNAL_ERROR',
-        message: error?.message || 'Halaman pengaturan MCU gagal dimuat.'
+        message: error?.message || 'Halaman masa berlaku MCU gagal dimuat.'
       }, { retry: () => this.initialize() });
       document.body.classList.add('initialized');
-    }
-  }
-
-  async loadExpirySetting() {
-    pageLifecycle()?.setLoading('expiry-setting', { retry: () => this.loadExpirySetting() });
-    try {
-      const settings = await workflowService.settings();
-      const row = settings.settings.find(item => item.setting_key === 'mcu_expiry_months');
-      this.expirySettingVersion = row?.version ?? null;
-      document.getElementById('expiry-months-input').value = settings.expiryMonths;
-      this.preview = null;
-      document.getElementById('expiry-impact-preview').classList.add('hidden');
-      document.getElementById('apply-expiry-button').disabled = true;
-      pageLifecycle()?.setReady('expiry-setting');
-    } catch (error) {
-      pageLifecycle()?.setError('expiry-setting', error, () => this.loadExpirySetting());
-      await presentWorkflowError(error, { retry: () => this.loadExpirySetting() });
-    }
-  }
-
-  bindExpirySettingActions() {
-    if (this.actionsBound) return;
-    this.actionsBound = true;
-    document.getElementById('preview-expiry-button')?.addEventListener('click', () => this.previewExpiryImpact());
-    document.getElementById('apply-expiry-button')?.addEventListener('click', () => this.applyExpirySetting());
-    document.getElementById('expiry-months-input')?.addEventListener('input', () => {
-      this.preview = null;
-      document.getElementById('apply-expiry-button').disabled = true;
-      document.getElementById('expiry-impact-preview').classList.add('hidden');
-    });
-  }
-
-  readExpiryMonths() {
-    const value = Number(document.getElementById('expiry-months-input').value);
-    if (!Number.isInteger(value) || value < 1 || value > 120) {
-      throw { code: 'WORKFLOW_VALIDATION_FAILED', message: 'Ambang harus berupa 1 sampai 120 bulan.' };
-    }
-    return value;
-  }
-
-  async previewExpiryImpact() {
-    try {
-      const months = this.readExpiryMonths();
-      this.preview = await workflowService.expiryPreview(months);
-      document.getElementById('impact-eligible').textContent = this.preview.proposedEligible;
-      document.getElementById('impact-entering').textContent = this.preview.entering;
-      document.getElementById('impact-leaving').textContent = this.preview.leaving;
-      document.getElementById('impact-no-mcu').textContent = this.preview.noMcu;
-      document.getElementById('expiry-impact-preview').classList.remove('hidden');
-      document.getElementById('apply-expiry-button').disabled = months === this.preview.currentMonths;
-    } catch (error) {
-      await presentWorkflowError(error, { retry: () => this.previewExpiryImpact() });
-    }
-  }
-
-  async applyExpirySetting() {
-    if (!this.preview || this.expirySettingVersion === null) return;
-    const months = this.readExpiryMonths();
-    const Swal = await ensureWorkflowAlerts();
-    const confirmation = await Swal.fire({
-      icon: 'question',
-      title: 'Terapkan Ambang Baru?',
-      text: `${this.preview.entering} masuk dan ${this.preview.leaving} keluar dari analitik.`,
-      showCancelButton: true,
-      confirmButtonText: 'Terapkan',
-      cancelButtonText: 'Batal'
-    });
-    if (!confirmation.isConfirmed) return;
-
-    const scope = `update-expiry:${this.expirySettingVersion}:${months}`;
-    try {
-      await workflowService.mutate('update-expiry-setting', {
-        expectedVersion: this.expirySettingVersion,
-        expiryMonths: months,
-        idempotencyKey: workflowIdempotency.get(scope)
-      }, scope);
-      workflowIdempotency.clear(scope);
-      await Swal.fire({ icon: 'success', title: 'Pengaturan Tersimpan', text: `Masa berlaku MCU: ${months} bulan.` });
-      mcuExpiryService.invalidateCache();
-      await this.loadExpiryData();
-      await this.loadExpirySetting();
-    } catch (error) {
-      await presentWorkflowError(error, {
-        retry: () => this.applyExpirySetting(),
-        reload: () => this.loadExpirySetting()
-      });
     }
   }
 
@@ -244,7 +140,7 @@ class MCUExpiryManagementPage {
     const pageData = this.getSearchedData().slice(startIdx, endIdx);
 
     if (pageData.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="9" class="px-6 py-4 text-center text-gray-500">Tidak ada data</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" class="px-6 py-4 text-center text-gray-500">Tidak ada data</td></tr>';
       this.updatePagination();
       return;
     }
@@ -253,6 +149,7 @@ class MCUExpiryManagementPage {
       const rowNumber = startIdx + idx + 1;
       const statusBadge = mcuExpiryService.getStatusBadge(emp.expiryStatus);
       const lastMCUDate = emp.lastMCUDate ? mcuExpiryService.formatDate(emp.lastMCUDate) : '-';
+      const expiryDate = emp.expiryDate ? mcuExpiryService.formatDate(emp.expiryDate) : '-';
       const daysLeftText = emp.daysLeft !== null ? emp.daysLeft : '-';
 
       return `
@@ -262,7 +159,9 @@ class MCUExpiryManagementPage {
           <td class="px-6 py-4 font-medium text-gray-900">${emp.name}</td>
           <td class="px-6 py-4 text-gray-600">${emp.department}</td>
           <td class="px-6 py-4 text-gray-600">${emp.job_title}</td>
+          <td class="px-6 py-4 text-gray-600">${emp.documentType || '-'}</td>
           <td class="px-6 py-4 text-gray-600">${lastMCUDate}</td>
+          <td class="px-6 py-4 text-gray-600">${expiryDate}</td>
           <td class="px-6 py-4 font-semibold ${emp.expiryStatus === 'EXPIRED' ? 'text-red-600' : 'text-yellow-600'}">
             ${daysLeftText} ${emp.daysLeft !== null && emp.daysLeft > 0 ? 'hari' : emp.daysLeft === 0 ? 'hari' : emp.daysLeft < 0 ? 'hari' : 'hari'}
           </td>
@@ -443,12 +342,13 @@ window.exportToCSV = async function() {
     }
 
     // Create CSV header
-    const headers = ['No', 'ID Karyawan', 'Nama', 'Departemen', 'Jabatan', 'MCU Terakhir', 'Hari Tersisa', 'Status'];
+    const headers = ['No', 'ID Karyawan', 'Nama', 'Departemen', 'Jabatan', 'Jenis Dokumen', 'Tanggal Pemeriksaan', 'Berlaku Sampai', 'Hari Tersisa', 'Status'];
     const csvContent = [headers.join(',')];
 
     // Add data rows
     data.forEach((emp, idx) => {
       const lastMCUDate = emp.lastMCUDate ? mcuExpiryService.formatDate(emp.lastMCUDate) : '-';
+      const expiryDate = emp.expiryDate ? mcuExpiryService.formatDate(emp.expiryDate) : '-';
       const daysLeftText = emp.daysLeft !== null ? emp.daysLeft : '-';
       const row = [
         idx + 1,
@@ -456,7 +356,9 @@ window.exportToCSV = async function() {
         emp.name,
         emp.department || '-',
         emp.job_title || '-',
+        emp.documentType || '-',
         lastMCUDate,
+        expiryDate,
         daysLeftText,
         emp.expiryStatus
       ];

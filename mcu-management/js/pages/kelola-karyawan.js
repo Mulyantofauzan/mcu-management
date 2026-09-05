@@ -28,6 +28,12 @@ import { workflowService } from '../services/workflowService.js';
 import { workflowIdempotency } from '../utils/workflowIdempotency.js';
 import { ensureWorkflowAlerts, presentUploadError, presentWorkflowError } from '../utils/workflowErrorPresenter.js';
 import { createMcuFormReader } from '../utils/mcuFormReader.js';
+import {
+    applyMcuTypeMode,
+    hasFullMcuHistory,
+    isHealthCertificate,
+    normalizeMcuDataForType
+} from '../utils/mcuFormOrder.js';
 
 let employees = [];
 let filteredEmployees = [];
@@ -1175,6 +1181,7 @@ window.addMCUForEmployee = async function(employeeId) {
         // Set default date to today
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('mcu-date').value = today;
+        applyMcuTypeMode(addMcuForm, '');
 
         // Populate doctor dropdown
         populateDoctorDropdown('mcu-doctor');
@@ -1278,6 +1285,14 @@ window.handleAddMCU = async function(event) {
             mcuId: formMcuId,
             userId: widgetContext.userId
         });
+        const healthCertificate = isHealthCertificate(readField('mcu-type'));
+        if (healthCertificate) {
+            const employeeMcus = await mcuService.getByEmployee(uploadContext.employeeId);
+            if (hasFullMcuHistory(employeeMcus)) {
+                showToast('Karyawan dengan riwayat MCU tidak dapat diperpanjang memakai Surat Sehat.', 'error');
+                return;
+            }
+        }
 
         // ✅ FIX: Get doctor ID and convert to number (matching handleEditMCU logic)
         const doctorValue = readField('mcu-doctor');
@@ -1295,7 +1310,7 @@ window.handleAddMCU = async function(event) {
             return value || null;
         };
 
-        const mcuData = {
+        const mcuData = normalizeMcuDataForType({
             mcuId: uploadContext.mcuId,
             employeeId: uploadContext.employeeId,
             mcuType: readField('mcu-type'),
@@ -1335,7 +1350,7 @@ window.handleAddMCU = async function(event) {
             // ✅ Collect medical and family histories from Riwayat Kesehatan section
             medicalHistories: getMedicalHistoryData(),
             familyHistories: getFamilyHistoryData()
-        };
+        });
 
         // 🔍 DEBUG: Log the collected data BEFORE passing to batch service
         // Validate form data
@@ -1396,7 +1411,7 @@ window.handleAddMCU = async function(event) {
 
         // ✅ CRITICAL: Collect lab results for batch processing
         let labResults = [];
-        if (labResultWidgetAdd) {
+        if (!healthCertificate && labResultWidgetAdd) {
             labResults = labResultWidgetAdd.getAllLabResults() || [];
         }
 
@@ -2189,6 +2204,7 @@ window.editMCU = async function() {
                 document.getElementById('edit-mcu-id').dataset.employeeId = mcu.employeeId || '';
                 document.getElementById('edit-mcu-type').value = mcu.mcuType || '';
                 document.getElementById('edit-mcu-date').value = mcu.mcuDate || '';
+                applyMcuTypeMode(document.getElementById('edit-mcu-form'), mcu.mcuType);
 
                 // Fill examination fields - use explicit value assignment
                 const bioFields = {
@@ -2424,6 +2440,11 @@ window.handleEditMCU = async function(event) {
 
     try {
         uploadContext = fileUploadWidget.getUploadContext();
+        const existingMCU = await mcuService.getById(mcuId);
+        if (!existingMCU) {
+            showToast('MCU tidak ditemukan. Muat ulang data.', 'error');
+            return;
+        }
         if (!workflowStateKnown) {
             await presentWorkflowError({ code: 'WORKFLOW_NETWORK_ERROR', message: 'Status workflow belum dapat diverifikasi.' });
             return;
@@ -2462,7 +2483,20 @@ window.handleEditMCU = async function(event) {
             return value || null;
         };
 
-        const updateData = {
+        const healthCertificate = isHealthCertificate(document.getElementById('edit-mcu-type').value);
+        if (healthCertificate) {
+            if (!isHealthCertificate(existingMCU.mcuType)) {
+                showToast('MCU penuh tidak dapat diubah menjadi Surat Sehat.', 'error');
+                return;
+            }
+            const employeeMcus = await mcuService.getByEmployee(existingMCU.employeeId);
+            if (hasFullMcuHistory(employeeMcus, mcuId)) {
+                showToast('Karyawan dengan riwayat MCU tidak dapat diperpanjang memakai Surat Sehat.', 'error');
+                return;
+            }
+        }
+
+        const updateData = normalizeMcuDataForType({
             mcuType: document.getElementById('edit-mcu-type').value,
             mcuDate: document.getElementById('edit-mcu-date').value,
             bmi: document.getElementById('edit-mcu-bmi').value ? parseFloat(document.getElementById('edit-mcu-bmi').value) : null,
@@ -2497,7 +2531,7 @@ window.handleEditMCU = async function(event) {
             alasanRujuk: document.getElementById('edit-mcu-alasan').value || null,
             initialResult: document.getElementById('edit-mcu-initial-result').value,
             initialNotes: document.getElementById('edit-mcu-initial-notes').value
-        };
+        });
 
         if (workflowEnabled) {
             delete updateData.initialResult;
@@ -2564,7 +2598,7 @@ window.handleEditMCU = async function(event) {
 
         // Collect lab results if widget exists
         let labResults = [];
-        if (labResultWidgetEdit) {
+        if (!healthCertificate && labResultWidgetEdit) {
             // VALIDATION: Only validate if user has made changes to lab items
             if (labResultWidgetEdit.hasChanges()) {
                 const validationErrors = labResultWidgetEdit.validateAllFieldsFilled();
@@ -2585,9 +2619,6 @@ window.handleEditMCU = async function(event) {
             }));
 
         }
-
-        // ✅ Get existing MCU to compare and track field changes
-        const existingMCU = await mcuService.getById(mcuId);
 
         if (workflowEnabled) {
             const freshDetail = await requireEditableWorkflowDetail(mcuId);
@@ -2659,96 +2690,98 @@ window.handleEditMCU = async function(event) {
             }
         }
 
-        try {
-            // Collect updated histories from EDIT form FIRST (before deleting old ones)
-            const medicalHistories = getEditMedicalHistoryData();
-            const familyHistories = getEditFamilyHistoryData();
+        if (!healthCertificate) {
+            try {
+                // Collect updated histories from EDIT form FIRST (before deleting old ones)
+                const medicalHistories = getEditMedicalHistoryData();
+                const familyHistories = getEditFamilyHistoryData();
 
 
-            // Get existing histories for comparison
-            const existingMedicalHistories = await database.MedicalHistories.getByMcuId(mcuId);
-            const existingFamilyHistories = await database.FamilyHistories.getByMcuId(mcuId);
+                // Get existing histories for comparison
+                const existingMedicalHistories = await database.MedicalHistories.getByMcuId(mcuId);
+                const existingFamilyHistories = await database.FamilyHistories.getByMcuId(mcuId);
 
-            // Track medical history changes
-            const existingMedicalNames = existingMedicalHistories.map(h => h.disease_name || h.diseaseName);
-            const newMedicalNames = medicalHistories.map(h => h.disease_name);
+                // Track medical history changes
+                const existingMedicalNames = existingMedicalHistories.map(h => h.disease_name || h.diseaseName);
+                const newMedicalNames = medicalHistories.map(h => h.disease_name);
 
-            // Find added/removed medical histories
-            const addedMedical = newMedicalNames.filter(name => !existingMedicalNames.includes(name));
-            const removedMedical = existingMedicalNames.filter(name => !newMedicalNames.includes(name));
+                // Find added/removed medical histories
+                const addedMedical = newMedicalNames.filter(name => !existingMedicalNames.includes(name));
+                const removedMedical = existingMedicalNames.filter(name => !newMedicalNames.includes(name));
 
-            // Track family history changes
-            const existingFamilyKeys = existingFamilyHistories.map(h => `${h.disease_name || h.diseaseName}:${h.family_member || h.familyMember}`);
-            const newFamilyKeys = familyHistories.map(h => `${h.disease_name}:${h.family_member}`);
+                // Track family history changes
+                const existingFamilyKeys = existingFamilyHistories.map(h => `${h.disease_name || h.diseaseName}:${h.family_member || h.familyMember}`);
+                const newFamilyKeys = familyHistories.map(h => `${h.disease_name}:${h.family_member}`);
 
-            const addedFamily = newFamilyKeys.filter(key => !existingFamilyKeys.includes(key));
-            const removedFamily = existingFamilyKeys.filter(key => !newFamilyKeys.includes(key));
+                const addedFamily = newFamilyKeys.filter(key => !existingFamilyKeys.includes(key));
+                const removedFamily = existingFamilyKeys.filter(key => !newFamilyKeys.includes(key));
 
-            // Log added medical histories
-            for (const disease of addedMedical) {
-                historyChanges.push({
-                    fieldLabel: `Riwayat Penyakit (Ditambah): ${disease}`,
-                    fieldChanged: 'medicalHistory',
-                    oldValue: '-',
-                    newValue: disease
-                });
+                // Log added medical histories
+                for (const disease of addedMedical) {
+                    historyChanges.push({
+                        fieldLabel: `Riwayat Penyakit (Ditambah): ${disease}`,
+                        fieldChanged: 'medicalHistory',
+                        oldValue: '-',
+                        newValue: disease
+                    });
+                }
+
+                // Log removed medical histories
+                for (const disease of removedMedical) {
+                    historyChanges.push({
+                        fieldLabel: `Riwayat Penyakit (Dihapus): ${disease}`,
+                        fieldChanged: 'medicalHistory',
+                        oldValue: disease,
+                        newValue: '-'
+                    });
+                }
+
+                // Log added family histories
+                for (const familyKey of addedFamily) {
+                    historyChanges.push({
+                        fieldLabel: `Riwayat Penyakit Keluarga (Ditambah): ${familyKey}`,
+                        fieldChanged: 'familyHistory',
+                        oldValue: '-',
+                        newValue: familyKey
+                    });
+                }
+
+                // Log removed family histories
+                for (const familyKey of removedFamily) {
+                    historyChanges.push({
+                        fieldLabel: `Riwayat Penyakit Keluarga (Dihapus): ${familyKey}`,
+                        fieldChanged: 'familyHistory',
+                        oldValue: familyKey,
+                        newValue: '-'
+                    });
+                }
+
+                // Delete existing histories
+                await database.MedicalHistories.deleteByMcuId(mcuId);
+                await database.FamilyHistories.deleteByMcuId(mcuId);
+
+                // Save new histories
+                if (medicalHistories.length > 0) {
+                    const medicalHistoriesWithMcuId = medicalHistories.map(history => ({
+                        ...history,
+                        mcu_id: mcuId,
+                        mcuId: mcuId
+                    }));
+                    await database.MedicalHistories.create(medicalHistoriesWithMcuId);
+                }
+
+                if (familyHistories.length > 0) {
+                    const familyHistoriesWithMcuId = familyHistories.map(history => ({
+                        ...history,
+                        mcu_id: mcuId,
+                        mcuId: mcuId
+                    }));
+                    await database.FamilyHistories.create(familyHistoriesWithMcuId);
+                }
+            } catch (historyError) {
+                showToast('⚠️ Riwayat Kesehatan mungkin tidak tersimpan: ' + historyError.message, 'warning');
+                // Continue with MCU update even if history save fails
             }
-
-            // Log removed medical histories
-            for (const disease of removedMedical) {
-                historyChanges.push({
-                    fieldLabel: `Riwayat Penyakit (Dihapus): ${disease}`,
-                    fieldChanged: 'medicalHistory',
-                    oldValue: disease,
-                    newValue: '-'
-                });
-            }
-
-            // Log added family histories
-            for (const familyKey of addedFamily) {
-                historyChanges.push({
-                    fieldLabel: `Riwayat Penyakit Keluarga (Ditambah): ${familyKey}`,
-                    fieldChanged: 'familyHistory',
-                    oldValue: '-',
-                    newValue: familyKey
-                });
-            }
-
-            // Log removed family histories
-            for (const familyKey of removedFamily) {
-                historyChanges.push({
-                    fieldLabel: `Riwayat Penyakit Keluarga (Dihapus): ${familyKey}`,
-                    fieldChanged: 'familyHistory',
-                    oldValue: familyKey,
-                    newValue: '-'
-                });
-            }
-
-            // Delete existing histories
-            await database.MedicalHistories.deleteByMcuId(mcuId);
-            await database.FamilyHistories.deleteByMcuId(mcuId);
-
-            // Save new histories
-            if (medicalHistories.length > 0) {
-                const medicalHistoriesWithMcuId = medicalHistories.map(history => ({
-                    ...history,
-                    mcu_id: mcuId,
-                    mcuId: mcuId
-                }));
-                const result = await database.MedicalHistories.create(medicalHistoriesWithMcuId);
-            }
-
-            if (familyHistories.length > 0) {
-                const familyHistoriesWithMcuId = familyHistories.map(history => ({
-                    ...history,
-                    mcu_id: mcuId,
-                    mcuId: mcuId
-                }));
-                const result = await database.FamilyHistories.create(familyHistoriesWithMcuId);
-            }
-        } catch (historyError) {
-            showToast('⚠️ Riwayat Kesehatan mungkin tidak tersimpan: ' + historyError.message, 'warning');
-            // Continue with MCU update even if history save fails
         }
 
         // Calculate total save steps for edit: 1 for MCU + 1 for each lab result change

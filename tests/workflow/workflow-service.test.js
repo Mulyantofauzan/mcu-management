@@ -83,6 +83,36 @@ test('looping approval returns committed result even when referral fails', async
   assert.equal(result.document.status, 'failed');
 });
 
+test('MCU cannot enter doctor queue without an active attachment', async () => {
+  let rpcCalled = false;
+  const query = {
+    select() { return this; },
+    eq() { return this; },
+    is() { return this; },
+    then(resolve, reject) {
+      return Promise.resolve({ data: null, count: 0, error: null }).then(resolve, reject);
+    }
+  };
+  const service = new WorkflowService({
+    from: () => query,
+    rpc: async () => {
+      rpcCalled = true;
+      return { data: {}, error: null };
+    }
+  });
+
+  await assert.rejects(
+    service.submitReview({
+      mcuId: 'MCU-1',
+      expectedVersion: 0,
+      idempotencyKey: 'idem-attachment'
+    }, { userId: 'USR-1' }, 'REQ-1'),
+    error => error.code === 'WORKFLOW_VALIDATION_FAILED'
+      && /Minimal satu dokumen MCU/.test(error.message)
+  );
+  assert.equal(rpcCalled, false);
+});
+
 test('signature confirmation verifies private object before database mutation', async () => {
   const calls = [];
   const storage = {

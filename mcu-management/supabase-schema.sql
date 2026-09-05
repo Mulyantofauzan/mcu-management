@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS mcus (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     mcu_id VARCHAR(50) UNIQUE NOT NULL, -- Custom ID: MCU-YYYYMMDD-XXXX
     employee_id VARCHAR(50) NOT NULL REFERENCES employees(employee_id) ON DELETE CASCADE,
-    mcu_type VARCHAR(100) NOT NULL CHECK (mcu_type IN ('Pre-Employee', 'Annual', 'Khusus', 'Final')),
+    mcu_type VARCHAR(100) NOT NULL CHECK (mcu_type IN ('Pre-Employee', 'Annual', 'Khusus', 'Final', 'Surat Sehat')),
     mcu_date DATE NOT NULL,
 
     -- Examination results

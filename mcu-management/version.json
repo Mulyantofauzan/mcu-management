@@ -1,7 +1,12 @@
 {
-  "version": "1.2.19",
-  "releaseDate": "2026-09-03",
+  "version": "1.2.20",
+  "releaseDate": "2026-09-05",
   "features": [
+    "Fixed 12-month MCU and 3-month health-certificate validity from examination date",
+    "Reduced Surat Sehat form with full-MCU history protection",
+    "One-click referral regeneration and download for Petugas",
+    "State-aware MCU attachment deletion from R2 and database",
+    "Required MCU attachment before Doctor review submission",
     "Employee job title and department columns in cardiovascular assessment table and Excel export",
     "Actionable legacy Follow-Up and Temporary Unfit records in the Petugas workflow",
     "Employee-named read-only Doctor review history with cycle-aware WhatsApp sharing",

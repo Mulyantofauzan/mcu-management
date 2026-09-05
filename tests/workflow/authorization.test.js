@@ -69,3 +69,7 @@ test('Admin inherits Petugas operations but not Doctor decisions', () => {
     error => error.code === WORKFLOW_ERROR_CODES.FORBIDDEN
   );
 });
+
+test('Petugas can regenerate missing referral documents', () => {
+  assert.doesNotThrow(() => authorizeAction('regenerate-referral', { role: 'Petugas' }));
+});

@@ -64,7 +64,8 @@ class AnalyticsEligibilityService {
       daysLeft: row.days_left,
       expiryStatus: row.expiry_status,
       latestMCU: row.mcu_id ? { mcu_id: row.mcu_id, mcu_date: row.last_mcu_date } : null,
-      expiryMonths: row.expiry_months
+      expiryMonths: row.expiry_months,
+      documentType: row.document_type
     }));
   }
 }

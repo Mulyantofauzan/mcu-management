@@ -13,7 +13,8 @@ const migrationFiles = [
   'migrations/20260802_06_mcu_followup_evidence.sql',
   'migrations/20260802_07_mcu_analytics_views.sql',
   'migrations/20260825_01_admin_operational_access.sql',
-  'migrations/20260902_01_legacy_followup_compatibility.sql'
+  'migrations/20260902_01_legacy_followup_compatibility.sql',
+  'migrations/20260903_01_mcu_validity_and_health_certificate.sql'
 ];
 
 function read(relativePath) {
@@ -147,4 +148,18 @@ test('legacy looping results can enter review without a fabricated cycle', () =>
   assert.match(compatibility, /mcu_record\.workflow_status/);
   assert.match(compatibility, /'legacyFollowup', is_legacy_followup/);
   assert.doesNotMatch(compatibility, /INSERT INTO public\.mcu_review_cycles/);
+});
+
+test('MCU validity uses examination date and fixed duration by document type', () => {
+  const validity = read(migrationFiles[9]);
+
+  assert.match(validity, /'Pre-Employee', 'Annual', 'Khusus', 'Final', 'Surat Sehat'/);
+  assert.match(validity, /'Surat Sehat' THEN 3 ELSE 12/);
+  assert.match(validity, /CASE WHEN m\.mcu_type = 'Surat Sehat' THEN 1 ELSE 0 END/);
+  assert.match(validity, /m\.mcu_date DESC NULLS LAST/);
+  assert.match(validity, /MAKE_INTERVAL\(months => public\.workflow_mcu_validity_months\(m\.mcu_type\)\)/);
+  assert.match(validity, /m\.mcu_type AS document_type/);
+  assert.doesNotMatch(validity, /ORDER BY[\s\S]*COALESCE\(m\.activated_at/);
+  assert.match(validity, /history\.mcu_type <> 'Surat Sehat'/);
+  assert.match(validity, /Karyawan dengan riwayat MCU tidak dapat diperpanjang memakai Surat Sehat\./);
 });

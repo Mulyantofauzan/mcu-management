@@ -51,6 +51,59 @@ test('canonical order sorting is numeric and stable', async () => {
   ]);
 });
 
+test('Surat Sehat uses reduced form mode and restores required fields', async () => {
+  const moduleUrl = pathToFileURL(path.join(
+    root,
+    'mcu-management/js/utils/mcuFormOrder.js'
+  ));
+  const { applyMcuTypeMode, hasFullMcuHistory, normalizeMcuDataForType } = await import(moduleUrl.href);
+  const control = { required: true, dataset: {} };
+  const section = {
+    dataset: { mcuOrder: '40' },
+    classList: { hidden: false, toggle(name, state) { this[name] = state; } },
+    querySelectorAll: () => [control]
+  };
+  const form = {
+    dataset: {},
+    querySelectorAll: () => [section]
+  };
+
+  applyMcuTypeMode(form, 'Surat Sehat');
+  assert.equal(section.classList.hidden, true);
+  assert.equal(control.required, false);
+  assert.equal(form.dataset.mcuTypeMode, 'health-certificate');
+
+  applyMcuTypeMode(form, 'Annual');
+  assert.equal(section.classList.hidden, false);
+  assert.equal(control.required, true);
+  assert.equal(form.dataset.mcuTypeMode, 'full');
+
+  assert.equal(hasFullMcuHistory([{ mcuId: '1', mcuType: 'Surat Sehat' }]), false);
+  assert.equal(hasFullMcuHistory([{ mcuId: '1', mcuType: 'Annual' }]), true);
+  const normalized = normalizeMcuDataForType({
+    mcuType: 'Surat Sehat',
+    bmi: 22,
+    recipient: 'Dokter tujuan',
+    medicalHistories: [{}]
+  });
+  assert.equal(normalized.bmi, null);
+  assert.equal(normalized.recipient, 'Dokter tujuan');
+  assert.deepEqual(normalized.medicalHistories, []);
+});
+
+test('all complete MCU forms offer Surat Sehat', () => {
+  const pages = [
+    ['mcu-management/pages/tambah-karyawan.html', 1],
+    ['mcu-management/pages/kelola-karyawan.html', 2],
+    ['mcu-management/pages/follow-up.html', 1]
+  ];
+
+  pages.forEach(([file, expected]) => {
+    const source = read(file);
+    assert.equal((source.match(/value="Surat Sehat"/g) || []).length, expected, file);
+  });
+});
+
 test('reordering preserves unique field IDs in every complete form', () => {
   const forms = [
     ['mcu-management/pages/tambah-karyawan.html', 'mcu-form'],

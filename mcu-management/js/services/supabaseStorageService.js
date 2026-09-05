@@ -337,7 +337,7 @@ export async function deleteOrphanedFiles(results, contextOrEmployeeId, mcuId = 
 
 /**
  * Delete file by ID
- * Soft deletes the file (marks as deleted in database)
+ * Deletes the file from R2 and its database metadata when the MCU is editable.
  * @param {string} fileId - File ID to delete
  * @returns {Promise<Object>} Delete result
  */

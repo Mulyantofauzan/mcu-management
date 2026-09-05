@@ -17,6 +17,7 @@ import { tempFileStorage } from '../services/tempFileStorage.js';  // ✅ NEW: T
 import { workflowService } from '../services/workflowService.js';
 import { workflowIdempotency } from '../utils/workflowIdempotency.js';
 import { presentUploadError, presentWorkflowError } from '../utils/workflowErrorPresenter.js';
+import { applyMcuTypeMode, isHealthCertificate } from '../utils/mcuFormOrder.js';
 
 let followUpList = [];
 let filteredList = [];
@@ -618,9 +619,22 @@ window.downloadWorkflowReferralAction = async function(mcuId) {
   const mcu = followUpList.find(item => item.mcuId === mcuId);
   try {
     if (!mcu?.currentShareCycleId) throw new Error('Review cycle tidak tersedia');
-    const result = await workflowService.get('download-referral', {
-      reviewCycleId: mcu.currentShareCycleId
-    });
+    const reviewCycleId = mcu.currentShareCycleId;
+    let result;
+    try {
+      result = await workflowService.get('download-referral', { reviewCycleId });
+    } catch (error) {
+      if (error?.code !== 'WORKFLOW_NOT_FOUND') throw error;
+      const scope = `regenerate-referral:${reviewCycleId}`;
+      const generated = await workflowService.mutate('regenerate-referral', { reviewCycleId }, scope);
+      if (generated?.status !== 'ready') {
+        throw {
+          code: generated?.code || 'WORKFLOW_DOCUMENT_FAILED',
+          message: generated?.message || 'Surat rujukan belum dapat dibuat.'
+        };
+      }
+      result = await workflowService.get('download-referral', { reviewCycleId });
+    }
     const link = document.createElement('a');
     link.href = result.downloadUrl;
     link.download = result.fileName;
@@ -849,8 +863,12 @@ window.openMCUUpdateModal = async function(mcuId) {
     const mcuTypeField = document.getElementById('update-mcu-type');
     const mcuDateField = document.getElementById('update-mcu-date');
 
-    if (mcuTypeField) mcuTypeField.value = currentMCU.mcuType || '';
+    if (mcuTypeField) {
+      mcuTypeField.value = currentMCU.mcuType || '';
+      mcuTypeField.disabled = true;
+    }
     if (mcuDateField) mcuDateField.value = currentMCU.mcuDate ? currentMCU.mcuDate.split('T')[0] : '';
+    applyMcuTypeMode(document.getElementById('mcu-update-form'), currentMCU.mcuType);
 
     // Set Doctor dropdown
     const doctorField = document.getElementById('update-mcu-doctor');
@@ -1085,7 +1103,7 @@ window.handleDetailMCUUpdate = async function(event) {
 
     // Get lab results from widget (separate from updateData since they're stored separately)
     let labResults = [];
-    if (labResultWidgetUpdate) {
+    if (!isHealthCertificate(currentMCU?.mcuType) && labResultWidgetUpdate) {
       // ONLY validate if user has made changes to lab items
       // If user just editing other fields (e.g., tanggal), skip lab validation
       if (labResultWidgetUpdate.hasChanges()) {

@@ -19,6 +19,12 @@ import { workflowService } from '../services/workflowService.js';
 import { workflowIdempotency } from '../utils/workflowIdempotency.js';
 import { presentUploadError, presentWorkflowError } from '../utils/workflowErrorPresenter.js';
 import { createMcuFormReader } from '../utils/mcuFormReader.js';
+import {
+    applyMcuTypeMode,
+    hasFullMcuHistory,
+    isHealthCertificate,
+    normalizeMcuDataForType
+} from '../utils/mcuFormOrder.js';
 
 let searchResults = [];
 let jobTitles = [];
@@ -684,6 +690,7 @@ window.openAddMCUForEmployee = async function(employeeId) {
         // Set default date to today
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('mcu-date').value = today;
+        applyMcuTypeMode(addMcuForm, '');
 
         // Generate MCU ID upfront for file uploads
         generatedMCUIdForAdd = generateMCUId();
@@ -968,9 +975,18 @@ window.handleAddMCU = async function(event) {
             userId: widgetContext.userId
         });
 
+        const healthCertificate = isHealthCertificate(readField('mcu-type'));
+        if (healthCertificate) {
+            const employeeMcus = await mcuService.getByEmployee(uploadContext.employeeId);
+            if (hasFullMcuHistory(employeeMcus)) {
+                showToast('Karyawan dengan riwayat MCU tidak dapat diperpanjang memakai Surat Sehat.', 'error');
+                return;
+            }
+        }
+
         // ✅ CRITICAL: Validate lab results BEFORE saving MCU
         // Lab inputs are generated via JavaScript, not HTML form, so required attribute doesn't work
-        if (labResultWidget) {
+        if (!healthCertificate && labResultWidget) {
             const labValidationErrors = labResultWidget.validateAllFieldsFilled();
             if (labValidationErrors.length > 0) {
                 const errorMsg = 'Semua pemeriksaan lab harus diisi:\n' + labValidationErrors.join('\n');
@@ -1001,7 +1017,7 @@ window.handleAddMCU = async function(event) {
             return value || null;
         };
 
-        const mcuData = {
+        const mcuData = normalizeMcuDataForType({
             mcuId: uploadContext.mcuId,
             employeeId: uploadContext.employeeId,
             mcuType: readField('mcu-type'),
@@ -1041,7 +1057,7 @@ window.handleAddMCU = async function(event) {
             // Medical and Family History
             medicalHistories: getMedicalHistoryData(),
             familyHistories: getFamilyHistoryData()
-        };
+        });
 
         try {
             await tempFileStorage.waitForPending(mcuData.mcuId);
@@ -1095,7 +1111,7 @@ window.handleAddMCU = async function(event) {
 
         // ✅ CRITICAL: Collect lab results for batch processing
         let labResults = [];
-        if (labResultWidget) {
+        if (!healthCertificate && labResultWidget) {
             labResults = labResultWidget.getAllLabResults() || [];
         }
 

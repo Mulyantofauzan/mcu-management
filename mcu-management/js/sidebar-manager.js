@@ -35,7 +35,7 @@
       { page: 'keputusan-bergabung', file: 'keputusan-bergabung.html', label: 'Keputusan Bergabung', icon: 'decision', badge: 'joining' },
       { page: 'kelola-user', file: 'kelola-user.html', label: 'Kelola User', icon: 'users' },
       { page: 'activity-log', file: 'activity-log.html', label: 'Activity Log', icon: 'file' },
-      { page: 'mcu-expiry-management', file: 'mcu-expiry-management.html', label: 'Pengaturan MCU', icon: 'settings', legacyBadge: 'badge-mcu-expiry' },
+      { page: 'mcu-expiry-management', file: 'mcu-expiry-management.html', label: 'MCU Expired', icon: 'clock', legacyBadge: 'badge-mcu-expiry' },
       { group: 'reports', label: 'Laporan', icon: 'file', children: reports },
       { page: 'data-terhapus', file: 'data-terhapus.html', label: 'Data Terhapus', icon: 'trash' }
     ],
