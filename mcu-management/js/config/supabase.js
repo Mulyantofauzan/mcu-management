@@ -7,6 +7,21 @@
 
 // Import environment config to ensure credentials are loaded
 import { ENV, initializeEnv } from './envConfig.js';
+import { isSessionExpiredResponse, createBrowserSessionExpiryHandler } from '../utils/sessionExpiry.mjs';
+
+const handleSessionExpired = createBrowserSessionExpiryHandler();
+
+// Wraps fetch so an expired token sends the user to login instead of failing silently.
+async function sessionAwareFetch(input, init) {
+    const response = await fetch(input, init);
+    if (response.status === 401 && localStorage.getItem(ACCESS_TOKEN_KEY)) {
+        const body = await response.clone().json().catch(() => null);
+        if (isSessionExpiredResponse(response.status, body)) {
+            handleSessionExpired();
+        }
+    }
+    return response;
+}
 // Initialize env config synchronously (it may already be initialized)
 await initializeEnv();
 
@@ -27,6 +42,7 @@ function getSupabaseOptions() {
 
     return {
         global: {
+            fetch: sessionAwareFetch,
             headers: {
                 Authorization: `Bearer ${accessToken}`
             }
