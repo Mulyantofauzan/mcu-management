@@ -290,7 +290,7 @@
         // Initialize
         async function init() {
             try {
-                // Check auth
+                if (!authService.guardPage('activity-log')) return;
                 currentUser = await authService.getCurrentUser();
                 if (!currentUser) {
                     window.location.href = '../index.html';

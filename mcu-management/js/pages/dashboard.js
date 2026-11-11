@@ -46,15 +46,7 @@ const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
 async function init() {
   try {
     // Check auth - SECURITY: Require proper authentication
-    if (!authService.isAuthenticated()) {
-      window.location.href = 'pages/login.html';
-      return;
-    }
-
-    if (authService.isDoctor()) {
-      window.location.replace('pages/validasi-mcu.html');
-      return;
-    }
+    if (!authService.guardPage('dashboard')) return;
 
     // ✅ Initialize theme manager (light/dark mode) FIRST before rendering
     initThemeManager();

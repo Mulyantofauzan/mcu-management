@@ -321,10 +321,7 @@ function hideUploadLoading() {
 
 async function init() {
     try {
-        if (!authService.isAuthenticated()) {
-            window.location.href = 'login.html';
-            return;
-        }
+        if (!authService.guardPage('kelola-karyawan')) return;
 
         updateUserInfo();
         pageLifecycle()?.setLoading('employees-stats', { retry: init });

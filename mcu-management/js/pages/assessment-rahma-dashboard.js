@@ -921,7 +921,7 @@ export async function initAssessmentRahmaDAshboard() {
     try {
         await supabaseReady;
 
-        // Check auth
+        if (!authService.guardPage('assessment-rahma')) return;
         const user = await authService.getCurrentUser();
         if (!user) {
             window.location.replace('login.html');

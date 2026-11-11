@@ -303,10 +303,7 @@ window.downloadRujukanBalikAction = async function(employeeId) {
 async function init() {
   try {
     // Check auth
-    if (!authService.isAuthenticated()) {
-      window.location.href = 'login.html';
-      return;
-    }
+    if (!authService.guardPage('follow-up')) return;
 
     updateUserInfo();
     pageLifecycle()?.setLoading('followup-stats', { retry: init });

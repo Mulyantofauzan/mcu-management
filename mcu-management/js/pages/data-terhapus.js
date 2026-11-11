@@ -20,10 +20,7 @@ const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
 
 async function init() {
     try {
-        if (!authService.isAuthenticated()) {
-            window.location.href = 'login.html';
-            return;
-        }
+        if (!authService.guardPage('data-terhapus')) return;
 
         if (!authService.isAdmin()) {
             showToast('Hanya Admin yang dapat mengakses Data Terhapus', 'error');

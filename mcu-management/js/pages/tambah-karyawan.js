@@ -261,10 +261,7 @@ function hideUploadLoading() {
 
 async function init() {
     try {
-        if (!authService.isAuthenticated()) {
-            window.location.href = 'login.html';
-            return;
-        }
+        if (!authService.guardPage('tambah-karyawan')) return;
 
         updateUserInfo();
         pageLifecycle()?.setLoading('employee-input-support', { retry: init });

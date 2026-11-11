@@ -62,10 +62,7 @@ function hideSaveLoading() {
 async function init() {
     try {
         // Check auth - only Admin can access
-        if (!authService.isAuthenticated()) {
-            window.location.href = 'login.html';
-            return;
-        }
+        if (!authService.guardPage('kelola-user')) return;
 
         // Wait for sidebar to load before updating user info
 
@@ -393,7 +390,7 @@ window.deleteUser = async function(userId) {
     if (!confirmed) return;
 
     try {
-        await database.delete('users', userId);
+        await authService.deleteUser(userId);
 
         // ✅ FIX: Log user deletion activity
         const currentUser = authService.getCurrentUser();

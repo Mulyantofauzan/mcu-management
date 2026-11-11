@@ -272,10 +272,7 @@ async function correctDecision(employeeId) {
 }
 
 async function init() {
-  if (!authService.isAuthenticated()) {
-    window.location.href = 'login.html';
-    return;
-  }
+  if (!authService.guardPage('keputusan-bergabung')) return;
   try {
     const bootstrap = await workflowService.bootstrap();
     if (bootstrap.role !== 'Admin') {

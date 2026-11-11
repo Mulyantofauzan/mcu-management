@@ -5,6 +5,7 @@
 
 import { generateUserId } from '../utils/idGenerator.js';
 import { getCurrentTimestamp } from '../utils/dateHelpers.js';
+import { pageFromPath, resolveAccess } from '../utils/roleAccess.mjs';
 
 let databasePromise;
 const database = new Proxy({}, {
@@ -188,8 +189,45 @@ class AuthService {
     throw new Error(result?.error || 'Server login belum siap');
   }
 
+  /**
+   * User changes go through the server so password hashing and the
+   * "keep one active Admin" rules cannot be bypassed from the browser.
+   * Returns null only on a local dev machine without the API running.
+   */
+  async callUsersApi(payload) {
+    const token = this.getAccessToken();
+    if (!token) {
+      throw new Error('Sesi tidak valid. Silakan login kembali.');
+    }
+
+    const response = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.status === 404 && this.isLocalDevelopment()) {
+      return null;
+    }
+
+    const result = await response.json().catch(() => null);
+    if (!response.ok || !result?.success) {
+      throw new Error(result?.error || 'Permintaan ke server gagal');
+    }
+    return result.user;
+  }
+
+  shouldUseUsersApi() {
+    return !this.isLocalDevelopment() || Boolean(this.getAccessToken());
+  }
+
   async createUser(userData) {
-    // Hash password using Web Crypto API with salt
+    if (this.shouldUseUsersApi()) {
+      const created = await this.callUsersApi({ action: 'create', ...userData });
+      if (created) return created;
+    }
+
+    // Local development only: hash password using Web Crypto API with salt
     const passwordHash = await hashPassword(userData.password);
 
     const user = {
@@ -337,6 +375,30 @@ class AuthService {
     return true;
   }
 
+  /**
+   * Blocks the current page unless the signed-in role may open it.
+   * Returns true when the page may continue loading.
+   */
+  guardPage(page = pageFromPath(window.location.pathname)) {
+    const inPages = window.location.pathname.includes('/pages/');
+    const urlFor = target => {
+      if (target === 'login') return inPages ? 'login.html' : 'pages/login.html';
+      if (target === 'dashboard') return inPages ? '../index.html' : 'index.html';
+      return inPages ? `${target}.html` : `pages/${target}.html`;
+    };
+
+    if (!this.isAuthenticated()) {
+      window.location.replace(urlFor('login'));
+      return false;
+    }
+
+    const access = resolveAccess({ role: this.currentUser?.role, page });
+    if (access.allowed) return true;
+
+    window.location.replace(urlFor(access.redirectPage || 'login'));
+    return false;
+  }
+
   requireAdmin() {
     if (!this.isAdmin()) {
       throw new Error('Akses ditolak. Hanya Admin yang dapat melakukan aksi ini.');
@@ -353,6 +415,14 @@ class AuthService {
   }
 
   async updateUser(userId, updates) {
+    if (this.shouldUseUsersApi()) {
+      const { username, displayName, role, active, password } = updates;
+      const updated = await this.callUsersApi({
+        action: 'update', userId, username, displayName, role, active, password
+      });
+      if (updated) return updated;
+    }
+
     const updateData = { ...updates };
 
     // If password is being updated, hash it using Web Crypto API
@@ -371,17 +441,22 @@ class AuthService {
       throw new Error('Tidak dapat menghapus user yang sedang login');
     }
 
+    if (this.shouldUseUsersApi()) {
+      const removed = await this.callUsersApi({ action: 'delete', userId });
+      if (removed) return true;
+    }
+
     await database.delete('users', userId);
     return true;
   }
 
   async deactivateUser(userId) {
-    await database.update('users', userId, { active: false });
+    await this.updateUser(userId, { active: false });
     return true;
   }
 
   async activateUser(userId) {
-    await database.update('users', userId, { active: true });
+    await this.updateUser(userId, { active: true });
     return true;
   }
 }

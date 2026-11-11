@@ -122,10 +122,7 @@ async function uploadSignature() {
 }
 
 async function init() {
-  if (!authService.isAuthenticated()) {
-    window.location.href = 'login.html';
-    return;
-  }
+  if (!authService.guardPage('profil-dokter')) return;
   pageLifecycle()?.setLoading('doctor-profile', { retry: init });
   try {
     const bootstrap = await workflowService.bootstrap();

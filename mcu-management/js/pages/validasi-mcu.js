@@ -518,10 +518,7 @@ async function submitDecision(decision) {
 }
 
 async function init() {
-  if (!authService.isAuthenticated()) {
-    window.location.href = 'login.html';
-    return;
-  }
+  if (!authService.guardPage('validasi-mcu')) return;
   try {
     const bootstrap = await workflowService.bootstrap();
     if (bootstrap.role !== 'Dokter') {

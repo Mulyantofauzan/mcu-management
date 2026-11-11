@@ -35,7 +35,7 @@ export async function initAssessmentRAHMA() {
   try {
     await supabaseReady;
 
-    // Check authentication
+    if (!authService.guardPage('assessment-rahma')) return;
     const user = await authService.getCurrentUser();
     if (!user) {
       showToast('Anda harus login terlebih dahulu', 'error');

@@ -1,4 +1,8 @@
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
+
+const BCRYPT_ROUNDS = 10;
+const BCRYPT_PATTERN = /^\$2[aby]\$\d{2}\$.{53}$/;
 
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://madis.sabdamu.my.id'
@@ -186,17 +190,23 @@ async function readJsonBody(req) {
   return rawBody ? JSON.parse(rawBody) : {};
 }
 
+function isBcryptHash(storedHash) {
+  return typeof storedHash === 'string' && BCRYPT_PATTERN.test(storedHash);
+}
+
 function hashPassword(password) {
-  const salt = crypto.randomBytes(16);
-  const saltString = Array.from(salt).map((byte) => String.fromCharCode(byte)).join('');
-  const hash = crypto.createHash('sha256').update(password + saltString, 'utf8').digest();
-  return Buffer.concat([salt, hash]).toString('base64');
+  return bcrypt.hashSync(String(password), BCRYPT_ROUNDS);
 }
 
 function verifyPassword(password, storedHash) {
-  if (!storedHash) return false;
+  if (!storedHash || typeof storedHash !== 'string') return false;
 
   try {
+    if (storedHash.startsWith('$2')) {
+      return isBcryptHash(storedHash) && bcrypt.compareSync(String(password), storedHash);
+    }
+
+    // Older formats, accepted only so existing users can log in once and be upgraded.
     const combined = Buffer.from(storedHash, 'base64');
     if (combined.length === 48) {
       const salt = combined.subarray(0, 16);
@@ -216,11 +226,7 @@ function verifyPassword(password, storedHash) {
 }
 
 function isLegacyPasswordHash(storedHash) {
-  try {
-    return Buffer.from(storedHash || '', 'base64').length !== 48;
-  } catch (error) {
-    return true;
-  }
+  return !isBcryptHash(storedHash);
 }
 
 module.exports = {

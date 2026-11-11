@@ -26,10 +26,7 @@ class MCUExpiryManagementPage {
   async initialize() {
     try {
       // Check authentication
-      if (!authService.isAuthenticated()) {
-        window.location.href = 'login.html';
-        return;
-      }
+      if (!authService.guardPage('mcu-expiry-management')) return;
 
       // Set user info
       const user = authService.getCurrentUser();

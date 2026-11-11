@@ -9,14 +9,17 @@
 
 import { isSupabaseEnabled, getSupabaseClient } from '../config/supabase.js';
 import { transformUser, transformEmployee, transformMCU, transformMCUChange, transformMasterDataItem, transformActivityLog } from './databaseAdapter-transforms.js';
+import { resolveStorageMode } from '../utils/storageMode.mjs';
 import { database as indexedDB } from './database-old.js';  // Direct import of IndexedDB instance (no circular dependency)
 
-// Determine which database to use (lazy - check when needed, not on load)
-// This allows Supabase to finish initializing asynchronously
-const getUseSupabase = () => {
-    const enabled = isSupabaseEnabled();
-    return enabled;
-};
+// Decide storage per call so Supabase can finish initializing first.
+// Throws StorageUnavailableError in production when Supabase is not ready,
+// so data is never silently kept only in this browser.
+const getUseSupabase = () => resolveStorageMode({
+    supabaseEnabled: isSupabaseEnabled(),
+    hostname: window.location.hostname,
+    protocol: window.location.protocol
+}) === 'supabase';
 
 /**
  * Get database instance
@@ -42,13 +45,16 @@ export function isUsingSupabase() {
 /**
  * USERS
  */
+// Never request password_hash in browser reads; only the server verifies passwords.
+const USER_PUBLIC_COLUMNS = 'id, user_id, username, display_name, role, active, last_login, created_at, updated_at';
+
 export const Users = {
     async getAll() {
         if (getUseSupabase()) {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('users')
-                .select('*')
+                .select(USER_PUBLIC_COLUMNS)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -62,7 +68,7 @@ export const Users = {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('users')
-                .select('*')
+                .select(USER_PUBLIC_COLUMNS)
                 .eq('username', username)
                 .single();
 
@@ -77,7 +83,7 @@ export const Users = {
             const supabase = getSupabaseClient();
             const { data, error } = await supabase
                 .from('users')
-                .select('*')
+                .select(USER_PUBLIC_COLUMNS)
                 .eq('user_id', userId)
                 .single();
 

@@ -205,9 +205,8 @@
         import { reportExportService } from '../js/services/reportExportService.js';  // ✅ NEW: Consolidated export
 
         // Check authentication
-        if (!authService.isAuthenticated()) {
-            window.location.href = 'login.html';
-        }
+        // Stop this module while the browser redirects away.
+        if (!authService.guardPage('report-period')) await new Promise(() => {});
 
         const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
 
