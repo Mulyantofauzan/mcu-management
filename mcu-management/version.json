@@ -1,7 +1,10 @@
 {
-  "version": "1.2.20",
-  "releaseDate": "2026-09-05",
+  "version": "1.2.21",
+  "releaseDate": "2026-11-15",
   "features": [
+    "Direct MCU saving without doctor review or administrator approval",
+    "Original MCU input form order with required result and notes",
+    "Removed Dokter role, Surat Sehat and configurable expiry threshold",
     "Fixed 12-month MCU and 3-month health-certificate validity from examination date",
     "Reduced Surat Sehat form with full-MCU history protection",
     "One-click referral regeneration and download for Petugas",
