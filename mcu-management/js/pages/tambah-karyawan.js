@@ -5,7 +5,6 @@
 
 import { authService } from '../services/authService.js';
 import { employeeService } from '../services/employeeService.js';
-import { mcuService } from '../services/mcuService.js';
 import { labService } from '../services/labService.js';
 import { mcuBatchService } from '../services/mcuBatchService.js';
 import { masterDataService } from '../services/masterDataService.js';
@@ -15,16 +14,8 @@ import { supabaseReady } from '../config/supabase.js';
 import { generateMCUId } from '../utils/idGenerator.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';
 import { deleteOrphanedFiles } from '../services/supabaseStorageService.js';
-import { workflowService } from '../services/workflowService.js';
-import { workflowIdempotency } from '../utils/workflowIdempotency.js';
-import { presentUploadError, presentWorkflowError } from '../utils/workflowErrorPresenter.js';
+import { presentUploadError } from '../utils/errorPresenter.js';
 import { createMcuFormReader } from '../utils/mcuFormReader.js';
-import {
-    applyMcuTypeMode,
-    hasFullMcuHistory,
-    isHealthCertificate,
-    normalizeMcuDataForType
-} from '../utils/mcuFormOrder.js';
 
 let searchResults = [];
 let jobTitles = [];
@@ -34,8 +25,6 @@ let currentEmployee = null;
 let fileUploadWidget = null;
 let labResultWidget = null;  // Lab result widget instance
 let generatedMCUIdForAdd = null;  // Store generated MCU ID for file uploads
-let workflowEnabled = false;
-let workflowStateKnown = false;
 let mcuSupportModulesPromise = null;
 
 const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
@@ -266,12 +255,7 @@ async function init() {
         updateUserInfo();
         pageLifecycle()?.setLoading('employee-input-support', { retry: init });
 
-        const [workflowResult, masterResult] = await Promise.allSettled([
-            configureWorkflowMode(),
-            loadMasterData()
-        ]);
-        if (workflowResult.status === 'rejected') throw workflowResult.reason;
-        if (masterResult.status === 'rejected') throw masterResult.reason;
+        await loadMasterData();
 
         populateDropdowns();
 
@@ -299,50 +283,6 @@ async function init() {
         pageLifecycle()?.setError('employee-input-support', error, init);
         showToast('Form belum siap. Silakan coba lagi.', 'error');
     }
-}
-
-async function configureWorkflowMode() {
-    try {
-        const bootstrap = await workflowService.bootstrap();
-        workflowEnabled = bootstrap.workflowEnabled === true;
-        workflowStateKnown = true;
-        if (workflowEnabled && !['Admin', 'Petugas'].includes(bootstrap.role)) {
-            await presentWorkflowError({
-                code: 'WORKFLOW_FORBIDDEN',
-                message: 'Input data MCU hanya dapat dilakukan Petugas atau Administrator.'
-            });
-            window.location.href = '../index.html';
-            return;
-        }
-    } catch (error) {
-        await presentWorkflowError(error, {
-            retry: configureWorkflowMode,
-            reload: configureWorkflowMode
-        });
-        if (!workflowStateKnown) throw error;
-    }
-
-    const resultSection = document.getElementById('mcu-result-section');
-    const notice = document.getElementById('workflow-review-notice');
-    const result = document.getElementById('mcu-result');
-    const notes = document.getElementById('mcu-notes');
-    resultSection?.classList.toggle('hidden', workflowEnabled);
-    notice?.classList.toggle('hidden', !workflowEnabled);
-    if (result) result.required = !workflowEnabled;
-    if (notes) notes.required = !workflowEnabled;
-}
-
-async function submitCreatedMcuForReview(createdMCU) {
-    const expectedVersion = Number(createdMCU.workflowVersion || 0);
-    const scope = `submit-review:${createdMCU.mcuId}:${expectedVersion}`;
-    return workflowService.mutate('submit-review', {
-        mcuId: createdMCU.mcuId,
-        expectedVersion,
-        idempotencyKey: workflowIdempotency.get(scope)
-    }, scope).then(result => {
-        workflowIdempotency.clear(scope);
-        return result;
-    });
 }
 
 function updateUserInfo() {
@@ -687,7 +627,6 @@ window.openAddMCUForEmployee = async function(employeeId) {
         // Set default date to today
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('mcu-date').value = today;
-        applyMcuTypeMode(addMcuForm, '');
 
         // Generate MCU ID upfront for file uploads
         generatedMCUIdForAdd = generateMCUId();
@@ -950,13 +889,6 @@ window.handleAddMCU = async function(event) {
 
     try {
         const readField = createMcuFormReader(submitForm);
-        if (!workflowStateKnown) {
-            await presentWorkflowError({
-                code: 'WORKFLOW_INTERNAL_ERROR',
-                message: 'Status workflow belum dapat diverifikasi. Muat ulang sebelum menyimpan.'
-            });
-            return;
-        }
         const currentUser = authService.getCurrentUser();
         const widgetContext = fileUploadWidget.getUploadContext();
         const formEmployeeId = String(submitForm.dataset.employeeId || '').normalize('NFKC').trim();
@@ -972,18 +904,9 @@ window.handleAddMCU = async function(event) {
             userId: widgetContext.userId
         });
 
-        const healthCertificate = isHealthCertificate(readField('mcu-type'));
-        if (healthCertificate) {
-            const employeeMcus = await mcuService.getByEmployee(uploadContext.employeeId);
-            if (hasFullMcuHistory(employeeMcus)) {
-                showToast('Karyawan dengan riwayat MCU tidak dapat diperpanjang memakai Surat Sehat.', 'error');
-                return;
-            }
-        }
-
         // ✅ CRITICAL: Validate lab results BEFORE saving MCU
         // Lab inputs are generated via JavaScript, not HTML form, so required attribute doesn't work
-        if (!healthCertificate && labResultWidget) {
+        if (labResultWidget) {
             const labValidationErrors = labResultWidget.validateAllFieldsFilled();
             if (labValidationErrors.length > 0) {
                 const errorMsg = 'Semua pemeriksaan lab harus diisi:\n' + labValidationErrors.join('\n');
@@ -1014,7 +937,7 @@ window.handleAddMCU = async function(event) {
             return value || null;
         };
 
-        const mcuData = normalizeMcuDataForType({
+        const mcuData = {
             mcuId: uploadContext.mcuId,
             employeeId: uploadContext.employeeId,
             mcuType: readField('mcu-type'),
@@ -1049,12 +972,12 @@ window.handleAddMCU = async function(event) {
             keluhanUtama: readField('mcu-keluhan') || null,
             diagnosisKerja: readField('mcu-diagnosis') || null,
             alasanRujuk: readField('mcu-alasan') || null,
-            initialResult: workflowEnabled ? null : readField('mcu-result'),
-            initialNotes: workflowEnabled ? null : readField('mcu-notes'),
+            initialResult: readField('mcu-result'),
+            initialNotes: readField('mcu-notes'),
             // Medical and Family History
             medicalHistories: getMedicalHistoryData(),
             familyHistories: getFamilyHistoryData()
-        });
+        };
 
         try {
             await tempFileStorage.waitForPending(mcuData.mcuId);
@@ -1108,17 +1031,11 @@ window.handleAddMCU = async function(event) {
 
         // ✅ CRITICAL: Collect lab results for batch processing
         let labResults = [];
-        if (!healthCertificate && labResultWidget) {
+        if (labResultWidget) {
             labResults = labResultWidget.getAllLabResults() || [];
         }
 
-        // A prior request may have saved the draft but lost the API response. Reuse it on retry.
-        const savedDraft = workflowEnabled
-            ? await mcuService.getById(mcuData.mcuId).catch(() => null)
-            : null;
-        const batchResult = savedDraft
-            ? { success: true, errors: [], data: { mcu: savedDraft, labSaved: [], labFailed: [] } }
-            : await mcuBatchService.saveMCUWithLabResults(mcuData, labResults, currentUser);
+        const batchResult = await mcuBatchService.saveMCUWithLabResults(mcuData, labResults, currentUser);
 
         if (!batchResult.success) {
             hideUnifiedLoading();
@@ -1134,27 +1051,6 @@ window.handleAddMCU = async function(event) {
         mcuPersisted = true;
         tempFileStorage.clearFiles(mcuData.mcuId);
 
-        let workflowSubmission = null;
-        if (workflowEnabled) {
-            try {
-                workflowSubmission = batchResult.data.mcu.workflowStatus
-                    && batchResult.data.mcu.workflowStatus !== 'draft'
-                    ? { workflowStatus: batchResult.data.mcu.workflowStatus }
-                    : await submitCreatedMcuForReview(batchResult.data.mcu);
-            } catch (error) {
-                hideUnifiedLoading();
-                await presentWorkflowError(error, {
-                    retry: async () => {
-                        workflowSubmission = await submitCreatedMcuForReview(batchResult.data.mcu);
-                    },
-                    reload: async () => {
-                        workflowSubmission = await submitCreatedMcuForReview(batchResult.data.mcu);
-                    }
-                });
-                if (!workflowSubmission) return;
-            }
-        }
-
         completeSaveStep();
 
         // Success - show detailed result
@@ -1166,9 +1062,7 @@ window.handleAddMCU = async function(event) {
             showToast(`✅ MCU berhasil! Lab: ${labSaved}/${labSaved + labFailed} tersimpan (${labFailed} gagal).`, 'warning');
         } else {
             const labMsg = labSaved > 0 ? ` & ${labSaved} hasil lab` : '';
-            showToast(workflowEnabled
-                ? `MCU${labMsg} tersimpan. Menunggu review dokter.`
-                : `✅ MCU${labMsg} berhasil disimpan!`, 'success');
+            showToast(`✅ MCU${labMsg} berhasil disimpan!`, 'success');
         }
 
         // Hide loading after a brief delay to show completion
@@ -1183,11 +1077,10 @@ window.handleAddMCU = async function(event) {
         if (createdMCU && createdMCU.mcuId) {
             const form = document.getElementById('mcu-form');
             const mcuIdDiv = document.createElement('div');
-            mcuIdDiv.className = `mb-4 p-3 ${workflowEnabled ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'} border rounded-lg`;
+            mcuIdDiv.className = 'mb-4 p-3 bg-green-50 border border-green-200 rounded-lg';
             mcuIdDiv.innerHTML = `
                 <p class="text-sm text-gray-600">MCU ID (Copy untuk referensi):</p>
-                <p class="text-lg font-semibold ${workflowEnabled ? 'text-blue-700' : 'text-green-700'} cursor-pointer select-all" id="mcu-id-display">${createdMCU.mcuId}</p>
-                ${workflowEnabled ? '<p class="text-sm text-blue-700 mt-1">Menunggu review dokter</p>' : ''}
+                <p class="text-lg font-semibold text-green-700 cursor-pointer select-all" id="mcu-id-display">${createdMCU.mcuId}</p>
             `;
             form.insertBefore(mcuIdDiv, form.querySelector('.modal-footer'));
         }

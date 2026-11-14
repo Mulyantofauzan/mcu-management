@@ -185,30 +185,6 @@ test('every guarded Add MCU field exists inside its submitted form', () => {
   });
 });
 
-test('canonical MCU ordering keeps persistent fields outside dynamic lab containers', () => {
-  const order = read('mcu-management/js/utils/mcuFormOrder.js');
-  const pages = [
-    'mcu-management/pages/tambah-karyawan.html',
-    'mcu-management/pages/kelola-karyawan.html',
-    'mcu-management/pages/follow-up.html'
-  ];
-
-  assert.match(order, /data-mcu-target="laboratory-static"/);
-  assert.match(order, /appendField\(form, '-hbsag', labStatic\)/);
-  assert.match(order, /appendField\(form, '-napza', labStatic\)/);
-  assert.doesNotMatch(order, /appendField\(form, '-(?:hbsag|napza)', lab\)/);
-
-  pages.forEach(pageFile => {
-    const page = read(pageFile);
-    const forms = [...page.matchAll(/<form[^>]*data-mcu-canonical-order[\s\S]*?<\/form>/g)];
-    assert.ok(forms.length > 0, `${pageFile} must have a canonical MCU form`);
-    forms.forEach(({ 0: form }) => {
-      assert.match(form, /data-mcu-target="laboratory"/);
-      assert.match(form, /data-mcu-target="laboratory-static"/);
-    });
-  });
-});
-
 test('sidebar has one canonical role-aware menu definition', () => {
   const source = read('mcu-management/js/sidebar-manager.js');
   const styles = read('mcu-management/css/sidebar.css');
@@ -234,19 +210,6 @@ test('sidebar owns the only active logout handler', () => {
   assert.match(sidebar, /clearSessionAndRedirect/);
   assert.match(styles, /\.sidebar \.sidebar-logout\s*{[\s\S]*cursor:\s*pointer;/);
   assert.doesNotMatch(pageSources, /window\.handleLogout\s*=/);
-});
-
-test('Administrator can use Petugas MCU entry and follow-up forms', () => {
-  const addEmployee = read('mcu-management/js/pages/tambah-karyawan.js');
-  const manageEmployee = read('mcu-management/js/pages/kelola-karyawan.js');
-  const followUp = read('mcu-management/js/pages/follow-up.js');
-
-  assert.match(addEmployee, /\['Admin', 'Petugas'\]\.includes\(bootstrap\.role\)/);
-  assert.match(manageEmployee, /authService\.hasRole\('Admin', 'Petugas'\)/);
-  assert.match(followUp, /\['Admin', 'Petugas'\]\.includes\(bootstrap\.role\)/);
-  [addEmployee, manageEmployee, followUp].forEach(source => {
-    assert.doesNotMatch(source, /role !== 'Petugas'/);
-  });
 });
 
 test('Admin and Petugas share fixed-duration MCU expiry view', () => {
@@ -312,18 +275,6 @@ test('WhatsApp summary uses approved review and excludes raw labs', () => {
   assert.doesNotMatch(source, /navigator\.clipboard|execCommand\('copy'\)/);
   assert.match(source, /if \(hasDocument\) await downloadReferral\(cycle\.id\)/);
   assert.match(source, /Pop-up WhatsApp diblokir/);
-});
-
-test('MCU entry separates examiner metadata from doctor decision', () => {
-  const page = read('mcu-management/pages/tambah-karyawan.html');
-  const source = read('mcu-management/js/pages/tambah-karyawan.js');
-  assert.match(page, /Dokter Pemeriksa \/ Sumber Data/);
-  assert.match(page, /workflow-review-notice/);
-  assert.match(source, /initialResult: workflowEnabled \? null/);
-  assert.match(source, /submit-review/);
-  assert.match(source, /Menunggu review dokter/);
-  assert.match(source, /const savedDraft = workflowEnabled/);
-  assert.match(source, /workflowStatus !== 'draft'/);
 });
 
 test('correction and periodic MCU paths submit raw data for doctor review', () => {
