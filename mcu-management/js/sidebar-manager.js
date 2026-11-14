@@ -10,9 +10,6 @@
     file: 'M7 3h7l5 5v13H7V3zm7 0v5h5M10 13h6m-6 4h6',
     clock: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
     trash: 'M4 7h16m-10 4v6m4-6v6M9 7l1-3h4l1 3m-9 0 1 14h10l1-14',
-    doctor: 'M9 4h6v5a3 3 0 01-6 0V4zm3 8v3a5 5 0 005 5h1m0-3v6m-3-3h6',
-    signature: 'M3 17c4-7 6-10 8-10 2 0 0 7 2 7 1 0 3-3 4-3 2 0-1 6 3 6h1',
-    decision: 'M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11',
     settings: 'M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7zm0-12v2m0 13v2m8.5-8.5h-2m-13 0h-2m14.5-6.5-1.5 1.5m-9 9-1.5 1.5m12 0-1.5-1.5m-9-9L6 5.5',
     menu: 'M4 6h16M4 12h16M4 18h16',
     logout: 'M17 16l4-4-4-4m4 4H9m4 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'
@@ -30,9 +27,8 @@
       { page: 'dashboard', file: 'index.html', label: 'Dashboard', icon: 'home' },
       { page: 'tambah-karyawan', file: 'tambah-karyawan.html', label: 'Tambah Karyawan', icon: 'add' },
       { page: 'kelola-karyawan', file: 'kelola-karyawan.html', label: 'Kelola Karyawan', icon: 'users' },
-      { page: 'follow-up', file: 'follow-up.html', label: 'Follow-Up', icon: 'clipboard', badge: 'followup' },
+      { page: 'follow-up', file: 'follow-up.html', label: 'Follow-Up', icon: 'clipboard' },
       { page: 'data-master', file: 'data-master.html', label: 'Data Master', icon: 'database' },
-      { page: 'keputusan-bergabung', file: 'keputusan-bergabung.html', label: 'Keputusan Bergabung', icon: 'decision', badge: 'joining' },
       { page: 'kelola-user', file: 'kelola-user.html', label: 'Kelola User', icon: 'users' },
       { page: 'activity-log', file: 'activity-log.html', label: 'Activity Log', icon: 'file' },
       { page: 'mcu-expiry-management', file: 'mcu-expiry-management.html', label: 'MCU Expired', icon: 'clock', legacyBadge: 'badge-mcu-expiry' },
@@ -42,22 +38,15 @@
     Petugas: [
       { page: 'dashboard', file: 'index.html', label: 'Dashboard', icon: 'home' },
       { page: 'tambah-karyawan', file: 'tambah-karyawan.html', label: 'Tambah Karyawan', icon: 'add' },
-      { page: 'kelola-karyawan', file: 'kelola-karyawan.html', label: 'Kelola Karyawan', icon: 'users', badge: 'correction' },
-      { page: 'follow-up', file: 'follow-up.html', label: 'Bukti Follow-Up', icon: 'clipboard', badge: 'followup' },
+      { page: 'kelola-karyawan', file: 'kelola-karyawan.html', label: 'Kelola Karyawan', icon: 'users' },
+      { page: 'follow-up', file: 'follow-up.html', label: 'Follow-Up', icon: 'clipboard' },
       { page: 'data-master', file: 'data-master.html', label: 'Data Master', icon: 'database' },
       { page: 'mcu-expiry-management', file: 'mcu-expiry-management.html', label: 'MCU Expired', icon: 'clock', legacyBadge: 'badge-mcu-expiry' },
       { group: 'reports', label: 'Laporan', icon: 'file', children: reports }
-    ],
-    Dokter: [
-      { page: 'validasi-mcu', file: 'validasi-mcu.html', label: 'Validasi MCU', icon: 'doctor', badge: 'review' },
-      { page: 'validasi-mcu', file: 'validasi-mcu.html?tab=followup', label: 'Review Follow-Up', icon: 'clipboard' },
-      { page: 'validasi-mcu', file: 'validasi-mcu.html?tab=history', label: 'Riwayat Review', icon: 'clock' },
-      { page: 'profil-dokter', file: 'profil-dokter.html', label: 'Profil & Tanda Tangan', icon: 'signature' }
     ]
   });
 
   let currentRole = 'Petugas';
-  let counts = {};
   const prefetchedPages = new Set();
 
   function currentUser() {
@@ -82,12 +71,6 @@
 
   function icon(name) {
     return `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${icons[name] || icons.file}"></path></svg>`;
-  }
-
-  function badge(name) {
-    if (!name) return '';
-    const value = Number(counts[name] || 0);
-    return `<span class="sidebar-badge${value ? '' : ' hidden'}" data-workflow-badge="${name}">${value}</span>`;
   }
 
   function menuLink(item, child = false) {
@@ -250,26 +233,6 @@
     window.addEventListener('pageshow', clearPending);
   }
 
-  async function fetchBootstrap() {
-    const token = localStorage.getItem('madisAccessToken');
-    if (!token) return;
-    try {
-      const response = await fetch('/api/workflow?action=bootstrap', {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: 'no-store'
-      });
-      const result = await response.json();
-      if (!response.ok || !result?.success) return;
-      const serverRole = result.data.role;
-      counts = result.data.counts || {};
-      if (menus[serverRole]) currentRole = serverRole;
-      renderNavigation();
-      renderUser();
-    } catch (error) {
-      // Navigation remains usable from authenticated local session while offline.
-    }
-  }
-
   function clearSessionAndRedirect() {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('madisAccessToken');
@@ -310,7 +273,6 @@
     document.dispatchEvent(new CustomEvent('madis:sidebar-ready', {
       detail: { role: currentRole }
     }));
-    await fetchBootstrap();
   }
 
   window.MADIS_SIDEBAR = { initialize, renderNavigation };

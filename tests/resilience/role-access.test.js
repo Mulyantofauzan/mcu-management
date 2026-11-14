@@ -8,27 +8,40 @@ const root = path.resolve(__dirname, '../..');
 const load = relative => import(pathToFileURL(path.join(root, relative)).href);
 const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 
-test('Dokter cannot open staff or admin pages', async () => {
-  const { resolveAccess } = await load('mcu-management/js/utils/roleAccess.mjs');
-  for (const page of ['dashboard', 'kelola-karyawan', 'tambah-karyawan', 'follow-up', 'data-master', 'analysis', 'report-period', 'employee-health-history', 'assessment-rahma', 'mcu-expiry-management', 'kelola-user', 'activity-log', 'data-terhapus', 'keputusan-bergabung']) {
+test('Dokter role is gone: no page opens and there is no home page', async () => {
+  const { resolveAccess, PAGE_ROLES } = await load('mcu-management/js/utils/roleAccess.mjs');
+  for (const page of Object.keys(PAGE_ROLES)) {
     const result = resolveAccess({ role: 'Dokter', page });
     assert.equal(result.allowed, false, page);
-    assert.equal(result.redirectPage, 'validasi-mcu', page);
+    assert.equal(result.redirectPage, null, page);
   }
 });
 
-test('Dokter can open doctor pages and staff cannot', async () => {
-  const { resolveAccess } = await load('mcu-management/js/utils/roleAccess.mjs');
-  for (const page of ['validasi-mcu', 'profil-dokter']) {
-    assert.equal(resolveAccess({ role: 'Dokter', page }).allowed, true);
-    assert.equal(resolveAccess({ role: 'Petugas', page }).allowed, false);
-    assert.equal(resolveAccess({ role: 'Admin', page }).allowed, false);
+test('workflow pages are no longer routable', async () => {
+  const { PAGE_ROLES } = await load('mcu-management/js/utils/roleAccess.mjs');
+  for (const page of ['validasi-mcu', 'profil-dokter', 'keputusan-bergabung']) {
+    assert.equal(page in PAGE_ROLES, false, page);
   }
+  for (const roles of Object.values(PAGE_ROLES)) {
+    for (const role of roles) assert.ok(['Admin', 'Petugas'].includes(role));
+  }
+});
+
+test('sidebar offers no doctor or workflow menus and no workflow API call', () => {
+  const sidebar = read('mcu-management/js/sidebar-manager.js');
+  assert.doesNotMatch(sidebar, /Dokter|validasi-mcu|profil-dokter|keputusan-bergabung|api\/workflow/);
+});
+
+test('user management and login no longer know the Dokter role', () => {
+  assert.doesNotMatch(read('mcu-management/pages/kelola-user.html'), /value="Dokter"/);
+  assert.doesNotMatch(read('mcu-management/pages/login.html'), /validasi-mcu/);
+  assert.doesNotMatch(read('mcu-management/js/services/authService.js'), /isDoctor/);
+  assert.doesNotMatch(read('mcu-management/js/pages/dashboard.js'), /isDoctor/);
 });
 
 test('Petugas is kept out of admin-only pages', async () => {
   const { resolveAccess } = await load('mcu-management/js/utils/roleAccess.mjs');
-  for (const page of ['kelola-user', 'activity-log', 'data-terhapus', 'keputusan-bergabung']) {
+  for (const page of ['kelola-user', 'activity-log', 'data-terhapus']) {
     assert.equal(resolveAccess({ role: 'Petugas', page }).allowed, false, page);
     assert.equal(resolveAccess({ role: 'Admin', page }).allowed, true, page);
   }
@@ -64,10 +77,7 @@ test('every protected page calls guardPage in its own code', async () => {
     'employee-health-history': ['mcu-management/pages/employee-health-history.html'],
     'kelola-user': ['mcu-management/js/pages/kelola-user.js'],
     'activity-log': ['mcu-management/pages/activity-log.html'],
-    'data-terhapus': ['mcu-management/js/pages/data-terhapus.js'],
-    'keputusan-bergabung': ['mcu-management/js/pages/keputusan-bergabung.js'],
-    'validasi-mcu': ['mcu-management/js/pages/validasi-mcu.js'],
-    'profil-dokter': ['mcu-management/js/pages/profil-dokter.js']
+    'data-terhapus': ['mcu-management/js/pages/data-terhapus.js']
   };
   assert.deepEqual(Object.keys(sources).sort(), Object.keys(PAGE_ROLES).sort());
   for (const [page, files] of Object.entries(sources)) {

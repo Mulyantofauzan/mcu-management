@@ -1122,14 +1122,10 @@ window.reseedDatabase = async function() {
   }
 };
 
-// Route Doctors before dashboard data is requested.
-if (authService.isAuthenticated() && authService.isDoctor()) {
-  window.location.replace('pages/validasi-mcu.html');
-} else {
-  supabaseReady.then(() => {
-    init();
-  }).catch(err => {
-    // Still initialize even if Supabase wait failed
-    init();
-  });
-}
+// init() runs authService.guardPage('dashboard') before any data is requested.
+supabaseReady.then(() => {
+  init();
+}).catch(() => {
+  // Still initialize even if Supabase wait failed
+  init();
+});

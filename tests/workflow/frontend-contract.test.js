@@ -209,22 +209,11 @@ test('canonical MCU ordering keeps persistent fields outside dynamic lab contain
   });
 });
 
-test('doctor signature upload uses a contextual storage error title', () => {
-  const presenter = read('mcu-management/js/utils/workflowErrorPresenter.js');
-  const profile = read('mcu-management/js/pages/profil-dokter.js');
-  assert.match(presenter, /handlers\.presentation/);
-  assert.match(profile, /error\?\.code === 'WORKFLOW_DOCUMENT_FAILED'[\s\S]*Penyimpanan TTD Belum Siap/);
-});
-
 test('sidebar has one canonical role-aware menu definition', () => {
   const source = read('mcu-management/js/sidebar-manager.js');
   const styles = read('mcu-management/css/sidebar.css');
   assert.match(source, /Admin:/);
   assert.match(source, /Petugas:/);
-  assert.match(source, /Dokter:/);
-  assert.match(source, /keputusan-bergabung\.html/);
-  assert.match(source, /validasi-mcu\.html/);
-  assert.match(source, /\/api\/workflow\?action=bootstrap/);
   assert.match(source, /class="sidebar-logout/);
   assert.match(source, /aria-label="Keluar dari aplikasi"/);
   assert.match(styles, /\.sidebar \.sidebar-logout svg\s*{[\s\S]*width:\s*1\.125rem;[\s\S]*height:\s*1\.125rem;/);
@@ -306,22 +295,6 @@ test('authenticated pages never hide the whole document during startup', () => {
     assert.doesNotMatch(html, /body:not\(\.initialized\)\s*>\s*\*/s, file);
     assert.doesNotMatch(html, /@keyframes\s+safariShow/, file);
   });
-});
-
-test('user management exposes canonical doctor role', () => {
-  const html = read('mcu-management/pages/kelola-user.html');
-  const auth = read('mcu-management/js/services/authService.js');
-  assert.match(html, /value="Dokter"/);
-  assert.match(html, /value="Admin">Administrator/);
-  assert.match(auth, /isDoctor\(\)/);
-});
-
-test('doctor login lands in the restricted clinical workspace', () => {
-  const login = read('mcu-management/pages/login.html');
-  const dashboard = read('mcu-management/js/pages/dashboard.js');
-  assert.match(login, /user\?\.role === 'Dokter' \? 'validasi-mcu\.html'/);
-  assert.match(dashboard, /authService\.isDoctor\(\)/);
-  assert.match(dashboard, /location\.replace\('pages\/validasi-mcu\.html'\)/);
 });
 
 test('workflow auth does not eagerly load database CDN', () => {

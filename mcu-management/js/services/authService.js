@@ -359,10 +359,6 @@ class AuthService {
     return this.currentUser && this.currentUser.role === 'Admin';
   }
 
-  isDoctor() {
-    return this.currentUser && this.currentUser.role === 'Dokter';
-  }
-
   hasRole(...roles) {
     return Boolean(this.currentUser && roles.includes(this.currentUser.role));
   }

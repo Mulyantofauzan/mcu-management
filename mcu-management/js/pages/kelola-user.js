@@ -175,9 +175,7 @@ function renderTable() {
         html += `<td><span class="font-medium text-gray-900">${safeUsername}</span></td>`;
         html += `<td>${safeDisplayName}</td>`;
         const roleLabel = safeRole === 'Admin' ? 'Administrator' : safeRole;
-        const roleClass = safeRole === 'Admin'
-            ? 'badge-primary'
-            : safeRole === 'Dokter' ? 'badge-success' : 'badge-secondary';
+        const roleClass = safeRole === 'Admin' ? 'badge-primary' : 'badge-secondary';
         html += `<td><span class="badge ${roleClass}">${roleLabel}</span></td>`;
         html += `<td class="text-sm text-gray-600">${createdDate}</td>`;
         html += '<td>';

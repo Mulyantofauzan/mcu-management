@@ -6,7 +6,6 @@
 
 const STAFF = ['Admin', 'Petugas'];
 const ADMIN = ['Admin'];
-const DOCTOR = ['Dokter'];
 
 export const PAGE_ROLES = Object.freeze({
   dashboard: STAFF,
@@ -21,13 +20,10 @@ export const PAGE_ROLES = Object.freeze({
   'employee-health-history': STAFF,
   'kelola-user': ADMIN,
   'activity-log': ADMIN,
-  'data-terhapus': ADMIN,
-  'keputusan-bergabung': ADMIN,
-  'validasi-mcu': DOCTOR,
-  'profil-dokter': DOCTOR
+  'data-terhapus': ADMIN
 });
 
-const HOME_PAGE = Object.freeze({ Admin: 'dashboard', Petugas: 'dashboard', Dokter: 'validasi-mcu' });
+const HOME_PAGE = Object.freeze({ Admin: 'dashboard', Petugas: 'dashboard' });
 
 export function pageFromPath(pathname = '') {
   const file = String(pathname).split('/').filter(Boolean).pop() || '';
