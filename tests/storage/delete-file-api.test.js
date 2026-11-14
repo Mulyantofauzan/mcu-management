@@ -69,12 +69,21 @@ test('Petugas deletes R2 object before MCU file metadata', async () => {
   ]);
 });
 
-test('final MCU attachment cannot be deleted', async () => {
-  const { handler, calls } = handlerFixture({ status: 'completed' });
+test('attachment of an active MCU can be deleted', async () => {
+  const { handler, calls } = handlerFixture({ status: 'approved_legacy' });
   const res = responseFixture();
   await handler({ method: 'DELETE', headers: {}, query: { fileId: 'FILE-1' } }, res);
 
-  assert.equal(res.statusCode, 409);
+  assert.equal(res.statusCode, 200);
+  assert.equal(calls.some(call => String(call).startsWith('r2:')), true);
+});
+
+test('Dokter cannot delete MCU attachments', async () => {
+  const { handler, calls } = handlerFixture({ role: 'Dokter' });
+  const res = responseFixture();
+  await handler({ method: 'DELETE', headers: {}, query: { fileId: 'FILE-1' } }, res);
+
+  assert.equal(res.statusCode, 403);
   assert.equal(calls.some(call => String(call).startsWith('r2:')), false);
 });
 
@@ -85,4 +94,15 @@ test('metadata remains when R2 deletion fails', async () => {
 
   assert.equal(res.statusCode, 500);
   assert.equal(calls.filter(call => call === 'mcufiles').length, 1);
+});
+
+test('a rejected session answers 403 instead of 500', async () => {
+  const handler = createDeleteFileHandler({
+    requireAuth: () => ({ app_user_id: 'D1' }),
+    getSupabaseAdmin: () => ({}),
+    loadActiveUser: async () => { const e = new Error('Peran tidak dikenali.'); e.statusCode = 403; throw e; }
+  });
+  const res = responseFixture();
+  await handler({ method: 'DELETE', headers: {}, query: { fileId: 'FILE-1' } }, res);
+  assert.equal(res.statusCode, 403);
 });

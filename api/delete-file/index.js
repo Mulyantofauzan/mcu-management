@@ -2,10 +2,8 @@
 
 const { setCorsHeaders, requireAuth } = require('../../server/auth-utils');
 const { getSupabaseAdmin } = require('../../server/supabaseAdmin');
-const { loadActiveUser } = require('../../server/workflow/authorization');
+const { loadActiveUser } = require('../../server/activeUser');
 const { R2DirectUploadService } = require('../../server/r2DirectUploadService');
-
-const EDITABLE_STATUSES = new Set(['draft', 'pending_review', 'correction_required']);
 
 function createDeleteFileHandler(dependencies = {}) {
   const authenticate = dependencies.requireAuth || requireAuth;
@@ -50,19 +48,13 @@ function createDeleteFileHandler(dependencies = {}) {
 
       const { data: mcu, error: mcuError } = await supabase
         .from('mcus')
-        .select('mcu_id, workflow_status')
+        .select('mcu_id')
         .eq('mcu_id', file.mcuid)
         .is('deleted_at', null)
         .maybeSingle();
       if (mcuError) throw mcuError;
       if (!mcu) {
         return res.status(404).json({ success: false, error: 'MCU pemilik file tidak ditemukan.' });
-      }
-      if (!EDITABLE_STATUSES.has(mcu.workflow_status)) {
-        return res.status(409).json({
-          success: false,
-          error: 'Dokumen hanya dapat dihapus saat MCU masih draft, menunggu review, atau perlu perbaikan.'
-        });
       }
       if (!file.supabase_storage_path) {
         return res.status(409).json({ success: false, error: 'Lokasi penyimpanan file tidak ditemukan.' });
@@ -77,6 +69,9 @@ function createDeleteFileHandler(dependencies = {}) {
 
       return res.status(200).json({ success: true, message: 'File berhasil dihapus.' });
     } catch (error) {
+      if ([401, 403].includes(error?.statusCode)) {
+        return res.status(error.statusCode).json({ success: false, error: error.message });
+      }
       console.error('[delete-file] Delete failed:', error?.message || error);
       return res.status(500).json({
         success: false,
@@ -88,4 +83,3 @@ function createDeleteFileHandler(dependencies = {}) {
 
 module.exports = createDeleteFileHandler();
 module.exports.createDeleteFileHandler = createDeleteFileHandler;
-module.exports.EDITABLE_STATUSES = EDITABLE_STATUSES;

@@ -13,7 +13,7 @@
 
 const { getAuthorizedSignedUrl, getAuthorizedMcuFiles } = require('../../server/r2SignedUrlService');
 const { setCorsHeaders, requireAuth } = require('../../server/auth-utils');
-const { loadActiveUser } = require('../../server/workflow/authorization');
+const { loadActiveUser } = require('../../server/activeUser');
 const { getSupabaseAdmin } = require('../../server/supabaseAdmin');
 
 module.exports = async (req, res) => {
@@ -70,6 +70,9 @@ module.exports = async (req, res) => {
       success: false
     });
   } catch (error) {
+    if ([401, 403].includes(error?.statusCode)) {
+      return res.status(error.statusCode).json({ error: error.message, success: false });
+    }
     return res.status(500).json({
       error: 'Internal server error',
       success: false

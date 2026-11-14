@@ -90,7 +90,7 @@ test('missing token is rejected and non-admin is forbidden', async () => {
 
 test('admin creates a user with a bcrypt hash and no hash in the response', async () => {
   const { handler, rows } = setup();
-  const res = await call(handler, 'A1', { action: 'create', username: 'baru', password: 'rahasia1', displayName: 'Baru', role: 'Dokter' });
+  const res = await call(handler, 'A1', { action: 'create', username: 'baru', password: 'rahasia1', displayName: 'Baru', role: 'Petugas' });
   assert.equal(res.statusCode, 200);
   const stored = rows.find(r => r.username === 'baru');
   assert.match(stored.password_hash, /^\$2[aby]\$/);
@@ -98,6 +98,13 @@ test('admin creates a user with a bcrypt hash and no hash in the response', asyn
   assert.equal(stored.active, true);
   assert.match(stored.user_id, /^USR-/);
   assert.equal(JSON.stringify(res.body).includes('password'), false);
+});
+
+test('create rejects the removed Dokter role', async () => {
+  const { handler, rows } = setup();
+  const res = await call(handler, 'A1', { action: 'create', username: 'dok', password: 'rahasia1', displayName: 'Dok', role: 'Dokter' });
+  assert.equal(res.statusCode, 400);
+  assert.equal(rows.some(r => r.username === 'dok'), false);
 });
 
 test('create validates role, password length, required fields and duplicates', async () => {

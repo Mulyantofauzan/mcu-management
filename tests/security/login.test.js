@@ -130,3 +130,14 @@ test('successful login returns a token and upgrades a legacy hash to bcrypt', as
   assert.ok(updates.some(patch => /^\$2[aby]\$/.test(patch.password_hash || '')));
   assert.equal(JSON.stringify(res.body).includes('password_hash'), false);
 });
+
+test('a Dokter account can no longer sign in and gets the generic answer', async () => {
+  const { handler } = makeHandler([
+    { user_id: 'd1', username: 'dok', password_hash: hashPassword('benar'), role: 'Dokter', active: true, display_name: 'Dok' }
+  ]);
+  const doctor = makeRes(); await handler(request('dok', 'benar'), doctor);
+  const unknown = makeRes(); await handler(request('tidak-ada', 'x', '9.9.9.9'), unknown);
+  assert.equal(doctor.statusCode, 401);
+  assert.deepEqual(doctor.body, unknown.body);
+  assert.equal(doctor.body.token, undefined);
+});

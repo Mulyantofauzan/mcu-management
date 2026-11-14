@@ -19,9 +19,6 @@
     },
     "api/hard-delete-file/index.js": {
       "maxDuration": 60
-    },
-    "api/workflow/index.js": {
-      "maxDuration": 60
     }
   },
   "headers": [

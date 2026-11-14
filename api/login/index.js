@@ -81,7 +81,7 @@ function createLoginHandler(dependencies = {}) {
         return res.status(500).json({ success: false, error: 'Gagal memeriksa user' });
       }
 
-      if (!user || user.active === false) {
+      if (!user || user.active === false || !['Admin', 'Petugas'].includes(user.role)) {
         verifyPassword(password, DUMMY_HASH);
         return rejectCredentials();
       }

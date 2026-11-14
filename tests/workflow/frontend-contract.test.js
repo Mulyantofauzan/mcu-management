@@ -367,12 +367,6 @@ test('correction and periodic MCU paths submit raw data for doctor review', () =
   assert.match(page, /edit-medical-result-section/);
 });
 
-test('doctor review submission requires an active MCU attachment', () => {
-  const service = read('server/workflow/workflowService.js');
-  assert.match(service, /from\('mcufiles'\)[\s\S]{0,240}count: 'exact', head: true/);
-  assert.match(service, /Minimal satu dokumen MCU wajib diunggah/);
-});
-
 test('inactive employee toggle anchors to the filter card', () => {
   const source = read('mcu-management/js/pages/kelola-karyawan.js');
   assert.match(source, /getElementById\('filter-department'\)\?\.closest\('\.card'\)/);
@@ -391,19 +385,6 @@ test('follow-up path submits evidence without a petugas medical result', () => {
   assert.match(source, /Bukti follow-up dikirim untuk review dokter/);
 });
 
-test('follow-up page exposes actionable legacy rows without fake referrals', () => {
-  const source = read('mcu-management/js/pages/follow-up.js');
-  const authorization = read('server/workflow/authorization.js');
-
-  assert.match(source, /\['followup_required', 'approved_legacy'\]\.includes/);
-  assert.match(source, /employeeName: row\.employee\?\.name/);
-  assert.match(source, /const referralButton = mcu\.currentShareCycleId/);
-  assert.match(source, /error\?\.code !== 'WORKFLOW_NOT_FOUND'/);
-  assert.match(source, /workflowService\.mutate\('regenerate-referral'/);
-  assert.match(source, /workflowService\.get\('download-referral'/);
-  assert.match(authorization, /'regenerate-referral': \['Admin', 'Petugas', 'Dokter'\]/);
-});
-
 test('analytics pages use the centralized eligibility service', () => {
   const service = read('mcu-management/js/services/analyticsEligibilityService.js');
   assert.match(service, /v_analytics_eligible_current/);
@@ -413,13 +394,6 @@ test('analytics pages use the centralized eligibility service', () => {
   assert.match(read('mcu-management/js/services/analysisDashboardService.js'), /analyticsEligibilityService\.getCurrentData/);
   assert.match(read('mcu-management/js/pages/assessment-rahma-dashboard.js'), /analyticsEligibilityService\.getCurrentModels/);
   assert.doesNotMatch(read('mcu-management/js/services/mcuExpiryService.js'), /expiryPeriodDays|setDate\(/);
-});
-
-test('expiry impact is recomputed by server before update', () => {
-  const service = read('server/workflow/workflowService.js');
-  assert.match(service, /const impact = await this\.getExpiryPreview\(payload, user\)/);
-  assert.match(service, /p_impact: impact/);
-  assert.doesNotMatch(service, /p_impact: payload\.impact/);
 });
 
 test('doctor review exposes clinical evidence and post-approval sharing', () => {

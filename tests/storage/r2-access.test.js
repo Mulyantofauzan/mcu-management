@@ -4,10 +4,14 @@ const { canAccessFile } = require('../../server/r2SignedUrlService');
 
 const file = { uploadedby: 'USR-UPLOADER' };
 
-test('active application roles can open MCU supporting files', () => {
-  for (const role of ['Admin', 'Petugas', 'Dokter']) {
+test('Admin and Petugas can open MCU supporting files', () => {
+  for (const role of ['Admin', 'Petugas']) {
     assert.equal(canAccessFile(file, { userId: 'USR-OTHER', role }), true);
   }
+});
+
+test('the removed Dokter role gets no blanket access', () => {
+  assert.equal(canAccessFile(file, { userId: 'USR-OTHER', role: 'Dokter' }), false);
 });
 
 test('unknown roles are limited to their own uploaded file', () => {

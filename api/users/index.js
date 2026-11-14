@@ -5,7 +5,7 @@ const {
   hashPassword
 } = require('../../server/auth-utils');
 
-const ROLES = ['Admin', 'Petugas', 'Dokter'];
+const ROLES = ['Admin', 'Petugas'];
 const PUBLIC_COLUMNS = 'user_id, username, display_name, role, active, last_login, created_at, updated_at';
 const MIN_PASSWORD = 6;
 const MAX_PASSWORD = 72;

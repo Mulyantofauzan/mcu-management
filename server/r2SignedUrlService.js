@@ -40,7 +40,7 @@ function getUserRole(claimsOrUserId) {
 }
 
 function canAccessFile(file, claimsOrUserId) {
-  if (['Admin', 'Petugas', 'Dokter'].includes(getUserRole(claimsOrUserId))) return true;
+  if (['Admin', 'Petugas'].includes(getUserRole(claimsOrUserId))) return true;
 
   const userId = getUserId(claimsOrUserId);
   if (!userId || !file?.uploadedby) return false;
