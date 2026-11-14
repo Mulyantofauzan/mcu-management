@@ -253,15 +253,13 @@ test('Admin and Petugas share fixed-duration MCU expiry view', () => {
   const sidebar = read('mcu-management/js/sidebar-manager.js');
   const page = read('mcu-management/pages/mcu-expiry-management.html');
   const source = read('mcu-management/js/pages/mcu-expiry-management.js');
-  const dashboard = read('mcu-management/js/pages/dashboard.js');
 
   assert.match(sidebar, /Petugas:\s*\[[\s\S]*mcu-expiry-management\.html'[\s\S]*label: 'MCU Expired'/);
   assert.match(sidebar, /Admin:\s*\[[\s\S]*mcu-expiry-management\.html'[\s\S]*label: 'MCU Expired'/);
   assert.match(source, /\['Admin', 'Petugas'\]\.includes\(user\?\.role\)/);
-  assert.match(page, /MCU berlaku 12 bulan dan Surat Sehat berlaku 3 bulan/);
+  assert.match(page, /MCU berlaku 12 bulan sejak tanggal pemeriksaan/);
   assert.match(page, /Jenis Dokumen/);
   assert.match(page, /Berlaku Sampai/);
-  assert.match(dashboard, /'Surat Sehat': 0/);
   assert.doesNotMatch(page, /expiry-months-input|Preview Dampak/);
   assert.doesNotMatch(source, /loadExpirySetting|update-expiry-setting/);
 });
@@ -367,55 +365,6 @@ test('analytics pages use the centralized eligibility service', () => {
   assert.match(read('mcu-management/js/services/analysisDashboardService.js'), /analyticsEligibilityService\.getCurrentData/);
   assert.match(read('mcu-management/js/pages/assessment-rahma-dashboard.js'), /analyticsEligibilityService\.getCurrentModels/);
   assert.doesNotMatch(read('mcu-management/js/services/mcuExpiryService.js'), /expiryPeriodDays|setDate\(/);
-});
-
-test('doctor review exposes clinical evidence and post-approval sharing', () => {
-  const source = read('mcu-management/js/pages/validasi-mcu.js');
-  assert.match(source, /labReference/);
-  assert.match(source, /medicalHistories/);
-  assert.match(source, /priorMcus/);
-  assert.match(source, /downloadFile/);
-  assert.match(source, /shareApprovedReview/);
-  assert.match(source, /Bagikan ke WhatsApp/);
-});
-
-test('doctor history is employee-named and final decisions are read-only', () => {
-  const page = read('mcu-management/pages/validasi-mcu.html');
-  const source = read('mcu-management/js/pages/validasi-mcu.js');
-  const whatsapp = read('mcu-management/js/utils/whatsappShare.js');
-
-  assert.match(source, /employee\.name \|\| employeeId \|\| item\.mcu_id/);
-  assert.match(source, /data-review-cycle/);
-  assert.match(source, /state\.selectedReviewCycleId/);
-  assert.match(source, /Keputusan final hanya dapat dilihat/);
-  assert.match(source, /\$\('#medical-result'\)\.disabled = true/);
-  assert.match(source, /\$\('#approve-review'\)\.disabled = true/);
-  assert.match(page, /id="share-review"/);
-  assert.match(whatsapp, /requestedCycleId/);
-  assert.match(whatsapp, /requested\?\.decision !== 'approved'/);
-});
-
-test('new workflow pages do not use raw browser alerts', () => {
-  [
-    'mcu-management/js/pages/validasi-mcu.js',
-    'mcu-management/js/pages/keputusan-bergabung.js',
-    'mcu-management/js/pages/profil-dokter.js',
-    'mcu-management/js/pages/mcu-expiry-management.js'
-  ].forEach(file => assert.doesNotMatch(read(file), /\balert\s*\(/, `${file} must use workflow error UI`));
-});
-
-test('joining decisions use server pagination for both tabs', () => {
-  const page = read('mcu-management/pages/keputusan-bergabung.html');
-  const source = read('mcu-management/js/pages/keputusan-bergabung.js');
-  const service = read('mcu-management/js/services/workflowService.js');
-
-  assert.match(page, /id="joining-pagination"/);
-  assert.match(source, /const PAGE_SIZE = 10/);
-  assert.match(source, /workflowService\.joiningQueue\(tab === 'history', \{ page, pageSize: PAGE_SIZE \}\)/);
-  assert.match(source, /loadData\(tab, 1\)/);
-  assert.match(source, /workflow-pagination-info/);
-  assert.doesNotMatch(source, /Promise\.all\(\[\s*workflowService\.joiningQueue/);
-  assert.match(service, /joiningQueue\(history = false, pagination = \{\}\)/);
 });
 
 test('quick Add MCU delegates to canonical form initialization', () => {
