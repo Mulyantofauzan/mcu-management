@@ -24,16 +24,8 @@ import { deleteOrphanedFiles } from '../services/supabaseStorageService.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';
 import { LAB_ITEMS_MAPPING, sortLabResultsByDisplayOrder } from '../data/labItemsMapping.js';
 import { mcuSuccessModal } from '../components/mcuSuccessModal.js';
-import { workflowService } from '../services/workflowService.js';
-import { workflowIdempotency } from '../utils/workflowIdempotency.js';
-import { ensureWorkflowAlerts, presentUploadError, presentWorkflowError } from '../utils/workflowErrorPresenter.js';
+import { presentUploadError } from '../utils/errorPresenter.js';
 import { createMcuFormReader } from '../utils/mcuFormReader.js';
-import {
-    applyMcuTypeMode,
-    hasFullMcuHistory,
-    isHealthCertificate,
-    normalizeMcuDataForType
-} from '../utils/mcuFormOrder.js';
 
 let employees = [];
 let filteredEmployees = [];
@@ -46,30 +38,9 @@ let showInactiveEmployees = false;
 let fileUploadWidget = null;
 let addFileUploadWidget = null;
 let generatedMCUIdForAdd = null;  // Store generated MCU ID for the add modal
-let workflowEnabled = false;
-let workflowStateKnown = false;
-let currentWorkflowDetail = null;
-let correctionQueue = [];
-let workflowBootstrapPromise = null;
 let formComponentsPromise = null;
 
 const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
-const EDITABLE_WORKFLOW_STATUSES = Object.freeze(['pending_review', 'correction_required']);
-
-function isEditableWorkflowStatus(status) {
-    return EDITABLE_WORKFLOW_STATUSES.includes(status);
-}
-
-async function requireEditableWorkflowDetail(mcuId) {
-    const detail = await workflowService.reviewDetail(mcuId);
-    if (!authService.hasRole('Admin', 'Petugas') || !isEditableWorkflowStatus(detail?.mcu?.workflow_status)) {
-        throw {
-            code: 'WORKFLOW_INVALID_TRANSITION',
-            message: 'MCU sedang direview atau hasilnya sudah final sehingga tidak dapat diedit.'
-        };
-    }
-    return detail;
-}
 
 function loadFormComponents() {
     if (!formComponentsPromise) {
@@ -85,24 +56,6 @@ function loadFormComponents() {
         });
     }
     return formComponentsPromise;
-}
-
-async function ensureWorkflowState() {
-    if (workflowStateKnown) return workflowEnabled;
-    if (!workflowBootstrapPromise) {
-        workflowBootstrapPromise = workflowService.bootstrap()
-            .then(bootstrap => {
-                workflowEnabled = bootstrap.workflowEnabled === true;
-                workflowStateKnown = true;
-                return workflowEnabled;
-            })
-            .catch(error => {
-                workflowStateKnown = false;
-                workflowBootstrapPromise = null;
-                throw error;
-            });
-    }
-    return workflowBootstrapPromise;
 }
 
 async function ensureDoctorsLoaded() {
@@ -351,121 +304,12 @@ async function init() {
     }
 }
 
-async function loadCorrectionQueue({ presentError = true } = {}) {
-    const section = document.getElementById('workflow-correction-section');
-    const list = document.getElementById('workflow-correction-list');
-    const count = document.getElementById('workflow-correction-count');
-    const user = authService.getCurrentUser();
-    if (!section || !list || !count) return;
-
-    if (!workflowEnabled || !authService.hasRole('Admin', 'Petugas')) {
-        section.classList.add('hidden');
-        return 0;
-    }
-
-    try {
-        const queue = await workflowService.petugasQueue();
-        correctionQueue = queue.filter(item => ['draft', 'correction_required'].includes(item.workflow_status));
-        count.textContent = String(correctionQueue.length);
-        section.classList.toggle('hidden', correctionQueue.length === 0);
-        list.replaceChildren();
-
-        correctionQueue.forEach(item => {
-            const row = document.createElement('div');
-            const isDraft = item.workflow_status === 'draft';
-            row.className = `flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 border rounded-lg ${isDraft ? 'border-blue-200 bg-blue-50' : 'border-yellow-200 bg-yellow-50'}`;
-            const text = document.createElement('div');
-            const name = document.createElement('strong');
-            const meta = document.createElement('p');
-            name.textContent = item.employee?.name || item.employee_id;
-            meta.className = 'text-sm text-gray-600';
-            meta.textContent = `${item.mcu_id} · ${item.mcu_type || '-'} · ${formatDateDisplay(item.mcu_date)}`;
-            text.append(name, meta);
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'btn btn-sm btn-primary';
-            button.textContent = isDraft ? 'Kirim ke Review' : 'Lihat & Koreksi';
-            button.addEventListener('click', () => isDraft
-                ? resumeDraftReview(item, button)
-                : window.viewMCUDetail(item.mcu_id));
-            row.append(text, button);
-            list.appendChild(row);
-        });
-        return correctionQueue.length;
-    } catch (error) {
-        pageLifecycle()?.setError('employees-corrections', error, loadSecondaryData);
-        if (presentError) await presentWorkflowError(error, { retry: loadCorrectionQueue });
-        return null;
-    }
-}
-
 async function loadSecondaryData() {
-    pageLifecycle()?.setLoading('employees-corrections', { retry: loadSecondaryData });
-    const [workflowResult, doctorResult] = await Promise.allSettled([
-        ensureWorkflowState(),
+    const [doctorResult] = await Promise.allSettled([
         ensureDoctorsLoaded(),
         populateDiseaseDropdowns()
     ]);
-
     if (doctorResult.status === 'fulfilled') doctors = doctorResult.value;
-    if (workflowResult.status === 'rejected') {
-        pageLifecycle()?.setError('employees-corrections', workflowResult.reason, loadSecondaryData);
-        return;
-    }
-
-    const queueCount = await loadCorrectionQueue({ presentError: false });
-    if (queueCount === null) return;
-    pageLifecycle()?.setReady('employees-corrections');
-}
-
-async function resumeDraftReview(item, button) {
-    button.disabled = true;
-    try {
-        await submitMCUForReview(item.mcu_id, Number(item.workflow_version || 0));
-        const Swal = await ensureWorkflowAlerts();
-        await Swal.fire({
-            icon: 'success',
-            title: 'MCU Dikirim',
-            text: 'Data masuk ke antrean review Dokter.',
-            timer: 1600,
-            showConfirmButton: false
-        });
-        await loadCorrectionQueue();
-    } catch (error) {
-        await presentWorkflowError(error, {
-            retry: () => resumeDraftReview(item, button),
-            reload: loadCorrectionQueue
-        });
-    } finally {
-        button.disabled = false;
-    }
-}
-
-function latestRejectionReason(detail) {
-    return [...(detail?.cycles || [])]
-        .reverse()
-        .find(cycle => cycle.decision === 'rejected')?.rejection_reason || '';
-}
-
-function configureMedicalResultFields(sectionId, fieldIds, hidden) {
-    document.getElementById(sectionId)?.classList.toggle('hidden', hidden);
-    fieldIds.forEach(id => {
-        const field = document.getElementById(id);
-        if (!field) return;
-        field.disabled = hidden;
-        if (hidden) field.required = false;
-    });
-}
-
-async function submitMCUForReview(mcuId, expectedVersion) {
-    const scope = `submit-review:${mcuId}:${expectedVersion}`;
-    const result = await workflowService.mutate('submit-review', {
-        mcuId,
-        expectedVersion,
-        idempotencyKey: workflowIdempotency.get(scope)
-    }, scope);
-    workflowIdempotency.clear(scope);
-    return result;
 }
 
 // ✅ NEW: Setup toggle button for showing/hiding inactive employees
@@ -1117,19 +961,6 @@ function populateDoctorDropdown(selectId) {
 
 window.addMCUForEmployee = async function(employeeId) {
     try {
-        if (!workflowStateKnown) {
-            try {
-                await ensureWorkflowState();
-            } catch (error) {
-                await presentWorkflowError({ code: 'WORKFLOW_NETWORK_ERROR', message: 'Status workflow belum dapat diverifikasi.' });
-                return;
-            }
-        }
-        if (workflowEnabled && !authService.hasRole('Admin', 'Petugas')) {
-            await presentWorkflowError({ code: 'WORKFLOW_FORBIDDEN', message: 'Hanya Petugas atau Administrator yang dapat mencatat MCU baru.' });
-            return;
-        }
-
         // Find employee data
         const employee = employees.find(e => e.employeeId === employeeId);
         if (!employee) {
@@ -1163,11 +994,6 @@ window.addMCUForEmployee = async function(employeeId) {
 
         // Reset form before binding the existing employee identity.
         addMcuForm.reset();
-        configureMedicalResultFields(
-            'add-medical-result-section',
-            ['mcu-result', 'mcu-notes'],
-            workflowEnabled
-        );
 
         // ✅ CRITICAL: Clear lab widget state before opening modal
         // This ensures fresh lab data collection for each new MCU
@@ -1178,7 +1004,6 @@ window.addMCUForEmployee = async function(employeeId) {
         // Set default date to today
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('mcu-date').value = today;
-        applyMcuTypeMode(addMcuForm, '');
 
         // Populate doctor dropdown
         populateDoctorDropdown('mcu-doctor');
@@ -1282,15 +1107,6 @@ window.handleAddMCU = async function(event) {
             mcuId: formMcuId,
             userId: widgetContext.userId
         });
-        const healthCertificate = isHealthCertificate(readField('mcu-type'));
-        if (healthCertificate) {
-            const employeeMcus = await mcuService.getByEmployee(uploadContext.employeeId);
-            if (hasFullMcuHistory(employeeMcus)) {
-                showToast('Karyawan dengan riwayat MCU tidak dapat diperpanjang memakai Surat Sehat.', 'error');
-                return;
-            }
-        }
-
         // ✅ FIX: Get doctor ID and convert to number (matching handleEditMCU logic)
         const doctorValue = readField('mcu-doctor');
         const doctorId = doctorValue ? parseInt(doctorValue, 10) : null;
@@ -1307,7 +1123,7 @@ window.handleAddMCU = async function(event) {
             return value || null;
         };
 
-        const mcuData = normalizeMcuDataForType({
+        const mcuData = {
             mcuId: uploadContext.mcuId,
             employeeId: uploadContext.employeeId,
             mcuType: readField('mcu-type'),
@@ -1342,16 +1158,16 @@ window.handleAddMCU = async function(event) {
             keluhanUtama: readField('mcu-keluhan') || null,
             diagnosisKerja: readField('mcu-diagnosis') || null,
             alasanRujuk: readField('mcu-alasan') || null,
-            initialResult: workflowEnabled ? null : readField('mcu-result'),
-            initialNotes: workflowEnabled ? null : readField('mcu-notes'),
+            initialResult: readField('mcu-result'),
+            initialNotes: readField('mcu-notes'),
             // ✅ Collect medical and family histories from Riwayat Kesehatan section
             medicalHistories: getMedicalHistoryData(),
             familyHistories: getFamilyHistoryData()
-        });
+        };
 
         // 🔍 DEBUG: Log the collected data BEFORE passing to batch service
         // Validate form data
-        const validation = validateMCUForm(mcuData, { requireMedicalResult: !workflowEnabled });
+        const validation = validateMCUForm(mcuData);
         if (!validation.isValid) {
             displayValidationErrors(validation.errors, showToast);
             return;
@@ -1408,7 +1224,7 @@ window.handleAddMCU = async function(event) {
 
         // ✅ CRITICAL: Collect lab results for batch processing
         let labResults = [];
-        if (!healthCertificate && labResultWidgetAdd) {
+        if (labResultWidgetAdd) {
             labResults = labResultWidgetAdd.getAllLabResults() || [];
         }
 
@@ -1430,17 +1246,7 @@ window.handleAddMCU = async function(event) {
             updateSaveProgress(currentSaveStep, totalSaveSteps);
         };
 
-        // A failed review submission leaves a recoverable draft. Reuse it on retry.
-        const existingDraft = workflowEnabled ? await mcuService.getById(mcuData.mcuId) : null;
-        const batchResult = existingDraft
-            ? {
-                success: existingDraft.workflowStatus === 'draft',
-                data: { mcu: existingDraft, labSaved: [], labFailed: [] },
-                errors: existingDraft.workflowStatus === 'draft'
-                    ? []
-                    : ['MCU sudah berpindah status. Muat ulang data.']
-            }
-            : await mcuBatchService.saveMCUWithLabResults(mcuData, labResults, currentUser);
+        const batchResult = await mcuBatchService.saveMCUWithLabResults(mcuData, labResults, currentUser);
 
         // Update progress for MCU save
         updateSaveStepProgress();
@@ -1453,24 +1259,6 @@ window.handleAddMCU = async function(event) {
         }
         mcuPersisted = true;
         tempFileStorage.clearFiles(mcuData.mcuId);
-
-        if (workflowEnabled) {
-            const createdVersion = batchResult.data.mcu?.workflowVersion ?? 0;
-            try {
-                await submitMCUForReview(mcuData.mcuId, createdVersion);
-            } catch (error) {
-                hideUnifiedLoading();
-                await presentWorkflowError(error, {
-                    retry: async () => {
-                        await submitMCUForReview(mcuData.mcuId, createdVersion);
-                        closeAddMCUModal();
-                        showToast(`MCU ${mcuData.mcuId} tersimpan. Menunggu review dokter.`, 'success');
-                        await loadData();
-                    }
-                });
-                return;
-            }
-        }
 
         // Update progress for each successful lab result
         if (batchResult.data.labSaved && batchResult.data.labSaved.length > 0) {
@@ -1500,16 +1288,12 @@ window.handleAddMCU = async function(event) {
         // Close add modal
         closeAddMCUModal();
 
-        if (workflowEnabled) {
-            showToast(`MCU ${mcuData.mcuId} tersimpan. Menunggu review dokter.`, 'success');
-        } else {
-            mcuSuccessModal.show(
-                employeeName,
-                mcuData.mcuType,
-                mcuData.initialResult,
-                5
-            );
-        }
+        mcuSuccessModal.show(
+            employeeName,
+            mcuData.mcuType,
+            mcuData.initialResult,
+            5
+        );
 
         // Show warning toast if lab failed (in addition to success modal)
         if (labFailed > 0) {
@@ -1554,48 +1338,12 @@ window.handleAddMCU = async function(event) {
 
 window.viewMCUDetail = async function(mcuId) {
     try {
-        if (!workflowStateKnown) {
-            try {
-                await ensureWorkflowState();
-            } catch (error) {
-                await presentWorkflowError({ code: 'WORKFLOW_NETWORK_ERROR', message: 'Status workflow belum dapat diverifikasi.' });
-                return;
-            }
-        }
         await ensureDoctorsLoaded();
 
         const mcu = await mcuService.getById(mcuId);
         if (!mcu) {
             showToast('MCU tidak ditemukan', 'error');
             return;
-        }
-
-        currentWorkflowDetail = null;
-        if (workflowEnabled) {
-            try {
-                currentWorkflowDetail = await workflowService.reviewDetail(mcuId);
-            } catch (error) {
-                await presentWorkflowError(error, { retry: () => window.viewMCUDetail(mcuId) });
-                return;
-            }
-        }
-
-        const workflowStatus = currentWorkflowDetail?.mcu?.workflow_status || mcu.workflowStatus;
-        const canEdit = workflowEnabled
-            && authService.hasRole('Admin', 'Petugas')
-            && isEditableWorkflowStatus(workflowStatus);
-        const needsCorrection = workflowStatus === 'correction_required';
-        const canUseLegacyActions = workflowStateKnown && !workflowEnabled;
-        document.getElementById('edit-mcu-button')?.classList.toggle('hidden', !(canEdit || canUseLegacyActions));
-        document.getElementById('delete-mcu-button')?.classList.toggle('hidden', !canUseLegacyActions);
-
-        const correctionAlert = document.getElementById('mcu-correction-alert');
-        const rejectionReason = latestRejectionReason(currentWorkflowDetail);
-        if (correctionAlert) {
-            correctionAlert.textContent = needsCorrection
-                ? `Dikembalikan dokter: ${rejectionReason || 'Periksa kembali data pemeriksaan.'}`
-                : '';
-            correctionAlert.classList.toggle('hidden', !needsCorrection);
         }
 
         const emp = employees.find(e => e.employeeId === mcu.employeeId);
@@ -2078,23 +1826,6 @@ window.editMCU = async function() {
             return;
         }
 
-        if (!workflowStateKnown) {
-            try {
-                await ensureWorkflowState();
-            } catch (error) {
-                await presentWorkflowError({ code: 'WORKFLOW_NETWORK_ERROR', message: 'Status workflow belum dapat diverifikasi.' });
-                return;
-            }
-        }
-        if (workflowEnabled) {
-            try {
-                currentWorkflowDetail = await requireEditableWorkflowDetail(mcu.mcuId);
-            } catch (error) {
-                await presentWorkflowError(error, { reload: () => window.viewMCUDetail(mcu.mcuId) });
-                return;
-            }
-        }
-
         // Close detail modal first
         closeMCUDetailModal();
 
@@ -2102,20 +1833,6 @@ window.editMCU = async function() {
         openModal('edit-mcu-modal');
         if (!labResultWidgetEdit || !labResultWidgetEdit.container) {
             labResultWidgetEdit = new StaticLabForm('lab-results-container-edit');
-        }
-
-        configureMedicalResultFields(
-            'edit-medical-result-section',
-            ['edit-mcu-initial-result', 'edit-mcu-initial-notes', 'edit-mcu-final-result', 'edit-mcu-final-notes'],
-            workflowEnabled
-        );
-        const correctionAlert = document.getElementById('edit-mcu-correction-alert');
-        if (correctionAlert) {
-            const needsCorrection = currentWorkflowDetail?.mcu?.workflow_status === 'correction_required';
-            correctionAlert.textContent = workflowEnabled && needsCorrection
-                ? `Alasan koreksi dokter: ${latestRejectionReason(currentWorkflowDetail) || 'Periksa kembali data pemeriksaan.'}`
-                : '';
-            correctionAlert.classList.toggle('hidden', !workflowEnabled || !needsCorrection);
         }
 
         // ✅ Setup custom disease input handlers for edit modal
@@ -2201,7 +1918,6 @@ window.editMCU = async function() {
                 document.getElementById('edit-mcu-id').dataset.employeeId = mcu.employeeId || '';
                 document.getElementById('edit-mcu-type').value = mcu.mcuType || '';
                 document.getElementById('edit-mcu-date').value = mcu.mcuDate || '';
-                applyMcuTypeMode(document.getElementById('edit-mcu-form'), mcu.mcuType);
 
                 // Fill examination fields - use explicit value assignment
                 const bioFields = {
@@ -2432,8 +2148,6 @@ window.handleEditMCU = async function(event) {
     let uploadContext = null;
     let uploadResult = { results: [] };
     let mcuPersisted = false;
-    let workflowEditStatus = null;
-    let workflowEditVersion = null;
 
     try {
         uploadContext = fileUploadWidget.getUploadContext();
@@ -2442,21 +2156,6 @@ window.handleEditMCU = async function(event) {
             showToast('MCU tidak ditemukan. Muat ulang data.', 'error');
             return;
         }
-        if (!workflowStateKnown) {
-            await presentWorkflowError({ code: 'WORKFLOW_NETWORK_ERROR', message: 'Status workflow belum dapat diverifikasi.' });
-            return;
-        }
-        if (workflowEnabled) {
-            try {
-                currentWorkflowDetail = await requireEditableWorkflowDetail(mcuId);
-                workflowEditStatus = currentWorkflowDetail.mcu.workflow_status;
-                workflowEditVersion = Number(currentWorkflowDetail.mcu.workflow_version || 0);
-            } catch (error) {
-                await presentWorkflowError(error, { reload: () => window.viewMCUDetail(mcuId) });
-                return;
-            }
-        }
-
         // ✅ FIX: Get doctor ID and convert to number
         const doctorSelect = document.getElementById('edit-mcu-doctor');
         const doctorValue = doctorSelect.value;
@@ -2480,20 +2179,7 @@ window.handleEditMCU = async function(event) {
             return value || null;
         };
 
-        const healthCertificate = isHealthCertificate(document.getElementById('edit-mcu-type').value);
-        if (healthCertificate) {
-            if (!isHealthCertificate(existingMCU.mcuType)) {
-                showToast('MCU penuh tidak dapat diubah menjadi Surat Sehat.', 'error');
-                return;
-            }
-            const employeeMcus = await mcuService.getByEmployee(existingMCU.employeeId);
-            if (hasFullMcuHistory(employeeMcus, mcuId)) {
-                showToast('Karyawan dengan riwayat MCU tidak dapat diperpanjang memakai Surat Sehat.', 'error');
-                return;
-            }
-        }
-
-        const updateData = normalizeMcuDataForType({
+        const updateData = {
             mcuType: document.getElementById('edit-mcu-type').value,
             mcuDate: document.getElementById('edit-mcu-date').value,
             bmi: document.getElementById('edit-mcu-bmi').value ? parseFloat(document.getElementById('edit-mcu-bmi').value) : null,
@@ -2528,16 +2214,11 @@ window.handleEditMCU = async function(event) {
             alasanRujuk: document.getElementById('edit-mcu-alasan').value || null,
             initialResult: document.getElementById('edit-mcu-initial-result').value,
             initialNotes: document.getElementById('edit-mcu-initial-notes').value
-        });
-
-        if (workflowEnabled) {
-            delete updateData.initialResult;
-            delete updateData.initialNotes;
-        }
+        };
 
         // Add final result if filled
         const finalResult = document.getElementById('edit-mcu-final-result').value;
-        if (!workflowEnabled && finalResult) {
+        if (finalResult) {
             updateData.finalResult = finalResult;
             updateData.finalNotes = document.getElementById('edit-mcu-final-notes').value || null;
         }
@@ -2595,7 +2276,7 @@ window.handleEditMCU = async function(event) {
 
         // Collect lab results if widget exists
         let labResults = [];
-        if (!healthCertificate && labResultWidgetEdit) {
+        if (labResultWidgetEdit) {
             // VALIDATION: Only validate if user has made changes to lab items
             if (labResultWidgetEdit.hasChanges()) {
                 const validationErrors = labResultWidgetEdit.validateAllFieldsFilled();
@@ -2615,18 +2296,6 @@ window.handleEditMCU = async function(event) {
                 employeeId: employeeId
             }));
 
-        }
-
-        if (workflowEnabled) {
-            const freshDetail = await requireEditableWorkflowDetail(mcuId);
-            const freshVersion = Number(freshDetail.mcu.workflow_version || 0);
-            if (freshDetail.mcu.workflow_status !== workflowEditStatus || freshVersion !== workflowEditVersion) {
-                throw {
-                    code: 'WORKFLOW_VERSION_CONFLICT',
-                    message: 'Status MCU berubah saat form dibuka. Muat ulang detail sebelum menyimpan.'
-                };
-            }
-            currentWorkflowDetail = freshDetail;
         }
 
         // ✅ Handle medical and family history updates
@@ -2687,99 +2356,98 @@ window.handleEditMCU = async function(event) {
             }
         }
 
-        if (!healthCertificate) {
-            try {
-                // Collect updated histories from EDIT form FIRST (before deleting old ones)
-                const medicalHistories = getEditMedicalHistoryData();
-                const familyHistories = getEditFamilyHistoryData();
+        try {
+            // Collect updated histories from EDIT form FIRST (before deleting old ones)
+            const medicalHistories = getEditMedicalHistoryData();
+            const familyHistories = getEditFamilyHistoryData();
 
 
-                // Get existing histories for comparison
-                const existingMedicalHistories = await database.MedicalHistories.getByMcuId(mcuId);
-                const existingFamilyHistories = await database.FamilyHistories.getByMcuId(mcuId);
+            // Get existing histories for comparison
+            const existingMedicalHistories = await database.MedicalHistories.getByMcuId(mcuId);
+            const existingFamilyHistories = await database.FamilyHistories.getByMcuId(mcuId);
 
-                // Track medical history changes
-                const existingMedicalNames = existingMedicalHistories.map(h => h.disease_name || h.diseaseName);
-                const newMedicalNames = medicalHistories.map(h => h.disease_name);
+            // Track medical history changes
+            const existingMedicalNames = existingMedicalHistories.map(h => h.disease_name || h.diseaseName);
+            const newMedicalNames = medicalHistories.map(h => h.disease_name);
 
-                // Find added/removed medical histories
-                const addedMedical = newMedicalNames.filter(name => !existingMedicalNames.includes(name));
-                const removedMedical = existingMedicalNames.filter(name => !newMedicalNames.includes(name));
+            // Find added/removed medical histories
+            const addedMedical = newMedicalNames.filter(name => !existingMedicalNames.includes(name));
+            const removedMedical = existingMedicalNames.filter(name => !newMedicalNames.includes(name));
 
-                // Track family history changes
-                const existingFamilyKeys = existingFamilyHistories.map(h => `${h.disease_name || h.diseaseName}:${h.family_member || h.familyMember}`);
-                const newFamilyKeys = familyHistories.map(h => `${h.disease_name}:${h.family_member}`);
+            // Track family history changes
+            const existingFamilyKeys = existingFamilyHistories.map(h => `${h.disease_name || h.diseaseName}:${h.family_member || h.familyMember}`);
+            const newFamilyKeys = familyHistories.map(h => `${h.disease_name}:${h.family_member}`);
 
-                const addedFamily = newFamilyKeys.filter(key => !existingFamilyKeys.includes(key));
-                const removedFamily = existingFamilyKeys.filter(key => !newFamilyKeys.includes(key));
+            const addedFamily = newFamilyKeys.filter(key => !existingFamilyKeys.includes(key));
+            const removedFamily = existingFamilyKeys.filter(key => !newFamilyKeys.includes(key));
 
-                // Log added medical histories
-                for (const disease of addedMedical) {
-                    historyChanges.push({
-                        fieldLabel: `Riwayat Penyakit (Ditambah): ${disease}`,
-                        fieldChanged: 'medicalHistory',
-                        oldValue: '-',
-                        newValue: disease
-                    });
-                }
-
-                // Log removed medical histories
-                for (const disease of removedMedical) {
-                    historyChanges.push({
-                        fieldLabel: `Riwayat Penyakit (Dihapus): ${disease}`,
-                        fieldChanged: 'medicalHistory',
-                        oldValue: disease,
-                        newValue: '-'
-                    });
-                }
-
-                // Log added family histories
-                for (const familyKey of addedFamily) {
-                    historyChanges.push({
-                        fieldLabel: `Riwayat Penyakit Keluarga (Ditambah): ${familyKey}`,
-                        fieldChanged: 'familyHistory',
-                        oldValue: '-',
-                        newValue: familyKey
-                    });
-                }
-
-                // Log removed family histories
-                for (const familyKey of removedFamily) {
-                    historyChanges.push({
-                        fieldLabel: `Riwayat Penyakit Keluarga (Dihapus): ${familyKey}`,
-                        fieldChanged: 'familyHistory',
-                        oldValue: familyKey,
-                        newValue: '-'
-                    });
-                }
-
-                // Delete existing histories
-                await database.MedicalHistories.deleteByMcuId(mcuId);
-                await database.FamilyHistories.deleteByMcuId(mcuId);
-
-                // Save new histories
-                if (medicalHistories.length > 0) {
-                    const medicalHistoriesWithMcuId = medicalHistories.map(history => ({
-                        ...history,
-                        mcu_id: mcuId,
-                        mcuId: mcuId
-                    }));
-                    await database.MedicalHistories.create(medicalHistoriesWithMcuId);
-                }
-
-                if (familyHistories.length > 0) {
-                    const familyHistoriesWithMcuId = familyHistories.map(history => ({
-                        ...history,
-                        mcu_id: mcuId,
-                        mcuId: mcuId
-                    }));
-                    await database.FamilyHistories.create(familyHistoriesWithMcuId);
-                }
-            } catch (historyError) {
-                showToast('⚠️ Riwayat Kesehatan mungkin tidak tersimpan: ' + historyError.message, 'warning');
-                // Continue with MCU update even if history save fails
+            // Log added medical histories
+            for (const disease of addedMedical) {
+                historyChanges.push({
+                    fieldLabel: `Riwayat Penyakit (Ditambah): ${disease}`,
+                    fieldChanged: 'medicalHistory',
+                    oldValue: '-',
+                    newValue: disease
+                });
             }
+
+            // Log removed medical histories
+            for (const disease of removedMedical) {
+                historyChanges.push({
+                    fieldLabel: `Riwayat Penyakit (Dihapus): ${disease}`,
+                    fieldChanged: 'medicalHistory',
+                    oldValue: disease,
+                    newValue: '-'
+                });
+            }
+
+            // Log added family histories
+            for (const familyKey of addedFamily) {
+                historyChanges.push({
+                    fieldLabel: `Riwayat Penyakit Keluarga (Ditambah): ${familyKey}`,
+                    fieldChanged: 'familyHistory',
+                    oldValue: '-',
+                    newValue: familyKey
+                });
+            }
+
+            // Log removed family histories
+            for (const familyKey of removedFamily) {
+                historyChanges.push({
+                    fieldLabel: `Riwayat Penyakit Keluarga (Dihapus): ${familyKey}`,
+                    fieldChanged: 'familyHistory',
+                    oldValue: familyKey,
+                    newValue: '-'
+                });
+            }
+
+            // Delete existing histories
+            await database.MedicalHistories.deleteByMcuId(mcuId);
+            await database.FamilyHistories.deleteByMcuId(mcuId);
+
+            // Save new histories
+            if (medicalHistories.length > 0) {
+                const medicalHistoriesWithMcuId = medicalHistories.map(history => ({
+                    ...history,
+                    mcu_id: mcuId,
+                    mcuId: mcuId
+                }));
+                await database.MedicalHistories.create(medicalHistoriesWithMcuId);
+            }
+
+            if (familyHistories.length > 0) {
+                const familyHistoriesWithMcuId = familyHistories.map(history => ({
+                    ...history,
+                    mcu_id: mcuId,
+                    mcuId: mcuId
+                }));
+                await database.FamilyHistories.create(familyHistoriesWithMcuId);
+            }
+        } catch (historyError) {
+            showToast('⚠️ Riwayat Kesehatan mungkin tidak tersimpan: ' + historyError.message, 'warning');
+            // Continue with MCU update even if history save fails
         }
+
 
         // Calculate total save steps for edit: 1 for MCU + 1 for each lab result change
         const totalEditSaveSteps = 1 + (labResults.length || 0);
@@ -2890,15 +2558,8 @@ window.handleEditMCU = async function(event) {
 
         // Show errors if any occurred
         if (batchResult.errors.length > 0) {
-            if (workflowEnabled) {
-                throw new Error(batchResult.errors.join('\n'));
-            }
             const errorMsg = `⚠️ Beberapa operasi gagal:\n${batchResult.errors.join('\n')}`;
             showToast(errorMsg, 'warning');
-        }
-
-        if (workflowEnabled && workflowEditStatus === 'correction_required') {
-            await submitMCUForReview(mcuId, currentWorkflowDetail.mcu.workflow_version);
         }
 
         // Hide loading after a brief delay to show completion
@@ -2906,17 +2567,8 @@ window.handleEditMCU = async function(event) {
             hideUnifiedLoading();
         }, 500);
 
-        const successMessage = !workflowEnabled
-            ? 'Data MCU berhasil diupdate'
-            : workflowEditStatus === 'correction_required'
-                ? 'Koreksi dikirim kembali untuk review dokter.'
-                : 'Data MCU diperbarui dan tetap menunggu review dokter.';
-        showToast(successMessage, 'success');
+        showToast('Data MCU berhasil diupdate', 'success');
         closeEditMCUModal();
-
-        if (workflowEnabled && workflowEditStatus === 'correction_required') {
-            await loadCorrectionQueue();
-        }
 
         // Reload if viewing from detail
         if (window.currentMCUId === mcuId) {
@@ -2935,13 +2587,6 @@ window.handleEditMCU = async function(event) {
         }
         if (error?.code?.startsWith('UPLOAD_')) {
             await presentUploadError(error);
-        } else if (workflowEnabled) {
-            await presentWorkflowError(error, {
-                retry: () => {
-                    if (submitForm) delete submitForm.dataset.submitting;
-                    return window.handleEditMCU(event);
-                }
-            });
         } else {
             showToast('Gagal mengupdate MCU: ' + error.message, 'error');
         }

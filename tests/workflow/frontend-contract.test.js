@@ -227,17 +227,6 @@ test('Admin and Petugas share fixed-duration MCU expiry view', () => {
   assert.doesNotMatch(source, /loadExpirySetting|update-expiry-setting/);
 });
 
-test('Petugas MCU edit is limited to pending review and requested correction', () => {
-  const source = read('mcu-management/js/pages/kelola-karyawan.js');
-
-  assert.match(source, /EDITABLE_WORKFLOW_STATUSES = Object\.freeze\(\['pending_review', 'correction_required'\]\)/);
-  assert.match(source, /requireEditableWorkflowDetail\(mcuId\)/);
-  assert.match(source, /freshDetail\.mcu\.workflow_status !== workflowEditStatus \|\| freshVersion !== workflowEditVersion/);
-  assert.match(source, /workflowEnabled && workflowEditStatus === 'correction_required'[\s\S]*submitMCUForReview/);
-  assert.match(source, /workflowEditStatus === 'correction_required'[\s\S]*Koreksi dikirim kembali untuk review dokter\./);
-  assert.match(source, /Data MCU diperbarui dan tetap menunggu review dokter\./);
-});
-
 test('menu navigation progressively enhances native links', () => {
   const source = read('mcu-management/js/sidebar-manager.js');
   const styles = read('mcu-management/css/sidebar.css');
@@ -275,18 +264,6 @@ test('WhatsApp summary uses approved review and excludes raw labs', () => {
   assert.doesNotMatch(source, /navigator\.clipboard|execCommand\('copy'\)/);
   assert.match(source, /if \(hasDocument\) await downloadReferral\(cycle\.id\)/);
   assert.match(source, /Pop-up WhatsApp diblokir/);
-});
-
-test('correction and periodic MCU paths submit raw data for doctor review', () => {
-  const source = read('mcu-management/js/pages/kelola-karyawan.js');
-  const page = read('mcu-management/pages/kelola-karyawan.html');
-  assert.match(source, /\['draft', 'correction_required'\]\.includes\(item\.workflow_status\)/);
-  assert.match(source, /delete updateData\.initialResult/);
-  assert.match(source, /submitMCUForReview/);
-  assert.match(source, /resumeDraftReview/);
-  assert.match(source, /Menunggu review dokter/);
-  assert.match(page, /workflow-correction-section/);
-  assert.match(page, /edit-medical-result-section/);
 });
 
 test('inactive employee toggle anchors to the filter card', () => {

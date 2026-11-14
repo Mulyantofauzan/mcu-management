@@ -425,6 +425,7 @@ export function debounce(func, wait) {
 
 // Get status badge HTML
 export function getStatusBadge(status) {
+  if (!status) return '<span class="badge badge-secondary">Belum ada hasil</span>';
   const badges = {
     'Fit': '<span class="badge badge-success">Fit</span>',
     'Follow-Up': '<span class="badge badge-warning">Follow-Up</span>',
