@@ -111,8 +111,6 @@ export function transformMCU(mcu) {
         finalResult: mcu.final_result,
         finalNotes: mcu.final_notes,
         status: mcu.status,
-        workflowStatus: mcu.workflow_status,
-        workflowVersion: mcu.workflow_version,
         currentMedicalResult: mcu.current_medical_result,
         currentReviewCycle: mcu.current_review_cycle,
         claimedBy: mcu.claimed_by,

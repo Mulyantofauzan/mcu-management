@@ -14,7 +14,7 @@ import { uploadFile, deleteFile, getFilesByMCU } from '../services/supabaseStora
 import { isSupabaseEnabled } from '../config/supabase.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';
 import { validateMcuFile } from '../services/mcuFilePolicy.mjs';
-import { ensureWorkflowAlerts } from '../utils/workflowErrorPresenter.js';
+import { ensureAlerts } from '../utils/errorPresenter.js';
 import { showConfirm } from '../utils/uiHelpers.js';
 
 export class FileUploadWidget {
@@ -409,7 +409,7 @@ export class FileUploadWidget {
         };
         this.showError(presentation.message);
         try {
-            const Swal = await ensureWorkflowAlerts();
+            const Swal = await ensureAlerts();
             await Swal.fire({
                 icon: 'error',
                 title: presentation.title,

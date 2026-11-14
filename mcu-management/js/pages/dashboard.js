@@ -400,8 +400,7 @@ function updateMCUTypeChart(filteredMCUs) {
     'Pre-Employee': 0,
     'Annual': 0,
     'Khusus': 0,
-    'Final': 0,
-    'Surat Sehat': 0
+    'Final': 0
   };
 
   filteredMCUs.forEach(mcu => {

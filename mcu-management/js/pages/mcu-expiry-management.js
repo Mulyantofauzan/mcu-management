@@ -6,7 +6,7 @@
 import { authService } from '../services/authService.js';
 import { initSidebar } from '../utils/sidebarInit.js';
 import { mcuExpiryService } from '../services/mcuExpiryService.js';
-import { ensureWorkflowAlerts, presentWorkflowError } from '../utils/workflowErrorPresenter.js';
+import { ensureAlerts, presentError } from '../utils/errorPresenter.js';
 
 const pageLifecycle = () => window.MADIS_PAGE_LIFECYCLE;
 
@@ -31,7 +31,7 @@ class MCUExpiryManagementPage {
       // Set user info
       const user = authService.getCurrentUser();
       if (!['Admin', 'Petugas'].includes(user?.role)) {
-        await presentWorkflowError({ code: 'WORKFLOW_FORBIDDEN', message: 'Halaman ini hanya untuk Administrator atau Petugas.' });
+        await presentError({ code: 'FORBIDDEN', message: 'Halaman ini hanya untuk Administrator atau Petugas.' });
         window.location.href = '../index.html';
         return;
       }
@@ -55,8 +55,8 @@ class MCUExpiryManagementPage {
       document.body.classList.add('initialized');
     } catch (error) {
       pageLifecycle()?.setError('expiry-data', error, () => this.initialize());
-      await presentWorkflowError({
-        code: error?.code || 'WORKFLOW_INTERNAL_ERROR',
+      await presentError({
+        code: error?.code || 'INTERNAL_ERROR',
         message: error?.message || 'Halaman masa berlaku MCU gagal dimuat.'
       }, { retry: () => this.initialize() });
       document.body.classList.add('initialized');
@@ -89,8 +89,8 @@ class MCUExpiryManagementPage {
       pageLifecycle()?.setReady('expiry-data');
     } catch (error) {
       pageLifecycle()?.setError('expiry-data', error, () => this.loadExpiryData());
-      await presentWorkflowError({
-        code: error?.code || 'WORKFLOW_INTERNAL_ERROR',
+      await presentError({
+        code: error?.code || 'INTERNAL_ERROR',
         message: error?.message || 'Data masa berlaku MCU gagal dimuat.'
       }, { retry: () => this.loadExpiryData() });
     }
@@ -137,7 +137,7 @@ class MCUExpiryManagementPage {
     const pageData = this.getSearchedData().slice(startIdx, endIdx);
 
     if (pageData.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="10" class="px-6 py-4 text-center text-gray-500">Tidak ada data</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="px-6 py-4 text-center text-gray-500">Tidak ada data</td></tr>';
       this.updatePagination();
       return;
     }
@@ -156,7 +156,6 @@ class MCUExpiryManagementPage {
           <td class="px-6 py-4 font-medium text-gray-900">${emp.name}</td>
           <td class="px-6 py-4 text-gray-600">${emp.department}</td>
           <td class="px-6 py-4 text-gray-600">${emp.job_title}</td>
-          <td class="px-6 py-4 text-gray-600">${emp.documentType || '-'}</td>
           <td class="px-6 py-4 text-gray-600">${lastMCUDate}</td>
           <td class="px-6 py-4 text-gray-600">${expiryDate}</td>
           <td class="px-6 py-4 font-semibold ${emp.expiryStatus === 'EXPIRED' ? 'text-red-600' : 'text-yellow-600'}">
@@ -333,13 +332,13 @@ window.exportToCSV = async function() {
   try {
     const data = page.getSearchedData();
     if (data.length === 0) {
-      const Swal = await ensureWorkflowAlerts();
+      const Swal = await ensureAlerts();
       await Swal.fire({ icon: 'info', title: 'Tidak Ada Data', text: 'Tidak ada baris yang dapat diekspor.' });
       return;
     }
 
     // Create CSV header
-    const headers = ['No', 'ID Karyawan', 'Nama', 'Departemen', 'Jabatan', 'Jenis Dokumen', 'Tanggal Pemeriksaan', 'Berlaku Sampai', 'Hari Tersisa', 'Status'];
+    const headers = ['No', 'ID Karyawan', 'Nama', 'Departemen', 'Jabatan', 'Tanggal Pemeriksaan', 'Berlaku Sampai', 'Hari Tersisa', 'Status'];
     const csvContent = [headers.join(',')];
 
     // Add data rows
@@ -353,7 +352,6 @@ window.exportToCSV = async function() {
         emp.name,
         emp.department || '-',
         emp.job_title || '-',
-        emp.documentType || '-',
         lastMCUDate,
         expiryDate,
         daysLeftText,
@@ -377,8 +375,8 @@ window.exportToCSV = async function() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   } catch (error) {
-    await presentWorkflowError({
-      code: 'WORKFLOW_INTERNAL_ERROR',
+    await presentError({
+      code: 'INTERNAL_ERROR',
       message: error?.message || 'CSV gagal dibuat.'
     });
   }

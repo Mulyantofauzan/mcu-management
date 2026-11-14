@@ -12,31 +12,17 @@ const authenticatedPages = [
     .map(file => `mcu-management/pages/${file}`)
 ];
 
-test('workflow client uses bearer API and deduplicates mutations', () => {
-  const source = read('mcu-management/js/services/workflowService.js');
-  assert.match(source, /\/api\/workflow/);
-  assert.match(source, /Authorization: `Bearer \$\{token\}`/);
-  assert.match(source, /pendingMutations/);
-  assert.doesNotMatch(source, /setTimeout\([^)]*request/);
-});
-
-test('idempotency keys stay in memory', () => {
-  const source = read('mcu-management/js/utils/workflowIdempotency.js');
-  assert.match(source, /crypto\.randomUUID\(\)/);
-  assert.doesNotMatch(source, /localStorage|sessionStorage|indexedDB/);
-});
-
-test('workflow errors have local SweetAlert recovery UI', () => {
-  const source = read('mcu-management/js/utils/workflowErrorPresenter.js');
+test('error presenter has local SweetAlert recovery UI', () => {
+  const source = read('mcu-management/js/utils/errorPresenter.js');
   const helpers = read('mcu-management/js/utils/uiHelpers.js');
   [
-    'WORKFLOW_UNAUTHORIZED',
-    'WORKFLOW_FORBIDDEN',
-    'WORKFLOW_VERSION_CONFLICT',
-    'WORKFLOW_VALIDATION_FAILED',
-    'WORKFLOW_LOCKED',
-    'WORKFLOW_NETWORK_ERROR',
-    'WORKFLOW_DOCUMENT_FAILED'
+    'UNAUTHORIZED',
+    'FORBIDDEN',
+    'VALIDATION_FAILED',
+    'NETWORK_ERROR',
+    'NOT_FOUND',
+    'INTERNAL_ERROR',
+    'UPLOAD_NETWORK_ERROR'
   ].forEach(code => assert.match(source, new RegExp(code)));
   assert.match(helpers, /assets\/vendor\/sweetalert2/);
   assert.doesNotMatch(`${source}\n${helpers}`, /https?:\/\//);
@@ -44,7 +30,7 @@ test('workflow errors have local SweetAlert recovery UI', () => {
 
 test('shared UI helpers own the proportional SweetAlert presentation', () => {
   const helpers = read('mcu-management/js/utils/uiHelpers.js');
-  const workflow = read('mcu-management/js/utils/workflowErrorPresenter.js');
+  const workflow = read('mcu-management/js/utils/errorPresenter.js');
   const styles = read('mcu-management/css/alerts.css');
 
   assert.equal(fs.existsSync(path.join(root, 'mcu-management/assets/vendor/sweetalert2/sweetalert2.all.min.js')), true);
@@ -59,7 +45,7 @@ test('shared UI helpers own the proportional SweetAlert presentation', () => {
   assert.match(helpers, /export async function showConfirm/);
   assert.match(helpers, /export function confirmDialog/);
   assert.match(workflow, /ensureAppAlerts/);
-  assert.match(workflow, /ensureWorkflowAlerts/);
+  assert.match(workflow, /ensureAlerts/);
   assert.match(styles, /max-width:\s*440px/);
   assert.match(styles, /max-width:\s*360px/);
   assert.match(styles, /body\.swal2-toast-shown[\s\S]*width:\s*100%/);
@@ -221,7 +207,6 @@ test('Admin and Petugas share fixed-duration MCU expiry view', () => {
   assert.match(sidebar, /Admin:\s*\[[\s\S]*mcu-expiry-management\.html'[\s\S]*label: 'MCU Expired'/);
   assert.match(source, /\['Admin', 'Petugas'\]\.includes\(user\?\.role\)/);
   assert.match(page, /MCU berlaku 12 bulan sejak tanggal pemeriksaan/);
-  assert.match(page, /Jenis Dokumen/);
   assert.match(page, /Berlaku Sampai/);
   assert.doesNotMatch(page, /expiry-months-input|Preview Dampak/);
   assert.doesNotMatch(source, /loadExpirySetting|update-expiry-setting/);
@@ -251,19 +236,6 @@ test('workflow auth does not eagerly load database CDN', () => {
   const auth = read('mcu-management/js/services/authService.js');
   assert.doesNotMatch(auth, /^import \{ database \}/m);
   assert.match(auth, /import\('\.\/database\.js'\)/);
-});
-
-test('WhatsApp summary uses approved review and excludes raw labs', () => {
-  const source = read('mcu-management/js/utils/whatsappShare.js');
-  assert.match(source, /approvedCycle/);
-  assert.match(source, /Hasil:/);
-  assert.match(source, /Catatan:/);
-  assert.match(source, /Dokter:/);
-  assert.doesNotMatch(source, /labs|pemeriksaan_lab|SGOT|SGPT/);
-  assert.match(source, /https:\/\/wa\.me\/\?text=\$\{encodeURIComponent\(summary\)\}/);
-  assert.doesNotMatch(source, /navigator\.clipboard|execCommand\('copy'\)/);
-  assert.match(source, /if \(hasDocument\) await downloadReferral\(cycle\.id\)/);
-  assert.match(source, /Pop-up WhatsApp diblokir/);
 });
 
 test('inactive employee toggle anchors to the filter card', () => {

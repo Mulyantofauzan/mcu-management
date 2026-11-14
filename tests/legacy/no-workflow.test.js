@@ -69,3 +69,37 @@ test('MCU expiry page has no admin threshold panel', () => {
   assert.doesNotMatch(script, /expirySetting|previewExpiryImpact|applyExpirySetting|workflowService/);
   assert.match(html, /MCU berlaku 12 bulan sejak tanggal pemeriksaan\./);
 });
+
+test('app code, pages, styles and APIs no longer mention the approval workflow or Surat Sehat', () => {
+  const pattern = /workflow|Workflow|WORKFLOW|Surat Sehat|health.?certificate|mcuFormOrder|whatsappShare|documentType|Jenis Dokumen/;
+  const roots = ['mcu-management/js', 'mcu-management/pages', 'mcu-management/css', 'api', 'server']
+    .map(dir => path.join(root, dir));
+  const files = roots.flatMap(dir => walk(dir))
+    .concat([path.join(app, 'index.html'), path.join(app, 'sw.js'), path.join(root, 'vercel.json')])
+    .filter(file => /\.(js|mjs|html|css|json)$/.test(file) && !file.includes('node_modules'));
+  const offenders = files.filter(file => pattern.test(fs.readFileSync(file, 'utf8')))
+    .map(file => path.relative(root, file));
+  assert.deepEqual(offenders, []);
+});
+
+test('removed shared workflow modules do not exist', () => {
+  for (const file of [
+    'mcu-management/css/workflow.css',
+    'mcu-management/js/services/workflowService.js',
+    'mcu-management/js/utils/workflowErrorPresenter.js',
+    'mcu-management/js/utils/workflowIdempotency.js',
+    'mcu-management/js/utils/whatsappShare.js',
+    'mcu-management/js/utils/mcuFormOrder.js'
+  ]) {
+    assert.equal(fs.existsSync(path.join(root, file)), false, file);
+  }
+});
+
+test('MCU expiry table has no document type column', () => {
+  const html = read('mcu-management/pages/mcu-expiry-management.html');
+  const headers = (html.match(/<th /g) || []).length;
+  const script = read('mcu-management/js/pages/mcu-expiry-management.js');
+  assert.equal(headers, 9);
+  assert.doesNotMatch(script, /documentType/);
+  assert.match(script, /presentError/);
+});
