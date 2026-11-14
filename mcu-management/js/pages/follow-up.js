@@ -14,10 +14,7 @@ import { showToast, openModal, closeModal } from '../utils/uiHelpers.js';
 import { supabaseReady } from '../config/supabase.js';  // ✅ FIX: Wait for Supabase initialization
 import { deleteOrphanedFiles, uploadBatchFiles } from '../services/supabaseStorageService.js';
 import { tempFileStorage } from '../services/tempFileStorage.js';  // ✅ NEW: Temp file management
-import { workflowService } from '../services/workflowService.js';
-import { workflowIdempotency } from '../utils/workflowIdempotency.js';
-import { presentUploadError, presentWorkflowError } from '../utils/workflowErrorPresenter.js';
-import { applyMcuTypeMode, isHealthCertificate } from '../utils/mcuFormOrder.js';
+import { presentUploadError } from '../utils/errorPresenter.js';
 
 let followUpList = [];
 let filteredList = [];
@@ -30,9 +27,6 @@ let currentMCU = null;
 let currentPage = 1;
 const itemsPerPage = 10;
 let labResultWidgetUpdate = null;  // Lab result widget for update modal
-let workflowEnabled = false;
-let workflowStateKnown = false;
-let currentWorkflowDetail = null;
 let followUpSupportModulesPromise = null;
 let referralModulePromise = null;
 
@@ -309,12 +303,7 @@ async function init() {
     pageLifecycle()?.setLoading('followup-stats', { retry: init });
     pageLifecycle()?.setLoading('followup-table', { retry: init });
 
-    const [workflowResult, masterResult] = await Promise.allSettled([
-      configureWorkflowMode(),
-      loadMasterData()
-    ]);
-    if (workflowResult.status === 'rejected') throw workflowResult.reason;
-    if (masterResult.status === 'rejected') throw masterResult.reason;
+    await loadMasterData();
 
     await window.loadFollowUpList({ throwOnError: true });
     pageLifecycle()?.markInteractive();
@@ -322,31 +311,6 @@ async function init() {
     pageLifecycle()?.setError('followup-stats', error, init);
     pageLifecycle()?.setError('followup-table', error, init);
     showToast('Daftar follow-up belum dapat dimuat.', 'error');
-  }
-}
-
-async function configureWorkflowMode() {
-  try {
-    const bootstrap = await workflowService.bootstrap();
-    workflowEnabled = bootstrap.workflowEnabled === true;
-    workflowStateKnown = true;
-    if (workflowEnabled && !['Admin', 'Petugas'].includes(bootstrap.role)) {
-      await presentWorkflowError({ code: 'WORKFLOW_FORBIDDEN', message: 'Bukti follow-up hanya dapat diisi Petugas atau Administrator.' });
-      window.location.href = '../index.html';
-      return;
-    }
-  } catch (error) {
-    await presentWorkflowError(error, { retry: configureWorkflowMode, reload: configureWorkflowMode });
-    if (!workflowStateKnown) throw error;
-  }
-
-  document.getElementById('followup-result-field')?.classList.toggle('hidden', workflowEnabled);
-  const result = document.getElementById('fu-result');
-  if (result) result.required = !workflowEnabled;
-  if (workflowEnabled) {
-    document.getElementById('followup-form-help').textContent = 'Isi bukti dan catatan tindak lanjut. Dokter akan menentukan hasil pada review berikutnya.';
-    document.getElementById('followup-notes-label').innerHTML = 'Bukti / Catatan Tindak Lanjut <span class="text-danger">*</span>';
-    document.getElementById('fu-notes').placeholder = 'Pemeriksaan, konsultasi, atau tindakan yang sudah dilakukan...';
   }
 }
 
@@ -440,29 +404,7 @@ function enrichEmployeeWithIdsOptimized(emp, jobMap, deptMap) {
 window.loadFollowUpList = async function({ throwOnError = false } = {}) {
   pageLifecycle()?.setLoading('followup-table', { retry: window.loadFollowUpList });
   try {
-    if (!workflowStateKnown) return;
-    if (workflowEnabled) {
-      const queue = await workflowService.petugasQueue();
-      followUpList = queue
-        .filter(row => ['followup_required', 'approved_legacy'].includes(row.workflow_status))
-        .map(row => ({
-          mcuId: row.mcu_id,
-          employeeId: row.employee_id,
-          employeeName: row.employee?.name,
-          employeeDepartment: row.employee?.department,
-          mcuType: row.mcu_type,
-          mcuDate: row.mcu_date,
-          initialResult: row.current_medical_result,
-          initialNotes: '',
-          workflowStatus: row.workflow_status,
-          workflowVersion: row.workflow_version,
-          currentReviewCycle: row.current_review_cycle,
-          currentShareCycleId: row.current_share_cycle_id,
-          currentShareStatus: row.current_share_status
-        }));
-    } else {
-      followUpList = await mcuService.getFollowUpList();
-    }
+    followUpList = await mcuService.getFollowUpList();
     filteredList = [...followUpList];
 
     updateStats();
@@ -474,11 +416,10 @@ window.loadFollowUpList = async function({ throwOnError = false } = {}) {
       pageLifecycle()?.setReady('followup-table');
     }
 
-    if (!workflowEnabled) showToast('Data berhasil dimuat', 'success');
+    showToast('Data berhasil dimuat', 'success');
   } catch (error) {
     pageLifecycle()?.setError('followup-table', error, window.loadFollowUpList);
-    if (workflowEnabled) await presentWorkflowError(error, { retry: window.loadFollowUpList });
-    else showToast('Gagal memuat data: ' + error.message, 'error');
+    showToast('Gagal memuat data: ' + error.message, 'error');
     if (throwOnError) throw error;
   }
 };
@@ -490,7 +431,7 @@ function updateStats() {
   // Completed this month - MCUs with finalResult !== 'Follow-Up' and finalResult !== null in current month
   const now = new Date();
   const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-  const completedCount = workflowEnabled ? 0 : followUpList.filter(mcu => {
+  const completedCount = followUpList.filter(mcu => {
     const mcuDate = new Date(mcu.mcuDate);
     // Check if MCU has been completed (has final result other than Follow-Up)
     const isCompleted = mcu.finalResult && mcu.finalResult !== 'Follow-Up';
@@ -554,13 +495,9 @@ function renderTable() {
     html += `<td>${formatDateDisplay(mcu.mcuDate)}</td>`;
     html += `<td><span class="badge badge-warning">${mcu.initialResult}</span></td>`;
     html += `<td title="${notes}"><span class="text-xs text-gray-600" style="display: block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayNotes}</span></td>`;
-    const referralButton = mcu.currentShareCycleId ? `
-        <button onclick="downloadWorkflowReferralAction('${mcu.mcuId}')" class="btn btn-sm btn-secondary" title="Download Surat Rujukan" style="padding: 0.375rem 0.75rem; background-color: #3b82f6; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
-          📄 Rujukan
-        </button>` : '';
     html += `<td>
       <div class="flex gap-2">
-        ${workflowEnabled ? referralButton : `<button onclick="downloadRujukanPDFAction('${mcu.mcuId}')" class="btn btn-sm btn-secondary" title="Download Surat Rujukan" style="padding: 0.375rem 0.75rem; background-color: #3b82f6; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">📄 Rujukan</button>`}
+        <button onclick="downloadRujukanPDFAction('${mcu.mcuId}')" class="btn btn-sm btn-secondary" title="Download Surat Rujukan" style="padding: 0.375rem 0.75rem; background-color: #3b82f6; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">📄 Rujukan</button>
         <button onclick="openFollowUpModal('${mcu.mcuId}')" class="btn btn-sm btn-primary">
           Update
         </button>
@@ -612,40 +549,6 @@ window.handleSearch = function() {
   renderTable();
 };
 
-window.downloadWorkflowReferralAction = async function(mcuId) {
-  const mcu = followUpList.find(item => item.mcuId === mcuId);
-  try {
-    if (!mcu?.currentShareCycleId) throw new Error('Review cycle tidak tersedia');
-    const reviewCycleId = mcu.currentShareCycleId;
-    let result;
-    try {
-      result = await workflowService.get('download-referral', { reviewCycleId });
-    } catch (error) {
-      if (error?.code !== 'WORKFLOW_NOT_FOUND') throw error;
-      const scope = `regenerate-referral:${reviewCycleId}`;
-      const generated = await workflowService.mutate('regenerate-referral', { reviewCycleId }, scope);
-      if (generated?.status !== 'ready') {
-        throw {
-          code: generated?.code || 'WORKFLOW_DOCUMENT_FAILED',
-          message: generated?.message || 'Surat rujukan belum dapat dibuat.'
-        };
-      }
-      result = await workflowService.get('download-referral', { reviewCycleId });
-    }
-    const link = document.createElement('a');
-    link.href = result.downloadUrl;
-    link.download = result.fileName;
-    link.rel = 'noopener';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-  } catch (error) {
-    await presentWorkflowError(error, {
-      retry: () => window.downloadWorkflowReferralAction(mcuId)
-    });
-  }
-};
-
 window.openFollowUpModal = async function(mcuId) {
   try {
     const { FileUploadWidget } = await loadFollowUpSupportModules();
@@ -653,17 +556,6 @@ window.openFollowUpModal = async function(mcuId) {
     if (!currentMCU) {
       showToast('MCU record tidak ditemukan', 'error');
       return;
-    }
-
-    if (workflowEnabled) {
-      currentWorkflowDetail = await workflowService.reviewDetail(mcuId);
-      currentMCU.workflowVersion = currentWorkflowDetail.mcu.workflow_version;
-      currentMCU.workflowStatus = currentWorkflowDetail.mcu.workflow_status;
-      currentMCU.currentMedicalResult = currentWorkflowDetail.mcu.current_medical_result;
-      const approvedCycles = currentWorkflowDetail.cycles.filter(cycle => cycle.decision === 'approved');
-      const latestCycle = approvedCycles[approvedCycles.length - 1];
-      currentMCU.initialResult = latestCycle?.medical_result || currentMCU.currentMedicalResult;
-      currentMCU.initialNotes = latestCycle?.clinical_notes || '';
     }
 
     const employee = employees.find(e => e.employeeId === currentMCU.employeeId);
@@ -718,7 +610,6 @@ window.openFollowUpModal = async function(mcuId) {
 window.closeFollowUpModal = function() {
   closeModal('followup-modal');
   currentMCU = null;
-  currentWorkflowDetail = null;
 };
 
 // ✅ NEW: Step 1 - Save follow-up data to memory ONLY (not database yet)
@@ -729,12 +620,8 @@ window.handleFollowUpSubmit = async function(event) {
   const finalResult = document.getElementById('fu-result').value;
   const finalNotes = document.getElementById('fu-notes').value;
 
-  if ((!workflowEnabled && !finalResult) || !finalNotes.trim()) {
-    if (workflowEnabled) {
-      await presentWorkflowError({ code: 'WORKFLOW_VALIDATION_FAILED', message: 'Bukti atau catatan tindak lanjut wajib diisi.' });
-    } else {
-      showToast('Hasil akhir dan catatan wajib diisi', 'warning');
-    }
+  if (!finalResult || !finalNotes.trim()) {
+    showToast('Hasil akhir dan catatan wajib diisi', 'warning');
     return;
   }
 
@@ -758,9 +645,8 @@ window.handleFollowUpSubmit = async function(event) {
     pendingChanges.uploadContext = uploadContext;
     pendingChanges.uploadResults = [];
     pendingChanges.followUpData = {
-      ...(workflowEnabled
-        ? { evidenceNotes: finalNotes.trim() }
-        : { finalResult: finalResult, finalNotes: finalNotes }),
+      finalResult: finalResult,
+      finalNotes: finalNotes,
       currentUser: currentUser
     };
 
@@ -865,7 +751,6 @@ window.openMCUUpdateModal = async function(mcuId) {
       mcuTypeField.disabled = true;
     }
     if (mcuDateField) mcuDateField.value = currentMCU.mcuDate ? currentMCU.mcuDate.split('T')[0] : '';
-    applyMcuTypeMode(document.getElementById('mcu-update-form'), currentMCU.mcuType);
 
     // Set Doctor dropdown
     const doctorField = document.getElementById('update-mcu-doctor');
@@ -889,12 +774,9 @@ window.openMCUUpdateModal = async function(mcuId) {
     if (initialResultField) initialResultField.value = currentMCU.initialResult || '';
     if (initialNotesField) initialNotesField.value = currentMCU.initialNotes || '';
 
-    // Medical result remains doctor-owned while approval workflow is enabled.
     const finalResultSection = document.getElementById('update-final-result-section');
     if (finalResultSection) {
-      if (workflowEnabled) {
-        finalResultSection.classList.add('hidden');
-      } else if (currentMCU.initialResult === 'Follow-Up' || currentMCU.finalResult) {
+      if (currentMCU.initialResult === 'Follow-Up' || currentMCU.finalResult) {
         finalResultSection.classList.remove('hidden');
 
         // Populate readonly display fields from pendingChanges (modal sebelumnya)
@@ -1001,11 +883,6 @@ window.toggleFinalResultSection = function() {
   const finalResultSection = document.getElementById('update-final-result-section');
 
   if (!initialResultField || !finalResultSection) return;
-  if (workflowEnabled) {
-    finalResultSection.classList.add('hidden');
-    return;
-  }
-
   if (initialResultField.value === 'Follow-Up') {
     finalResultSection.classList.remove('hidden');
   } else {
@@ -1100,7 +977,7 @@ window.handleDetailMCUUpdate = async function(event) {
 
     // Get lab results from widget (separate from updateData since they're stored separately)
     let labResults = [];
-    if (!isHealthCertificate(currentMCU?.mcuType) && labResultWidgetUpdate) {
+    if (labResultWidgetUpdate) {
       // ONLY validate if user has made changes to lab items
       // If user just editing other fields (e.g., tanggal), skip lab validation
       if (labResultWidgetUpdate.hasChanges()) {
@@ -1166,17 +1043,14 @@ async function finalizeFollowUpUpdate() {
       }
     }
 
-    // Legacy mode stores final result directly. Workflow mode sends evidence to doctor.
-    if (!workflowEnabled) {
-      const oldFinalResult = originalMCU.finalResult || '';
-      if (String(oldFinalResult) !== String(followUpData.finalResult)) {
-        mergedUpdateData.finalResult = followUpData.finalResult;
-      }
+    const oldFinalResult = originalMCU.finalResult || '';
+    if (String(oldFinalResult) !== String(followUpData.finalResult)) {
+      mergedUpdateData.finalResult = followUpData.finalResult;
+    }
 
-      const oldFinalNotes = originalMCU.finalNotes || '';
-      if (String(oldFinalNotes) !== String(followUpData.finalNotes)) {
-        mergedUpdateData.finalNotes = followUpData.finalNotes;
-      }
+    const oldFinalNotes = originalMCU.finalNotes || '';
+    if (String(oldFinalNotes) !== String(followUpData.finalNotes)) {
+      mergedUpdateData.finalNotes = followUpData.finalNotes;
     }
 
     // ✅ Check if there are any actual changes to save
@@ -1300,29 +1174,10 @@ async function finalizeFollowUpUpdate() {
       }
     }
 
-    // Workflow submissions must not continue after a partial raw-data save.
-    if (workflowEnabled && batchResult.errors.length > 0) {
-      throw new Error(batchResult.errors.join('\n'));
-    }
-
-    // Show errors if any occurred in legacy mode.
+    // Show errors if any operation failed.
     if (batchResult.errors.length > 0) {
       const errorMsg = `Beberapa operasi gagal:\n${batchResult.errors.join('\n')}`;
       showToast(errorMsg, 'warning');
-    }
-
-    if (workflowEnabled) {
-      const scope = `submit-followup:${mcuId}:${originalMCU.workflowVersion}`;
-      await workflowService.mutate('submit-followup', {
-        mcuId,
-        expectedVersion: originalMCU.workflowVersion,
-        evidenceNotes: followUpData.evidenceNotes,
-        attachmentFileIds: (pendingChanges.uploadResults || [])
-          .filter(result => result.success && result.fileId)
-          .map(result => result.fileId),
-        idempotencyKey: workflowIdempotency.get(scope)
-      }, scope);
-      workflowIdempotency.clear(scope);
     }
 
     hideSaveLoading();
@@ -1339,10 +1194,7 @@ async function finalizeFollowUpUpdate() {
       uploadResults: []
     };
 
-    if (workflowEnabled) {
-      showToast('Bukti follow-up dikirim untuk review dokter.', 'success');
-      setTimeout(() => window.loadFollowUpList(), 800);
-    } else if (changes.length > 0) {
+    if (changes.length > 0) {
       displayChangeHistory(changes);
     } else {
       showToast('Follow-up dan detail MCU berhasil diupdate!', 'success');
@@ -1354,11 +1206,7 @@ async function finalizeFollowUpUpdate() {
 
   } catch (error) {
     hideSaveLoading();
-    if (workflowEnabled) {
-      await presentWorkflowError(error, { retry: finalizeFollowUpUpdate });
-    } else {
-      showToast('Gagal menyimpan perubahan: ' + error.message, 'error');
-    }
+    showToast('Gagal menyimpan perubahan: ' + error.message, 'error');
   }
 }
 

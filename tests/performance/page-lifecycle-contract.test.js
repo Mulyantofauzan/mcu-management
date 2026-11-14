@@ -91,7 +91,7 @@ test('employee input defers MCU-only support modules', () => {
 
 test('follow-up list renders before modal support modules', () => {
   const source = read('mcu-management/js/pages/follow-up.js');
-  const init = source.match(/async function init\(\)[\s\S]*?\n}\n\nasync function configureWorkflowMode/)?.[0] || '';
+  const init = source.match(/async function init\(\)[\s\S]*?\n}\n\nfunction updateUserInfo/)?.[0] || '';
 
   assert.doesNotMatch(source, /^import FileUploadWidget|^import \{ StaticLabForm \}/m);
   assert.doesNotMatch(init, /await initLabForms/);

@@ -274,16 +274,6 @@ test('inactive employee toggle anchors to the filter card', () => {
   assert.doesNotMatch(source, /insertBefore\(toggleBtn, tableCard\)/);
 });
 
-test('follow-up path submits evidence without a petugas medical result', () => {
-  const source = read('mcu-management/js/pages/follow-up.js');
-  assert.match(source, /evidenceNotes: followUpData\.evidenceNotes/);
-  assert.match(source, /attachmentFileIds:[\s\S]{0,180}result\.fileId/);
-  assert.doesNotMatch(source, /attachmentFileIds: \[\]/);
-  assert.match(source, /mcuTypeField\.disabled = true/);
-  assert.match(source, /if \(!workflowEnabled\)[\s\S]{0,500}mergedUpdateData\.finalResult/);
-  assert.match(source, /Bukti follow-up dikirim untuk review dokter/);
-});
-
 test('analytics pages use the centralized eligibility service', () => {
   const service = read('mcu-management/js/services/analyticsEligibilityService.js');
   assert.match(service, /v_analytics_eligible_current/);
