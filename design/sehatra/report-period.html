@@ -1,0 +1,41 @@
+<!doctype html>
+<!--
+Sumber: mcu-management/pages/report-period.html dan js/services/reportExportService.js
+Paritas: Filter Laporan (Tanggal Mulai, Tanggal Akhir, Departemen, Status MCU: Semua, Fit, Unfit, Follow-Up), tombol Buat Laporan; kartu Total Karyawan, Total MCU, Unfit / Follow-Up; Hasil Laporan (No, ID Karyawan, Nama Karyawan, Departemen, Jabatan, Tanggal MCU, Tipe MCU, Status, Hasil Awal, Hasil Akhir); pagination Sebelumnya/Berikutnya; pesan kosong; pesan memuat "Mengkonsolidasikan data MCU dan karyawan...".
+Pilihan: halaman asli tidak punya tombol ekspor, jadi tidak ditambahkan.
+-->
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Laporan Periode - Sehatra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="sehatra.css">
+<script src="theme-init.js"></script>
+</head>
+<body data-page="report-period">
+<a class="skip" href="#main">Lewati ke konten</a>
+<div class="app"><div id="shell-side"></div><div class="main"><div id="shell-top"></div><main id="main" class="content">
+<div class="ph"><div><h1>Laporan Periode MCU</h1><p>Laporan karyawan dan hasil MCU dalam periode tertentu.</p></div></div>
+<p><span class="sample-note">Data contoh, bukan data asli</span></p>
+<form class="card filters" data-demo-submit aria-label="Filter laporan">
+  <label><span>Tanggal mulai</span><input class="field" id="rp-from" name="rp-from" type="date" value="2026-01-01" required></label>
+  <label><span>Tanggal akhir</span><input class="field" id="rp-to" name="rp-to" type="date" value="2026-11-20" required></label>
+  <label><span>Departemen</span><select class="field" id="rp-dept" name="rp-dept"><option>Semua departemen</option><option>Produksi</option><option>Gudang &amp; Logistik</option><option>Teknik &amp; Pemeliharaan</option><option>Keuangan</option><option>HRD &amp; Umum</option><option>IT</option></select></label>
+  <label><span>Status MCU</span><select class="field" id="rp-status" name="rp-status"><option>Semua status</option><option>Fit</option><option>Unfit</option><option>Follow-Up</option></select></label>
+  <div class="acts"><button class="btn pri" type="submit">Buat laporan</button></div>
+</form>
+<div class="grid g-kpi">
+  <div class="card kpi"><div class="l"><i></i>Total Karyawan</div><div class="v num">49</div><div class="s">Punya MCU pada periode</div></div>
+  <div class="card kpi"><div class="l"><i style="background:var(--info)"></i>Total MCU</div><div class="v num">63</div><div class="s">Pemeriksaan tercatat</div></div>
+  <div class="card kpi"><div class="l"><i style="background:var(--warn)"></i>Unfit / Follow-Up</div><div class="v num">8</div><div class="s">Perlu tindak lanjut</div></div>
+</div>
+<section class="card" aria-labelledby="hl-t"><div class="card-h"><h2 id="hl-t">Hasil Laporan</h2><div class="seg" data-state-demo role="group" aria-label="Contoh kondisi data"><button type="button" data-state-set="normal" aria-pressed="true">Normal</button><button type="button" data-state-set="loading" aria-pressed="false">Memuat</button><button type="button" data-state-set="empty" aria-pressed="false">Kosong</button><button type="button" data-state-set="error" aria-pressed="false">Galat</button></div></div>
+<div class="card-b"><div data-states><div data-state="normal" data-active><div class="tbl-wrap"><table><thead><tr><th>No</th><th>ID karyawan</th><th>Nama karyawan</th><th>Departemen</th><th>Jabatan</th><th>Tanggal MCU</th><th>Tipe MCU</th><th>Status</th><th>Hasil awal</th><th>Hasil akhir</th></tr></thead><tbody><tr><td class="num">1</td><td class="num muted">KRY-1003</td><td><div class="who-c"><div class="ava">AW</div><div><b>Andi Wijaya</b></div></div></td><td>Gudang &amp; Logistik</td><td>Forklift Operator</td><td class="num">03 Sep 2026</td><td>Annual</td><td><span class="pill s-followup" data-status="Follow-Up">Follow-Up</span></td><td><span class="pill s-followup" data-status="Follow-Up">Follow-Up</span></td><td><span class="pill s-note" data-status="Fit With Note">Fit With Note</span></td></tr><tr><td class="num">2</td><td class="num muted">KRY-1001</td><td><div class="who-c"><div class="ava">BS</div><div><b>Budi Santoso</b></div></div></td><td>Produksi</td><td>Operator Mesin</td><td class="num">20 Nov 2026</td><td>Annual</td><td><span class="pill s-fit" data-status="Fit">Fit</span></td><td><span class="pill s-fit" data-status="Fit">Fit</span></td><td><span class="muted">-</span></td></tr><tr><td class="num">3</td><td class="num muted">KRY-1002</td><td><div class="who-c"><div class="ava">SR</div><div><b>Siti Rahma</b></div></div></td><td>HRD &amp; Umum</td><td>Staf HRD</td><td class="num">21 Agu 2026</td><td>Khusus</td><td><span class="pill s-temp" data-status="Temporary Unfit">Temporary Unfit</span></td><td><span class="pill s-temp" data-status="Temporary Unfit">Temporary Unfit</span></td><td><span class="muted">-</span></td></tr><tr><td class="num">4</td><td class="num muted">KRY-1005</td><td><div class="who-c"><div class="ava">AH</div><div><b>Agus Hidayat</b></div></div></td><td>Teknik &amp; Pemeliharaan</td><td>Teknisi Listrik</td><td class="num">14 Agu 2026</td><td>Final</td><td><span class="pill s-unfit" data-status="Unfit">Unfit</span></td><td><span class="pill s-unfit" data-status="Unfit">Unfit</span></td><td><span class="muted">-</span></td></tr><tr><td class="num">5</td><td class="num muted">KRY-1004</td><td><div class="who-c"><div class="ava">RL</div><div><b>Rina Lestari</b></div></div></td><td>Keuangan</td><td>Akuntan</td><td class="num">19 Nov 2026</td><td>Annual</td><td><span class="pill s-note" data-status="Fit With Note">Fit With Note</span></td><td><span class="pill s-note" data-status="Fit With Note">Fit With Note</span></td><td><span class="muted">-</span></td></tr></tbody></table></div><div class="pager"><span>Menampilkan 1 sampai 5 dari 63 (contoh)</span><div><button class="btn sm" type="button" data-demo="halaman sebelumnya" disabled>Sebelumnya</button><button class="btn sm" type="button" data-demo="halaman berikutnya">Berikutnya</button></div></div></div><div data-state="loading"><div class="empty" role="status" aria-busy="true">Mengkonsolidasikan data MCU dan karyawan... Jangan tutup halaman ini. Proses akan dimulai dalam beberapa detik.</div></div><div data-state="empty"><div class="empty"><b>Tidak ada data untuk periode ini</b><p>Isi filter lalu klik Buat laporan, atau ubah rentang tanggal.</p></div></div><div data-state="error"><div class="empty" role="alert"><b>Data gagal dimuat</b><p>Periksa koneksi, lalu coba lagi.</p><button class="btn sm" type="button" data-demo="coba lagi memuat data">Coba lagi</button></div></div></div></div></section>
+</main></div></div>
+
+<script src="shell.js"></script>
+<script src="sehatra.js"></script>
+</body>
+</html>
