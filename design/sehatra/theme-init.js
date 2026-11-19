@@ -38,6 +38,9 @@
     try { storage = root.localStorage; } catch (e) { storage = undefined; }
     try { dark = root.matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) { dark = false; }
     apply(resolveTheme(readStored(storage), dark));
+    try {
+      if (storage && storage.getItem('sehatra-side') === 'collapsed') root.document.documentElement.dataset.side = 'collapsed';
+    } catch (e) { /* diabaikan: menu tampil terbuka */ }
   }
 
   function toggle() {

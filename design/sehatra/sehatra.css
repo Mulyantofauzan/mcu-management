@@ -57,14 +57,19 @@ h1,h2,h3,p{margin:0}
 .search:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .icon-btn{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--muted);flex:none}
 .icon-btn:hover{color:var(--fg);border-color:var(--line-2)}
-.menu-btn{display:none}
+.menu-btn{display:grid}
+html[data-side="collapsed"] .app{grid-template-columns:minmax(0,1fr)}
+html[data-side="collapsed"] .side{display:none}
+.kpi .meter{display:flex;align-items:center;gap:10px;margin-top:6px}
+.kpi .meter .bar{flex:1;margin-top:0}
+.kpi .meter b{font-size:13px;font-weight:700;min-width:44px;text-align:right}
 .me{display:flex;align-items:center;gap:10px;margin-left:auto;padding-left:6px}
 .me .who{line-height:1.25;text-align:right}
 .me .who b{display:block;font-weight:700;font-size:13px}
 .me .who span{font-size:12px;color:var(--muted)}
 .ava{width:36px;height:36px;border-radius:50%;background:var(--accent-soft);color:var(--accent-strong);display:grid;place-items:center;font-weight:800;font-size:12.5px;flex:none}
 
-.content{padding-block:8px 48px;padding-left:max(var(--gx),env(safe-area-inset-left,0px));padding-right:max(var(--gx),env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px;max-width:1280px;width:100%}
+.content{padding-block:8px 48px;padding-left:max(var(--gx),env(safe-area-inset-left,0px));padding-right:max(var(--gx),env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px;width:100%}
 .ph{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .ph h1{font-size:24px;font-weight:800;letter-spacing:-.025em;text-wrap:balance}
 .ph p{color:var(--muted);margin-top:2px}
@@ -202,6 +207,7 @@ tbody tr.row:hover td{background:var(--bg)}
 
 @media (max-width:1000px){.g-2-1{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:900px){
+  html[data-side="collapsed"] .side{display:flex}
   :root{--gx:16px}
   .app{grid-template-columns:minmax(0,1fr)}
   .side{position:fixed;left:0;top:0;bottom:0;width:272px;max-width:86vw;height:auto;transform:translateX(-102%);transition:transform .22s ease;padding-top:calc(20px + env(safe-area-inset-top,0px))}

@@ -118,7 +118,15 @@
     }
 
     var side = document.getElementById('side');
-    if (t.closest('[data-menu-toggle]')) { if (side) side.classList.toggle('open'); return; }
+    if (t.closest('[data-menu-toggle]')) {
+      var narrow = window.matchMedia && window.matchMedia('(max-width:900px)').matches;
+      if (narrow) { if (side) side.classList.toggle('open'); return; }
+      var root = document.documentElement;
+      var next = root.dataset.side === 'collapsed' ? 'open' : 'collapsed';
+      root.dataset.side = next;
+      try { localStorage.setItem('sehatra-side', next); } catch (e) { /* penyimpanan diblokir: hanya berlaku di sesi ini */ }
+      return;
+    }
     if (side && !t.closest('#side')) side.classList.remove('open');
   });
 

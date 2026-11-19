@@ -49,7 +49,7 @@
     { label: 'Analisis', items: [
       { key: 'analysis', label: 'Analisis', icon: 'chart' },
       { key: 'report-period', label: 'Laporan Periode', icon: 'file' },
-      { key: 'assessment-rahma', label: 'Skor Jakarta', icon: 'heart' }
+      { key: 'assessment-rahma', label: 'Rahma - Jakarta Cardiovascular', icon: 'heart' }
     ] },
     { label: 'Pengaturan', adminOnly: true, items: [
       { key: 'kelola-user', label: 'Kelola User', icon: 'lock' },
@@ -106,7 +106,7 @@
 
     var topbar =
       '<header class="topbar">' +
-        '<button class="icon-btn menu-btn" type="button" data-menu-toggle aria-label="Buka menu">' + icon('menu') + '</button>' +
+        '<button class="icon-btn menu-btn" type="button" data-menu-toggle aria-label="Tampilkan atau sembunyikan menu">' + icon('menu') + '</button>' +
         '<label class="search" for="gsearch">' + icon('search') +
         '<input id="gsearch" type="search" placeholder="Cari nama atau NIK karyawan" autocomplete="off"></label>' +
         '<button class="icon-btn" type="button" data-theme-toggle aria-label="Ganti tema">' + icon('moon') + '</button>' +
