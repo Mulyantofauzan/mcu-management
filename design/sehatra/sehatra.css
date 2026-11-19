@@ -231,3 +231,7 @@ tbody tr.row:hover td{background:var(--bg)}
 [data-state]{display:none}
 [data-state][data-active]{display:block}
 .scrim[hidden]{display:none}
+#shell-side,#shell-top{display:contents}
+.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.brand-mark .i{width:20px;height:20px;stroke-width:2.4}
+.search .i{width:17px;height:17px}
