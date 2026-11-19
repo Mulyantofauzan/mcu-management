@@ -76,8 +76,18 @@
     var opener = t.closest('[data-open]');
     if (opener) { openDialog(opener.dataset.open); return; }
 
+    var toggler = t.closest('[data-toggle]');
+    if (toggler) {
+      var panel = document.querySelector(toggler.dataset.toggle);
+      if (panel) {
+        panel.hidden = !panel.hidden;
+        toggler.setAttribute('aria-expanded', String(!panel.hidden));
+      }
+      return;
+    }
+
     var demo = t.closest('[data-demo]');
-    if (demo) { showToast('Prototipe: ' + (demo.dataset.demo || 'aksi belum tersambung')); return; }
+    if (demo && demo.tagName !== 'SELECT') { showToast('Prototipe: ' + (demo.dataset.demo || 'aksi belum tersambung')); return; }
 
     var tab = t.closest('[data-tab]');
     if (tab) {
@@ -138,6 +148,11 @@
     if (ev.key === 'Enter' && ev.target.id === 'gsearch') {
       window.location.href = 'kelola-karyawan.html?q=' + encodeURIComponent(ev.target.value);
     }
+  });
+
+  document.addEventListener('change', function (ev) {
+    var el = ev.target;
+    if (el.tagName === 'SELECT' && el.matches('[data-demo]')) showToast('Prototipe: ' + (el.dataset.demo || 'filter belum tersambung'));
   });
 
   document.addEventListener('submit', function (ev) {

@@ -1,0 +1,44 @@
+<!doctype html>
+<!--
+Sumber: mcu-management/pages/login.html
+Paritas: field Username dan Password (wajib), kotak "Remember me" (Ingat saya), tombol Sign In (Masuk), overlay memuat, label versi aplikasi, footer organisasi.
+Pilihan: nama produk Sehatra menggantikan MADIS. Pesan galat dan memuat dibuat terlihat lewat tombol contoh kondisi. Halaman tanpa menu samping.
+-->
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Masuk - Sehatra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="sehatra.css">
+<script src="theme-init.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Lewati ke konten</a>
+<main id="main" class="auth">
+<div class="card auth-card">
+  <div class="brand"><div class="brand-mark" aria-hidden="true"><svg class="i" aria-hidden="true"><use href="#i-shield"/></svg></div><div><b>Sehatra</b><small>Manajemen MCU</small></div></div>
+  <div><h1 style="font-size:22px;font-weight:800;letter-spacing:-.02em">Masuk</h1><p class="muted">Gunakan akun yang diberikan administrator.</p></div>
+  <div class="alert bad" id="login-error" role="alert" hidden>Username atau password salah. Coba lagi.</div>
+  <div class="alert info" id="login-loading" role="status" hidden>Memproses...</div>
+  <form class="stackv" data-demo-submit>
+    <div class="form" style="grid-template-columns:1fr">
+      <label>Username<input class="field" id="username" name="username" type="text" placeholder="Masukkan username" required autocomplete="username"></label>
+      <label>Password<input class="field" id="password" name="password" type="password" placeholder="Masukkan password" required autocomplete="current-password"></label>
+    </div>
+    <label class="check"><input type="checkbox" name="remember"> Ingat saya</label>
+    <button class="btn pri block" type="submit">Masuk</button>
+  </form>
+  <p class="muted" style="font-size:12.5px">Contoh kondisi:
+    <button class="btn sm" type="button" data-toggle="#login-error" aria-expanded="false">Pesan galat</button>
+    <button class="btn sm" type="button" data-toggle="#login-loading" aria-expanded="false">Memuat</button></p>
+  <div class="auth-foot">&copy; 2025 SHE PST Site MHU · <span class="tag num">v1.2.21</span></div>
+  <div style="display:flex;justify-content:center"><button class="icon-btn" type="button" data-theme-toggle aria-label="Ganti tema"><svg class="i" aria-hidden="true"><use href="#i-moon"/></svg></button></div>
+</div>
+</main>
+
+<script src="shell.js"></script>
+<script src="sehatra.js"></script>
+</body>
+</html>

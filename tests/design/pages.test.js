@@ -97,6 +97,10 @@ for (const file of pages) {
       assert.ok(ok, `dead button: <button${b.attrs}>`);
     }
     for (const f of els.filter(e => e.tag === 'form')) assert.ok(has(f, 'data-demo-submit'), 'form without data-demo-submit');
+    for (const s of els.filter(e => e.tag === 'select')) {
+      const inDemoForm = s.ancestors.some(a => /(?:^|\s)data-demo-submit(?:\s|=|$)/.test(a));
+      assert.ok(inDemoForm || has(s, 'data-demo'), `select without behaviour: <select${s.attrs}>`);
+    }
     assert.doesNotMatch(parsed.clean, /href="#"/);
   });
 
@@ -105,6 +109,10 @@ for (const file of pages) {
     for (const e of els.filter(x => has(x, 'data-open'))) {
       const target = attr(e, 'data-open');
       assert.ok(target.startsWith('#') && ids.has(target.slice(1)), `data-open target ${target}`);
+    }
+    for (const e of els.filter(x => has(x, 'data-toggle'))) {
+      const target = attr(e, 'data-toggle');
+      assert.ok(target.startsWith('#') && ids.has(target.slice(1)), `data-toggle target ${target}`);
     }
     for (const d of els.filter(x => attr(x, 'role') === 'dialog')) {
       assert.ok(ids.has(attr(d, 'aria-labelledby')), 'dialog aria-labelledby');
