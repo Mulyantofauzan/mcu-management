@@ -1,0 +1,46 @@
+<!doctype html>
+<!--
+Sumber: mcu-management/pages/follow-up.html dan js/pages/follow-up.js
+Paritas: judul Follow-Up MCU; kartu Total Follow-Up, Selesai Bulan Ini, Perlu Perhatian; tabel Nama Karyawan, ID Karyawan, Departemen, Tanggal MCU, Hasil Awal, Catatan, Aksi (Update); pagination; dialog Update Follow-Up: nilai sebelumnya (Hasil Awal, Catatan Awal), Hasil Akhir (Fit, Fit With Note, Temporary Unfit, Follow-Up, Unfit), Catatan Akhir, upload dokumen follow-up, Batal, Simpan dan lanjut Update MCU.
+Pilihan: langkah 2 aplikasi lama (Update Detail MCU) adalah form MCU yang sama, jadi tombol lanjut membuka tambah-karyawan.html#sec-fisik, bukan menyalin form. Filter departemen dan pencarian ditambahkan untuk konsistensi dengan Kelola Karyawan.
+-->
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Follow-Up MCU - Sehatra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="sehatra.css">
+<script src="theme-init.js"></script>
+</head>
+<body data-page="follow-up">
+<a class="skip" href="#main">Lewati ke konten</a>
+<div class="app"><div id="shell-side"></div><div class="main"><div id="shell-top"></div><main id="main" class="content">
+<div class="ph"><div><h1>Follow-Up MCU</h1><p>Daftar karyawan yang memerlukan pemeriksaan lanjutan.</p></div></div>
+<p><span class="sample-note">Data contoh, bukan data asli</span></p>
+<div class="grid g-kpi">
+  <div class="card kpi"><div class="l"><i style="background:var(--warn)"></i>Total Follow-Up</div><div class="v num">6</div><div class="s">Menunggu hasil akhir</div></div>
+  <div class="card kpi"><div class="l"><i style="background:var(--good)"></i>Selesai Bulan Ini</div><div class="v num">3</div><div class="s">Hasil akhir sudah diisi</div></div>
+  <div class="card kpi"><div class="l"><i style="background:var(--crit)"></i>Perlu Perhatian</div><div class="v num">2</div><div class="s">Lebih dari 30 hari tanpa hasil akhir</div></div>
+</div>
+<section class="card" aria-labelledby="fu-t"><div class="card-h"><h2 id="fu-t">Daftar Follow-Up</h2><div class="seg" data-state-demo role="group" aria-label="Contoh kondisi data"><button type="button" data-state-set="normal" aria-pressed="true">Normal</button><button type="button" data-state-set="loading" aria-pressed="false">Memuat</button><button type="button" data-state-set="empty" aria-pressed="false">Kosong</button><button type="button" data-state-set="error" aria-pressed="false">Galat</button></div></div>
+<div class="tools" style="padding:16px 18px 0"><label class="search" for="fu-search"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg><input id="fu-search" type="search" placeholder="Cari nama atau ID karyawan" autocomplete="off"></label><select class="field" id="fu-dept" name="fu-dept" data-demo="filter departemen"><option>Semua departemen</option><option>Produksi</option><option>Gudang &amp; Logistik</option><option>Keuangan</option><option>HRD &amp; Umum</option></select></div>
+<div class="card-b"><div data-states><div data-state="normal" data-active><div class="tbl-wrap"><table><thead><tr><th>Nama karyawan</th><th>ID karyawan</th><th>Departemen</th><th>Tanggal MCU</th><th>Hasil awal</th><th>Catatan</th><th>Aksi</th></tr></thead><tbody><tr class="row" tabindex="0" data-open="#dlg-followup"><td><div class="who-c"><div class="ava">AW</div><div><b>Andi Wijaya</b></div></div></td><td class="num muted">KRY-1003</td><td>Gudang &amp; Logistik</td><td class="num">03 Sep 2026</td><td><span class="pill s-followup" data-status="Follow-Up">Follow-Up</span></td><td>Hipertensi tahap 1, kontrol tekanan darah dalam 2 minggu</td><td><button class="btn sm pri" type="button" data-open="#dlg-followup">Update</button></td></tr><tr class="row" tabindex="0" data-open="#dlg-followup"><td><div class="who-c"><div class="ava">SR</div><div><b>Siti Rahma</b></div></div></td><td class="num muted">KRY-1002</td><td>HRD &amp; Umum</td><td class="num">21 Agu 2026</td><td><span class="pill s-followup" data-status="Follow-Up">Follow-Up</span></td><td>Glukosa puasa 112, ulangi HbA1c</td><td><button class="btn sm pri" type="button" data-open="#dlg-followup">Update</button></td></tr><tr class="row" tabindex="0" data-open="#dlg-followup"><td><div class="who-c"><div class="ava">JN</div><div><b>Joko Nugroho</b></div></div></td><td class="num muted">KRY-1008</td><td>Produksi</td><td class="num">14 Agu 2026</td><td><span class="pill s-followup" data-status="Follow-Up">Follow-Up</span></td><td>Kolesterol total 248, diet dan ulang lipid</td><td><button class="btn sm pri" type="button" data-open="#dlg-followup">Update</button></td></tr><tr class="row" tabindex="0" data-open="#dlg-followup"><td><div class="who-c"><div class="ava">DL</div><div><b>Dewi Lestari</b></div></div></td><td class="num muted">KRY-1012</td><td>Keuangan</td><td class="num">02 Agu 2026</td><td><span class="pill s-followup" data-status="Follow-Up">Follow-Up</span></td><td>Asam urat 8,1, batasi jeroan</td><td><button class="btn sm pri" type="button" data-open="#dlg-followup">Update</button></td></tr></tbody></table></div><div class="pager"><span>Menampilkan 1 sampai 4 dari 6 (contoh)</span><div><button class="btn sm" type="button" data-demo="halaman sebelumnya" disabled>Sebelumnya</button><button class="btn sm" type="button" data-demo="halaman berikutnya">Berikutnya</button></div></div></div><div data-state="loading"><div class="empty" role="status" aria-busy="true">Memuat data...</div></div><div data-state="empty"><div class="empty"><b>Tidak ada follow-up</b><p>Semua karyawan sudah punya hasil akhir.</p></div></div><div data-state="error"><div class="empty" role="alert"><b>Data gagal dimuat</b><p>Periksa koneksi, lalu coba lagi.</p><button class="btn sm" type="button" data-demo="coba lagi memuat data">Coba lagi</button></div></div></div></div></section>
+</main></div></div>
+<div class="scrim center" id="dlg-followup" hidden><div class="panel" role="dialog" aria-modal="true" aria-labelledby="dlg-followup-t"><form data-demo-submit><div class="panel-h"><div><h2 id="dlg-followup-t">Update Follow-Up</h2><p>Langkah 1 dari 2: hasil akhir dan catatan.</p></div><button class="icon-btn" type="button" data-close aria-label="Tutup"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button></div><div class="panel-b"><div class="stackv">
+  <section><h3>Nilai sebelumnya</h3><div class="kv"><div><span>Karyawan</span><b>Andi Wijaya (KRY-1003)</b></div><div><span>Hasil awal</span><b><span class="pill s-followup" data-status="Follow-Up">Follow-Up</span></b></div><div><span>Catatan awal</span><b>Hipertensi tahap 1, kontrol tekanan darah dalam 2 minggu</b></div></div></section>
+  <p class="alert info">Isi hasil akhir dan catatan. Detail pemeriksaan MCU diperbarui di langkah berikutnya.</p>
+  <div class="form" style="grid-template-columns:1fr">
+    <label><span>Hasil akhir <span class="req" aria-hidden="true">*</span></span><select class="field" id="fu-result" name="fu-result" required><option>Pilih hasil...</option><option>Fit</option><option>Fit With Note</option><option>Temporary Unfit</option><option>Follow-Up</option><option>Unfit</option></select></label>
+    <label><span>Catatan akhir <span class="req" aria-hidden="true">*</span></span><textarea class="field" id="fu-notes" name="fu-notes" rows="3" required placeholder="Ringkasan hasil pemeriksaan lanjutan"></textarea></label>
+  </div>
+  <section><h3>Upload dokumen follow-up</h3>
+    <div class="filerow"><span>surat-rujukan-andi.pdf · 0,8 MB</span><button class="btn sm" type="button" data-demo="file dihapus dari antrean, form tidak disimpan">Hapus</button></div>
+    <div class="dropzone" tabindex="0"><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg><p><b>Pilih file atau tarik ke sini</b></p><p class="muted">PDF kurang dari 10 MB, PNG/JPG maksimal 3 MB.</p>
+    <button class="btn" type="button" data-demo="memilih file">Pilih file</button></div></section>
+</div></div><div class="panel-f"><button class="btn" type="button" data-close>Batal</button><a class="btn pri" href="tambah-karyawan.html#sec-fisik">Simpan &amp; lanjut update MCU</a></div></form></div></div>
+<script src="shell.js"></script>
+<script src="sehatra.js"></script>
+</body>
+</html>

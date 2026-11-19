@@ -1,0 +1,47 @@
+<!doctype html>
+<!--
+Sumber: mcu-management/pages/employee-health-history.html
+Paritas: judul Riwayat Kesehatan Karyawan; pilih Nama Karyawan dan Jenis Tampilan (Semua Waktu, Tahun Ini, 6 Bulan Terakhir, 3 Bulan Terakhir); info Nama, Departemen, Total MCU; ringkasan Fit, Unfit, Follow-Up, Status Terakhir; Riwayat MCU (Card View); Timeline Riwayat MCU; Riwayat Detail (No, Tanggal MCU, Tipe MCU, Status, Hasil Awal, Hasil Akhir, Catatan); keadaan kosong "Tidak Ada Data MCU".
+Pilihan: grafik canvas aplikasi lama diganti timeline SVG berbentuk titik per MCU. Keadaan awal "Pilih Karyawan" diwakili pilihan awal pada daftar karyawan.
+-->
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Riwayat Kesehatan - Sehatra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="sehatra.css">
+<script src="theme-init.js"></script>
+</head>
+<body data-page="employee-health-history">
+<a class="skip" href="#main">Lewati ke konten</a>
+<div class="app"><div id="shell-side"></div><div class="main"><div id="shell-top"></div><main id="main" class="content">
+<div class="ph"><div><h1>Riwayat Kesehatan Karyawan</h1><p>Lihat timeline MCU dan tren kesehatan per karyawan.</p></div></div>
+<p><span class="sample-note">Data contoh, bukan data asli</span></p>
+<section class="card" aria-labelledby="pk-t"><div class="card-h"><h2 id="pk-t">Pilih Karyawan</h2><div class="seg" data-state-demo role="group" aria-label="Contoh kondisi data"><button type="button" data-state-set="normal" aria-pressed="true">Normal</button><button type="button" data-state-set="loading" aria-pressed="false">Memuat</button><button type="button" data-state-set="empty" aria-pressed="false">Kosong</button><button type="button" data-state-set="error" aria-pressed="false">Galat</button></div></div>
+<div class="card-b form" style="padding-top:14px">
+  <label><span>Nama karyawan</span><select class="field" id="employee-select" name="employee-select" data-demo="karyawan dipilih"><option>Pilih karyawan...</option><option selected>Andi Wijaya (KRY-1003)</option><option>Siti Rahma (KRY-1002)</option><option>Budi Santoso (KRY-1001)</option></select></label>
+  <label><span>Jenis tampilan</span><select class="field" id="view-type" name="view-type" data-demo="rentang waktu diganti"><option>Semua waktu</option><option>Tahun ini</option><option>6 bulan terakhir</option><option>3 bulan terakhir</option></select></label>
+</div></section>
+<div data-states><div data-state="normal" data-active>
+  <div class="grid g-kpi">
+    <div class="card kpi"><div class="l"><i></i>Nama karyawan</div><div class="v num">Andi Wijaya</div><div class="s">KRY-1003 · Forklift Operator</div></div>
+    <div class="card kpi"><div class="l"><i></i>Departemen</div><div class="v num">Gudang &amp; Logistik</div><div class="s">Status aktif</div></div>
+    <div class="card kpi"><div class="l"><i style="background:var(--info)"></i>Total MCU</div><div class="v num">3</div><div class="s">2024 sampai 2026</div></div>
+  </div>
+  <div class="grid g-kpi">
+    <div class="card kpi"><div class="l"><i style="background:var(--good)"></i>Fit</div><div class="v num">2</div><div class="s">Hasil Fit</div></div>
+    <div class="card kpi"><div class="l"><i style="background:var(--crit)"></i>Unfit</div><div class="v num">0</div><div class="s">Hasil Unfit</div></div>
+    <div class="card kpi"><div class="l"><i style="background:var(--warn)"></i>Follow-Up</div><div class="v num">1</div><div class="s">Menunggu hasil akhir</div></div>
+    <div class="card kpi"><div class="l"><i></i>Status terakhir</div><div class="v" style="font-size:20px"><span class="pill s-followup" data-status="Follow-Up">Follow-Up</span></div><div class="s">MCU 03 Sep 2026</div></div>
+  </div>
+  <section class="card" aria-labelledby="hc-t"><div class="card-h"><h2 id="hc-t">Riwayat MCU (Card View)</h2></div><div class="card-b"><div class="grid g-3"><div class="card" style="box-shadow:none"><div class="card-b" style="padding:14px 16px"><div class="row" style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b class="num">03 Sep 2026</b><span class="pill s-followup" data-status="Follow-Up">Follow-Up</span></div><p class="muted" style="margin-top:6px">Tipe: Annual</p><p style="margin-top:6px">Tekanan darah 148/92, kontrol 2 minggu</p></div></div><div class="card" style="box-shadow:none"><div class="card-b" style="padding:14px 16px"><div class="row" style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b class="num">12 Okt 2025</b><span class="pill s-fit" data-status="Fit">Fit</span></div><p class="muted" style="margin-top:6px">Tipe: Annual</p><p style="margin-top:6px">Seluruh parameter normal</p></div></div><div class="card" style="box-shadow:none"><div class="card-b" style="padding:14px 16px"><div class="row" style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b class="num">08 Okt 2024</b><span class="pill s-fit" data-status="Fit">Fit</span></div><p class="muted" style="margin-top:6px">Tipe: Pre-Employee</p><p style="margin-top:6px">Layak bekerja</p></div></div></div></div></section>
+  <section class="card" aria-labelledby="tl-t"><div class="card-h"><h2 id="tl-t">Timeline Riwayat MCU</h2><span>Setiap titik adalah satu MCU</span></div><div class="card-b"><svg viewBox="0 0 600 120" width="100%" role="img" aria-label="Timeline riwayat MCU Andi Wijaya, contoh"><line x1="30" x2="570" y1="50" y2="50" stroke="var(--line-2)" stroke-width="2"/><circle cx="60" cy="50" r="9" fill="var(--good)" stroke="var(--surface)" stroke-width="3"/><text x="60" y="82" text-anchor="middle" style="fill:var(--fg);font-weight:700">Okt 2024</text><text x="60" y="100" text-anchor="middle">Fit</text><circle cx="300" cy="50" r="9" fill="var(--good)" stroke="var(--surface)" stroke-width="3"/><text x="300" y="82" text-anchor="middle" style="fill:var(--fg);font-weight:700">Okt 2025</text><text x="300" y="100" text-anchor="middle">Fit</text><circle cx="540" cy="50" r="9" fill="var(--warn)" stroke="var(--surface)" stroke-width="3"/><text x="540" y="82" text-anchor="middle" style="fill:var(--fg);font-weight:700">Sep 2026</text><text x="540" y="100" text-anchor="middle">Follow-Up</text></svg></div></section>
+  <section class="card" aria-labelledby="rd-t"><div class="card-h"><h2 id="rd-t">Riwayat Detail</h2></div><div class="card-b"><div class="tbl-wrap"><table><thead><tr><th>No</th><th>Tanggal MCU</th><th>Tipe MCU</th><th>Status</th><th>Hasil awal</th><th>Hasil akhir</th><th>Catatan</th></tr></thead><tbody><tr><td class="num">1</td><td class="num">03 Sep 2026</td><td>Annual</td><td><span class="pill s-followup" data-status="Follow-Up">Follow-Up</span></td><td><span class="pill s-followup" data-status="Follow-Up">Follow-Up</span></td><td class="muted">-</td><td>Tekanan darah 148/92, kontrol 2 minggu</td></tr><tr><td class="num">2</td><td class="num">12 Okt 2025</td><td>Annual</td><td><span class="pill s-fit" data-status="Fit">Fit</span></td><td><span class="pill s-fit" data-status="Fit">Fit</span></td><td class="muted">-</td><td>Seluruh parameter normal</td></tr><tr><td class="num">3</td><td class="num">08 Okt 2024</td><td>Pre-Employee</td><td><span class="pill s-fit" data-status="Fit">Fit</span></td><td><span class="pill s-fit" data-status="Fit">Fit</span></td><td class="muted">-</td><td>Layak bekerja</td></tr></tbody></table></div></div></section></div><div data-state="loading"><div class="empty" role="status" aria-busy="true">Memuat data...</div></div><div data-state="empty"><div class="empty"><b>Tidak Ada Data MCU</b><p>Karyawan ini belum memiliki riwayat MCU untuk periode yang dipilih.</p></div></div><div data-state="error"><div class="empty" role="alert"><b>Data gagal dimuat</b><p>Periksa koneksi, lalu coba lagi.</p><button class="btn sm" type="button" data-demo="coba lagi memuat data">Coba lagi</button></div></div></div>
+</main></div></div>
+
+<script src="shell.js"></script>
+<script src="sehatra.js"></script>
+</body>
+</html>
