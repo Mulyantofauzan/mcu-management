@@ -1,0 +1,76 @@
+<!doctype html>
+<!--
+Sumber: _template.html (pola salin untuk semua halaman, bukan halaman aplikasi).
+Cara pakai: salin file ini, ganti <title>, tambahkan data-page="<kunci halaman>" pada <body>,
+ganti komentar ini dengan "Sumber:" halaman asli dan daftar paritas (kolom, filter, aksi),
+lalu isi <main>. Kondisi data memakai [data-states]: normal, loading, empty, error.
+-->
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Judul Halaman - Sehatra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="sehatra.css">
+<script src="theme-init.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Lewati ke konten</a>
+<div class="app">
+  <div id="shell-side"></div>
+  <div class="main">
+    <div id="shell-top"></div>
+    <main id="main" class="content">
+      <div class="ph">
+        <div><h1>Judul halaman</h1><p>Satu kalimat tentang fungsi halaman ini.</p></div>
+        <div class="acts"><button class="btn pri" type="button" data-open="#dlg-contoh"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg>Aksi utama</button></div>
+      </div>
+      <p><span class="sample-note">Data contoh, bukan data asli</span></p>
+
+      <section class="card" aria-labelledby="daftar-t">
+        <div class="card-h">
+          <h2 id="daftar-t">Daftar</h2>
+          <div class="seg" data-state-demo role="group" aria-label="Contoh kondisi data">
+            <button type="button" data-state-set="normal" aria-pressed="true">Normal</button>
+            <button type="button" data-state-set="loading" aria-pressed="false">Memuat</button>
+            <button type="button" data-state-set="empty" aria-pressed="false">Kosong</button>
+            <button type="button" data-state-set="error" aria-pressed="false">Galat</button>
+          </div>
+        </div>
+        <div class="card-b" data-states>
+          <div data-state="normal" data-active>
+            <div class="tbl-wrap">
+              <table>
+                <thead><tr><th>Nama</th><th>Status</th><th>Aksi</th></tr></thead>
+                <tbody>
+                  <tr class="row" tabindex="0" data-open="#dlg-contoh"><td>Nama Karyawan 1</td><td><span class="pill s-fit" data-status="Fit">Fit</span></td><td><button class="btn sm" type="button" data-open="#dlg-contoh">Detail</button></td></tr>
+                  <tr class="row" tabindex="0" data-open="#dlg-contoh"><td>Nama Karyawan 2</td><td><span class="pill s-followup" data-status="Follow-Up">Follow-Up</span></td><td><button class="btn sm" type="button" data-open="#dlg-contoh">Detail</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div data-state="loading"><div class="empty" role="status" aria-busy="true">Memuat data...</div></div>
+          <div data-state="empty"><div class="empty"><b>Belum ada data</b><p>Tambahkan data pertama dengan tombol di kanan atas.</p></div></div>
+          <div data-state="error"><div class="empty" role="alert"><b>Data gagal dimuat</b><p>Periksa koneksi, lalu coba lagi.</p><button class="btn sm" type="button" data-demo="coba lagi memuat data">Coba lagi</button></div></div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div class="scrim" id="dlg-contoh" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="dlg-contoh-t">
+    <div class="panel-h">
+      <div><h2 id="dlg-contoh-t">Judul dialog</h2><p>Deskripsi singkat isi dialog.</p></div>
+      <button class="icon-btn" type="button" data-close aria-label="Tutup"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="panel-b"><p>Isi dialog atau drawer.</p></div>
+    <div class="panel-f"><button class="btn" type="button" data-close>Tutup</button></div>
+  </div>
+</div>
+
+<script src="shell.js"></script>
+<script src="sehatra.js"></script>
+</body>
+</html>

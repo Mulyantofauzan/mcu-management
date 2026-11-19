@@ -38,14 +38,26 @@
     setTimeout(function () { el.remove(); }, 2800);
   }
 
-  function setState(container, name) {
+  function findStates(from) {
+    var el = from;
+    while (el && el !== document.body) {
+      var found = el.querySelector('[data-states]');
+      if (found) return found;
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  function setState(container, name, scope) {
     Array.prototype.forEach.call(container.querySelectorAll('[data-state]'), function (el) {
       if (el.dataset.state === name) el.setAttribute('data-active', '');
       else el.removeAttribute('data-active');
     });
-    Array.prototype.forEach.call(container.parentElement.querySelectorAll('[data-state-set]'), function (btn) {
-      btn.setAttribute('aria-pressed', String(btn.dataset.stateSet === name));
-    });
+    if (scope) {
+      Array.prototype.forEach.call(scope.querySelectorAll('[data-state-set]'), function (btn) {
+        btn.setAttribute('aria-pressed', String(btn.dataset.stateSet === name));
+      });
+    }
   }
 
   function paintThemeIcon() {
@@ -84,8 +96,8 @@
     var stateBtn = t.closest('[data-state-set]');
     if (stateBtn) {
       var scope = stateBtn.closest('[data-state-demo]');
-      var container = scope && scope.parentElement.querySelector('[data-states]');
-      if (container) setState(container, stateBtn.dataset.stateSet);
+      var container = scope && findStates(scope);
+      if (container) setState(container, stateBtn.dataset.stateSet, scope);
       return;
     }
 
