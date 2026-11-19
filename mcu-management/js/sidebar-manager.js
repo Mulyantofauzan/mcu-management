@@ -24,27 +24,74 @@
 
   const menus = Object.freeze({
     Admin: [
-      { page: 'dashboard', file: 'index.html', label: 'Dashboard', icon: 'home' },
+      { page: 'dashboard', file: 'index.html', label: 'Dashboard', icon: 'home', section: 'Utama' },
+      { page: 'kelola-karyawan', file: 'kelola-karyawan.html', label: 'Kelola Karyawan', icon: 'users', section: 'Data' },
       { page: 'tambah-karyawan', file: 'tambah-karyawan.html', label: 'Tambah Karyawan', icon: 'add' },
-      { page: 'kelola-karyawan', file: 'kelola-karyawan.html', label: 'Kelola Karyawan', icon: 'users' },
       { page: 'follow-up', file: 'follow-up.html', label: 'Follow-Up', icon: 'clipboard' },
-      { page: 'data-master', file: 'data-master.html', label: 'Data Master', icon: 'database' },
-      { page: 'kelola-user', file: 'kelola-user.html', label: 'Kelola User', icon: 'users' },
-      { page: 'activity-log', file: 'activity-log.html', label: 'Activity Log', icon: 'file' },
       { page: 'mcu-expiry-management', file: 'mcu-expiry-management.html', label: 'MCU Expired', icon: 'clock', legacyBadge: 'badge-mcu-expiry' },
-      { group: 'reports', label: 'Laporan', icon: 'file', children: reports },
+      { page: 'data-master', file: 'data-master.html', label: 'Data Master', icon: 'database' },
+      { group: 'reports', label: 'Laporan', icon: 'file', children: reports, section: 'Analisis' },
+      { page: 'kelola-user', file: 'kelola-user.html', label: 'Kelola User', icon: 'users', section: 'Pengaturan' },
+      { page: 'activity-log', file: 'activity-log.html', label: 'Activity Log', icon: 'file' },
       { page: 'data-terhapus', file: 'data-terhapus.html', label: 'Data Terhapus', icon: 'trash' }
     ],
     Petugas: [
-      { page: 'dashboard', file: 'index.html', label: 'Dashboard', icon: 'home' },
+      { page: 'dashboard', file: 'index.html', label: 'Dashboard', icon: 'home', section: 'Utama' },
+      { page: 'kelola-karyawan', file: 'kelola-karyawan.html', label: 'Kelola Karyawan', icon: 'users', section: 'Data' },
       { page: 'tambah-karyawan', file: 'tambah-karyawan.html', label: 'Tambah Karyawan', icon: 'add' },
-      { page: 'kelola-karyawan', file: 'kelola-karyawan.html', label: 'Kelola Karyawan', icon: 'users' },
       { page: 'follow-up', file: 'follow-up.html', label: 'Follow-Up', icon: 'clipboard' },
-      { page: 'data-master', file: 'data-master.html', label: 'Data Master', icon: 'database' },
       { page: 'mcu-expiry-management', file: 'mcu-expiry-management.html', label: 'MCU Expired', icon: 'clock', legacyBadge: 'badge-mcu-expiry' },
-      { group: 'reports', label: 'Laporan', icon: 'file', children: reports }
+      { page: 'data-master', file: 'data-master.html', label: 'Data Master', icon: 'database' },
+      { group: 'reports', label: 'Laporan', icon: 'file', children: reports, section: 'Analisis' }
     ]
   });
+
+  const SIDE_KEY = 'sehatra-side';
+
+  function applySideState(state) {
+    document.documentElement.dataset.side = state;
+    document.querySelectorAll('.sidebar-collapse-toggle').forEach(button => {
+      button.setAttribute('aria-expanded', String(state !== 'collapsed'));
+    });
+  }
+
+  function restoreSideState() {
+    try {
+      if (localStorage.getItem(SIDE_KEY) === 'collapsed') document.documentElement.dataset.side = 'collapsed';
+    } catch (error) {
+      document.documentElement.removeAttribute('data-side');
+    }
+  }
+
+  function setupCollapseToggle() {
+    if (document.querySelector('.sidebar-collapse-toggle')) return;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'sidebar-collapse-toggle';
+    button.setAttribute('aria-label', 'Tampilkan atau sembunyikan menu');
+    button.setAttribute('aria-controls', 'sidebar');
+    button.innerHTML = icon('menu');
+    button.addEventListener('click', () => {
+      const next = document.documentElement.dataset.side === 'collapsed' ? 'open' : 'collapsed';
+      applySideState(next);
+      try {
+        localStorage.setItem(SIDE_KEY, next);
+      } catch (error) {
+        /* storage blocked: the choice only lasts for this page view */
+      }
+    });
+    const row = document.querySelector('body > .ml-64 > header > div');
+    if (row) {
+      row.classList.add('sehatra-header-row');
+      row.prepend(button);
+    } else {
+      button.classList.add('is-floating');
+      document.body.appendChild(button);
+    }
+    applySideState(document.documentElement.dataset.side === 'collapsed' ? 'collapsed' : 'open');
+  }
+
+  restoreSideState();
 
   let currentRole = 'Petugas';
   const prefetchedPages = new Set();
@@ -86,12 +133,18 @@
     return `<li><button type="button" data-toggle-submenu="${id}" class="sidebar-submenu-toggle"><span class="flex items-center gap-3 flex-1">${icon(item.icon)}<span>${item.label}</span></span><svg data-submenu-arrow class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button><ul id="${id}" class="sidebar-submenu hidden">${item.children.map(child => menuLink(child, true)).join('')}</ul></li>`;
   }
 
+  function sectionLabel(item) {
+    return item.section
+      ? `<li class="sidebar-group-label" role="presentation">${item.section}</li>`
+      : '';
+  }
+
   function renderNavigation() {
     const sidebar = document.getElementById('sidebar');
     const nav = sidebar?.querySelector('nav');
     if (!sidebar || !nav) return;
     const roleMenus = menus[currentRole] || menus.Petugas;
-    nav.innerHTML = `<ul class="space-y-1">${roleMenus.map(menuItem).join('')}</ul>`;
+    nav.innerHTML = `<ul class="space-y-1">${roleMenus.map(item => sectionLabel(item) + menuItem(item)).join('')}</ul>`;
     nav.classList.add('sidebar-nav');
     sidebar.setAttribute('aria-label', 'Navigasi utama');
     setActiveLink();
@@ -264,11 +317,17 @@
     const sidebar = document.getElementById('sidebar');
     if (!sidebar) return;
     const layout = sidebar.firstElementChild;
-    layout?.firstElementChild?.classList.add('sidebar-brand');
+    const brand = layout?.firstElementChild;
+    brand?.classList.add('sidebar-brand');
+    const brandTitle = brand?.querySelector('h1');
+    const brandNote = brand?.querySelector('p');
+    if (brandTitle) brandTitle.textContent = 'Sehatra';
+    if (brandNote) brandNote.textContent = 'Manajemen MCU';
     currentRole = menus[currentUser()?.role] ? currentUser().role : 'Petugas';
     renderNavigation();
     renderUser();
     setupMobileMenu();
+    setupCollapseToggle();
     setupNavigationEnhancement();
     document.dispatchEvent(new CustomEvent('madis:sidebar-ready', {
       detail: { role: currentRole }

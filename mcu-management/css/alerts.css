@@ -58,17 +58,17 @@
 }
 
 .madis-alert-button:focus-visible {
-  outline: 3px solid rgba(37, 99, 235, 0.3);
+  outline: 3px solid rgba(14, 133, 118, 0.3);
   outline-offset: 2px;
 }
 
 .madis-alert-button-confirm {
   color: #fff;
-  background: #2563eb;
+  background: #0e8576;
 }
 
 .madis-alert-button-confirm:hover {
-  background: #1d4ed8;
+  background: #0a6b5e;
 }
 
 .madis-alert-button-danger {
@@ -129,7 +129,7 @@
 }
 
 .swal2-timer-progress-bar.madis-alert-progress {
-  background: rgba(37, 99, 235, 0.45);
+  background: rgba(14, 133, 118, 0.45);
 }
 
 @media (max-width: 480px) {

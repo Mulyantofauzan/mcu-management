@@ -40,8 +40,8 @@
   display: block;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, #2563eb, #60a5fa);
-  box-shadow: 0 0 8px rgba(37, 99, 235, 0.45);
+  background: linear-gradient(90deg, #0e8576, #4fbfae);
+  box-shadow: 0 0 8px rgba(14, 133, 118, 0.45);
   transform: scaleX(0.08);
   transform-origin: left;
 }
@@ -104,7 +104,7 @@ body.madis-navigating #madis-navigation-progress span {
   flex: 0 0 auto;
   padding: 0.5rem 0.75rem;
   color: #ffffff;
-  background: #2563eb;
+  background: #0e8576;
   border-radius: 0.5rem;
   font-weight: 600;
 }
@@ -119,9 +119,9 @@ body.madis-navigating #madis-navigation-progress span {
   gap: 0.75rem;
   max-width: calc(100vw - 2rem);
   padding: 0.75rem 1rem;
-  color: #1e3a8a;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
+  color: #0a554c;
+  background: #eef8f6;
+  border: 1px solid #bfe5de;
   border-radius: 0.75rem;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
   font-size: 0.875rem;
@@ -130,7 +130,7 @@ body.madis-navigating #madis-navigation-progress span {
 .madis-update-notice button {
   padding: 0.45rem 0.7rem;
   color: #ffffff;
-  background: #2563eb;
+  background: #0e8576;
   border-radius: 0.5rem;
   font-weight: 600;
 }
@@ -171,7 +171,7 @@ body.madis-navigating #madis-navigation-progress span {
 .sidebar .sidebar-brand {
   flex: 0 0 auto;
   padding: 1.125rem 1.25rem;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f6fbfa 100%);
 }
 
 .sidebar .sidebar-brand h1 {
@@ -239,23 +239,23 @@ body.madis-navigating #madis-navigation-progress span {
 
 .sidebar .sidebar-link:hover,
 .sidebar .sidebar-submenu-toggle:hover {
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: #eef8f6;
+  color: #0a6b5e;
 }
 
 .sidebar .sidebar-link:focus-visible,
 .sidebar .sidebar-submenu-toggle:focus-visible,
 .sidebar .sidebar-logout:focus-visible,
 .sidebar-mobile-toggle:focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid #14a08c;
   outline-offset: 2px;
 }
 
 .sidebar .sidebar-link.active {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: #dff2ee;
+  color: #0a6b5e;
   font-weight: 600;
-  box-shadow: inset 3px 0 0 #2563eb;
+  box-shadow: inset 3px 0 0 #0e8576;
 }
 
 .sidebar .sidebar-submenu-toggle {
@@ -267,14 +267,14 @@ body.madis-navigating #madis-navigation-progress span {
 }
 
 .sidebar .sidebar-submenu-toggle.is-active {
-  color: #1d4ed8;
+  color: #0a6b5e;
   font-weight: 600;
 }
 
 .sidebar .sidebar-submenu {
   margin: 0.3rem 0 0.25rem 1.3rem;
   padding-left: 0.6rem !important;
-  border-left: 1px solid #dbeafe;
+  border-left: 1px solid #dff2ee;
 }
 
 .sidebar .sidebar-submenu > li + li {
@@ -528,9 +528,9 @@ body.madis-navigating #madis-navigation-progress span {
     justify-content: center;
     width: 2.75rem;
     height: 2.75rem;
-    color: #1d4ed8;
+    color: #0a6b5e;
     background: #ffffff;
-    border: 1px solid #dbeafe;
+    border: 1px solid #dff2ee;
     border-radius: 0.75rem;
     box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
   }
