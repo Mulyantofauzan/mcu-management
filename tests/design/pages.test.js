@@ -114,6 +114,14 @@ for (const file of pages) {
       const target = attr(e, 'data-toggle');
       assert.ok(target.startsWith('#') && ids.has(target.slice(1)), `data-toggle target ${target}`);
     }
+    for (const s of els.filter(x => has(x, 'data-reveal'))) {
+      const target = attr(s, 'data-reveal');
+      assert.ok(target.startsWith('#') && ids.has(target.slice(1)), `data-reveal target ${target}`);
+      assert.ok(attr(s, 'data-reveal-when'), 'data-reveal without data-reveal-when');
+    }
+    for (const a of els.filter(x => x.tag === 'a' && /^#.+/.test(attr(x, 'href') || ''))) {
+      assert.ok(ids.has(attr(a, 'href').slice(1)), `anchor ${attr(a, 'href')} has no target`);
+    }
     for (const d of els.filter(x => attr(x, 'role') === 'dialog')) {
       assert.ok(ids.has(attr(d, 'aria-labelledby')), 'dialog aria-labelledby');
       assert.ok(els.some(x => has(x, 'data-close') && x.start > d.start && x.start < d.end), 'dialog without [data-close]');

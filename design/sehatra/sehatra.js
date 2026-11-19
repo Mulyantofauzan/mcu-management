@@ -152,6 +152,10 @@
 
   document.addEventListener('change', function (ev) {
     var el = ev.target;
+    if (el.tagName === 'SELECT' && el.dataset.reveal) {
+      var shown = document.querySelector(el.dataset.reveal);
+      if (shown) shown.hidden = el.value !== el.dataset.revealWhen;
+    }
     if (el.tagName === 'SELECT' && el.matches('[data-demo]')) showToast('Prototipe: ' + (el.dataset.demo || 'filter belum tersambung'));
   });
 
