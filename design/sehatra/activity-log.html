@@ -1,0 +1,36 @@
+<!doctype html>
+<!--
+Sumber: mcu-management/pages/activity-log.html
+Paritas: Filter Data (Aksi: Semua, Create, Update, Delete; Target Entitas: Semua, Karyawan, MCU, Follow-Up, User; Dari Tanggal; Sampai Tanggal), Terapkan Filter, Export CSV; tabel Waktu, User, Aksi, Target, Detail; pagination dengan nomor halaman; pesan "Tidak ada data aktivitas".
+Pilihan: nomor halaman memakai tombol demo. Isi Detail adalah contoh format teks log dari aplikasi.
+-->
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Activity Log - Sehatra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="sehatra.css">
+<script src="theme-init.js"></script>
+</head>
+<body data-page="activity-log">
+<a class="skip" href="#main">Lewati ke konten</a>
+<div class="app"><div id="shell-side"></div><div class="main"><div id="shell-top"></div><main id="main" class="content">
+<div class="ph"><div><h1>Activity Log Audit</h1><p>Riwayat aktivitas pengguna. Hanya Admin yang dapat melihatnya.</p></div></div>
+<p><span class="sample-note">Data contoh, bukan data asli</span></p>
+<form class="card filters" data-demo-submit aria-label="Filter log aktivitas">
+  <label><span>Aksi</span><select class="field" id="lg-act" name="lg-act"><option>Semua aksi</option><option>Create</option><option>Update</option><option>Delete</option></select></label>
+  <label><span>Target entitas</span><select class="field" id="lg-target" name="lg-target"><option>Semua target</option><option>Karyawan</option><option>MCU</option><option>Follow-Up</option><option>User</option></select></label>
+  <label><span>Dari tanggal</span><input class="field" id="lg-from" name="lg-from" type="date"></label>
+  <label><span>Sampai tanggal</span><input class="field" id="lg-to" name="lg-to" type="date"></label>
+  <div class="acts"><button class="btn pri" type="submit">Terapkan filter</button><button class="btn" type="button" data-demo="ekspor CSV"><svg class="i" aria-hidden="true"><use href="#i-dl"/></svg>Export CSV</button></div>
+</form>
+<section class="card" aria-labelledby="lg-t"><div class="card-h"><h2 id="lg-t">Aktivitas</h2><div class="seg" data-state-demo role="group" aria-label="Contoh kondisi data"><button type="button" data-state-set="normal" aria-pressed="true">Normal</button><button type="button" data-state-set="loading" aria-pressed="false">Memuat</button><button type="button" data-state-set="empty" aria-pressed="false">Kosong</button><button type="button" data-state-set="error" aria-pressed="false">Galat</button></div></div>
+<div class="card-b"><div data-states><div data-state="normal" data-active><div class="tbl-wrap"><table><thead><tr><th>Waktu</th><th>User</th><th>Aksi</th><th>Target</th><th>Detail</th></tr></thead><tbody><tr><td class="num">20 Nov 2026 09:12</td><td>Petugas Lapangan 1</td><td><span class="pill p0">Create</span></td><td><span class="tag">MCU</span></td><td>MCU: MCU-2026-0063. Employee: Budi Santoso.</td></tr><tr><td class="num">19 Nov 2026 16:40</td><td>dr. Anindya Larasati</td><td><span class="pill p1">Update</span></td><td><span class="tag">Follow-Up</span></td><td>Updated MCU follow-up: MCU-2026-0058. Employee: Andi Wijaya. Fields: finalResult, finalNotes</td></tr><tr><td class="num">19 Nov 2026 10:05</td><td>Petugas Lapangan 2</td><td><span class="pill p0">Create</span></td><td><span class="tag">Karyawan</span></td><td>Karyawan: KRY-1006. Nama: Maya Setiawan.</td></tr><tr><td class="num">18 Nov 2026 14:21</td><td>Admin</td><td><span class="pill p1">Update</span></td><td><span class="tag">Karyawan</span></td><td>Karyawan dipulihkan: KRY-1005. Nama: Agus Hidayat.</td></tr><tr><td class="num">18 Nov 2026 09:03</td><td>Admin</td><td><span class="pill p0">Create</span></td><td><span class="tag">User</span></td><td>User: petugas02. Role: Petugas.</td></tr><tr><td class="num">17 Nov 2026 15:48</td><td>Admin</td><td><span class="pill p3">Delete</span></td><td><span class="tag">MCU</span></td><td>MCU: MCU-2025-0012. Dipindahkan ke Data Terhapus.</td></tr></tbody></table></div><div class="pager"><span>Halaman 1 dari 12 (contoh)</span><div><button class="btn sm" type="button" data-demo="halaman sebelumnya" disabled>Sebelumnya</button><button class="btn sm" type="button" data-demo="halaman 1" aria-current="page" disabled>1</button><button class="btn sm" type="button" data-demo="halaman 2">2</button><button class="btn sm" type="button" data-demo="halaman 3">3</button><button class="btn sm" type="button" data-demo="halaman berikutnya">Selanjutnya</button></div></div></div><div data-state="loading"><div class="empty" role="status" aria-busy="true">Memuat data...</div></div><div data-state="empty"><div class="empty"><b>Tidak ada data aktivitas</b><p>Ubah filter atau rentang tanggal.</p></div></div><div data-state="error"><div class="empty" role="alert"><b>Data gagal dimuat</b><p>Periksa koneksi, lalu coba lagi.</p><button class="btn sm" type="button" data-demo="coba lagi memuat data">Coba lagi</button></div></div></div></div></section>
+</main></div></div>
+
+<script src="shell.js"></script>
+<script src="sehatra.js"></script>
+</body>
+</html>

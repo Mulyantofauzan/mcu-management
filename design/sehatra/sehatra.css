@@ -294,3 +294,5 @@ td.num{font-variant-numeric:tabular-nums}
 .inline .field{flex:1}
 @media (max-width:900px){.formwrap{grid-template-columns:minmax(0,1fr)}.idx{display:none}.fgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:520px){.fgrid{grid-template-columns:1fr}}
+.filters .acts{grid-column:1/-1;flex-wrap:wrap}
+.index-wrap{max-width:1100px;margin:0 auto;padding-top:32px}
