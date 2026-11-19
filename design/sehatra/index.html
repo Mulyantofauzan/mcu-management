@@ -1,0 +1,32 @@
+<!doctype html>
+<!--
+Sumber: docs/superpowers/specs/2026-11-20-sehatra-templates-design.md
+Paritas: daftar isi empat belas halaman template (login ditambah 13 kunci halaman di roleAccess.mjs), dikelompokkan seperti menu: Akses, Utama, Data, Analisis, Pengaturan.
+Pilihan: halaman ini tanpa menu samping karena hanya daftar isi, bukan halaman aplikasi.
+-->
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Template UI - Sehatra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="sehatra.css">
+<script src="theme-init.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Lewati ke konten</a>
+<main id="main" class="content index-wrap">
+<div class="ph"><div><h1>Template UI Sehatra</h1><p>Empat belas halaman statis untuk aplikasi Manajemen MCU. Dipakai sebagai acuan visual sebelum rebuild.</p></div>
+  <div class="acts"><button class="icon-btn" type="button" data-theme-toggle aria-label="Ganti tema"><svg class="i" aria-hidden="true"><use href="#i-moon"/></svg></button></div></div>
+<p><span class="sample-note">Semua nama dan angka adalah data contoh</span></p>
+<section class="card" aria-label="Cara membaca"><div class="card-b">
+  <p><b>Cara membaca template.</b> Buka satu halaman, lalu coba: tombol bulan atau matahari untuk tema terang dan gelap; tombol Normal, Memuat, Kosong, Galat untuk kondisi data; klik baris atau tombol Detail untuk dialog; tekan Esc untuk menutup. Komentar di bagian atas tiap file HTML memuat sumber halaman asli dan daftar paritasnya.</p>
+</div></section>
+<div class="grid g-2"><section class="card" aria-label="Akses"><div class="card-h"><h2>Akses</h2><span>1 halaman</span></div><div class="card-b list"><a class="li" href="login.html"><div class="tx"><div class="nm">Masuk</div><div class="sub">Form login dengan pesan galat dan kondisi memuat.</div></div><span class="tag">Semua</span></a></div></section><section class="card" aria-label="Utama"><div class="card-h"><h2>Utama</h2><span>1 halaman</span></div><div class="card-b list"><a class="li" href="dashboard.html"><div class="tx"><div class="nm">Dashboard</div><div class="sub">Filter periode, kartu ringkasan, 7 grafik, follow-up dan aktivitas.</div></div><span class="tag">Admin, Petugas</span></a></div></section><section class="card" aria-label="Data"><div class="card-h"><h2>Data</h2><span>6 halaman</span></div><div class="card-b list"><a class="li" href="kelola-karyawan.html"><div class="tx"><div class="nm">Kelola Karyawan</div><div class="sub">Daftar karyawan, detail, edit, hapus, detail MCU, tab Data MCU.</div></div><span class="tag">Admin, Petugas</span></a><a class="li" href="tambah-karyawan.html"><div class="tx"><div class="nm">Tambah Karyawan</div><div class="sub">Cari atau tambah karyawan, form MCU lengkap 9 bagian (dipakai juga untuk Edit MCU).</div></div><span class="tag">Admin, Petugas</span></a><a class="li" href="follow-up.html"><div class="tx"><div class="nm">Follow-Up MCU</div><div class="sub">Daftar follow-up, dialog hasil akhir dan upload dokumen.</div></div><span class="tag">Admin, Petugas</span></a><a class="li" href="mcu-expiry-management.html"><div class="tx"><div class="nm">Masa Berlaku MCU</div><div class="sub">MCU expired dan warning 60 hari, filter, CSV.</div></div><span class="tag">Admin, Petugas</span></a><a class="li" href="employee-health-history.html"><div class="tx"><div class="nm">Riwayat Kesehatan</div><div class="sub">Timeline dan riwayat MCU per karyawan.</div></div><span class="tag">Admin, Petugas</span></a><a class="li" href="data-master.html"><div class="tx"><div class="nm">Data Master</div><div class="sub">Jabatan, departemen, vendor, dokter, item lab, penyakit.</div></div><span class="tag">Admin, Petugas</span></a></div></section><section class="card" aria-label="Analisis"><div class="card-h"><h2>Analisis</h2><span>3 halaman</span></div><div class="card-b list"><a class="li" href="analysis.html"><div class="tx"><div class="nm">Analisis</div><div class="sub">Tren status, distribusi BMI, TD, penglihatan, gaya hidup, hasil lab.</div></div><span class="tag">Admin, Petugas</span></a><a class="li" href="report-period.html"><div class="tx"><div class="nm">Laporan Periode</div><div class="sub">Filter periode dan tabel hasil laporan.</div></div><span class="tag">Admin, Petugas</span></a><a class="li" href="assessment-rahma.html"><div class="tx"><div class="nm">Skor Jakarta</div><div class="sub">Dashboard risiko kardiovaskular, kalkulator, tabel poin.</div></div><span class="tag">Admin, Petugas</span></a></div></section><section class="card" aria-label="Pengaturan"><div class="card-h"><h2>Pengaturan</h2><span>3 halaman</span></div><div class="card-b list"><a class="li" href="kelola-user.html"><div class="tx"><div class="nm">Kelola User</div><div class="sub">Akun, peran, ubah password.</div></div><span class="tag">Admin</span></a><a class="li" href="activity-log.html"><div class="tx"><div class="nm">Log Aktivitas</div><div class="sub">Audit aktivitas dengan filter dan CSV.</div></div><span class="tag">Admin</span></a><a class="li" href="data-terhapus.html"><div class="tx"><div class="nm">Data Terhapus</div><div class="sub">Restore dan hapus permanen karyawan atau MCU.</div></div><span class="tag">Admin</span></a></div></section></div>
+</main>
+
+<script src="shell.js"></script>
+<script src="sehatra.js"></script>
+</body>
+</html>
