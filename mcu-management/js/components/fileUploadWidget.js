@@ -486,7 +486,7 @@ export class FileUploadWidget {
                     </div>
                 </div>
                 <div class="file-item-actions">
-                    <button class="btn-file-action btn-delete" data-fileid="${file.fileid}">
+                    <button type="button" class="btn-file-action btn-delete" data-fileid="${file.fileid}">
                         ✕ Delete
                     </button>
                 </div>

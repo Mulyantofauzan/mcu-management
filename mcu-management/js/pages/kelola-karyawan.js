@@ -973,7 +973,7 @@ window.addMCUForEmployee = async function(employeeId) {
         // Get job title and department
         // ✅ FIX: employees table stores names, not IDs! Match by name not ID
         // Normalize comparison: trim whitespace and case-insensitive as fallback
-        const empJobTitle = (employee.job_title || '').trim();
+        const empJobTitle = (employee.jobTitle || '').trim();
         const jobTitle = jobTitles.find(j =>
             j.name === empJobTitle ||
             (j.name && j.name.trim().toLowerCase() === empJobTitle.toLowerCase())
@@ -1349,7 +1349,7 @@ window.viewMCUDetail = async function(mcuId) {
         const emp = employees.find(e => e.employeeId === mcu.employeeId);
         // ✅ FIX: Match by NAME not ID (employees stores names, not IDs!)
         // Normalize comparison: trim whitespace and case-insensitive as fallback
-        const empJobTitle = (emp?.job_title || '').trim();
+        const empJobTitle = (emp?.jobTitle || '').trim();
         const job = jobTitles.find(j =>
             j.name === empJobTitle ||
             (j.name && j.name.trim().toLowerCase() === empJobTitle.toLowerCase())
@@ -1368,7 +1368,7 @@ window.viewMCUDetail = async function(mcuId) {
         if (empIdEl) empIdEl.textContent = emp?.employeeId || '-';
 
         const empJobEl = document.getElementById('mcu-detail-emp-job');
-        // Show job title: prefer matched master data name, fall back to raw employee job_title value
+        // Show job title: prefer matched master data name, fall back to the employee jobTitle value
         if (empJobEl) empJobEl.textContent = empJobTitle || '-';
 
         const empDeptEl = document.getElementById('mcu-detail-emp-dept');
@@ -1889,7 +1889,7 @@ window.editMCU = async function() {
 
                 // Fill employee info display (matching Tambah MCU layout)
                 const emp = employees.find(e => e.employeeId === mcu.employeeId);
-                const empJobTitle = (emp?.job_title || '').trim();
+                const empJobTitle = (emp?.jobTitle || '').trim();
                 const job = jobTitles.find(j =>
                     j.name === empJobTitle ||
                     (j.name && j.name.trim().toLowerCase() === empJobTitle.toLowerCase())
