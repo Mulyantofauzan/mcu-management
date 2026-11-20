@@ -101,7 +101,7 @@
   </DataState>
 </Card>
 
-<EmployeeDetailDialog employee={detail} onclose={() => (detail = null)} />
+<EmployeeDetailDialog employee={detail} {user} onclose={() => (detail = null)} onchanged={load} />
 <EmployeeEditDialog employee={editing} {jobTitles} {departments} saving={busy} onsave={save} onclose={() => (editing = null)} />
 <ConfirmDialog open={Boolean(deleting)} title="Hapus karyawan?" {busy} onconfirm={remove} onclose={() => (deleting = null)}>
   {#if deleting}<p>Karyawan <b>{deleting.name}</b> akan dipindahkan ke Data Terhapus bersama semua MCU dan dokumennya.</p>{/if}

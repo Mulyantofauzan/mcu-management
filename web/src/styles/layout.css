@@ -9,3 +9,4 @@
 .g-3{grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
 .g-2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
 .stackv{display:flex;flex-direction:column;gap:18px}
+.gap-top{margin-top:10px}

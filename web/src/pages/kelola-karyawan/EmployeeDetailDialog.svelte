@@ -1,12 +1,14 @@
 <script>
   import Dialog from '../../ui/Dialog.svelte';
+  import McuDetailPanel from './mcu/McuDetailPanel.svelte';
   import DataState from '../../ui/DataState.svelte';
   import { listEmployeeMcus } from '../../data/employees.js';
   import { formatDate } from '../../lib/format.js';
   import { calculateAge } from '../../lib/people.js';
   import { resultOf, pillClass } from '../../lib/status.js';
 
-  let { employee, onclose } = $props();
+  let { employee, user, onclose, onchanged } = $props();
+  let mcuId = $state(null);
   let state = $state('loading');
   let mcus = $state([]);
   let error = $state('');
@@ -47,7 +49,7 @@
         <DataState {state} {error} emptyTitle="Belum ada riwayat MCU" onretry={() => load(employee.employeeId)}>
           <div class="tbl-wrap">
             <table>
-              <thead><tr><th>ID MCU</th><th>Tanggal</th><th>Jenis</th><th>Hasil</th></tr></thead>
+              <thead><tr><th>ID MCU</th><th>Tanggal</th><th>Jenis</th><th>Hasil</th><th>Aksi</th></tr></thead>
               <tbody>
                 {#each mcus as mcu, index (mcu.mcuId)}
                   <tr>
@@ -55,6 +57,7 @@
                     <td class="num">{formatDate(mcu.mcuDate)}</td>
                     <td>{mcu.mcuType || '-'}</td>
                     <td><span class="pill {pillClass(resultOf(mcu))}">{resultOf(mcu) || '-'}</span></td>
+                    <td><button class="btn sm" type="button" onclick={() => (mcuId = mcu.mcuId)}>Detail</button></td>
                   </tr>
                 {/each}
               </tbody>
@@ -66,3 +69,7 @@
   {/if}
   {#snippet footer()}<button class="btn" type="button" onclick={onclose}>Tutup</button>{/snippet}
 </Dialog>
+
+{#if employee}
+  <McuDetailPanel {mcuId} {employee} {user} onclose={() => (mcuId = null)} ondeleted={() => { mcuId = null; load(employee.employeeId); onchanged(); }} />
+{/if}

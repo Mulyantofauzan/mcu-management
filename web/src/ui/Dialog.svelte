@@ -1,22 +1,25 @@
 <script>
   /* Dialog modal: Esc menutup, klik latar menutup, fokus terkunci di dalam dan kembali ke pemicu. */
   import Icon from './Icon.svelte';
+  import { pushDialog, popDialog, isTopDialog } from '../lib/dialogStack.js';
 
   let { open, onclose, title, subtitle = '', size = 'side', footer, children } = $props();
   let panel = $state(null);
   let trigger = null;
+  const token = Symbol('dialog');
 
   const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
   $effect(() => {
     if (!open || !panel) return;
     trigger = document.activeElement;
+    pushDialog(token);
     (panel.querySelector('[data-first]') || panel.querySelector(FOCUSABLE))?.focus();
-    return () => trigger?.focus?.();
+    return () => { popDialog(token); trigger?.focus?.(); };
   });
 
   function keydown(event) {
-    if (!open) return;
+    if (!open || !isTopDialog(token)) return;
     if (event.key === 'Escape') { event.stopPropagation(); onclose(); return; }
     if (event.key !== 'Tab' || !panel) return;
     const items = [...panel.querySelectorAll(FOCUSABLE)].filter(el => el.offsetParent !== null);

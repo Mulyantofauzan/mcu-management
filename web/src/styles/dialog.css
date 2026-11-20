@@ -28,3 +28,6 @@
 .kv span{display:block;color:var(--muted);font-size:12px}
 .kv b{font-weight:650}
 .kv .pill{display:inline-flex}
+.push-left{margin-right:auto}
+.scrim:not(.center) .panel-h{position:sticky;top:0;background:var(--surface);z-index:2}
+.scrim:not(.center) .panel-f{position:sticky;bottom:0;background:var(--surface);z-index:2}

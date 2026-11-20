@@ -31,13 +31,41 @@ export function transformMcu(row) {
     mcuDate: row.mcu_date,
     bmi: row.bmi,
     bloodPressure: row.blood_pressure,
+    respiratoryRate: row.respiratory_rate,
+    pulse: row.pulse,
+    temperature: row.temperature,
+    chestCircumference: row.chest_circumference,
+    visionDistantUnaidedLeft: row.vision_distant_unaided_left,
+    visionDistantUnaidedRight: row.vision_distant_unaided_right,
+    visionDistantSpectaclesLeft: row.vision_distant_spectacles_left,
+    visionDistantSpectaclesRight: row.vision_distant_spectacles_right,
+    visionNearUnaidedLeft: row.vision_near_unaided_left,
+    visionNearUnaidedRight: row.vision_near_unaided_right,
+    visionNearSpectaclesLeft: row.vision_near_spectacles_left,
+    visionNearSpectaclesRight: row.vision_near_spectacles_right,
+    audiometry: row.audiometry,
+    spirometry: row.spirometry,
+    hbsag: row.hbsag,
+    napza: row.napza,
+    colorblind: row.colorblind,
+    xray: row.xray,
+    ekg: row.ekg,
+    treadmill: row.treadmill,
     smokingStatus: row.smoking_status,
     exerciseFrequency: row.exercise_frequency,
+    doctor: row.doctor,
+    recipient: row.recipient,
+    keluhanUtama: row.keluhan_utama,
+    diagnosisKerja: row.diagnosis_kerja,
+    alasanRujuk: row.alasan_rujuk,
     initialResult: row.initial_result,
+    initialNotes: row.initial_notes,
     finalResult: row.final_result,
+    finalNotes: row.final_notes,
     status: row.status,
     deletedAt: row.deleted_at,
-    createdAt: row.created_at
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
   };
 }
 
@@ -56,5 +84,15 @@ export function transformActivity(row) {
 
 export function transformMedicalHistory(row) {
   if (!row) return row;
-  return { id: row.id, mcuId: row.mcu_id, diseaseName: row.disease_name };
+  return { id: row.id, mcuId: row.mcu_id, diseaseName: row.disease_name, yearDiagnosed: row.year_diagnosed };
+}
+
+export function transformFamilyHistory(row) {
+  if (!row) return row;
+  return { id: row.id, mcuId: row.mcu_id, diseaseName: row.disease_name, familyMember: row.family_member };
+}
+
+export function transformChange(row) {
+  if (!row) return row;
+  return { id: row.id, mcuId: row.mcu_id, fieldName: row.field_name, oldValue: row.old_value, newValue: row.new_value, changedAt: row.changed_at };
 }
