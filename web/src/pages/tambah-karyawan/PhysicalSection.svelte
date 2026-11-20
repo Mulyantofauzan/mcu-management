@@ -1,7 +1,7 @@
 <script>
   import SectionCard from './SectionCard.svelte';
   import SelectOther from './SelectOther.svelte';
-  import { MCU_TYPES, AUDIO, SPIRO, HBSAG, SMOKING, EXERCISE } from '../../lib/mcuOptions.js';
+  import { MCU_TYPES, AUDIO, SPIRO, HBSAG, SMOKING, EXERCISE, optionsWith } from '../../lib/mcuOptions.js';
 
   let { form = $bindable() } = $props();
 </script>
@@ -9,7 +9,7 @@
 <SectionCard id="sec-fisik" number="2" title="Pemeriksaan">
   <div class="fgrid">
     <label><span>Jenis MCU <span class="req" aria-hidden="true">*</span></span>
-      <select class="field" bind:value={form.mcuType} required><option value="">Pilih...</option>{#each MCU_TYPES as type}<option>{type}</option>{/each}</select></label>
+      <select class="field" bind:value={form.mcuType} required><option value="">Pilih...</option>{#each optionsWith(MCU_TYPES, form.mcuType) as type}<option>{type}</option>{/each}</select></label>
     <label><span>Tanggal MCU <span class="req" aria-hidden="true">*</span></span><input class="field" type="date" bind:value={form.mcuDate} required></label>
     <label><span>BMI (kg/m²)</span><input class="field num" type="number" step="any" bind:value={form.bmi} placeholder="Contoh: 24,5"></label>
     <label><span>Tekanan darah (mmHg)</span><input class="field num" type="text" inputmode="numeric" bind:value={form.bloodPressure} placeholder="120/80"></label>
@@ -19,8 +19,8 @@
     <label><span>Lingkar perut (cm)</span><input class="field num" type="number" step="any" bind:value={form.chestCircumference}></label>
     <SelectOther label="Audiometri" options={AUDIO} bind:value={form.audiometry} bind:other={form.audiometryOther} />
     <SelectOther label="Spirometri" options={SPIRO} bind:value={form.spirometry} bind:other={form.spirometryOther} />
-    <label><span>HBsAg</span><select class="field" bind:value={form.hbsag}>{#each HBSAG as option}<option>{option}</option>{/each}</select></label>
-    <label><span>Status merokok</span><select class="field" bind:value={form.smokingStatus}>{#each SMOKING as option}<option>{option}</option>{/each}</select></label>
-    <label><span>Frekuensi olahraga</span><select class="field" bind:value={form.exerciseFrequency}>{#each EXERCISE as option}<option>{option}</option>{/each}</select></label>
+    <label><span>HBsAg</span><select class="field" bind:value={form.hbsag}>{#each optionsWith(HBSAG, form.hbsag) as option}<option>{option}</option>{/each}</select></label>
+    <label><span>Status merokok</span><select class="field" bind:value={form.smokingStatus}>{#each optionsWith(SMOKING, form.smokingStatus) as option}<option>{option}</option>{/each}</select></label>
+    <label><span>Frekuensi olahraga</span><select class="field" bind:value={form.exerciseFrequency}>{#each optionsWith(EXERCISE, form.exerciseFrequency) as option}<option>{option}</option>{/each}</select></label>
   </div>
 </SectionCard>

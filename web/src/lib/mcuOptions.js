@@ -31,3 +31,6 @@ export const VISION_FIELDS = [
   { key: 'visionNearSpectaclesLeft', col: 'vision_near_spectacles_left' },
   { key: 'visionNearSpectaclesRight', col: 'vision_near_spectacles_right' }
 ];
+
+/* Daftar pilihan ditambah nilai saat ini bila belum ada (data lama bisa berisi teks di luar daftar). */
+export const optionsWith = (options, value) => (value && !options.includes(value) ? [...options, value] : options);

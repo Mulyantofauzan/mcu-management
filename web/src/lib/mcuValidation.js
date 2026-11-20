@@ -36,3 +36,16 @@ export function validateLabValues(labs) {
   });
   return { isValid: errors.length === 0, errors };
 }
+
+/* Mode edit: kolom lab boleh kosong (menghapus item), tetapi yang terisi harus angka positif. */
+export function validateLabEdit(labs) {
+  const errors = [];
+  LAB_ITEMS.forEach(item => {
+    const raw = String(labs[item.id] ?? '').trim();
+    if (!raw) return;
+    const value = parseFloat(raw);
+    if (Number.isNaN(value)) errors.push(`${item.name}: nilai harus angka`);
+    else if (value <= 0) errors.push(`${item.name}: nilai harus lebih dari 0`);
+  });
+  return { isValid: errors.length === 0, errors };
+}

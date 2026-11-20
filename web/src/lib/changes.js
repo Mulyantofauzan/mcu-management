@@ -4,7 +4,14 @@ export const FIELD_LABELS = {
   respiratoryRate: 'RR (Frekuensi Nafas)', pulse: 'Nadi', temperature: 'Suhu', chestCircumference: 'Lingkar Perut',
   vision: 'Penglihatan', audiometry: 'Audiometri', spirometry: 'Spirometri', xray: 'X-Ray', ekg: 'EKG',
   treadmill: 'Treadmill', hbsag: 'HBsAg', sgot: 'SGOT', sgpt: 'SGPT', cbc: 'CBC', napza: 'NAPZA',
-  colorblind: 'Buta Warna', doctor: 'Dokter', recipient: 'Penerima Rujukan', keluhanUtama: 'Keluhan Utama',
+  colorblind: 'Buta Warna',
+  medicalHistory: 'Riwayat Penyakit', familyHistory: 'Riwayat Penyakit Keluarga',
+  smokingStatus: 'Status Merokok', exerciseFrequency: 'Frekuensi Olahraga',
+  visionDistantUnaidedLeft: 'Visus Jauh Mata Kiri (Tanpa Koreksi)', visionDistantUnaidedRight: 'Visus Jauh Mata Kanan (Tanpa Koreksi)',
+  visionDistantSpectaclesLeft: 'Visus Jauh Mata Kiri (Dengan Kacamata)', visionDistantSpectaclesRight: 'Visus Jauh Mata Kanan (Dengan Kacamata)',
+  visionNearUnaidedLeft: 'Visus Dekat Mata Kiri (Tanpa Koreksi)', visionNearUnaidedRight: 'Visus Dekat Mata Kanan (Tanpa Koreksi)',
+  visionNearSpectaclesLeft: 'Visus Dekat Mata Kiri (Dengan Kacamata)', visionNearSpectaclesRight: 'Visus Dekat Mata Kanan (Dengan Kacamata)',
+  created: 'Dibuat', doctor: 'Dokter', recipient: 'Penerima Rujukan', keluhanUtama: 'Keluhan Utama',
   diagnosisKerja: 'Diagnosis Kerja', alasanRujuk: 'Alasan Rujuk', initialResult: 'Hasil Awal',
   initialNotes: 'Catatan Awal', finalResult: 'Hasil Akhir', finalNotes: 'Catatan Akhir', status: 'Status', labResult: 'Hasil Lab'
 };

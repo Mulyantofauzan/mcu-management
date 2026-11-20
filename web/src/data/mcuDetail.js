@@ -11,7 +11,7 @@ export async function getMcu(mcuId) {
 const LAB_COLUMNS = 'id, mcu_id, employee_id, lab_item_id, value, unit, min_range_reference, max_range_reference, notes, lab_items:lab_item_id(id, name, description, unit)';
 
 export async function getLabResults(mcuId) {
-  return selectAll('pemeriksaan_lab', query => query.eq('mcu_id', mcuId), LAB_COLUMNS);
+  return selectAll('pemeriksaan_lab', query => query.eq('mcu_id', mcuId).is('deleted_at', null).not('lab_item_id', 'is', null).order('created_at', { ascending: true }).limit(50), LAB_COLUMNS);
 }
 
 export async function getMcuMedicalHistories(mcuId) {
