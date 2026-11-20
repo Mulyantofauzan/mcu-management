@@ -19,8 +19,8 @@
     <label><span>Lingkar perut (cm)</span><input class="field num" type="number" step="any" bind:value={form.chestCircumference}></label>
     <SelectOther label="Audiometri" options={AUDIO} bind:value={form.audiometry} bind:other={form.audiometryOther} />
     <SelectOther label="Spirometri" options={SPIRO} bind:value={form.spirometry} bind:other={form.spirometryOther} />
-    <label><span>HBsAg</span><select class="field" bind:value={form.hbsag}>{#each optionsWith(HBSAG, form.hbsag) as option}<option>{option}</option>{/each}</select></label>
-    <label><span>Status merokok</span><select class="field" bind:value={form.smokingStatus}>{#each optionsWith(SMOKING, form.smokingStatus) as option}<option>{option}</option>{/each}</select></label>
-    <label><span>Frekuensi olahraga</span><select class="field" bind:value={form.exerciseFrequency}>{#each optionsWith(EXERCISE, form.exerciseFrequency) as option}<option>{option}</option>{/each}</select></label>
+    <label><span>HBsAg</span><select class="field" bind:value={form.hbsag}><option value="">Pilih...</option>{#each optionsWith(HBSAG, form.hbsag) as option}<option>{option}</option>{/each}</select></label>
+    <label><span>Status merokok</span><select class="field" bind:value={form.smokingStatus}><option value="">Pilih...</option>{#each optionsWith(SMOKING, form.smokingStatus) as option}<option>{option}</option>{/each}</select></label>
+    <label><span>Frekuensi olahraga</span><select class="field" bind:value={form.exerciseFrequency}><option value="">Pilih...</option>{#each optionsWith(EXERCISE, form.exerciseFrequency) as option}<option>{option}</option>{/each}</select></label>
   </div>
 </SectionCard>

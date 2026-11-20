@@ -10,3 +10,4 @@
 .g-2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
 .stackv{display:flex;flex-direction:column;gap:18px}
 .gap-top{margin-top:10px}
+.group-title{font-size:15px;font-weight:700;letter-spacing:-.01em;margin:6px 0 -4px}

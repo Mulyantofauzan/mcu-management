@@ -2,12 +2,12 @@
 export const OTHER = 'Lainnya';
 export const MCU_TYPES = ['Pre-Employee', 'Annual', 'Khusus', 'Final'];
 export const RESULTS = ['Fit', 'Fit With Note', 'Temporary Unfit', 'Follow-Up', 'Unfit'];
-export const VISION_VALUES = ['6/6', '6/9', '6/12', '6/18', '6/24', '6/36', '6/60', OTHER];
+export const VISION_VALUES = ['-', '6/6', '6/9', '6/12', '6/18', '6/24', '6/36', '6/60', OTHER];
 export const AUDIO = ['Normal', 'Gangguan Ringan', OTHER];
 export const SPIRO = ['Normal', 'Restriktif', 'Obstruktif', OTHER];
 export const HBSAG = ['Negatif', 'Positif', 'Reaktif', 'Non-Reaktif'];
 export const SMOKING = ['Tidak Merokok', 'Mantan Perokok', 'Perokok Aktif'];
-export const EXERCISE = ['Tidak Pernah', '2x Seminggu', '1-2x Seminggu', '1-2x Sebulan'];
+export const EXERCISE = ['Tidak Pernah', '>2x Seminggu', '1-2x Seminggu', '1-2x Sebulan'];
 export const XRAY = ['Normal', OTHER];
 export const EKG = ['Normal', 'Normal Resting ECG', OTHER];
 export const TREADMILL = ['Normal', 'Tidak diperiksa', OTHER];

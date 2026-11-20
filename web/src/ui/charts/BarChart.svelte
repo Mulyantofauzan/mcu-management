@@ -4,8 +4,7 @@
   const W = 640, H = 250, LEFT = 30, RIGHT = 634, TOP = 16, BASE = 224;
   const niceMax = $derived.by(() => {
     const peak = Math.max(1, ...items.map(item => item.value));
-    const step = peak <= 4 ? 1 : Math.pow(10, Math.floor(Math.log10(peak))) / (peak < 10 ? 1 : 2);
-    return Math.ceil(peak / step) * step;
+    return peak <= 4 ? 4 : Math.ceil(peak / 4) * 4;
   });
   const ticks = $derived(Array.from({ length: 5 }, (_, i) => (niceMax / 4) * i));
   const y = value => BASE - (value / niceMax) * (BASE - TOP);

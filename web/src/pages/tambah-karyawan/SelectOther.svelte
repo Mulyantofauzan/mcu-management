@@ -7,6 +7,6 @@
 
 <label>
   <span>{label}</span>
-  <select class="field" {id} bind:value>{#each options as option}<option>{option}</option>{/each}</select>
+  <select class="field" {id} bind:value><option value="">Pilih...</option>{#each options as option}<option>{option}</option>{/each}</select>
   {#if value === OTHER}<input class="field" type="text" bind:value={other} placeholder="Isi nilai sendiri" aria-label={`${label} (isian sendiri)`}>{/if}
 </label>

@@ -25,7 +25,7 @@
     <label>Berat badan (kg)<input class="field num" type="number" min="30" max="200" bind:value={f.weight}></label>
     <label>Gula darah puasa (mg/dL)<input class="field num" type="number" min="40" max="500" bind:value={f.glucose}></label>
     <label>Merokok<select class="field" bind:value={f.smoking}><option>Tidak merokok</option><option>Mantan perokok</option><option>Perokok aktif</option></select></label>
-    <label>Aktivitas fisik<select class="field" bind:value={f.exercise}><option>Tidak pernah</option><option>1-2x sebulan</option><option>1-2x seminggu</option><option>2x seminggu</option></select></label>
+    <label>Aktivitas fisik<select class="field" bind:value={f.exercise}><option>Tidak pernah</option><option>1-2x sebulan</option><option>1-2x seminggu</option><option>>2x seminggu</option></select></label>
   </div>
   <div class="live gap-top" aria-live="polite">
     <span>Skor total <b class="num result">{result.score}</b>{#if bmi}<span class="muted"> · IMT {String(bmi).replace('.', ',')}</span>{/if}{#if Number(f.glucose) >= 126}<span class="muted"> · diabetes (GDP 126 ke atas)</span>{/if}</span>

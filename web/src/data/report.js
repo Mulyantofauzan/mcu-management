@@ -16,12 +16,12 @@ export async function loadReportSources(from, to) {
 
 export { getDepartments };
 
-export async function getLabsForMcus(mcuIds) {
+export async function getLabsForMcus(mcuIds, columns = 'id, mcu_id, lab_item_id, value') {
   const ids = [...new Set(mcuIds.filter(Boolean))];
   const byMcu = new Map(ids.map(id => [String(id), []]));
   for (let i = 0; i < ids.length; i += 100) {
     const batch = ids.slice(i, i + 100);
-    const rows = await selectAll('pemeriksaan_lab', query => query.in('mcu_id', batch).is('deleted_at', null).limit(5000), 'id, mcu_id, lab_item_id, value');
+    const rows = await selectAll('pemeriksaan_lab', query => query.in('mcu_id', batch).is('deleted_at', null).limit(5000), columns);
     rows.forEach(row => byMcu.get(String(row.mcu_id))?.push(row));
   }
   return byMcu;

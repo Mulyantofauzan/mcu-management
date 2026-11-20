@@ -23,7 +23,7 @@
             <td>{row.label}</td>
             {#each row.keys as key, index (key)}
               <td>
-                <select class="field" bind:value={form[key]} aria-label={`${row.label}, ${SIDES[index]}`}>{#each VISION_VALUES as option}<option>{option}</option>{/each}</select>
+                <select class="field" bind:value={form[key]} aria-label={`${row.label}, ${SIDES[index]}`}><option value="">Pilih</option>{#each VISION_VALUES as option}<option>{option}</option>{/each}</select>
                 {#if form[key] === OTHER}<input class="field" type="text" bind:value={form[`${key}Other`]} placeholder="Isi nilai sendiri" aria-label={`${row.label}, ${SIDES[index]} (isian sendiri)`}>{/if}
               </td>
             {/each}

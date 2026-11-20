@@ -9,14 +9,14 @@ const todayIso = (now = new Date()) =>
 export function newMcuForm(now = new Date()) {
   const form = {
     mcuType: '', mcuDate: todayIso(now), bmi: '', bloodPressure: '', respiratoryRate: '', pulse: '', temperature: '', chestCircumference: '',
-    hbsag: 'Negatif', smokingStatus: 'Tidak Merokok', exerciseFrequency: 'Tidak Pernah',
-    audiometry: 'Normal', spirometry: 'Normal', xray: 'Normal', ekg: 'Normal', treadmill: 'Normal', napza: 'Negatif', colorblind: 'Normal',
+    hbsag: '', smokingStatus: '', exerciseFrequency: '',
+    audiometry: '', spirometry: '', xray: '', ekg: '', treadmill: '', napza: '', colorblind: '',
     doctor: '', recipient: '', keluhanUtama: '', diagnosisKerja: '', alasanRujuk: '', initialResult: '', initialNotes: '',
     labs: Object.fromEntries(LAB_ITEMS.map(item => [item.id, ''])),
     medical: [], family: []
   };
   SELECT_FIELDS.forEach(key => { form[`${key}Other`] = ''; });
-  VISION_FIELDS.forEach(({ key }) => { form[key] = '6/6'; form[`${key}Other`] = ''; });
+  VISION_FIELDS.forEach(({ key }) => { form[key] = ''; form[`${key}Other`] = ''; });
   return form;
 }
 
