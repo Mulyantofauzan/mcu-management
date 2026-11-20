@@ -76,3 +76,17 @@ test('formatFileSize and dialogStack', async () => {
   popDialog(a);
   assert.equal(isTopDialog(a), false);
 });
+
+test('lab name: joined name first, local table as fallback, N/A only when unknown', async () => {
+  const { labName } = await load('lib/lab.js');
+  assert.equal(labName({ lab_items: { name: 'Hemoglobin' }, lab_item_id: 3 }), 'Hemoglobin');
+  assert.equal(labName({ lab_items: null, lab_item_id: 3 }), 'Hemoglobin');
+  assert.equal(labName({ lab_item_id: 7 }), 'Glukosa Puasa');
+  assert.equal(labName({ lab_item_id: 999 }), 'N/A');
+});
+
+test('lab query joins lab_items like the old labService', async () => {
+  const fs = require('node:fs');
+  const source = fs.readFileSync(path.resolve(__dirname, '../../web/src/data/mcuDetail.js'), 'utf8');
+  assert.match(source, /lab_items:lab_item_id\(id, name/);
+});

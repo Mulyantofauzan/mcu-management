@@ -8,9 +8,10 @@ export async function getMcu(mcuId) {
   return rows[0] ? transformMcu(rows[0]) : null;
 }
 
+const LAB_COLUMNS = 'id, mcu_id, employee_id, lab_item_id, value, unit, min_range_reference, max_range_reference, notes, lab_items:lab_item_id(id, name, description, unit)';
+
 export async function getLabResults(mcuId) {
-  const rows = await selectAll('pemeriksaan_lab', query => query.eq('mcu_id', mcuId));
-  return rows;
+  return selectAll('pemeriksaan_lab', query => query.eq('mcu_id', mcuId), LAB_COLUMNS);
 }
 
 export async function getMcuMedicalHistories(mcuId) {

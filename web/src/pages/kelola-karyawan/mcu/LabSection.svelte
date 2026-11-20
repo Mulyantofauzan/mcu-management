@@ -1,5 +1,5 @@
 <script>
-  import { sortLabResults, labStatus, labRange } from '../../../lib/lab.js';
+  import { sortLabResults, labStatus, labRange, labName } from '../../../lib/lab.js';
 
   let { part } = $props();
   const rows = $derived(part.ok ? sortLabResults(part.data) : []);
@@ -19,7 +19,7 @@
           {#each rows as result (result.id)}
             {@const status = labStatus(result)}
             <tr>
-              <td>{result.lab_items?.name || 'N/A'}</td>
+              <td>{labName(result)}</td>
               <td class="num"><b>{result.value || '-'}</b></td>
               <td>{result.unit || '-'}</td>
               <td class="num">{labRange(result)}</td>

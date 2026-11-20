@@ -32,9 +32,9 @@ export function resetClient() {
   clientPromise = null;
 }
 
-export async function selectAll(table, build = query => query) {
+export async function selectAll(table, build = query => query, columns = '*') {
   const client = await getClient();
-  const { data, error } = await build(client.from(table).select('*'));
+  const { data, error } = await build(client.from(table).select(columns));
   if (error) throw error;
   return data || [];
 }
