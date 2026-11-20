@@ -1,0 +1,7 @@
+.auth{min-height:100vh;display:grid;place-items:center;padding:24px 16px}
+.auth-card{width:min(420px,100%);padding:28px;display:flex;flex-direction:column;gap:18px}
+.auth-card .brand{padding:0}
+.auth-foot{color:var(--muted);font-size:12.5px;text-align:center}
+.auth-title{font-size:22px;font-weight:800;letter-spacing:-.02em}
+.form-single{grid-template-columns:1fr}
+.auth-theme{display:flex;justify-content:center}

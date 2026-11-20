@@ -1,0 +1,27 @@
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.field{height:38px;border:1px solid var(--line-2);background:var(--surface);border-radius:10px;padding:0 12px;min-width:0}
+.field:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.tools .search{max-width:320px;flex:1 1 220px;height:38px}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:none;border-radius:8px;padding:6px 13px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:var(--shadow)}
+.seg button span{color:var(--faint);margin-left:5px;font-weight:700}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.form label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.form label.full{grid-column:1/-1}
+.form .field{width:100%;color:var(--fg);font-weight:500}
+.live{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px;border-radius:10px;background:var(--surface-2);padding:12px 14px;font-size:13px}
+.check{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--muted)}
+.form textarea.field{height:auto;padding:10px 12px;resize:vertical}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end;padding:16px 18px}
+.filters label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.filters .field{width:100%;color:var(--fg);font-weight:500}
+.filters .acts{display:flex;gap:8px}
+.fgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.fgrid label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.fgrid .field{width:100%;color:var(--fg);font-weight:500}
+.fgrid .wide{grid-column:1/-1}
+.req{color:var(--crit)}
+.inline{display:flex;gap:8px;align-items:center}
+.inline .field{flex:1}
+.filters .acts{grid-column:1/-1;flex-wrap:wrap}

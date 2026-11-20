@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Sehatra</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
+  <script>
+    /* Terapkan tema dan keadaan menu sebelum render pertama supaya tidak berkedip. */
+    (function () {
+      var root = document.documentElement, theme = null, side = null;
+      try { theme = localStorage.getItem('sehatra-theme'); side = localStorage.getItem('sehatra-side'); } catch (e) {}
+      if (theme !== 'light' && theme !== 'dark') theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      root.dataset.theme = theme;
+      if (side === 'collapsed') root.dataset.side = 'collapsed';
+    })();
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+@font-face{font-family:'Plus Jakarta Sans';src:url('/fonts/plus-jakarta-sans-latin-wght-normal.woff2') format('woff2');font-weight:200 800;font-style:normal;font-display:swap}
+/* Token warna lolos AA; disesuaikan seminimal mungkin dari artifact (hue tetap). */
+:root{
+  --bg:#F3F7F5; --surface:#FFFFFF; --surface-2:#EAF0EE; --line:#DFE7E4; --line-2:#CBD7D3;
+  --fg:#13231F; --muted:#586B65; --faint:#677A74;
+  --accent:#0E8576; --accent-ink:#FFFFFF; --accent-soft:#DFF2EE; --accent-strong:#0A6B5E;
+  --good:#187C4A; --good-bg:#E0F4E9; --info:#2D6AC3; --info-bg:#E4EEFB;
+  --warn:#9C5E09; --warn-bg:#FBEDD3; --crit:#C13535; --crit-bg:#FBE4E3; --crit-ink:#FFFFFF;
+  --font:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --r:12px; --gx:28px;
+  --shadow:0 1px 2px rgba(16,40,34,.05),0 4px 14px rgba(16,40,34,.04);
+}
+:root[data-theme="dark"]{
+  --bg:#0D1614; --surface:#14211E; --surface-2:#1A2A27; --line:#233632; --line-2:#2F4540;
+  --fg:#E6EFEC; --muted:#9BB0A9; --faint:#748A82;
+  --accent:#3DC8B3; --accent-ink:#06211D; --accent-soft:#163732; --accent-strong:#7FE0D1;
+  --good:#52C586; --good-bg:#16352A; --info:#78A9F0; --info-bg:#1A2B47;
+  --warn:#E5AC4F; --warn-bg:#3B2D12; --crit:#F08585; --crit-bg:#3E1D1D; --crit-ink:#1A0707;
+  --shadow:none; color-scheme:dark}

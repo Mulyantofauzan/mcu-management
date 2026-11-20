@@ -1,0 +1,15 @@
+.formwrap{display:grid;grid-template-columns:190px minmax(0,1fr);gap:20px;align-items:start}
+.idx{position:sticky;top:76px;display:flex;flex-direction:column;gap:2px}
+.idx .cap{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);padding:0 10px 6px}
+.idx a{display:flex;gap:8px;padding:6px 10px;border-left:2px solid var(--line);color:var(--muted);text-decoration:none;font-weight:600;border-radius:0 8px 8px 0}
+.idx a:hover{color:var(--fg);background:var(--surface-2)}
+.idx .n{width:14px;color:var(--faint)}
+.sections{display:flex;flex-direction:column;gap:16px;min-width:0}
+.sec-card{scroll-margin-top:84px}
+.savebar{position:sticky;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);z-index:10}
+.dropzone{border:1.5px dashed var(--line-2);border-radius:var(--r);padding:18px;text-align:center;color:var(--muted)}
+.filerow{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:10px}
+.chiprow{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border-radius:8px;padding:3px 4px 3px 10px;font-weight:600}
+.chip button{border:0;background:none;color:var(--muted);width:22px;height:22px;border-radius:6px}
+.chip button:hover{color:var(--crit)}

@@ -1,0 +1,34 @@
+/**
+ * Single source of truth for which role may open which page.
+ * The sidebar only hides links; this is what actually blocks navigation.
+ * Real data protection is enforced by database policies and server APIs.
+ */
+
+const STAFF = ['Admin', 'Petugas'];
+const ADMIN = ['Admin'];
+
+export const PAGE_ROLES = Object.freeze({
+  dashboard: STAFF,
+  'tambah-karyawan': STAFF,
+  'kelola-karyawan': STAFF,
+  'follow-up': STAFF,
+  'data-master': STAFF,
+  'mcu-expiry-management': STAFF,
+  'assessment-rahma': STAFF,
+  analysis: STAFF,
+  'report-period': STAFF,
+  'employee-health-history': STAFF,
+  'kelola-user': ADMIN,
+  'activity-log': ADMIN,
+  'data-terhapus': ADMIN
+});
+
+const HOME_PAGE = Object.freeze({ Admin: 'dashboard', Petugas: 'dashboard' });
+
+export function resolveAccess({ role, page }) {
+  const allowedRoles = PAGE_ROLES[page];
+  if (!allowedRoles || !allowedRoles.includes(role)) {
+    return { allowed: false, redirectPage: HOME_PAGE[role] || null };
+  }
+  return { allowed: true, redirectPage: null };
+}

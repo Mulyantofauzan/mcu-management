@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "cd mcu-management && npm run dev",
     "build": "cd mcu-management && npm run build",
-    "test": "node --test"
+    "test": "node --test",
+    "web:dev": "npm --prefix web run dev",
+    "web:build": "npm --prefix web run build"
   },
   "private": true,
   "dependencies": {

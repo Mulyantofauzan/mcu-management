@@ -1,0 +1,21 @@
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:720px}
+th{text-align:left;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);padding:12px 16px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:12px 16px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.row{cursor:pointer}
+tbody tr.row:hover td{background:var(--bg)}
+.who-c{display:flex;align-items:center;gap:12px}
+.who-c b{display:block;font-weight:650;line-height:1.25}
+.who-c span{font-size:12px;color:var(--muted)}
+.muted{color:var(--muted)}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-top:1px solid var(--line);color:var(--muted);font-size:13px;flex-wrap:wrap}
+.pager div{display:flex;gap:6px}
+.empty{padding:40px 16px;text-align:center;color:var(--muted)}
+.who-c{display:flex;align-items:center;gap:12px}
+.who-c b{display:block;font-weight:650;line-height:1.25}
+.who-c span{font-size:12px;color:var(--muted)}
+.actions-cell{display:flex;gap:6px;flex-wrap:wrap}
+.num,td.num{white-space:nowrap}
+td.num{font-variant-numeric:tabular-nums}
+.actions-cell{flex-wrap:nowrap}
