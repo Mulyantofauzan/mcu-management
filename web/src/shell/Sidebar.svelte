@@ -3,6 +3,7 @@
   import { menuForRole, pathFor } from '../lib/nav.js';
   import { router } from '../lib/router.svelte.js';
   import { sidebar, closeMobileSidebar } from '../lib/sidebar.svelte.js';
+  import { badges } from '../lib/badges.svelte.js';
 
   let { role, coverage = null } = $props();
   const groups = $derived(menuForRole(role));
@@ -20,6 +21,7 @@
         {@const href = pathFor(item.key)}
         <a {href} aria-current={router.path === href ? 'page' : undefined} onclick={closeMobileSidebar}>
           <Icon name={item.icon} />{item.label}
+          {#if item.key === 'mcu-expiry-management' && badges.expiry > 0}<span class="cnt" aria-label={`${badges.expiry} perlu diperhatikan`}>{badges.expiry}</span>{/if}
         </a>
       {/each}
     {/each}

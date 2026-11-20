@@ -12,10 +12,14 @@ export function toCsv(rows) {
 }
 
 export function downloadCsv(rows, filename) {
+  downloadCsvFile(rows, `${filename}_${Date.now()}.csv`);
+}
+
+export function downloadCsvFile(rows, fileName) {
   const blob = new Blob([toCsv(rows)], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = `${filename}_${Date.now()}.csv`;
+  link.download = fileName;
   link.click();
   setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }

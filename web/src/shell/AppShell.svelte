@@ -1,9 +1,12 @@
 <script>
   import Sidebar from './Sidebar.svelte';
   import Topbar from './Topbar.svelte';
+  import { onMount } from 'svelte';
   import { closeMobileSidebar } from '../lib/sidebar.svelte.js';
+  import { refreshBadges } from '../lib/badges.svelte.js';
 
   let { user, coverage = null, onlogout, children } = $props();
+  onMount(refreshBadges);
 </script>
 
 <svelte:window onkeydown={event => event.key === 'Escape' && closeMobileSidebar()} />
