@@ -41,4 +41,5 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(port, () => console.log(`API lokal siap di http://localhost:${port}/api/...`));
+/* Hanya 127.0.0.1: server ini memegang kunci service-role, jangan terbuka ke jaringan. */
+server.listen(port, '127.0.0.1', () => console.log(`API lokal siap di http://127.0.0.1:${port}/api/... (hanya komputer ini)`));

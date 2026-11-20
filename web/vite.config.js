@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 
 const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 
-const apiTarget = process.env.API_PROXY || 'http://localhost:3000';
+const apiTarget = process.env.API_PROXY || 'http://127.0.0.1:3000';
 
 export default defineConfig({
   plugins: [svelte()],
