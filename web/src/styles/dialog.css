@@ -31,3 +31,4 @@
 .push-left{margin-right:auto}
 .scrim:not(.center) .panel-h{position:sticky;top:0;background:var(--surface);z-index:2}
 .scrim:not(.center) .panel-f{position:sticky;bottom:0;background:var(--surface);z-index:2}
+.kv .full-row{grid-column:1/-1}

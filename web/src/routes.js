@@ -5,6 +5,7 @@ export const ROUTES = [
   { path: '/tambah-karyawan', key: 'tambah-karyawan', load: () => import('./pages/tambah-karyawan/TambahKaryawanPage.svelte') },
   { path: '/mcu-expiry-management', key: 'mcu-expiry-management', load: () => import('./pages/mcu-expiry/McuExpiryPage.svelte') },
   { path: '/activity-log', key: 'activity-log', load: () => import('./pages/activity-log/ActivityLogPage.svelte') },
+  { path: '/follow-up', key: 'follow-up', load: () => import('./pages/follow-up/FollowUpPage.svelte') },
   { path: '/login', key: 'login', public: true, load: () => import('./pages/login/LoginPage.svelte') },
   { path: '*', key: 'not-found', load: () => import('./pages/not-found/NotFoundPage.svelte') }
 ];
