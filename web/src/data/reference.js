@@ -27,3 +27,8 @@ export async function getMcuOwners(mcuIds) {
   const rows = await selectAll('mcus', query => query.in('mcu_id', ids));
   return new Map(rows.map(row => [row.mcu_id, row.employee_id]));
 }
+
+export async function getJobTitles() {
+  const rows = await selectAll('job_titles', query => query.order('name'));
+  return rows.map(row => ({ id: row.id, name: row.name }));
+}

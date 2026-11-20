@@ -15,6 +15,7 @@ export function transformEmployee(row) {
     employeeType: row.employee_type,
     vendorName: row.vendor_name,
     isActive: row.is_active,
+    inactiveReason: row.inactive_reason,
     deletedAt: row.deleted_at,
     createdAt: row.created_at
   };
