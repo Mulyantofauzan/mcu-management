@@ -4,7 +4,7 @@
   import { pillClass } from '../../lib/status.js';
   import { shortNotes } from './followUp.js';
 
-  let { rows, onupdate } = $props();
+  let { rows, onupdate, onreferral } = $props();
 </script>
 
 <div class="tbl-wrap">
@@ -20,7 +20,7 @@
           <td class="num">{formatDate(mcu.mcuDate)}</td>
           <td><span class="pill {pillClass(mcu.initialResult)}">{mcu.initialResult}</span></td>
           <td class="notes" title={mcu.initialNotes || ''}>{shortNotes(mcu.initialNotes)}</td>
-          <td><button class="btn sm pri" type="button" onclick={event => { event.stopPropagation(); onupdate({ employee, mcu }); }}>Update</button></td>
+          <td><div class="actions-cell"><button class="btn sm" type="button" onclick={event => { event.stopPropagation(); onreferral({ employee, mcu }); }}>Surat rujukan</button><button class="btn sm pri" type="button" onclick={event => { event.stopPropagation(); onupdate({ employee, mcu }); }}>Update</button></div></td>
         </tr>
       {/each}
     </tbody>

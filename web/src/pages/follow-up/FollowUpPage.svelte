@@ -12,6 +12,10 @@
   import { followUpRows, followUpStats, searchRows, departmentsOf, PAGE_SIZE } from './followUp.js';
   import { paginate } from '../kelola-karyawan/list.js';
   import { navigate } from '../../lib/router.svelte.js';
+  import { getDoctors } from '../../data/mcuDetail.js';
+  import { buildRujukanHtml, openPrintWindow, doctorNameOf } from '../../features/rujukan/rujukanLetter.js';
+  import { calculateAge } from '../../lib/people.js';
+  import { showToast } from '../../lib/toast.svelte.js';
 
   let { user } = $props();
   let status = $state('loading');
@@ -40,6 +44,17 @@
     }
   }
 
+  async function printReferral({ employee, mcu }) {
+    try {
+      const doctors = await getDoctors().catch(() => []);
+      const html = buildRujukanHtml({ ...employee, age: calculateAge(employee.birthDate) }, mcu, doctorNameOf(mcu.doctor, doctors));
+      openPrintWindow(html);
+      showToast('Surat Rujukan siap dicetak. Gunakan Ctrl+S atau Simpan PDF di jendela cetak.');
+    } catch (failure) {
+      showToast(`Gagal membuat surat rujukan: ${failure.message}`);
+    }
+  }
+
   function done(editMcuId) {
     target = null;
     if (editMcuId) navigate(`/tambah-karyawan?mcu=${encodeURIComponent(editMcuId)}`);
@@ -65,7 +80,7 @@
     <select class="field" bind:value={filters.department} aria-label="Filter departemen"><option value="">Semua departemen</option>{#each departmentsOf(rows) as department}<option>{department}</option>{/each}</select>
   </div>
   <DataState state={pageState} {error} onretry={load} emptyTitle={rows.length ? 'Tidak ada hasil' : 'Tidak ada follow-up'} emptyText={rows.length ? 'Ubah kata kunci atau filter.' : 'Semua karyawan sudah punya hasil akhir.'}>
-    <FollowUpTable rows={view.items} onupdate={item => (target = item)} />
+    <FollowUpTable rows={view.items} onupdate={item => (target = item)} onreferral={printReferral} />
     <Pager page={view.page} pageSize={PAGE_SIZE} total={filtered.length} onpage={next => (page = next)} />
   </DataState>
 </Card>
