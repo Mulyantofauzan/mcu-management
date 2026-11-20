@@ -4,13 +4,21 @@ Antarmuka baru aplikasi Manajemen MCU: Vite + Svelte 5. Desainnya mengikuti `des
 
 ## Menjalankan
 
+Satu kali:
+
 ```sh
 npm --prefix web install
-npm run web:dev        # http://localhost:5173
-npm run web:build      # hasil di web/dist
+cp .env.local.example .env.local   # isi sendiri: URL, kunci anon, service role, JWT secret Supabase
 ```
 
-Panggilan `/api/*` diteruskan ke `API_PROXY` (bawaan `http://localhost:3000`, misalnya `vercel dev`).
+Dua terminal:
+
+```sh
+npm run api:dev     # API lokal di :3000 (handler api/* apa adanya, tanpa Vercel CLI)
+npm run web:dev     # aplikasi di http://localhost:5173
+```
+
+Panggilan `/api/*` diteruskan ke `API_PROXY` (bawaan `http://localhost:3000`).
 Jangan buka berkas lewat `file://`: aplikasi memakai ES module dan path absolut.
 
 ## Struktur
