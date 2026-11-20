@@ -8,6 +8,7 @@ export const ROUTES = [
   { path: '/follow-up', key: 'follow-up', load: () => import('./pages/follow-up/FollowUpPage.svelte') },
   { path: '/data-terhapus', key: 'data-terhapus', load: () => import('./pages/data-terhapus/DataTerhapusPage.svelte') },
   { path: '/kelola-user', key: 'kelola-user', load: () => import('./pages/kelola-user/KelolaUserPage.svelte') },
+  { path: '/data-master', key: 'data-master', load: () => import('./pages/data-master/DataMasterPage.svelte') },
   { path: '/login', key: 'login', public: true, load: () => import('./pages/login/LoginPage.svelte') },
   { path: '*', key: 'not-found', load: () => import('./pages/not-found/NotFoundPage.svelte') }
 ];
