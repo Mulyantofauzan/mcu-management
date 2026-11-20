@@ -36,7 +36,8 @@
   function done(result) {
     saved = result;
     const labs = result.labSaved ? ` dan ${result.labSaved} hasil lab` : '';
-    showToast(`MCU${labs} berhasil disimpan!`);
+    const docs = result.fileCount ? ` serta ${result.fileCount} dokumen` : '';
+    showToast(`MCU${labs}${docs} berhasil disimpan!`);
     result.warnings.forEach(showToast);
   }
 
