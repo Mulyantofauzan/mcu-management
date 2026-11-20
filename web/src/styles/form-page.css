@@ -13,3 +13,11 @@
 .chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border-radius:8px;padding:3px 4px 3px 10px;font-weight:600}
 .chip button{border:0;background:none;color:var(--muted);width:22px;height:22px;border-radius:6px}
 .chip button:hover{color:var(--crit)}
+.hint{font-weight:500;color:var(--faint);font-size:11.5px}
+.tbl-wrap td .field+.field{margin-top:6px}
+.fgrid label .muted{font-weight:500}
+.fgrid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.fgrid.ratio{grid-template-columns:1fr 2fr}
+.sub-h{font-size:13.5px;font-weight:700;margin:0 0 8px}
+@media (max-width:900px){.fgrid.two,.fgrid.ratio{grid-template-columns:1fr}}
+.saved-id{font-size:20px;font-weight:800;color:var(--good);user-select:all;margin:4px 0 12px}
