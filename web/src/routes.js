@@ -11,6 +11,7 @@ export const ROUTES = [
   { path: '/data-master', key: 'data-master', load: () => import('./pages/data-master/DataMasterPage.svelte') },
   { path: '/report-period', key: 'report-period', load: () => import('./pages/report-period/ReportPage.svelte') },
   { path: '/employee-health-history', key: 'employee-health-history', load: () => import('./pages/health-history/HealthHistoryPage.svelte') },
+  { path: '/assessment-rahma', key: 'assessment-rahma', load: () => import('./pages/rahma/RahmaPage.svelte') },
   { path: '/login', key: 'login', public: true, load: () => import('./pages/login/LoginPage.svelte') },
   { path: '*', key: 'not-found', load: () => import('./pages/not-found/NotFoundPage.svelte') }
 ];

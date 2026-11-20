@@ -26,3 +26,4 @@
 .inline .field{flex:1}
 .filters .acts{grid-column:1/-1;flex-wrap:wrap}
 .filter-tools{padding:16px 18px 0}
+.live .result{font-size:22px;margin-left:6px}

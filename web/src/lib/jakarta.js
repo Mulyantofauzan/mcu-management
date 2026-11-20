@@ -83,3 +83,17 @@ export function hasDiabetesHistory(histories = []) {
     return disease.includes('diabetes') || disease.includes('dm');
   });
 }
+
+/* Untuk kalkulator: masukan langsung (usia dalam tahun), rumus poin yang sama. */
+export function jakartaScoreFromInputs({ gender, age, bloodPressure, bmi, smoking, exercise, diabetes }) {
+  const scores = {
+    jk: genderPoints(gender),
+    umur: Number.isFinite(age) ? agePoints(age) : 0,
+    td: bloodPressure ? bloodPressurePoints(bloodPressure) : 0,
+    imt: bmi ? bmiPoints(bmi) : 0,
+    merokok: smoking ? smokingPoints(smoking) : 0,
+    diabetes: diabetes ? 2 : 0,
+    aktivitasFisik: exercise ? exercisePoints(exercise) : 0
+  };
+  return { score: Object.values(scores).reduce((sum, value) => sum + value, 0), scores };
+}
