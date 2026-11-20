@@ -1,5 +1,6 @@
 /* Sebaran untuk grafik Dashboard. Semua fungsi murni dan menerima model yang sudah disaring. */
 import { resultOf } from './filter.js';
+import { percentOf, formatPercent } from '../../../lib/percent.js';
 
 export const STATUS_ORDER = ['Fit', 'Fit With Note', 'Follow-Up', 'Temporary Unfit', 'Unfit'];
 export const TYPE_ORDER = ['Pre-Employee', 'Annual', 'Khusus', 'Final'];
@@ -63,5 +64,5 @@ export function bmiCounts(models) {
 
 export function withShare(items) {
   const total = items.reduce((sum, item) => sum + item.value, 0);
-  return items.map(item => ({ ...item, share: total ? Math.round((item.value / total) * 100) : 0 }));
+  return items.map(item => ({ ...item, share: percentOf(item.value, total), percent: formatPercent(item.value, total) }));
 }

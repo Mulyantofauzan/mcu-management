@@ -1,5 +1,6 @@
 /* Laporan Periode (murni): baris laporan, statistik, dan ekspor konsolidasi. Aturan dari report-period.html dan reportExportService.js lama. */
 import { formatDate } from '../../lib/format.js';
+import { formatPercent } from '../../lib/percent.js';
 
 const iso = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
@@ -34,7 +35,7 @@ export function buildReport(mcus, employees, { department = '', status = '' } = 
   return { rows, mcus: used, employeeCount: unique.size };
 }
 
-const pct = (part, whole) => (whole ? `${((part / whole) * 100).toFixed(1)}%` : '0%');
+const pct = formatPercent;
 
 export function reportStats(rows, employeeCount) {
   const fit = rows.filter(row => row.status === 'Fit').length;

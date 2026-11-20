@@ -24,7 +24,7 @@ test('report rows: skips deleted/unknown, filters by department and initial resu
   assert.deepEqual(buildReport(mcus, employees, { department: 'IT' }).rows.map(r => r.employeeId), ['B']);
   assert.deepEqual(buildReport(mcus, employees, { status: 'Unfit' }).rows.map(r => r.employeeId), ['A']);
   const stats = reportStats(all.rows, all.employeeCount);
-  assert.deepEqual([stats.mcus, stats.fit, stats.fitPercent, stats.unfit, stats.unfitPercent], [3, 1, '33.3%', 2, '66.7%']);
+  assert.deepEqual([stats.mcus, stats.fit, stats.fitPercent, stats.unfit, stats.unfitPercent], [3, 1, '33,3%', 2, '66,7%']);
   assert.equal(reportStats([], 0).fitPercent, '0%');
 });
 

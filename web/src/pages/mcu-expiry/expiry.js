@@ -1,5 +1,6 @@
 /* Logika halaman Masa Berlaku MCU (murni): daftar perhatian, filter, urutan, KPI, dan baris ekspor. */
 import { formatDate } from '../../lib/format.js';
+import { percentOf, formatPercent } from '../../lib/percent.js';
 
 export const PAGE_SIZE = 10;
 export const STATUS_LABEL = { EXPIRED: 'Expired', WARNING: 'Warning' };
@@ -25,7 +26,7 @@ export function daysText(daysLeft) {
   return `${daysLeft} hari`;
 }
 
-const percent = (part, whole) => (whole ? Math.round((part / whole) * 1000) / 10 : 0);
+const percent = (part, whole) => percentOf(part, whole);
 
 export function kpiStats(overview) {
   const expired = overview.filter(row => row.expiryStatus === 'EXPIRED').length;
@@ -33,7 +34,9 @@ export function kpiStats(overview) {
   const total = expired + warning;
   return {
     expired, warning, total,
-    expiredShare: percent(expired, total), warningShare: percent(warning, total), totalShare: percent(total, overview.length)
+    expiredShare: percent(expired, total), warningShare: percent(warning, total), totalShare: percent(total, overview.length),
+    expiredText: `${expired} dari ${total} · ${formatPercent(expired, total)}`, warningText: `${warning} dari ${total} · ${formatPercent(warning, total)}`,
+    totalText: `${total} dari ${overview.length} karyawan · ${formatPercent(total, overview.length)}`
   };
 }
 

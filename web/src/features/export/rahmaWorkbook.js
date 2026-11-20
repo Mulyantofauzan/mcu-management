@@ -37,7 +37,7 @@ export async function buildWorkbook(ExcelJS, rows, allRows) {
   resume.addRow([`Generated: ${new Date().toLocaleDateString('id-ID')}`]);
   resume.addRow([]);
   style(resume.addRow(['Risk Level', 'Count', 'Percentage']), () => 'FFE5E7EB', { bold: true });
-  riskCounts(allRows).forEach(item => style(resume.addRow([`${item.label}${item.level < 4 ? ' Risk' : ''}`, item.count, `${item.percent.toFixed(1)}%`]), () => 'FFFFFFFF'));
+  riskCounts(allRows).forEach(item => style(resume.addRow([`${item.label}${item.level < 4 ? ' Risk' : ''}`, item.count, item.percentText]), () => 'FFFFFFFF'));
   resume.addRow([]);
   style(resume.addRow(['TOTAL', allRows.length, '100%']), () => 'FFE5E7EB', { bold: true });
 

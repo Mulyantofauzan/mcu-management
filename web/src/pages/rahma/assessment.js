@@ -2,6 +2,7 @@
 import { jakartaScore, jakartaLevel, hasDiabetesHistory } from '../../lib/jakarta.js';
 import { metabolicAssessment } from '../../lib/metabolic.js';
 import { calculateAge } from '../../lib/people.js';
+import { percentOf, formatPercent } from '../../lib/percent.js';
 
 export const RISK_LEVELS = { 1: 'Low', 2: 'Medium', 3: 'High', 4: 'Critical' };
 
@@ -47,7 +48,7 @@ export function riskCounts(rows) {
   const counts = { 1: 0, 2: 0, 3: 0, 4: 0 };
   rows.forEach(row => { if (row.riskLevel) counts[row.riskLevel] += 1; });
   const total = rows.length;
-  return [1, 2, 3, 4].map(level => ({ level, label: RISK_LEVELS[level], count: counts[level], percent: total ? Math.round((counts[level] / total) * 1000) / 10 : 0 }));
+  return [1, 2, 3, 4].map(level => ({ level, label: RISK_LEVELS[level], count: counts[level], percent: percentOf(counts[level], total), percentText: formatPercent(counts[level], total) }));
 }
 
 export const optionsOf = (rows, key) => [...new Set(rows.map(row => row[key]).filter(Boolean))].sort();

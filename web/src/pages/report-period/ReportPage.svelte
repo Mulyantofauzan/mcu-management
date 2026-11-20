@@ -82,7 +82,7 @@
   <div class="grid g-kpi">
     <Kpi label="Total Karyawan" value={stats.employees} sub="Karyawan unik pada laporan" />
     <Kpi label="Total MCU" value={stats.mcus} sub={`Fit: ${stats.fit} (${stats.fitPercent})`} color="var(--info)" />
-    <Kpi label="Unfit / Follow-Up" value={stats.unfit} sub={stats.unfitPercent} color="var(--crit)" />
+    <Kpi label="Unfit / Follow-Up" value={stats.unfit} sub={`${stats.unfit} dari ${stats.mcus} MCU · ${stats.unfitPercent}`} color="var(--crit)" />
   </div>
 {/if}
 

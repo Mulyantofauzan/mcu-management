@@ -1,10 +1,10 @@
 <script>
   import Card from '../Card.svelte';
   import Donut from './Donut.svelte';
+  import { formatPercent } from '../../lib/percent.js';
 
   let { title, note = '', items, unit = '', showShare = true } = $props();
   const total = $derived(items.reduce((sum, item) => sum + item.value, 0));
-  const share = value => (total ? Math.round((value / total) * 100) : 0);
 </script>
 
 <Card {title} {note}>
@@ -14,7 +14,7 @@
       {#each items as item (item.label)}
         <div>
           <i style:background={item.color}></i>{item.label}
-          <b class="num">{item.value}{#if showShare}<span class="muted share"> · {share(item.value)}%</span>{/if}</b>
+          <b class="num">{item.value}{#if showShare}<span class="muted share"> · {formatPercent(item.value, total)}</span>{/if}</b>
         </div>
       {/each}
     </div>
