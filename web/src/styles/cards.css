@@ -13,3 +13,5 @@
 .kpi .meter{display:flex;align-items:center;gap:10px;margin-top:6px}
 .kpi .meter .bar{flex:1;margin-top:0}
 .kpi .meter b{font-size:13px;font-weight:700;min-width:44px;text-align:right}
+.more{margin-top:10px;text-align:center;font-size:12.5px}
+.share{font-weight:500}

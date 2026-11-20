@@ -37,7 +37,7 @@
   <div class="card auth-card">
     <div class="brand">
       <div class="brand-mark" aria-hidden="true"><Icon name="shield" size={20} /></div>
-      <div><b>Sehatra</b><small>Manajemen MCU</small></div>
+      <div><b>MADIS</b><small>Medical Check-Up Analysis &amp; Data Information System</small></div>
     </div>
     <div>
       <h1 class="auth-title">Masuk</h1>

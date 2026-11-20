@@ -32,7 +32,7 @@
   });
 
   $effect(() => {
-    document.title = route && !route.public ? `${pageLabel(route.key)} - Sehatra` : 'Masuk - Sehatra';
+    document.title = route && !route.public ? `${pageLabel(route.key)} - MADIS` : 'Masuk - MADIS';
   });
 
   function logout() {

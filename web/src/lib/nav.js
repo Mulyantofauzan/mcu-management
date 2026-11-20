@@ -43,7 +43,7 @@ export function pageLabel(key) {
     const found = group.items.find(item => item.key === key);
     if (found) return found.label;
   }
-  return 'Sehatra';
+  return 'MADIS';
 }
 
 export function pathFor(key) {

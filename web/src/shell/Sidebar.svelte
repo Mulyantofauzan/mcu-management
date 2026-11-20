@@ -11,7 +11,7 @@
 <aside class="side" class:open={sidebar.mobileOpen} id="side" aria-label="Navigasi utama">
   <div class="brand">
     <div class="brand-mark" aria-hidden="true"><Icon name="shield" size={20} /></div>
-    <div><b>Sehatra</b><small>Manajemen MCU</small></div>
+    <div><b>MADIS</b><small>Medical Check-Up Analysis &amp; Data Information System</small></div>
   </div>
   <nav class="nav" aria-label="Menu">
     {#each groups as group, index (group.label)}
