@@ -17,3 +17,12 @@ export const LAB_ITEMS = Object.freeze([
 ]);
 
 export const labItemById = id => LAB_ITEMS.find(item => item.id === Number(id)) || null;
+
+/* Status lab yang disimpan di kolom notes (dibaca halaman Analisis): Low, High, atau Normal terhadap rentang rujukan. */
+export function labStatusNote(item, value) {
+  const number = parseFloat(value);
+  if (!item || Number.isNaN(number) || !Number.isFinite(item.min) || !Number.isFinite(item.max)) return '';
+  if (number < item.min) return 'Low';
+  if (number > item.max) return 'High';
+  return 'Normal';
+}

@@ -58,6 +58,25 @@ test('diffHistories reports added and removed entries with the old labels', asyn
   assert.deepEqual(diffHistories([], [], [], []), []);
 });
 
+test('lab status note follows the old widget: Low / High / Normal against the range', async () => {
+  const { labStatusNote, labItemById } = await load('lib/labItems.js');
+  const hb = labItemById(3);
+  assert.equal(labStatusNote(hb, '10.9'), 'Low');
+  assert.equal(labStatusNote(hb, '11'), 'Normal');
+  assert.equal(labStatusNote(hb, '17'), 'Normal');
+  assert.equal(labStatusNote(hb, '17.1'), 'High');
+  assert.equal(labStatusNote(hb, 'abc'), '');
+  assert.equal(labStatusNote(null, '5'), '');
+  const { labResultsFrom, newMcuForm } = await load('pages/tambah-karyawan/mcuFormModel.js');
+  const form = newMcuForm();
+  form.labs[3] = '9'; form.labs[5] = '5'; form.labs[7] = '200';
+  const labs = labResultsFrom(form);
+  assert.equal(labs.find(l => l.labItemId === 3).notes, 'Low');
+  assert.equal(labs.find(l => l.labItemId === 5).notes, 'Normal');
+  assert.equal(labs.find(l => l.labItemId === 7).notes, 'High');
+  assert.equal(labs.find(l => l.labItemId === 8).notes, null);
+});
+
 test('diffLabs creates, updates, deletes and skips unchanged', async () => {
   const { diffLabs } = await load('lib/mcuDiff.js');
   const name = id => `Item${id}`;
@@ -69,5 +88,8 @@ test('diffLabs creates, updates, deletes and skips unchanged', async () => {
   assert.deepEqual(plan.updates.map(u => [u.id, u.value]), [['r2', 5.5]]);
   assert.deepEqual(plan.deletes.map(d => d.id), ['r3']);
   assert.deepEqual(plan.changes.map(c => c.label), ['Hasil Lab (Update): Item5', 'Hasil Lab (Dihapus): Item7', 'Hasil Lab (Baru): Item8']);
+  const silent = diffLabs([{ id: 'r1', lab_item_id: 3, value: 14, notes: null }], [{ labItemId: 3, value: '14', notes: 'Normal' }], name);
+  assert.deepEqual(silent.updates.map(u => u.notes), ['Normal']);
+  assert.deepEqual(silent.changes, []);
   assert.deepEqual(plan.changes[0], { label: 'Hasil Lab (Update): Item5', oldValue: '4', newValue: '5.5' });
 });

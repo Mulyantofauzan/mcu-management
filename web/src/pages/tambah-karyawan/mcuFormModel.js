@@ -1,5 +1,5 @@
 /* Model form MCU: nilai awal, pembacaan "Lainnya", dan penyusunan payload. Murni dan diuji. */
-import { LAB_ITEMS } from '../../lib/labItems.js';
+import { LAB_ITEMS, labStatusNote } from '../../lib/labItems.js';
 import { OTHER, VISION_FIELDS, VISION_VALUES, AUDIO, SPIRO, XRAY, EKG, TREADMILL, NAPZA, COLORBLIND } from '../../lib/mcuOptions.js';
 
 const SELECT_FIELDS = ['audiometry', 'spirometry', 'xray', 'ekg', 'treadmill', 'napza', 'colorblind'];
@@ -44,7 +44,7 @@ export function toMcuPayload(form, { mcuId, employeeId }) {
 }
 
 export function labResultsFrom(form) {
-  return LAB_ITEMS.map(item => ({ labItemId: item.id, value: form.labs[item.id], notes: null }));
+  return LAB_ITEMS.map(item => ({ labItemId: item.id, value: form.labs[item.id], notes: labStatusNote(item, form.labs[item.id]) || null }));
 }
 
 const OPTIONS = { audiometry: AUDIO, spirometry: SPIRO, xray: XRAY, ekg: EKG, treadmill: TREADMILL, napza: NAPZA, colorblind: COLORBLIND };

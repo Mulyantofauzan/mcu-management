@@ -56,9 +56,10 @@ export function diffLabs(existing, inputs, nameOf) {
     }
     const number = parseFloat(value);
     if (!row) { creates.push({ labItemId: id, value: number, notes }); changes.push({ label: `Hasil Lab (Baru): ${nameOf(id)}`, oldValue: '-', newValue: String(number) }); return; }
-    if (parseFloat(row.value) !== number || (row.notes || null) !== (notes || null)) {
+    const valueChanged = parseFloat(row.value) !== number;
+    if (valueChanged || (row.notes || null) !== (notes || null)) {
       updates.push({ id: row.id, labItemId: id, value: number, notes });
-      changes.push({ label: `Hasil Lab (Update): ${nameOf(id)}`, oldValue: String(parseFloat(row.value)), newValue: String(number) });
+      if (valueChanged) changes.push({ label: `Hasil Lab (Update): ${nameOf(id)}`, oldValue: String(parseFloat(row.value)), newValue: String(number) });
     }
   });
   return { creates, updates, deletes, changes };

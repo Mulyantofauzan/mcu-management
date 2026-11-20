@@ -26,7 +26,7 @@ export async function updateMcu({ mcuId, oldMcu, patch, labInputs = null, histor
   const labPlan = labInputs ? diffLabs(await getLabResults(mcuId), labInputs, id => labItemById(id)?.name || `Item ${id}`) : { creates: [], updates: [], deletes: [], changes: [] };
   const historyChanges = histories ? diffHistories(histories.existingMedical, histories.existingFamily, histories.medical, histories.family) : [];
   const total = diffs.length + labPlan.changes.length + historyChanges.length;
-  if (!total) return { changed: 0, changes: [], warnings: [] };
+  if (!total && !labPlan.updates.length) return { changed: 0, changes: [], warnings: [] };
 
   const warnings = [];
   if (diffs.length) {
@@ -65,8 +65,10 @@ export async function updateMcu({ mcuId, oldMcu, patch, labInputs = null, histor
     ...historyChanges.map(change => ({ mcu_id: mcuId, field_name: change.fieldName, old_value: change.oldValue, new_value: change.newValue, changed_at: when, changed_by: by })),
     ...labPlan.changes.map(change => ({ mcu_id: mcuId, field_name: change.label, old_value: change.oldValue, new_value: change.newValue, changed_at: when, changed_by: by }))
   ];
-  const logged = await client.from('mcu_changes').insert(rows);
-  if (logged.error) warnings.push(`Riwayat perubahan gagal dicatat: ${logged.error.message}`);
+  if (rows.length) {
+    const logged = await client.from('mcu_changes').insert(rows);
+    if (logged.error) warnings.push(`Riwayat perubahan gagal dicatat: ${logged.error.message}`);
+  }
 
   const fields = [...new Set(diffs.map(d => d.field))].join(', ') || 'none';
   await logActivity({ action: 'update', target: 'MCU', targetId: mcuId, user, details: `Updated MCU follow-up: ${mcuId}. Employee: ${employeeName || 'Unknown'}. Fields: ${fields}` }).catch(() => {});
