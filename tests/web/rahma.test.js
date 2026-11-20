@@ -87,3 +87,16 @@ test('filters and counts', async () => {
   assert.equal(counts[2].percent, 50);
   assert.deepEqual(a.optionsOf(rows, 'department'), ['HRD', 'IT']);
 });
+
+test('Rahma table keeps the old 22-column layout with its two column groups', () => {
+  const fs = require('node:fs');
+  const source = fs.readFileSync(path.resolve(__dirname, '../../web/src/pages/rahma/RiskTable.svelte'), 'utf8');
+  const row = source.slice(source.indexOf('<tbody>'), source.indexOf('</tbody>'));
+  assert.equal((row.match(/<td\b/g) || []).length, 22);
+  assert.match(source, /colspan="9"[^>]*>Jakarta Cardiovascular Score</);
+  assert.match(source, /colspan="7"[^>]*>Sindrom Metabolik</);
+  assert.match(source, /const CV = \['JK', 'Umur', 'TD', 'IMT', 'Merokok', 'Diabetes', 'Aktivitas Fisik', 'Nilai', 'Risk'\]/);
+  assert.match(source, /const META = \['LP', 'TG', 'HDL', 'TD', 'GDP', 'Nilai', 'Risk'\]/);
+  assert.match(source, /Risk Total/);
+  assert.match(source, /Risk Level/);
+});
