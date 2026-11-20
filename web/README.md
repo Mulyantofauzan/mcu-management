@@ -33,4 +33,6 @@ src/
   styles/                          CSS per tanggung jawab, diimpor lewat index.css
 ```
 
+Deploy preview (tanpa menyentuh produksi): lihat `docs/deployment/WEB-PREVIEW.md`.
+
 Aturan: tidak ada berkas sumber di atas 250 baris (dijaga `tests/web/structure.test.js`).

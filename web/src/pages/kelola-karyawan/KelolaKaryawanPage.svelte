@@ -10,6 +10,7 @@
   import EmployeeTable from './EmployeeTable.svelte';
   import EmployeeDetailDialog from './EmployeeDetailDialog.svelte';
   import EmployeeEditDialog from './EmployeeEditDialog.svelte';
+  import McuListTab from './McuListTab.svelte';
   import { listEmployees, updateEmployee, softDeleteEmployee } from '../../data/employees.js';
   import { getDepartments, getJobTitles } from '../../data/reference.js';
   import { filterEmployees, paginate, PAGE_SIZE } from './list.js';
@@ -32,6 +33,7 @@
   let editing = $state(null);
   let deleting = $state(null);
   let busy = $state(false);
+  let tab = $state('employee');
 
   const filtered = $derived(filterEmployees(employees, filters));
   const view = $derived(paginate(filtered, page));
@@ -93,6 +95,14 @@
   <a class="btn pri" href="/tambah-karyawan"><Icon name="plus" />Tambah karyawan</a>
 </PageHeader>
 
+<div class="seg" role="group" aria-label="Tampilan data">
+  <button type="button" aria-pressed={tab === 'employee'} onclick={() => (tab = 'employee')}>Karyawan</button>
+  <button type="button" aria-pressed={tab === 'mcu'} onclick={() => (tab = 'mcu')}>Data MCU</button>
+</div>
+
+{#if tab === 'mcu'}
+  <McuListTab {user} />
+{:else}
 <Card title="Daftar Karyawan" note={status === 'ready' ? `${filtered.length} karyawan` : ''}>
   <EmployeeFilters bind:filters {departments} onclear={() => (filters = blank())} />
   <DataState state={pageState} {error} onretry={load} emptyTitle="Tidak ada data" emptyText="Ubah filter atau kata kunci.">
@@ -100,6 +110,7 @@
     <Pager page={view.page} pageSize={PAGE_SIZE} total={filtered.length} onpage={next => (page = next)} />
   </DataState>
 </Card>
+{/if}
 
 <EmployeeDetailDialog employee={detail} {user} onclose={() => (detail = null)} onchanged={load} />
 <EmployeeEditDialog employee={editing} {jobTitles} {departments} saving={busy} onsave={save} onclose={() => (editing = null)} />
