@@ -15,3 +15,6 @@
 .kpi .meter b{font-size:13px;font-weight:700;min-width:44px;text-align:right}
 .more{margin-top:10px;text-align:center;font-size:12.5px}
 .share{font-weight:500}
+.mcu-card{padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.mcu-card .head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mcu-card .note{font-style:italic}
