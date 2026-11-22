@@ -63,7 +63,8 @@ try {
 
 const STORAGE_BUCKET = process.env.CLOUDFLARE_R2_BUCKET_NAME;
 const R2_ENDPOINT = process.env.CLOUDFLARE_R2_ENDPOINT;
-const R2_PUBLIC_URL = process.env.CLOUDFLARE_R2_PUBLIC_URL || 'https://pub-dd28e3fca9424669a25f4edf5ae53f1a.r2.dev';
+// No default: files are served through short-lived signed URLs, never through a public bucket URL.
+const R2_PUBLIC_URL = process.env.CLOUDFLARE_R2_PUBLIC_URL || null;
 const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB
 const ALLOWED_TYPES = {
   'application/pdf': 'pdf',
@@ -140,9 +141,8 @@ async function generateStoragePath(employeeId, mcuId, fileName) {
  * Generate public URL for R2 file
  */
 function generatePublicUrl(filePath) {
-  // Format: https://pub-{deployment-id}.r2.dev/{path}
-  // Uses public development URL for R2 bucket
-  return `${R2_PUBLIC_URL}/${filePath}`;
+  // Only when an operator explicitly configures a public base URL; otherwise null (use signed URLs).
+  return R2_PUBLIC_URL ? `${R2_PUBLIC_URL}/${filePath}` : null;
 }
 
 /**

@@ -3,6 +3,7 @@
 const { setCorsHeaders, requireAuth } = require('../../server/auth-utils');
 const { getSupabaseAdmin } = require('../../server/supabaseAdmin');
 const { loadActiveUser } = require('../../server/activeUser');
+const { isManagedFileKey } = require('../../server/r2KeyPolicy');
 const { R2DirectUploadService } = require('../../server/r2DirectUploadService');
 
 function createDeleteFileHandler(dependencies = {}) {
@@ -58,6 +59,10 @@ function createDeleteFileHandler(dependencies = {}) {
       }
       if (!file.supabase_storage_path) {
         return res.status(409).json({ success: false, error: 'Lokasi penyimpanan file tidak ditemukan.' });
+      }
+
+      if (!isManagedFileKey(file.supabase_storage_path)) {
+        return res.status(409).json({ success: false, error: 'Lokasi penyimpanan file tidak valid.' });
       }
 
       await createStorage().deleteObject(file.supabase_storage_path);

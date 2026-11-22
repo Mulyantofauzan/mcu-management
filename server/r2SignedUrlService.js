@@ -11,6 +11,7 @@
  */
 
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { isManagedFileKey } = require('./r2KeyPolicy');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { getSupabaseAdmin } = require('./supabaseAdmin');
 
@@ -105,6 +106,9 @@ async function getAuthorizedSignedUrl(fileId, claimsOrUserId) {
     }
     if (!canAccessFile(file, claimsOrUserId)) {
       throw new Error('Forbidden: file access denied');
+    }
+    if (!isManagedFileKey(file.supabase_storage_path)) {
+      throw new Error('Forbidden: file storage path is outside the managed namespace');
     }
 
     // Generate signed URL
