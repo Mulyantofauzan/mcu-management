@@ -122,6 +122,16 @@ function verifyJwt(token) {
   }
 
   const [encodedHeader, encodedBody, signature] = parts;
+  let header;
+  try {
+    header = JSON.parse(base64UrlDecode(encodedHeader));
+  } catch {
+    throw new Error('Invalid token header');
+  }
+  if (header?.alg !== 'HS256') {
+    throw new Error('Unsupported token algorithm');
+  }
+
   const expectedSignature = crypto
     .createHmac('sha256', secret)
     .update(`${encodedHeader}.${encodedBody}`)
@@ -138,11 +148,29 @@ function verifyJwt(token) {
 
   const payload = JSON.parse(base64UrlDecode(encodedBody));
   const now = Math.floor(Date.now() / 1000);
-  if (payload.exp && payload.exp <= now) {
+  if (!payload.exp || payload.exp <= now) {
     throw new Error('Token expired');
   }
 
   return payload;
+}
+
+const APP_STAFF_ROLES = ['Admin', 'Petugas'];
+
+/**
+ * A token that merely carries a valid signature is not an application session.
+ * Supabase-issued keys (e.g. the public anon key) can share the signing secret,
+ * so require the claims that only /api/login puts into a token.
+ */
+function isAppSessionClaims(claims) {
+  return Boolean(
+    claims
+    && claims.iss === 'madis'
+    && claims.aud === 'authenticated'
+    && typeof claims.app_user_id === 'string'
+    && claims.app_user_id
+    && APP_STAFF_ROLES.includes(claims.app_role)
+  );
 }
 
 function getBearerToken(req) {
@@ -160,6 +188,10 @@ function requireAuth(req, res, options = {}) {
     }
 
     const claims = verifyJwt(token);
+    if (!isAppSessionClaims(claims)) {
+      res.status(401).json({ success: false, error: 'Unauthorized: invalid or expired token' });
+      return null;
+    }
     if (options.roles?.length && !options.roles.includes(claims.app_role)) {
       res.status(403).json({ success: false, error: 'Forbidden: insufficient role' });
       return null;
@@ -168,6 +200,33 @@ function requireAuth(req, res, options = {}) {
     return claims;
   } catch (error) {
     res.status(401).json({ success: false, error: 'Unauthorized: invalid or expired token' });
+    return null;
+  }
+}
+
+/**
+ * requireAuth plus a database re-check, so deactivating or demoting a user
+ * takes effect immediately instead of when the 8h token expires.
+ * Returns { claims, user } or null (a response has already been sent).
+ */
+async function requireActiveAuth(req, res, options = {}) {
+  const claims = requireAuth(req, res, options);
+  if (!claims) return null;
+
+  try {
+    const { loadActiveUser } = require('./activeUser');
+    const user = await loadActiveUser(claims, options.supabase);
+    if (options.roles?.length && !options.roles.includes(user.role)) {
+      res.status(403).json({ success: false, error: 'Forbidden: insufficient role' });
+      return null;
+    }
+    return { claims, user };
+  } catch (error) {
+    const status = error?.statusCode || 500;
+    res.status(status).json({
+      success: false,
+      error: status === 500 ? 'Internal server error' : error.message
+    });
     return null;
   }
 }
@@ -233,7 +292,9 @@ module.exports = {
   setCorsHeaders,
   signJwt,
   verifyJwt,
+  isAppSessionClaims,
   requireAuth,
+  requireActiveAuth,
   readJsonBody,
   hashPassword,
   verifyPassword,

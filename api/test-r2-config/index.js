@@ -2,7 +2,7 @@
  * Diagnostic endpoint untuk test R2 configuration
  */
 
-const { setCorsHeaders, requireAuth } = require('../../server/auth-utils');
+const { setCorsHeaders, requireActiveAuth } = require('../../server/auth-utils');
 
 module.exports = async (req, res) => {
   setCorsHeaders(req, res, 'GET, OPTIONS');
@@ -15,7 +15,7 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const auth = requireAuth(req, res, { roles: ['Admin'] });
+  const auth = await requireActiveAuth(req, res, { roles: ['Admin'] });
   if (!auth) return;
 
   try {

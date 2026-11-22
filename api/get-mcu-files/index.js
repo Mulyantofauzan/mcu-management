@@ -5,7 +5,7 @@
  * Retrieves all files associated with an MCU from the mcufiles table
  */
 
-const { setCorsHeaders, requireAuth } = require('../../server/auth-utils');
+const { setCorsHeaders, requireActiveAuth } = require('../../server/auth-utils');
 const { getSupabaseAdmin } = require('../../server/supabaseAdmin');
 
 module.exports = async (req, res) => {
@@ -19,14 +19,14 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const auth = requireAuth(req, res);
-  if (!auth) return;
+  const session = await requireActiveAuth(req, res);
+  if (!session) return;
 
   try {
     const supabase = getSupabaseAdmin();
     const { mcuId } = req.query;
-    const userId = auth.app_user_id || auth.sub;
-    const isAdmin = auth.app_role === 'Admin';
+    const userId = session.user.userId;
+    const isAdmin = session.user.role === 'Admin';
 
     // Validate required parameters
     if (!mcuId) {

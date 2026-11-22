@@ -144,9 +144,17 @@ async function handleDirectUpload(req, res, auth, directUploads) {
   }
 }
 
+const MULTIPART_SEGMENT_PATTERN = /^[A-Za-z0-9._-]{1,128}$/;
+
 function handleMultipart(req, res, auth) {
+  if (!authenticatedUserId(auth)) {
+    return res.status(401).json({ success: false, code: 'UNAUTHORIZED', error: 'Unauthorized' });
+  }
   try {
-    const bb = busboy({ headers: req.headers });
+    const bb = busboy({
+      headers: req.headers,
+      limits: { files: 1, fields: 8, parts: 10, fieldSize: 1024 }
+    });
     let file = null;
     const fields = {};
     let completed = false;
@@ -213,6 +221,15 @@ function handleMultipart(req, res, auth) {
           respond(400, { error: 'Missing required fields: employeeId, mcuId' });
           return;
         }
+        if (
+          !MULTIPART_SEGMENT_PATTERN.test(employeeId)
+          || !MULTIPART_SEGMENT_PATTERN.test(mcuId)
+          || employeeId === '.' || employeeId === '..'
+          || mcuId === '.' || mcuId === '..'
+        ) {
+          respond(400, { error: 'Invalid employeeId or mcuId.' });
+          return;
+        }
         if (hasStaleMultipartContext(fields)) {
           respond(409, {
             success: false,
@@ -233,7 +250,7 @@ function handleMultipart(req, res, auth) {
             employeeId,
             mcuId,
             file.mimeType,
-            authenticatedUserId(auth) || 'system'
+            authenticatedUserId(auth)
           );
           respond(200, {
             success: true,
