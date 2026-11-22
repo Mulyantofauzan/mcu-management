@@ -32,3 +32,6 @@ build/
 .vercel
 .superpowers/
 .env*
+
+# Local assistant settings (may contain tokens)
+.claude/settings.local.json
