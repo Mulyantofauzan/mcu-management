@@ -16,7 +16,7 @@ function decodeExpiry(token) {
 export function isTokenValid(token, nowSeconds = Math.floor(Date.now() / 1000)) {
   if (!token) return false;
   const exp = decodeExpiry(token);
-  return exp === null || exp > nowSeconds;
+  return exp !== null && exp > nowSeconds;
 }
 
 export function getAccessToken() {

@@ -4,8 +4,11 @@ export function toCsv(rows) {
   const headers = Object.keys(rows[0]);
   const cell = value => {
     if (value === null || value === undefined) return '';
-    const text = String(value);
-    return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    let text = String(value);
+    /* Sel yang diawali = + - @ tab atau CR dibaca spreadsheet sebagai rumus; awali dengan kutip tunggal. */
+    const harmless = typeof value === 'number' || text === '-' || /^-?\d+([.,]\d+)?$/.test(text);
+    if (/^[=+\-@\t\r]/.test(text) && !harmless) text = `'${text}`;
+    return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
   };
   const lines = [headers.join(','), ...rows.map(row => headers.map(key => cell(row[key])).join(','))];
   return '﻿' + lines.join('\n');

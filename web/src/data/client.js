@@ -5,9 +5,14 @@ import { getAccessToken, clearSession } from '../lib/session.js';
 
 let clientPromise = null;
 
-async function sessionAwareFetch(input, init) {
-  const response = await fetch(input, init);
-  if (response.status === 401 && getAccessToken()) {
+/* Token dibaca per permintaan, bukan dibekukan saat klien dibuat: setelah logout atau ganti akun
+   tanpa muat ulang halaman, permintaan tidak boleh membawa JWT pengguna sebelumnya. */
+export async function sessionAwareFetch(input, init = {}) {
+  const token = getAccessToken();
+  const headers = new Headers(init.headers || {});
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  const response = await fetch(input, { ...init, headers });
+  if (response.status === 401 && token) {
     clearSession();
     location.assign('/login');
   }
@@ -16,10 +21,9 @@ async function sessionAwareFetch(input, init) {
 
 export function getClient() {
   clientPromise ||= loadConfig().then(({ url, anonKey }) => {
-    const token = getAccessToken();
     return createClient(url, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false },
-      global: { fetch: sessionAwareFetch, headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      global: { fetch: sessionAwareFetch }
     });
   }).catch(error => {
     clientPromise = null;
