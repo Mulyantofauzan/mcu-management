@@ -8,7 +8,7 @@
   import { router, navigate, initRouter } from './lib/router.svelte.js';
   import { initTheme } from './lib/theme.svelte.js';
   import { initSidebar } from './lib/sidebar.svelte.js';
-  import { getCurrentUser, clearSession } from './lib/session.js';
+  import { getCurrentUser, clearSession, watchSession } from './lib/session.js';
 
   initTheme();
   initSidebar();
@@ -33,6 +33,11 @@
 
   $effect(() => {
     document.title = route && !route.public ? `${pageLabel(route.key)} - MADIS` : 'Masuk - MADIS';
+  });
+
+  /* Token habis saat halaman dibiarkan terbuka: kembali ke halaman masuk tanpa menunggu klik. */
+  $effect(() => {
+    if (user) return watchSession(logout);
   });
 
   function logout() {

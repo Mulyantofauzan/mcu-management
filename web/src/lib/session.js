@@ -24,6 +24,25 @@ export function getAccessToken() {
   return isTokenValid(token) ? token : null;
 }
 
+/* Tab yang dibiarkan terbuka tidak mengirim permintaan apa pun, jadi kedaluwarsa dicek berkala
+   dan saat tab kembali terlihat (mis. komputer bangun dari tidur). Mengembalikan fungsi berhenti. */
+export function watchSession(onExpired, { intervalMs = 30000, doc = globalThis.document } = {}) {
+  let done = false;
+  const stop = () => {
+    done = true;
+    clearInterval(timer);
+    doc?.removeEventListener('visibilitychange', check);
+  };
+  const check = () => {
+    if (done || getAccessToken()) return;
+    stop();
+    onExpired();
+  };
+  const timer = setInterval(check, intervalMs);
+  doc?.addEventListener('visibilitychange', check);
+  return stop;
+}
+
 export function getCurrentUser() {
   if (!getAccessToken()) return null;
   try {
